@@ -16,6 +16,9 @@ $vbo_tn = $this->vbo_tn;
 $vbo_app = VikBooking::getVboApplication();
 $vbo_app->loadDatePicker();
 
+$vat_included = VikBooking::ivaInclusa();
+$tax_summary = !$vat_included && VikBooking::showTaxOnSummaryOnly() ? true : false;
+
 $is_mobile = VikBooking::detectUserAgent(false, false);
 $currencysymb = VikBooking::getCurrencySymb();
 $calendartype = VikBooking::calendarType();
@@ -110,7 +113,7 @@ $package['conditions'] = do_shortcode($package['conditions']);
 				<?php echo $package['descr'] ?>
 			</div>
 			<div class="vbo-pkgdet-cost">
-				<span class="vbo-pkglist-pkg-price"><span class="vbo_currency"><?php echo $currencysymb; ?></span> <span class="vbo_price"><?php echo VikBooking::numberFormat($package['cost']); ?></span></span>
+				<span class="vbo-pkglist-pkg-price"><span class="vbo_currency"><?php echo $currencysymb; ?></span> <span class="vbo_price"><?php echo VikBooking::numberFormat(($tax_summary ? $package['cost'] : VikBooking::sayPackagePlusIva($package['cost'], $package['idiva']))); ?></span></span>
 				<span class="vbo-pkglist-pkg-priceper"><?php echo implode(', ', $costfor); ?></span>
 			</div>
 		</div>

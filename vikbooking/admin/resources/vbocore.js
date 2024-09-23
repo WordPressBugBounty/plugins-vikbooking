@@ -1,5 +1,5 @@
 /**
- * VikBooking Core v1.6.8
+ * VikBooking Core v1.7.0
  * Copyright (C) 2024 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -468,6 +468,18 @@
 		}
 
 		/**
+		 * Ensures VBO is ready to support VCM.
+		 * 
+		 * @param 	any 	env 	optional data to evaluate.
+		 * 
+		 * @return 	bool
+		 */
+		static vcmMultitasking(env) {
+			// tell VCM that VBOCore supports it
+			return true;
+		}
+
+		/**
 		 * Initializes the multitasking panel for the admin widgets.
 		 * 
 		 * @param 	object 	params 	the panel object params.
@@ -494,9 +506,11 @@
 				addw_def_cls:    "vbo-widget-render-regular",
 				addwfs_selector: ".vbo-sidepanel-add-widget-focussed",
 				wtags_selector:	 ".vbo-sidepanel-widget-tags",
+				wname_selector:	 ".vbo-sidepanel-widget-name",
 				addw_data_attr:  "data-vbowidgetid",
 				actws_selector:  ".vbo-sidepanel-active-widgets",
 				editw_selector:  ".vbo-sidepanel-edit-widgets-trig",
+				shortc_selector: ".vbo-sidepanel-shortcut",
 				rmwidget_class:  "vbo-admin-widgets-widget-remove",
 				rmwidget_icn: 	 "",
 				dtcwidget_class: "vbo-admin-widgets-widget-detach",
@@ -508,6 +522,9 @@
 				open_class: 	 "vbo-sidepanel-open",
 				close_class: 	 "vbo-sidepanel-close",
 				cur_widget_cls:  "vbo-admin-widgets-container-small",
+				sortable:        true,
+				sort_save_ev:    "vbo-admin-widgets-updateposmp",
+				sorting:         null,
 			};
 
 			if (typeof params === 'object') {
@@ -524,8 +541,10 @@
 				panel_opts: panel_opts,
 			});
 
-			// setup browser notifications
-			VBOCore.setupNotifications();
+			if (VBOCore.options.is_vbo) {
+				// setup browser notifications
+				VBOCore.setupNotifications();
+			}
 
 			// count active widgets on current page
 			var tot_active_widgets = VBOCore.options.admin_widgets.length;
@@ -572,19 +591,21 @@
 				$(VBOCore.options.panel_opts.btn_trigger).trigger('click');
 			});
 
-			// register toggle layout buttons
-			$(VBOCore.options.panel_opts.t_layout_large).on('click', function() {
-				// large layout
-				$(VBOCore.options.panel_opts.selector).addClass(VBOCore.options.panel_opts.sclass_l_large).removeClass(VBOCore.options.panel_opts.sclass_l_small);
-				$(VBOCore.options.panel_opts.wclass_base_sel).addClass(VBOCore.options.panel_opts.wclass_l_large).removeClass(VBOCore.options.panel_opts.wclass_l_small);
-				VBOCore.options.panel_opts.cur_widget_cls = VBOCore.options.panel_opts.sclass_l_large;
-			});
-			$(VBOCore.options.panel_opts.t_layout_small).on('click', function() {
-				// small layout
-				$(VBOCore.options.panel_opts.selector).addClass(VBOCore.options.panel_opts.sclass_l_small).removeClass(VBOCore.options.panel_opts.sclass_l_large);
-				$(VBOCore.options.panel_opts.wclass_base_sel).addClass(VBOCore.options.panel_opts.wclass_l_small).removeClass(VBOCore.options.panel_opts.wclass_l_large);
-				VBOCore.options.panel_opts.cur_widget_cls = VBOCore.options.panel_opts.sclass_l_small;
-			});
+			if (VBOCore.options.is_vbo) {
+				// register toggle layout buttons
+				$(VBOCore.options.panel_opts.t_layout_large).on('click', function() {
+					// large layout
+					$(VBOCore.options.panel_opts.selector).addClass(VBOCore.options.panel_opts.sclass_l_large).removeClass(VBOCore.options.panel_opts.sclass_l_small);
+					$(VBOCore.options.panel_opts.wclass_base_sel).addClass(VBOCore.options.panel_opts.wclass_l_large).removeClass(VBOCore.options.panel_opts.wclass_l_small);
+					VBOCore.options.panel_opts.cur_widget_cls = VBOCore.options.panel_opts.sclass_l_large;
+				});
+				$(VBOCore.options.panel_opts.t_layout_small).on('click', function() {
+					// small layout
+					$(VBOCore.options.panel_opts.selector).addClass(VBOCore.options.panel_opts.sclass_l_small).removeClass(VBOCore.options.panel_opts.sclass_l_large);
+					$(VBOCore.options.panel_opts.wclass_base_sel).addClass(VBOCore.options.panel_opts.wclass_l_small).removeClass(VBOCore.options.panel_opts.wclass_l_large);
+					VBOCore.options.panel_opts.cur_widget_cls = VBOCore.options.panel_opts.sclass_l_small;
+				});
+			}
 
 			// register listener for esc key pressed
 			$(document).keyup(function(e) {
@@ -671,7 +692,7 @@
 						return;
 					}
 
-					if (e.shiftKey === true) {
+					if (e.shiftKey === true && !VBOCore.options.is_vcm) {
 						// widget multitask panel rendering
 						VBOCore.addWidgetToPanel(load_wid_id);
 						$(VBOCore.options.panel_opts.search_selector).trigger('blur');
@@ -680,7 +701,19 @@
 					}
 
 					// widget modal rendering is the default method
-					VBOCore.renderModalWidget(load_wid_id);
+					if (VBOCore.options.is_vcm) {
+						// register loading effect with automatic cancellation
+						let orig_name = (focussed_wid.length ? focussed_wid : first_matched).find(VBOCore.options.panel_opts.wname_selector).text();
+						(focussed_wid.length ? focussed_wid : first_matched).find(VBOCore.options.panel_opts.wname_selector).html(orig_name + ' ' + VBOCore.options.default_loading_body);
+						setTimeout(() => {
+							(focussed_wid.length ? focussed_wid : first_matched).find(VBOCore.options.panel_opts.wname_selector).text(orig_name);
+						}, 1000);
+
+						// assets will be loaded within VCM before rendering the modal widget
+						VBOCore.handleDisplayWidgetNotification({widget_id: load_wid_id});
+					} else {
+						VBOCore.renderModalWidget(load_wid_id);
+					}
 
 					return;
 				}
@@ -734,12 +767,29 @@
 					return false;
 				}
 
+				if (VBOCore.options.panel_opts.sorting) {
+					// prevent dropped widgets after sorting to be added to the panel
+					return false;
+				}
+
 				// determine widget rendering method
 				if (e && e.target) {
 					let cktarget = $(e.target);
-					if (e.shiftKey === true || (cktarget.hasClass(VBOCore.options.panel_opts.addw_modal_cls) || cktarget.parent().hasClass(VBOCore.options.panel_opts.addw_modal_cls))) {
+					if (e.shiftKey === true || VBOCore.options.is_vcm || (cktarget.hasClass(VBOCore.options.panel_opts.addw_modal_cls) || cktarget.parent().hasClass(VBOCore.options.panel_opts.addw_modal_cls))) {
 						// widget modal rendering
-						VBOCore.renderModalWidget(widget_id);
+						if (VBOCore.options.is_vcm) {
+							// register loading effect with automatic cancellation
+							let orig_name = $(this).find(VBOCore.options.panel_opts.wname_selector).text();
+							$(this).find(VBOCore.options.panel_opts.wname_selector).html(orig_name + ' ' + VBOCore.options.default_loading_body);
+							setTimeout(() => {
+								$(this).find(VBOCore.options.panel_opts.wname_selector).text(orig_name);
+							}, 1000);
+
+							// assets will be loaded within VCM before rendering the modal widget
+							VBOCore.handleDisplayWidgetNotification({widget_id: widget_id});
+						} else {
+							VBOCore.renderModalWidget(widget_id);
+						}
 
 						return;
 					}
@@ -749,8 +799,10 @@
 				VBOCore.addWidgetToPanel(widget_id);
 			});
 
-			// register listener for updating multitask sidepanel with debounce
-			document.addEventListener(VBOCore.options.multitask_save_event, VBOCore.debounceEvent(VBOCore.saveMultitasking, 1000));
+			if (VBOCore.options.is_vbo) {
+				// register listener for updating multitask sidepanel with debounce
+				document.addEventListener(VBOCore.options.multitask_save_event, VBOCore.debounceEvent(VBOCore.saveMultitasking, 1000));
+			}
 
 			// subscribe to event for multitask shortcut
 			document.addEventListener(VBOCore.multitask_shortcut_event, function() {
@@ -764,31 +816,111 @@
 				$(VBOCore.options.panel_opts.search_selector).trigger('focus');
 			});
 
-			// register click event on edit widgets button
-			$(VBOCore.options.panel_opts.editw_selector).on('click', function() {
-				VBOCore.toggleWidgetsPanelEditing(null);
-			});
+			if (VBOCore.options.is_vbo) {
+				// register click event on edit widgets button
+				$(VBOCore.options.panel_opts.editw_selector).on('click', function() {
+					VBOCore.toggleWidgetsPanelEditing(null);
+				});
 
-			// register detach widget buttons
-			$('.' + VBOCore.options.panel_opts.dtcwidget_class).each(function() {
-				let widget_wrapper 	 = $(this).parent(VBOCore.options.panel_opts.wclass_base_sel);
-				let detach_widget_id = widget_wrapper.attr(VBOCore.options.panel_opts.addw_data_attr);
-				let detach_to_target = widget_wrapper.find('.' + VBOCore.options.panel_opts.dtctarget_class);
-				if (detach_to_target.length) {
+				// register detach widget buttons
+				$('.' + VBOCore.options.panel_opts.dtcwidget_class).each(function() {
+					let widget_wrapper 	 = $(this).parent(VBOCore.options.panel_opts.wclass_base_sel);
+					let detach_widget_id = widget_wrapper.attr(VBOCore.options.panel_opts.addw_data_attr);
+					let detach_to_target = widget_wrapper.find('.' + VBOCore.options.panel_opts.dtctarget_class);
+					if (!detach_to_target.length) {
+						detach_to_target = widget_wrapper;
+					}
 					// move detach wrapper onto the target (widget head)
 					$(this).prependTo(detach_to_target);
-				}
 
-				if (!detach_widget_id) {
-					return;
-				}
+					if (!detach_widget_id) {
+						return;
+					}
 
-				// register detach action
-				$(this).on('click', function() {
-					// detach widget, meaning do a modal rendering
-					VBOCore.renderModalWidget(detach_widget_id);
+					// register detach action
+					$(this).on('click', function() {
+						// detach widget, meaning do a modal rendering
+						VBOCore.renderModalWidget(detach_widget_id);
+					});
 				});
-			});
+			}
+
+			if (VBOCore.options.panel_opts.sortable && typeof $.fn.sortable !== 'undefined') {
+				// make the admin widgets sortable
+				let sortable_env = VBOCore.options.is_vcm ? 'vcm-sidepanel-add-widgets' : 'vbo-sidepanel-add-widgets';
+				let handle_env   = VBOCore.options.is_vcm ? 'vcm-sidepanel-widget-info-det' : 'vbo-sidepanel-widget-info-det';
+				let item_env     = VBOCore.options.is_vcm ? 'vcm-sidepanel-add-widget' : 'vbo-sidepanel-add-widget';
+
+				// default sorting flag
+				VBOCore.options.panel_opts.sorting = null;
+
+				// register listener for updating the widget sorting values on the multitask sidepanel with debounce
+				document.addEventListener(VBOCore.options.panel_opts.sort_save_ev, VBOCore.debounceEvent(VBOCore.saveMultitaskingSorting, 500));
+
+				// apply sorting capabilities
+				$('.' + sortable_env).sortable({
+					axix: 'x',
+					cursor: 'move',
+					handle: '.' + handle_env,
+					items: '.' + item_env,
+					containment: 'parent',
+					revert: false,
+					start: function(event, ui) {
+						// update flag
+						VBOCore.options.panel_opts.sorting = $(ui.item).attr('data-vbowidgetid');
+						// set is-sorting class
+						$(ui.item).addClass('is-sorting');
+					},
+					stop: function(event, ui) {
+						// make sure no elements are being sorted
+						$('.' + item_env).removeClass('is-sorting');
+						// register delayed update flag to allow understanding a sorting was just completed
+						setTimeout(() => {
+							// restore default sorting flag
+							VBOCore.options.panel_opts.sorting = null;
+						}, 500);
+					},
+					update: function(event, ui) {
+						// build the current widgets position list
+						let pos_list = {};
+						document.querySelectorAll('.' + item_env).forEach((elem, index) => {
+							let curr_wid = elem.getAttribute('data-vbowidgetid');
+							pos_list[curr_wid] = index;
+						});
+						// trigger the event to update the widget positions
+						VBOCore.emitEvent(VBOCore.options.panel_opts.sort_save_ev, {
+							pos_list: pos_list,
+						});
+					}
+				});
+			}
+		}
+
+		/**
+		 * Registers the callback for saving the new widget sorting value in the Multitask panel.
+		 */
+		static saveMultitaskingSorting(e) {
+			if (!e || !e.detail || !e.detail.pos_list) {
+				return;
+			}
+
+			// update multitask widget position
+			VBOCore.doAjax(
+				VBOCore.options.multitask_ajax_uri,
+				{
+					call: 'setMultitaskingWidgetPos',
+					call_args: [
+						e.detail.pos_list,
+					],
+				},
+				(response) => {
+					// do nothing on success
+				},
+				(error) => {
+					// silently log the error
+					console.error(error.responseText);
+				}
+			);
 		}
 
 		/**
@@ -885,10 +1017,11 @@
 							setTimeout(() => {
 								let detach_elem = $('<div></div>').addClass(VBOCore.options.panel_opts.dtcwidget_class).html(VBOCore.options.panel_opts.dtcwidget_icn);
 								let detach_to_target = widget_elem.find('.' + VBOCore.options.panel_opts.dtctarget_class);
-								if (detach_to_target.length) {
-									// move detach wrapper onto the target (widget head)
-									detach_elem.prependTo(detach_to_target);
+								if (!detach_to_target.length) {
+									detach_to_target = widget_elem;
 								}
+								// move detach wrapper onto the target (widget head)
+								detach_elem.prependTo(detach_to_target);
 								// register detach action
 								detach_elem.on('click', function() {
 									// detach widget, meaning do a modal rendering
@@ -924,6 +1057,8 @@
 			if (added === true) {
 				// show button for edit mode
 				triggerer.show();
+				// hide shortcut element
+				$(VBOCore.options.panel_opts.shortc_selector).hide();
 				return;
 			}
 
@@ -934,6 +1069,8 @@
 				if (!editing_widgets.length) {
 					// hide button for edit mode after removing the last widget
 					triggerer.removeClass(VBOCore.options.panel_opts.editw_selector.substr(1) + '-active').hide();
+					// show shortcut element
+					$(VBOCore.options.panel_opts.shortc_selector).show();
 				}
 				return;
 			}
@@ -1776,9 +1913,10 @@
 							}
 						});
 						// widget modal rendering handled by VCM (or an external admin resource)
-						let modal_data = VBOCore.renderModalWidget(data['widget_id'], data, options, false);
-						if (modal_data.hasOwnProperty('dismissed_event')) {
-							// register event to unload all assets
+						let hide_panel = VBOCore.options.is_vcm && $('.' + VBOCore.options.panel_opts.open_class).length ? true : false;
+						let modal_data = VBOCore.renderModalWidget(data['widget_id'], data, options, hide_panel);
+						if (modal_data.hasOwnProperty('dismissed_event') && (modal_data['suffix'] || '').indexOf('inner') < 0) {
+							// register event to unload all assets (only if not from an inner modal)
 							document.addEventListener(modal_data['dismissed_event'], () => {
 								assets.forEach((asset) => {
 									if ($('link#' + asset['id']).length) {
@@ -2082,6 +2220,15 @@
 
 				// register an admin menu action for the rendered widget
 				VBOCore.fetchWidgetDetails(widget_id).then((details) => {
+					// update modal title, if default title is present
+					if (modal_options.title == VBOCore.options.tn_texts.admin_widget) {
+						widget_modal
+							.closest('.vbo-modal-overlay-content')
+							.find('.vbo-modal-overlay-content-head-title')
+							.text(data._modalTitle + ' - ' + details['name']);
+					}
+
+					// register admin menu action
 					try {
 						// work on Local Storage to register the widget data
 						VBOCore.registerAdminMenuAction({
@@ -2423,12 +2570,19 @@
 			var modal_head = $('<div></div>').addClass('vbo-modal-overlay-content-head');
 			var modal_head_close = $('<span></span>').addClass('vbo-modal-overlay-close-times').html('&times;');
 			modal_head_close.on('click', modal_dismiss_fn);
-			modal_head.append(options.title).append(modal_head_close);
+			if (options.title) {
+				let modal_title = $('<span></span>').addClass('vbo-modal-overlay-content-head-title').html(options.title);
+				modal_head.append(modal_title);
+			}
+			modal_head.append(modal_head_close);
 
 			// check if the modal head should be draggable
 			if (options.draggable) {
-				// register the event to allow dragging
+				// register the event(s) to allow dragging
 				modal_head.addClass('vbo-modal-head-draggable');
+				modal_head.on('contextmenu', (e) => {
+					e.preventDefault();
+				});
 				modal_head.on('mousedown', modal_dragstart_fn);
 			}
 
@@ -2487,14 +2641,15 @@
 					}
 
 					// immediately unregister from this event once fired
-					document.removeEventListener(e.type, vbo_core_dismiss_event_modal_escape);
+					window.removeEventListener(e.type, vbo_core_dismiss_event_modal_escape);
 
 					// trigger the actual dismiss event
 					VBOCore.emitEvent(options.dismiss_event);
 				};
 
 				// listen to the Escape keyup event to dismiss the modal
-				document.addEventListener('keyup', vbo_core_dismiss_event_modal_escape);
+				// listen on window to allow admin-widgets to prevent the default behavior and stop the propagation
+				window.addEventListener('keyup', vbo_core_dismiss_event_modal_escape);
 			}
 
 			// register to the toggle-loading event
@@ -2762,7 +2917,7 @@
 					// duplicate link
 					return false;
 				}
-				if (menu_action_entry.hasOwnProperty('widget') && menu_actions[i].hasOwnProperty('widget') && menu_actions[i]['href'] == menu_action_entry['widget']) {
+				if (menu_action_entry.hasOwnProperty('widget') && menu_actions[i].hasOwnProperty('widget') && menu_actions[i]['widget'] == menu_action_entry['widget']) {
 					// duplicate widget
 					return false;
 				}
@@ -2998,5 +3153,55 @@
 	 * @since 	1.6.5
 	 */
 	VBOCore.widgets_pushed_data = [];
+
+	/**
+	 * Checks if the KeyBoard event matches the given shortcut.
+	 *
+	 * @param 	array 	 keys 	The shortcut representation.
+	 *
+	 * @return 	boolean  True if matches, otherwise false.
+	 * 
+	 * @since 	1.7.0
+	 */
+	KeyboardEvent.prototype.shortcut = function(keys) {
+		// get modifiers list
+		var modifiers = keys.slice(0);
+		// pop character from modifiers
+		var keyCode = modifiers.pop();
+
+		if (typeof keyCode === 'string') {
+			// get ASCII
+			keyCode = keyCode.toUpperCase().charCodeAt(0);
+		}
+
+		// make sure the modifiers are lower case
+		modifiers = modifiers.map(function(mod) {
+			return mod.toLowerCase();
+		});
+
+		var ok = false;
+
+		// validate key code
+		if (this.keyCode == keyCode) {
+			// validate modifiers
+			ok = true;
+			var lookup = ['meta', 'shift', 'alt', 'ctrl'];
+
+			for (var i = 0; i < lookup.length && ok; i++) {
+				// check if modifiers is pressed
+				var mod = this[lookup[i] + 'Key'];
+
+				if (mod) {
+					// if pressed, the shortcut must specify it
+					ok &= modifiers.indexOf(lookup[i]) !== -1;
+				} else {
+					// if not pressed, the shortcut must not include it
+					ok &= modifiers.indexOf(lookup[i]) === -1;
+				}
+			}
+		}
+
+		return ok;
+	}
 
 })(jQuery, window);

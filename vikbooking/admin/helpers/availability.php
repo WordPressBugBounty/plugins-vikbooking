@@ -68,6 +68,13 @@ class VikBookingAvailability
 	protected $ignore_restrictions = false;
 
 	/**
+	 * Whether to ignore rooms availability.
+	 *
+	 * @var bool
+	 */
+	protected $ignore_availability = false;
+
+	/**
 	 * Whether check-ins on check-outs are allowed.
 	 * 
 	 * @var bool
@@ -151,15 +158,16 @@ class VikBookingAvailability
 	}
 
 	/**
-	 * Returns the global object, either
-	 * a new instance or the existing instance
-	 * if the class was already instantiated.
+	 * Returns the global object, either a new instance or the existing instance
+	 * if the class was already instantiated, unless a new instance is requested.
+	 * 
+	 * @param 	bool 	$anew 	True for forcing a new instance.
 	 *
-	 * @return 	self 	A new instance of the class.
+	 * @return 	VikBookingAvailability
 	 */
-	public static function getInstance()
+	public static function getInstance($anew = false)
 	{
-		if (is_null(static::$instance)) {
+		if (is_null(static::$instance) || $anew) {
 			static::$instance = new static();
 		}
 
@@ -247,7 +255,8 @@ class VikBookingAvailability
 			case 2:
 				return 'Invalid request authentication.';
 			case 3:
-				return JText::translate('VBO_AV_ECODE_3');
+				$expl = JText::translate('VBO_AV_ECODE_3');
+				return $expl != 'VBO_AV_ECODE_3' ? $expl : 'No rooms found for the given party.';
 			case 4:
 				return 'Not compliant with the booking restrictions.';
 			case 5:
@@ -255,7 +264,8 @@ class VikBookingAvailability
 			case 6:
 				return 'No rates defined for the given length of stay.';
 			case 7:
-				return JText::translate('VBO_AV_ECODE_7');
+				$expl = JText::translate('VBO_AV_ECODE_7');
+				return $expl != 'VBO_AV_ECODE_7' ? $expl : 'No availability for the dates requested.';
 			case 8:
 				return 'No rooms available due to room or rate plan restrictions.';
 			default:
@@ -267,9 +277,14 @@ class VikBookingAvailability
 	/**
 	 * Loads all rooms in VBO and maps them into an associative array.
 	 * 
-	 * @return 	array 	the associative list of rooms.
+	 * @param 	array 	$ids 	optional list of IDs to load.
+	 * @param 	int 	$max 	optional rooms limit to fetch.
+	 * 
+	 * @return 	array 			the associative list of rooms.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP) added arguments $ids, $max.
 	 */
-	public function loadRooms()
+	public function loadRooms(array $ids = [], $max = 0)
 	{
 		if ($this->all_rooms) {
 			// return previously cached array if available
@@ -278,10 +293,32 @@ class VikBookingAvailability
 
 		$dbo = JFactory::getDbo();
 
-		$q = "SELECT `id`, `name`, `img`, `idcat`, `avail`, `units`, `fromadult`, `toadult`, 
-			`fromchild`, `tochild`, `totpeople`, `mintotpeople` FROM `#__vikbooking_rooms` 
-			ORDER BY `avail` DESC, `name` ASC;";
-		$dbo->setQuery($q);
+		$q = $dbo->getQuery(true)
+			->select([
+				$dbo->qn('id'),
+				$dbo->qn('name'),
+				$dbo->qn('img'),
+				$dbo->qn('idcat'),
+				$dbo->qn('avail'),
+				$dbo->qn('units'),
+				$dbo->qn('fromadult'),
+				$dbo->qn('toadult'),
+				$dbo->qn('fromchild'),
+				$dbo->qn('tochild'),
+				$dbo->qn('totpeople'),
+				$dbo->qn('mintotpeople'),
+			])
+			->from($dbo->qn('#__vikbooking_rooms'));
+
+		if ($ids) {
+			$ids = array_map('intval', $ids);
+			$q->where($dbo->qn('id') . ' IN (' . implode(', ', $ids) . ')');
+		}
+
+		$q->order($dbo->qn('avail') . ' DESC');
+		$q->order($dbo->qn('name') . ' ASC');
+
+		$dbo->setQuery($q, 0, $max);
 		$room_rows = $dbo->loadAssocList();
 
 		if (!$room_rows) {
@@ -326,12 +363,41 @@ class VikBookingAvailability
 		$rooms = $this->loadRooms();
 
 		foreach ($rooms as $k => $room) {
-			if (!$room['avail']) {
+			if (!($room['avail'] ?? 1)) {
 				unset($rooms[$k]);
 			}
 		}
 
 		return $rooms;
+	}
+
+	/**
+	 * Finds a room by name.
+	 * 
+	 * @param 	string 	$name 	The room name to look for.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getRoomByName(string $name)
+	{
+		$dbo = JFactory::getDbo();
+
+		$q = $dbo->getQuery(true)
+			->select('*')
+			->from($dbo->qn('#__vikbooking_rooms'))
+			->order($dbo->qn('avail') . ' DESC')
+			->order($dbo->qn('name') . ' ASC');
+
+		foreach (array_filter(explode(' ', $name)) as $nm_part) {
+			$q->where($dbo->qn('name') . ' LIKE ' . $dbo->q("%{$nm_part}%"));
+		}
+
+		$dbo->setQuery($q, 0, 1);
+		$record = $dbo->loadAssoc();
+
+		return $record ?? [];
 	}
 
 	/**
@@ -341,7 +407,7 @@ class VikBookingAvailability
 	 */
 	public function loadRatePlans()
 	{
-		if (count($this->all_rplans)) {
+		if ($this->all_rplans) {
 			// return previously cached array if available
 			return $this->all_rplans;
 		}
@@ -349,22 +415,225 @@ class VikBookingAvailability
 		$dbo = JFactory::getDbo();
 
 		$rate_plans = [];
+		$derived_rplans = [];
 
 		$q = "SELECT * FROM `#__vikbooking_prices` ORDER BY `name` ASC;";
 		$dbo->setQuery($q);
 		$rplan_rows = $dbo->loadAssocList();
 
-		if ($rplan_rows) {
-			foreach ($rplan_rows as $rplan) {
-				$rate_plans[$rplan['id']] = $rplan;
+		foreach ($rplan_rows as $rplan) {
+			if (!empty($rplan['derived_id']) && !empty($rplan['derived_data'])) {
+				// decode the derived data information
+				$rplan['derived_data'] = json_decode($rplan['derived_data'], true);
+				// add rate plan ID
+				$derived_rplans[] = $rplan['id'];
 			}
-			// sort rate plans
-			$rate_plans = VikBooking::sortRatePlans($rate_plans, true);
+			$rate_plans[$rplan['id']] = $rplan;
 		}
+
+		// add the information about the parent rate plans, if any
+		foreach ($rate_plans as $rplan_id => $rplan_data) {
+			if (in_array($rplan_id, $derived_rplans) && isset($rate_plans[$rplan_data['derived_id']])) {
+				// set parent rate details
+				$rate_plans[$rplan_id]['parent_rate_id'] = $rate_plans[$rplan_data['derived_id']]['id'];
+				$rate_plans[$rplan_id]['parent_rate_name'] = $rate_plans[$rplan_data['derived_id']]['name'];
+			}
+		}
+
+		// sort rate plans
+		$rate_plans = VikBooking::sortRatePlans($rate_plans, true);
 
 		$this->all_rplans = $rate_plans;
 
 		return $rate_plans;
+	}
+
+	/**
+	 * Returns a list of rate plans derived from the given parent rate plan ID.
+	 * 
+	 * @param 	int 	$parent_rate_id 	The parent rate plan ID.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getDerivedRatePlans(int $parent_rate_id)
+	{
+		$derived_rplans = [];
+
+		foreach ($this->loadRatePlans() as $rp_id => $rplan) {
+			if ($rplan['derived_id'] && $rplan['derived_id'] == $parent_rate_id && $rplan['derived_data']) {
+				// this rate plan is derived from the given parent rate plan
+				$derived_rplans[] = $rplan;
+			}
+		}
+
+		return $derived_rplans;
+	}
+
+	/**
+	 * Returns the inventory for the rooms and dates set.
+	 * 
+	 * @param 	bool 	$restrictions 	Whether to include booking restrictions data.
+	 * 
+	 * @return 	array 					Associative list of rooms availability inventory.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getInventory($restrictions = false)
+	{
+		$stay_ts = $this->getStayDates(true);
+
+		if (!$stay_ts) {
+			$this->setError('No dates provided');
+			return [];
+		}
+
+		if ($stay_ts[0] > $stay_ts[1]) {
+			$this->setError('Invalid dates provided');
+			return [];
+		}
+
+		$info_from = getdate($stay_ts[0]);
+
+		$room_ids   = array_column($this->loadRooms(), 'id');
+		$room_names = array_column($this->loadRooms(), 'name');
+		$room_units = array_column($this->loadRooms(), 'units');
+
+		if (!$room_ids) {
+			$this->setError('No rooms provided');
+			return [];
+		}
+
+		// load busy records
+		$busy_records = VikBooking::loadBusyRecords($room_ids, $stay_ts[0], $stay_ts[1]);
+
+		// room restrictions associative list
+		$room_restrictions = [];
+
+		// global minimum stay restriction
+		$glob_minlos = VikBooking::getDefaultNightsCalendar();
+		$glob_minlos = $glob_minlos < 1 ? 1 : (int) $glob_minlos;
+
+		// inventory pool
+		$ari = [];
+		foreach ($room_ids as $room_index => $room_id) {
+			$ari[$room_id] = [
+				'room_name' => $room_names[$room_index],
+				'inventory' => [],
+			];
+		}
+
+		// loop through all dates in the range
+		while ($info_from[0] <= $stay_ts[1]) {
+			// build day after timestamp
+			$day_after_ts = mktime(0, 0, 0, $info_from['mon'], $info_from['mday'] + 1, $info_from['year']);
+
+			// scan the units booked for each requested room
+			foreach ($room_ids as $room_index => $room_id) {
+				$units_booked = 0;
+				// scan all the occupied records of the current room
+				foreach (($busy_records[$room_id] ?? []) as $busy) {
+					$info_in  = getdate($busy['checkin']);
+					$info_out = getdate($busy['checkout']);
+					$in_ts    = mktime(0, 0, 0, $info_in['mon'], $info_in['mday'], $info_in['year']);
+					$out_ts   = mktime(0, 0, 0, $info_out['mon'], $info_out['mday'], $info_out['year']);
+					if ($info_from[0] >= $in_ts && $info_from[0] < $out_ts) {
+						// increase room units booked
+						$units_booked++;
+					}
+				}
+
+				// count units left
+				$units_left = $units_booked >= $room_units[$room_index] ? 0 : ($room_units[$room_index] - $units_booked);
+
+				// set room inventory date
+				$inventory_day = [
+					'day' => date('Y-m-d', $info_from[0]),
+				];
+
+				if ($room_units[$room_index] == 1) {
+					// single-unit listing inventory structure
+					$inventory_day['available'] = (bool) $units_left;
+				} else {
+					// multi-unit room-type inventory structure
+					$inventory_day['units_booked']  = $units_booked;
+					$inventory_day['units_to_sell'] = $units_left;
+				}
+
+				// check for room-level restrictions
+				if ($restrictions) {
+					if (!isset($room_restrictions[$room_id])) {
+						// load room restrictions only once
+						$room_restrictions[$room_id] = VikBooking::loadRestrictions(true, [$room_id]);
+					}
+
+					// parse room restrictions for the current inventory day
+					$restr = VikBooking::parseSeasonRestrictions($info_from[0], $day_after_ts, 1, $room_restrictions[$room_id]);
+					if ($restr) {
+						$inventory_day['restrictions'] = [
+							'min_los' => (int) $restr['minlos'],
+						];
+						if (($restr['maxlos'] ?? 0)) {
+							$inventory_day['restrictions']['max_los'] = (int) $restr['maxlos'];
+						}
+						if (!empty($restr['cta'])) {
+							$inventory_day['restrictions']['closed_to_arrival'] = array_map(function($wday) {
+								switch ($wday) {
+									case '1':
+										return 'Monday';
+									case '2':
+										return 'Tuesday';
+									case '3':
+										return 'Wednesday';
+									case '4':
+										return 'Thursday';
+									case '5':
+										return 'Friday';
+									case '6':
+										return 'Saturday';
+									default:
+										return 'Sunday';
+								}
+							}, $restr['cta']);
+						}
+						if (!empty($restr['ctd'])) {
+							$inventory_day['restrictions']['closed_to_departure'] = array_map(function($wday) {
+								switch ($wday) {
+									case '1':
+										return 'Monday';
+									case '2':
+										return 'Tuesday';
+									case '3':
+										return 'Wednesday';
+									case '4':
+										return 'Thursday';
+									case '5':
+										return 'Friday';
+									case '6':
+										return 'Saturday';
+									default:
+										return 'Sunday';
+								}
+							}, $restr['ctd']);
+						}
+					} else {
+						// set the global minimum stay restriction
+						$inventory_day['restrictions'] = [
+							'min_los' => $glob_minlos,
+						];
+					}
+				}
+
+				// push room-day inventory
+				$ari[$room_id]['inventory'][] = $inventory_day;
+			}
+
+			// go to next date
+			$info_from = getdate($day_after_ts);
+		}
+
+		return $ari;
 	}
 
 	/**
@@ -376,12 +645,16 @@ class VikBookingAvailability
 	 */
 	public function getRates($params = [])
 	{
-		if (!count($this->stay_dates)) {
+		// reset errors to their initial values
+		$this->error = '';
+		$this->errorCode = 0;
+
+		if (!$this->stay_dates) {
 			$this->setError('No dates provided');
 			return false;
 		}
 
-		if (!count($this->room_parties)) {
+		if (!$this->room_parties) {
 			$this->setError('No room party provided');
 			return false;
 		}
@@ -391,6 +664,8 @@ class VikBookingAvailability
 
 		// build options array for TACVBO
 		$options = [
+			'hash' 		 => md5('vbo.e4j.vbo'),
+			'req_type' 	 => 'hotel_availability',
 			'start_date' => $this->stay_dates[0],
 			'end_date' 	 => $this->stay_dates[1],
 			'nights' 	 => $this->countNightsOfStay(),
@@ -410,12 +685,34 @@ class VikBookingAvailability
 			}
 		}
 
+		// check for implicit settings
+		if (!empty($params['max_rooms_limit'])) {
+			// set rooms maximum limit
+			TACVBO::$maxRoomsLimit = (int) $params['max_rooms_limit'];
+			// unset implicit setting
+			unset($params['max_rooms_limit']);
+		} else {
+			// reset to initial value for subsequent calls
+			TACVBO::$maxRoomsLimit = 0;
+		}
+
+		if (is_array(($params['forced_room_ids'] ?? null))) {
+			// set allowed room IDs
+			TACVBO::$forcedRoomIds = $params['forced_room_ids'];
+			// unset implicit setting
+			unset($params['forced_room_ids']);
+		} else {
+			// reset to initial value for subsequent calls
+			TACVBO::$forcedRoomIds = [];
+		}
+
 		// merge default options with params, if any
 		$options = array_merge($options, $params);
 
 		// invoke TACVBO class by injecting the options
 		TACVBO::$getArray = true;
 		TACVBO::$ignoreRestrictions = $this->ignore_restrictions;
+		TACVBO::$ignoreAvailability = $this->ignore_availability;
 		$website_rates = TACVBO::tac_av_l($options);
 
 		// store the error code occurred (if any)
@@ -1788,6 +2085,24 @@ class VikBookingAvailability
 		}
 
 		return $this->ignore_restrictions;
+	}
+
+	/**
+	 * Sets and returns the flag to ignore the rooms availability.
+	 * 
+	 * @param 	bool 	$set 	the boolean status to set.
+	 * 
+	 * @return 	bool 			the current ignore status.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function ignoreAvailability($set = null)
+	{
+		if (is_bool($set)) {
+			$this->ignore_availability = $set;
+		}
+
+		return $this->ignore_availability;
 	}
 
 	/**

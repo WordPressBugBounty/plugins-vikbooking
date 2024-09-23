@@ -55,6 +55,10 @@ input[type="date"], input[type="datetime-local"], input[type="datetime"], input[
 	font-size: 1.2em;
 }
 
+.vbo-admin-container {
+	padding: 0;
+}
+
 /*** Menu ***/
 .vbo-menu-container {
 	margin-bottom: 20px;
@@ -122,12 +126,6 @@ select {
     vertical-align: middle;
     font-size: 0;
     white-space: nowrap;
-}
-
-/*** General Classes **/
-.vbo-admin-container {
-	background: transparent;
-	padding: 0;
 }
 
 /*** Calendar field **/
@@ -681,14 +679,8 @@ input[type="number"], #vbo-addnumnight, #vbo-numnights, #vbo-numadults, #vbo-num
 }
 
 /*** Bookings List ***/
-.vbcsvexport > i, .vbicsexport > i {
-	padding: 11px;
-}
-.vbo-perms-operators > i {
-	padding: 11px;
-}
-.vbcsvexport > span, .vbicsexport > span, .vbo-perms-operators > span {
-	padding-top: 10px;
+.vbcsvexport > i, .vbicsexport > i, .vbo-perms-operators > i {
+	padding: 11px 8px 11px 12px;
 }
 
 /*** Tableaux ***/

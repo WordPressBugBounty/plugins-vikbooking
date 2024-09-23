@@ -152,7 +152,7 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 			} elseif (!isset($activity->id_review) && empty($watch_data->message_id)) {
 				// this is a guest message
 				$watch_data->guest_message = $activity->content;
-				$watch_data->message_id    = $activity->id_message;
+				$watch_data->message_id    = $activity->id_message ?? 0;
 				$watch_data->message_bid   = $activity->idorder;
 			}
 		}
@@ -299,7 +299,7 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 			}
 
 			?>
-			<div class="vbo-dashboard-guest-activity vbo-dashboard-guest-activity-<?php echo $activity_type; ?>" onclick="vboWidgetLatestFromGuestsOpenBooking('<?php echo $activity->idorder; ?>', '<?php echo $activity_type == 'message' ? '#messaging' : ''; ?>');">
+			<div class="vbo-dashboard-guest-activity vbo-dashboard-guest-activity-<?php echo $activity_type; ?>" onclick="vboWidgetLatestFromGuestsShowDetails('<?php echo $activity_type; ?>', '<?php echo $activity_type == 'message' ? $activity->idorder : $activity->id_review; ?>');">
 				<div class="vbo-dashboard-guest-activity-avatar">
 				<?php
 				if (!empty($activity->guest_avatar)) {
@@ -432,7 +432,7 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 			// do nothing
 		}
 
-		if (!count($latest_activities) || $latest_activities[0]->last_updated == $latest_dt) {
+		if (!$latest_activities || $latest_activities[0]->last_updated == $latest_dt) {
 			// no newest activities found
 			echo '0';
 			return;
@@ -518,6 +518,33 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 				open_url = open_url.replace('%d', id) + url_suffix;
 				// navigate
 				document.location.href = open_url;
+			}
+
+			/**
+			 * Shows the details of either a message or a review.
+			 */
+			function vboWidgetLatestFromGuestsShowDetails(type, id) {
+				if (type === 'message') {
+					VBOCore.handleDisplayWidgetNotification({
+						widget_id: 'guest_messages'
+					}, {
+						bid: id,
+						modal_options: {
+							suffix: 'widget_modal_inner_guest_messages',
+						}
+					});
+				} else if (type === 'review') {
+					VBOCore.handleDisplayWidgetNotification({
+						widget_id: 'guest_reviews'
+					}, {
+						review_id: id,
+						modal_options: {
+							suffix: 'widget_modal_inner_guest_reviews',
+						}
+					});
+				} else {
+					vboWidgetLatestFromGuestsOpenBooking(id, '');
+				}
 			}
 
 			/**

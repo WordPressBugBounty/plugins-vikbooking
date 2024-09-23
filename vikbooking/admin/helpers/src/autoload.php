@@ -25,16 +25,18 @@ JHtml::addIncludePath(VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTO
  */
 spl_autoload_register(function($class)
 {
+	$vcm_exists = is_file(implode(DIRECTORY_SEPARATOR, [VCM_SITE_PATH, 'helpers', 'lib.vikchannelmanager.php']));
+
 	// handle base VCM library
 	if ($class === 'VikChannelManager')
 	{
-		return (bool) @include_once implode(DIRECTORY_SEPARATOR, [VCM_SITE_PATH, 'helpers', 'lib.vikchannelmanager.php']);
+		return $vcm_exists && include_once implode(DIRECTORY_SEPARATOR, [VCM_SITE_PATH, 'helpers', 'lib.vikchannelmanager.php']);
 	}
 
 	// handle config VCM library
 	if ($class === 'VikChannelManagerConfig')
 	{
-		return (bool) @include_once implode(DIRECTORY_SEPARATOR, [VCM_SITE_PATH, 'helpers', 'vcm_config.php']);
+		return $vcm_exists && include_once implode(DIRECTORY_SEPARATOR, [VCM_SITE_PATH, 'helpers', 'vcm_config.php']);
 	}
 
 	// handle base VBO library

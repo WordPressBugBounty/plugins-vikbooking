@@ -776,6 +776,7 @@ if ($vbo_auth_global) {
 
 			let vbo_css_base_uri = '<?php echo VBO_ADMIN_URI . (VBOPlatformDetection::isWordPress() ? 'resources/' : '') . 'vbo-appearance-%s.css'; ?>';
 			let vbo_css_base_id  = 'vbo-css-appearance-';
+			let vcm_css_base_id  = 'vcm-css-appearance-';
 			let vbo_css_modes 	 = {
 				auto: vbo_css_base_uri.replace('%s', 'auto'),
 				dark: vbo_css_base_uri.replace('%s', 'dark'),
@@ -820,6 +821,13 @@ if ($vbo_auth_global) {
 					} else if (jQuery('link#' + vbo_css_base_id + app_mode + '-css').length) {
 						// WP framework may add "-css" as suffix to the given ID
 						jQuery('link#' + vbo_css_base_id + app_mode + '-css').remove();
+					}
+					// check if the VCM related CSS file should be unset too
+					if (jQuery('link#' + vcm_css_base_id + app_mode).length) {
+						jQuery('link#' + vcm_css_base_id + app_mode).remove();
+					} else if (jQuery('link#' + vcm_css_base_id + app_mode + '-css').length) {
+						// WP framework may add "-css" as suffix to the given ID
+						jQuery('link#' + vcm_css_base_id + app_mode + '-css').remove();
 					}
 				}
 			}

@@ -503,11 +503,11 @@ foreach ($months_labels as $i => $v) {
 										}
 										if (count($custvalues) > 1) {
 											$enoughinfo = true;
-											$cellcont .= '<span class="vbo-tableaux-guest-name">' . implode(' ', $custvalues) . '</span>';;
+											$cellcont .= '<span class="vbo-tableaux-guest-name">' . implode(' ', $custvalues) . '</span>';
 										}
 									}
 									if (!$enoughinfo) {
-										$cellcont .= '<span class="vbo-tableaux-guest-name">' . $rbook['idorder'] . '</span>';;
+										$cellcont .= '<span class="vbo-tableaux-guest-name">' . $rbook['idorder'] . '</span>';
 									}
 								}
 
@@ -716,21 +716,46 @@ function registerHoveringTooltip(that) {
 	if (hovtip) {
 		return false;
 	}
+
 	if (hovtimer) {
 		clearTimeout(hovtimer);
 		hovtimer = null;
 	}
+
 	var elem = jQuery(that);
 	var cellheight = elem.outerHeight();
+
 	hovtimer = setTimeout(function() {
+		// turn flag on
 		hovtip = true;
-		jQuery(
-			"<div class=\"vbo-overview-tipblock\">"+
-				"<div class=\"vbo-overview-tipinner\"><span class=\"vbo-overview-tiploading\">"+vboMessages.loadingTip+"</span></div>"+
-				"<div class=\"vbo-overview-tipexpander\" style=\"display: none;\"><div class=\"vbo-overview-expandtoggle\"><i class=\"<?php echo VikBookingIcons::i('expand'); ?>\"></i></div></div>"+
-			"</div>"
-		).appendTo(elem);
-		jQuery(".vbo-overview-tipblock").css("bottom", "+="+cellheight);
+
+		// calculate cell-element position
+		let pos_top = elem.offset().top;
+		let pos_left = elem.offset().left;
+		let elem_height = elem.outerHeight();
+		let screen_width = window?.screen?.width || 0;
+
+		// build tooltip block element
+		let tooltip_block = jQuery('<div></div>');
+		tooltip_block.addClass('vbo-overview-tipblock');
+		tooltip_block.append("<div class=\"vbo-overview-tipinner\"><span class=\"vbo-overview-tiploading\">" + vboMessages.loadingTip + "</span></div>");
+		tooltip_block.append("<div class=\"vbo-overview-tipexpander\" style=\"display: none;\"><div class=\"vbo-overview-expandtoggle\"><i class=\"<?php echo VikBookingIcons::i('expand'); ?>\"></i></div></div>");
+
+		// calculate block position
+		tooltip_block.css('top', (pos_top + elem_height - 16) + 'px');
+		// tooltip_block.css('left', (pos_left - 6) + 'px');
+		if (screen_width > 600 && (pos_left + 400) > screen_width) {
+			// place the tooltip starting from right
+			tooltip_block.css('left', (pos_left - (400 - elem.outerWidth())) + 'px');
+		} else {
+			// regular placing starting from left
+			tooltip_block.css('left', (pos_left - 6) + 'px');
+		}
+
+		// append block to body
+		tooltip_block.appendTo(jQuery('body'));
+
+		// load tooltip bookings
 		loadTooltipBookings(elem.attr('data-bid'));
 	}, 900);
 }
@@ -740,6 +765,9 @@ function unregisterHoveringTooltip() {
 	hovtimer = null;
 }
 
+/**
+ * @deprecated  1.16.10 (J) - 1.6.10 (WP)
+ */
 function adjustHoveringTooltip() {
 	setTimeout(function() {
 		var difflim = 35;
@@ -799,7 +827,7 @@ function loadTooltipBookings(bid) {
 				var bcont = "<div class=\"vbo-overview-tip-bookingcont\">";
 				bcont += "<div class=\"vbo-overview-tip-bookingcont-left\">";
 				bcont += "<div class=\"vbo-overview-tip-bid\"><span class=\"vbo-overview-tip-lbl\">ID <span class=\"vbo-overview-tip-lbl-innerleft\"><a href=\"" + base_uri_edit.replace('%d', v.id) + "\" target=\"_blank\"><i class=\"<?php echo VikBookingIcons::i('edit'); ?>\"></i></a></span></span><span class=\"vbo-overview-tip-cnt\">"+v.id+"</span></div>";
-				bcont += "<div class=\"vbo-overview-tip-bstatus\"><span class=\"vbo-overview-tip-lbl\"><?php echo addslashes(JText::translate('VBPVIEWORDERSEIGHT')); ?></span><span class=\"vbo-overview-tip-cnt\"><div class=\"label "+(v.status == 'confirmed' ? 'label-success' : 'label-warning')+"\">"+v.status_lbl+"</div></span></div>";
+				bcont += "<div class=\"vbo-overview-tip-bstatus\"><span class=\"vbo-overview-tip-lbl\"><?php echo addslashes(JText::translate('VBPVIEWORDERSEIGHT')); ?></span><span class=\"vbo-overview-tip-cnt\"><div class=\"badge "+(v.status == 'confirmed' ? 'badge-success' : 'badge-warning')+"\">"+v.status_lbl+"</div></span></div>";
 				bcont += "<div class=\"vbo-overview-tip-bdate\"><span class=\"vbo-overview-tip-lbl\"><?php echo addslashes(JText::translate('VBPVIEWORDERSONE')); ?></span><span class=\"vbo-overview-tip-cnt\"><a href=\"" + base_uri_details.replace('%d', v.id) + "\" target=\"_blank\">"+v.ts+"</a></span></div>";
 				bcont += "</div>";
 				bcont += "<div class=\"vbo-overview-tip-bookingcont-right\">";
@@ -833,9 +861,13 @@ function loadTooltipBookings(bid) {
 				container.append(bcont);
 				jQuery('.vbo-overview-tipexpander').show();
 			});
+
+			/**
+			 * @deprecated  1.16.10 (J) - 1.6.10 (WP)
+			 */
 			// adjust the position so that it won't go under other contents
-			adjustHoveringTooltip()
-			//
+			// adjustHoveringTooltip();
+
 		} catch(err) {
 			// restore
 			hideVboTooltip();

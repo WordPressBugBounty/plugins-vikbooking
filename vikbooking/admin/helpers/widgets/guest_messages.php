@@ -289,12 +289,13 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				<div class="vbo-dashboard-guest-activity-content">
 					<div class="vbo-dashboard-guest-activity-content-head">
 						<div class="vbo-dashboard-guest-activity-content-info-details">
-							<h4 class="vbo-w-guestmessages-message-gtitle"><?php
+							<h4 class="vbo-w-guestmessages-message-gtitle"><span><?php
 							if (!$gmessage->first_name && !$gmessage->last_name) {
 								echo JText::translate('VBO_GUEST');
 							} else {
 								echo $gmessage->first_name . (!empty($gmessage->last_name) ? ' ' . $gmessage->last_name : '');
 							}
+							?></span><?php
 							if (empty($gmessage->read_dt) && !strcasecmp($gmessage->sender_type, 'guest')) {
 								// print also an icon to inform that the message was not read
 								echo ' ';
@@ -357,15 +358,12 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 							</div>
 						</div>
 						<div class="vbo-dashboard-guest-activity-content-info-date">
+							<span><?php echo JHtml::fetch('date', $gmessage->last_updated, 'H:i'); ?></span>
 						<?php
-						$gmessage_ts = strtotime($gmessage->last_updated);
-						?>
-							<span><?php echo date('H:i', $gmessage_ts); ?></span>
-						<?php
-						if (date('Y-m-d', $gmessage_ts) != $this->today_ymd) {
+						if (JHtml::fetch('date', $gmessage->last_updated, 'Y-m-d') != $this->today_ymd) {
 							// format and print the date
 							?>
-							<span><?php echo date(str_replace('/', $this->datesep, $this->df), $gmessage_ts); ?></span>
+							<span><?php echo JHtml::fetch('date', $gmessage->last_updated, str_replace('/', $this->datesep, $this->df)); ?></span>
 							<?php
 						} else {
 							// print "today"
@@ -398,9 +396,15 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				<?php
 			}
 			if ($latest_messages) {
+				// count current page number
+				$page_number = 1;
+				if ($offset > 0) {
+					$page_number = floor($offset / $length) + 1;
+					$page_number = $page_number > 0 ? $page_number : 1;
+				}
 				?>
 				<div class="vbo-guestactivitywidget-command-chevron vbo-guestactivitywidget-command-page">
-					<span class="vbo-guestactivitywidget-page"><?php echo JText::sprintf('VBO_PAGE_NUMBER', $offset + 1); ?></span>
+					<span class="vbo-guestactivitywidget-page"><?php echo JText::sprintf('VBO_PAGE_NUMBER', $page_number); ?></span>
 				</div>
 				<div class="vbo-guestactivitywidget-command-chevron vbo-guestactivitywidget-command-next">
 					<span class="vbo-guestactivitywidget-next" onclick="vboWidgetGuestMessagesNavigate('<?php echo $wrapper; ?>', 1);"><?php VikBookingIcons::e('chevron-right'); ?></span>
@@ -605,8 +609,9 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		}
 
 		// multitask data event identifier for clearing intervals
-		$js_intvals_id = '';
-		$bid_convo = 0;
+		$js_intvals_id   = '';
+		$bid_convo       = 0;
+		$contains_filter = '';
 		if ($data && $data->isModalRendering()) {
 			// access Multitask data
 			$js_intvals_id = $data->getModalJsIdentifier();
@@ -617,6 +622,9 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			} else {
 				$bid_convo = $this->options()->fetchBookingId();
 			}
+
+			// check if a specific filter was set for searching guest messages
+			$contains_filter = (string) $this->options()->get('message_contains', '');
 		}
 
 		?>
@@ -628,7 +636,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						<div class="vbo-reportwidget-commands">
 							<div class="vbo-reportwidget-commands-main">
 								<div class="vbo-reportwidget-command-dates">
-									<div id="<?php echo $wrapper_id; ?>-filters" class="vbo-reportwidget-period-name" style="display: none;"><?php VikBookingIcons::e('search'); ?> <?php echo JText::translate('VBO_FILTERS_APPLIED'); ?></div>
+									<div id="<?php echo $wrapper_id; ?>-filters" class="vbo-reportwidget-period-name" style="<?php echo !$contains_filter ? 'display: none;' : ''; ?>"><?php VikBookingIcons::e('search'); ?> <?php echo JText::translate('VBO_FILTERS_APPLIED'); ?></div>
 								</div>
 							</div>
 							<div class="vbo-reportwidget-command-dots">
@@ -684,7 +692,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 									<div class="vbo-param-container">
 										<div class="vbo-param-label"><?php echo JText::translate('VBSENDEMAILCUSTCONT'); ?></div>
 										<div class="vbo-param-setting">
-											<input type="text" class="vbo-widget-guest-messages-messcontains" value="" autocomplete="off" />
+											<input type="text" class="vbo-widget-guest-messages-messcontains" value="<?php echo JHtml::fetch('esc_attr', $contains_filter); ?>" autocomplete="off" />
 											<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_MESSAGE_CONTAINS_HELP'); ?></span>
 										</div>
 									</div>
@@ -771,7 +779,6 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			// HTML helper tag for URL routing and some JS functions should be loaded once per widget instance
 			$admin_file_base = VBOPlatformDetection::isWordPress() ? 'admin.php' : 'index.php';
 		?>
-		<a class="vbo-widget-guest-messages-basenavuri" href="<?php echo $admin_file_base; ?>?option=com_vikbooking&task=editorder&cid[]=%d" style="display: none;"></a>
 
 		<script type="text/javascript">
 
@@ -905,9 +912,6 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					}
 				}
 
-				// base navigation URI to booking details
-				var booking_base_uri = jQuery('.vbo-widget-guest-messages-basenavuri').first().attr('href');
-
 				// build modal content
 				var chat_head_title = jQuery('<span></span>');
 				var chat_head_title_wrap = jQuery('<span></span>').addClass('vbo-modal-wguestmessages-chat-info');
@@ -917,10 +921,20 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				var chat_head_title_img = jQuery('<span></span>').addClass('vbo-modal-wguestmessages-chat-guestavatar');
 				var chat_head_title_txt = jQuery('<span></span>').addClass('vbo-modal-wguestmessages-chat-guestname');
 				var chat_head_title_bid = jQuery('<span></span>').addClass('vbo-modal-wguestmessages-chat-guestbid');
-				chat_head_title_bid.append('<a class="badge badge-info" href="' + booking_base_uri.replace('%d', id) + '" target="_blank">' + id + '</a>');
+				var chat_head_open_bid = jQuery('<a></a>').addClass('badge badge-info').attr('href', 'JavaScript: void(0);').text(id).on('click', () => {
+					VBOCore.handleDisplayWidgetNotification({
+						widget_id: 'booking_details'
+					}, {
+						bid: id,
+						modal_options: {
+							suffix: 'widget_modal_inner_booking_details',
+						}
+					});
+				});
+				chat_head_title_bid.append(chat_head_open_bid);
 
 				var guest_avatar = message_el.find('.vbo-dashboard-guest-activity-avatar img');
-				var guest_name = message_el.find('.vbo-w-guestmessages-message-gtitle').text();
+				var guest_name = message_el.find('.vbo-w-guestmessages-message-gtitle').find('span').first().text();
 				chat_head_title_txt.text(guest_name);
 				if (guest_avatar && guest_avatar.length) {
 					chat_head_title_img.append(guest_avatar.clone());

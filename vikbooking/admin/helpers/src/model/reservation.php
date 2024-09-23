@@ -43,6 +43,146 @@ class VBOModelReservation extends JObject
 	}
 
 	/**
+	 * Sets the caller information used to save history records.
+	 * 
+	 * @param 	string 	$caller 	The caller identifier.
+	 * 
+	 * @return 	self
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function setCaller($caller = '')
+	{
+		$this->set('_caller', (string) $caller);
+
+		return $this;
+	}
+
+	/**
+	 * Returns the caller information.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getCaller()
+	{
+		return (string) $this->get('_caller', '');
+	}
+
+	/**
+	 * Sets the history extra data value.
+	 * 
+	 * @param 	array 	$data 	The history extra data array.
+	 * 
+	 * @return 	self
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function setHistoryData(array $data = [])
+	{
+		$this->set('_historyData', $data);
+
+		return $this;
+	}
+
+	/**
+	 * Returns the customer information.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getHistoryData()
+	{
+		return (array) $this->get('_historyData', []);
+	}
+
+	/**
+	 * Sets the search filters.
+	 * 
+	 * @param 	array 	$data 	The search filters associative array.
+	 * 
+	 * @return 	self
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function setFilters(array $data = [])
+	{
+		$this->set('_filters', $data);
+
+		return $this;
+	}
+
+	/**
+	 * Returns the search filters.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getFilters()
+	{
+		return (array) $this->get('_filters', []);
+	}
+
+	/**
+	 * Sets the booking information record.
+	 * 
+	 * @param 	array 	$booking 	The booking record.
+	 * 
+	 * @return 	self
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function setBooking(array $booking = [])
+	{
+		$this->set('_booking', $booking);
+
+		return $this;
+	}
+
+	/**
+	 * Returns the booking information record.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getBooking()
+	{
+		return (array) $this->get('_booking', []);
+	}
+
+	/**
+	 * Sets the room booking records.
+	 * 
+	 * @param 	array 	$room_booking 	The room booking records.
+	 * 
+	 * @return 	self
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function setRoomBooking(array $room_booking = [])
+	{
+		$this->set('_roomBooking', $room_booking);
+
+		return $this;
+	}
+
+	/**
+	 * Returns the room booking records.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getRoomBooking()
+	{
+		return (array) $this->get('_roomBooking', []);
+	}
+
+	/**
 	 * Sets the customer information.
 	 * 
 	 * @param 	array 	$customer 	the customer array.
@@ -63,7 +203,7 @@ class VBOModelReservation extends JObject
 	 */
 	public function getCustomer()
 	{
-		return (array)$this->get('_customer', []);
+		return (array) $this->get('_customer', []);
 	}
 
 	/**
@@ -87,7 +227,7 @@ class VBOModelReservation extends JObject
 	 */
 	public function getRoom()
 	{
-		return (array)$this->get('_room', []);
+		return (array) $this->get('_room', []);
 	}
 
 	/**
@@ -111,7 +251,7 @@ class VBOModelReservation extends JObject
 	 */
 	public function getNewBookingID()
 	{
-		return (int)$this->get('_newBookingID', 0);
+		return (int) $this->get('_newBookingID', 0);
 	}
 
 	/**
@@ -246,6 +386,16 @@ class VBOModelReservation extends JObject
 		if (!$this->get('checkin_h') || !$this->get('checkout_h')) {
 			// make sure to set the times (hours/minutes) for check-in and check-out
 			$this->loadCheckinOutTimes();
+
+			// make sure check-in and check-out timestamps have been set to a proper time
+			$from_info = getdate($this->get('checkin'));
+			$to_info   = getdate($this->get('checkout'));
+			if ((int) $from_info['hour'] != (int) $this->get('checkin_h')) {
+				$this->set('checkin', mktime((int) $this->get('checkin_h'), (int) $this->get('checkin_m'), 0, $from_info['mon'], $from_info['mday'], $from_info['year']));
+			}
+			if ((int) $to_info['hour'] != (int) $this->get('checkout_h')) {
+				$this->set('checkout', mktime((int) $this->get('checkout_h'), (int) $this->get('checkout_m'), 0, $to_info['mon'], $to_info['mday'], $to_info['year']));
+			}
 		}
 
 		// number of nights of stay
@@ -299,18 +449,1152 @@ class VBOModelReservation extends JObject
 	}
 
 	/**
-	 * Tells whether the operation is authenticated. By default this
-	 * model is only available in the administrator section of the site.
+	 * Searches for bookings according to specified filters.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function search()
+	{
+		$dbo = JFactory::getDbo();
+
+		$filters = $this->getFilters();
+
+		if (!$filters) {
+			$this->setError('Missing filters to search for a booking.');
+			return [];
+		}
+
+		$q = $dbo->getQuery(true)
+			->select($dbo->qn('o') . '.*')
+			->select([
+				$dbo->qn('c.first_name', 'customer_first_name'),
+				$dbo->qn('c.last_name', 'customer_last_name'),
+			])
+			->from($dbo->qn('#__vikbooking_orders', 'o'))
+			->leftJoin($dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $dbo->qn('co.idorder') . ' = ' . $dbo->qn('o.id'))
+			->leftJoin($dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $dbo->qn('c.id') . ' = ' . $dbo->qn('co.idcustomer'))
+			->where(1)
+			->order($dbo->qn('o.id') . ' DESC');
+
+		if (($filters['booking_id'] ?? null)) {
+			$q->andWhere([
+				$dbo->qn('o.id') . ' = ' . $dbo->q($filters['booking_id']),
+				$dbo->qn('o.idorderota') . ' = ' . $dbo->q($filters['booking_id']),
+			], $glue = 'OR');
+		}
+
+		if (($filters['status'] ?? null)) {
+			$q->where($dbo->qn('o.status') . ' = ' . $dbo->q($filters['status']));
+		}
+
+		if (($filters['exclude_closures'] ?? false)) {
+			$q->where($dbo->qn('o.closure') . ' = 0');
+		}
+
+		if (($filters['exclude_expired'] ?? false)) {
+			// take only active reservations with a check-out date in the future
+			$today_dt = JFactory::getDate('today', new DateTimeZone(date_default_timezone_get()));
+			$q->where($dbo->qn('o.checkout') . ' >= ' . $dbo->q($today_dt->format('U', true)));
+		}
+
+		if (($filters['email'] ?? null)) {
+			$q->where($dbo->qn('o.custmail') . ' = ' . $dbo->q($filters['email']));
+		}
+
+		if (($filters['phone'] ?? null)) {
+			$q->where(sprintf('REPLACE(%s, \' \', \'\') LIKE REPLACE(%s, \' \', \'\')', 
+				$dbo->qn('o.phone'),
+				$dbo->q('%' . $filters['phone'])
+			));
+		}
+
+		if (($filters['date_range']['type'] ?? null) && (($filters['date_range']['start'] ?? null) || ($filters['date_range']['end'] ?? null))) {
+			// search by date range
+			$from_dt = JFactory::getDate(($filters['date_range']['start'] ?? $filters['date_range']['end']));
+			$from_dt->modify('00:00:00');
+			$to_dt = JFactory::getDate(($filters['date_range']['end'] ?? $filters['date_range']['start']));
+			$to_dt->modify('23:59:59');
+
+			// check the type of date
+			if ($filters['date_range']['type'] == 'stay') {
+				// find intersections of stay dates
+				$q->andWhere([
+					'(' . $dbo->qn('o.checkin') . ' <= ' . $dbo->q($from_dt->format('U')) . ' AND ' . $dbo->qn('o.checkout') . ' >= ' . $dbo->q($to_dt->format('U')) . ')',
+					'(' . $dbo->qn('o.checkin') . ' >= ' . $dbo->q($from_dt->format('U')) . ' AND ' . $dbo->qn('o.checkout') . ' <= ' . $dbo->q($to_dt->format('U')) . ')',
+					'(' . $dbo->qn('o.checkin') . ' >= ' . $dbo->q($from_dt->format('U')) . ' AND ' . $dbo->qn('o.checkin') . ' < ' . $dbo->q($to_dt->format('U')) . ' AND ' . $dbo->qn('o.checkout') . ' >= ' . $dbo->q($to_dt->format('U')) . ')',
+					'(' . $dbo->qn('o.checkin') . ' <= ' . $dbo->q($from_dt->format('U')) . ' AND ' . $dbo->qn('o.checkout') . ' > ' . $dbo->q($from_dt->format('U')) . ' AND ' . $dbo->qn('o.checkout') . ' <= ' . $dbo->q($to_dt->format('U')) . ')',
+				], $glue = 'OR');
+			} else {
+				$column = $dbo->qn('o.checkin');
+				if ($filters['date_range']['type'] == 'checkout') {
+					$column = $dbo->qn('o.checkout');
+				} elseif ($filters['date_range']['type'] == 'creation') {
+					$column = $dbo->qn('o.ts');
+				}
+				$q->where($column . ' >= ' . $dbo->q($from_dt->format('U')));
+				$q->where($column . ' <= ' . $dbo->q($to_dt->format('U')));
+			}
+		} else {
+			// check for single date filters
+			if (($filters['creation_date'] ?? null)) {
+				// dates are expected to be in military format
+				$creation = JFactory::getDate($filters['creation_date']);
+				$creation->modify('00:00:00');
+				$q->where($dbo->qn('o.ts') . ' >= ' . $dbo->q($creation->format('U')));
+				$creation->modify('23:59:59');
+				$q->where($dbo->qn('o.ts') . ' <= ' . $dbo->q($creation->format('U')));
+			}
+
+			if (($filters['checkin_date'] ?? null) && !($filters['checkout_date'] ?? null)) {
+				// dates are expected to be in military format
+				$checkin = JFactory::getDate($filters['checkin_date']);
+				$checkin->modify('00:00:00');
+				$q->where($dbo->qn('o.checkin') . ' >= ' . $dbo->q($checkin->format('U')));
+				$checkin->modify('23:59:59');
+				$q->where($dbo->qn('o.checkin') . ' <= ' . $dbo->q($checkin->format('U')));
+			}
+
+			if (($filters['checkout_date'] ?? null) && !($filters['checkin_date'] ?? null)) {
+				// dates are expected to be in military format
+				$checkout = JFactory::getDate($filters['checkout_date']);
+				$checkout->modify('00:00:00');
+				$q->where($dbo->qn('o.checkout') . ' >= ' . $dbo->q($checkout->format('U')));
+				$checkout->modify('23:59:59');
+				$q->where($dbo->qn('o.checkout') . ' <= ' . $dbo->q($checkout->format('U')));
+			}
+
+			if (($filters['checkin_date'] ?? null) && ($filters['checkout_date'] ?? null)) {
+				// range of dates (dates are expected to be in military format)
+				$checkin = JFactory::getDate($filters['checkin_date']);
+				$checkin->modify('00:00:00');
+				$checkout = JFactory::getDate($filters['checkout_date']);
+				$checkout->modify('23:59:59');
+				$q->andWhere([
+					$dbo->qn('o.checkin') . ' BETWEEN ' . $dbo->q($checkin->format('U')) . ' AND ' . $dbo->q($checkout->format('U')),
+					$dbo->qn('o.checkout') . ' BETWEEN ' . $dbo->q($checkin->format('U')) . ' AND ' . $dbo->q($checkout->format('U')),
+				], $glue = 'OR');
+			}
+
+			if (($filters['stay_date'] ?? null)) {
+				// dates are expected to be in military format
+				$staydt = JFactory::getDate($filters['stay_date']);
+				$staydt->modify('23:59:59');
+				$q->where($dbo->qn('o.checkin') . ' < ' . $dbo->q($staydt->format('U')));
+				$q->where($dbo->qn('o.checkout') . ' > ' . $dbo->q($staydt->format('U')));
+			}
+		}
+
+		if (($filters['customer_name'] ?? null)) {
+			$q->where('CONCAT_WS(\' \', ' . $dbo->qn('c.first_name') . ', ' . $dbo->qn('c.last_name') . ') LIKE ' . $dbo->q('%' . $filters['customer_name'] . '%'));
+		}
+
+		if (($filters['confirmation_number'] ?? null)) {
+			$q->where($dbo->qn('o.confirmnumber') . ' = ' . $dbo->q($filters['confirmation_number']));
+		}
+
+		if (($filters['room_name'] ?? null)) {
+			// find the room involved from the given name
+			$room_record = VikBooking::getAvailabilityInstance()->getRoomByName($filters['room_name']);
+			if ($room_record) {
+				$q->leftJoin($dbo->qn('#__vikbooking_ordersrooms', 'or') . ' ON ' . $dbo->qn('or.idorder') . ' = ' . $dbo->qn('o.id'));
+				$q->where($dbo->qn('or.idroom') . ' = ' . (int) $room_record['id']);
+			}
+		}
+
+		$dbo->setQuery($q, 0, ($filters['max_bookings'] ?? 0));
+
+		return $dbo->loadAssocList();
+	}
+
+	/**
+	 * Modifies the requested booking ID according to the provided options.
+	 * This method does not support all rate plan options like for the creation of a
+	 * new booking. This is a method for making quick updates concerning a room switch,
+	 * a change of stay dates, new booking total amount, guests, add extra services etc..
+	 * 
+	 * @param 	array 	$options 	List of details to perform the modification.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function modify(array $options)
+	{
+		$dbo = JFactory::getDbo();
+
+		// access the previous booking details
+		$prev_booking = $this->getBooking();
+
+		// access the current rooms booked
+		$roomBooking  = $this->getRoomBooking();
+
+		// gather modification options
+		$booking_id = $options['booking_id'] ?? $prev_booking['id'] ?? 0;
+
+		if (!$booking_id) {
+			$this->setError('Missing booking ID.');
+			return false;
+		}
+
+		if (!$prev_booking) {
+			// load current booking record if not injected
+			$prev_booking = VikBooking::getBookingInfoFromID($booking_id);
+			if (!$prev_booking) {
+				$this->setError('Booking not found.');
+				return false;
+			}
+		}
+
+		if (!$roomBooking) {
+			// load current rooms booked
+			$roomBooking = VikBooking::loadOrdersRoomsData($booking_id);
+		}
+
+		// do not touch this array property because it's used by VCM
+		$prev_booking['rooms_info'] = $roomBooking;
+
+		// list of operations to trigger/perform
+		$trigger_operations = [];
+
+		// list of history description rows
+		$history_descr_rows = [];
+
+		// access availability helper
+		$av_helper = VikBooking::getAvailabilityInstance();
+
+		// calculate the new stay dates, if different
+		$diff_stay_dates = false;
+		$set_checkin  = date('Y-m-d', $prev_booking['checkin']);
+		$set_checkout = date('Y-m-d', $prev_booking['checkout']);
+		if (($options['checkin'] ?? null)) {
+			// date is expected in military format
+			$diff_stay_dates = $diff_stay_dates || ($options['checkin'] != $set_checkin);
+			$set_checkin = $options['checkin'];
+		}
+		if (($options['checkout'] ?? null)) {
+			// date is expected in military format
+			$diff_stay_dates = $diff_stay_dates || ($options['checkout'] != $set_checkout);
+			$set_checkout = $options['checkout'];
+		}
+
+		// ensure the stay dates are valid
+		if (JFactory::getDate($set_checkin) >= JFactory::getDate($set_checkout)) {
+			$this->setError('Invalid stay dates provided.');
+			return false;
+		}
+
+		// ensure we are not changing dates for a split-stay reservation
+		if ($diff_stay_dates && !empty($prev_booking['split_stay'])) {
+			// we receive the stay dates at booking record, so we cannot proceed with the update
+			$this->setError('Cannot modify the stay dates for a split-stay reservation. Please do it manually.');
+			return false;
+		}
+
+		// set dates involved
+		$av_helper->setStayDates($set_checkin, $set_checkout);
+
+		// count new nights of stay
+		$set_nights = $av_helper->countNightsOfStay();
+
+		// gather stay timestamps
+		list($set_checkin_ts, $set_checkout_ts) = $av_helper->getStayDates(true);
+
+		// load the current busy record IDs before any modification, if any
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_ordersbusy'))
+				->where($dbo->qn('idorder') . ' = ' . (int) $booking_id)
+		);
+		$busy_ids = array_column($dbo->loadAssocList(), 'idbusy');
+
+		// first off, check if any room switch was requested (recommended one switch at most)
+		$switching_details = [];
+		if ($options['switch_rooms'] ?? []) {
+			// get all room IDs for the switch that were not booked already
+			$booked_rooms = array_column($roomBooking, 'idroom');
+			$new_missing_rooms = array_values(array_diff((array) $options['switch_rooms'], $booked_rooms));
+
+			// scan all rooms requested for the switch that were not booked already
+			foreach ($new_missing_rooms as $index => $switch_room_id) {
+				if (!isset($roomBooking[$index])) {
+					// adding more rooms is not supported
+					break;
+				}
+				// ensure the room switch is allowed (room should be available on the new dates)
+				$switched_room_info = VikBooking::getRoomInfo($switch_room_id, ['id', 'name', 'units']);
+				if (!$switched_room_info) {
+					$this->setError('The requested room could not be found for the switch.');
+					return false;
+				}
+				if (!VikBooking::roomBookable($switch_room_id, 1, $set_checkin_ts, $set_checkout_ts, $busy_ids)) {
+					// abort by setting a descriptive error message
+					$this->setError(sprintf(
+						'The room %s is not available from %s to %s, and so the room switch cannot be made.',
+						$switched_room_info['name'] ?? '',
+						$set_checkin,
+						$set_checkout
+					));
+					return false;
+				}
+			}
+
+			// scan again all rooms to be switched once we know they are available
+			foreach ($new_missing_rooms as $index => $switch_room_id) {
+				if (!isset($roomBooking[$index])) {
+					// adding more rooms is not supported
+					break;
+				}
+
+				// update room-booking record by switching room ID
+				$q = $dbo->getQuery(true)
+					->update($dbo->qn('#__vikbooking_ordersrooms'))
+					->set($dbo->qn('idroom') . ' = ' . (int) $switch_room_id)
+					->where($dbo->qn('idorder') . ' = ' . (int) $booking_id)
+					->where($dbo->qn('idroom') . ' = ' . (int) ($roomBooking[$index]['idroom'] ?? 0));
+				$dbo->setQuery($q, 0, 1);
+				$dbo->execute();
+
+				if ($busy_ids) {
+					// update busy records with new stay dates just for the switched room
+					$q = $dbo->getQuery(true)
+						->update($dbo->qn('#__vikbooking_busy'))
+						->set($dbo->qn('idroom') . ' = ' . (int) $switch_room_id)
+						->set($dbo->qn('checkin') . ' = ' . $dbo->q($set_checkin_ts))
+						->set($dbo->qn('checkout') . ' = ' . $dbo->q($set_checkout_ts))
+						->set($dbo->qn('realback') . ' = ' . $dbo->q($set_checkout_ts + (VikBooking::getHoursRoomAvail() * 3600)))
+						->where($dbo->qn('id') . ' IN (' . implode(', ', array_map('intval', $busy_ids)) . ')')
+						->where($dbo->qn('idroom') . ' = ' . (int) ($roomBooking[$index]['idroom'] ?? 0));
+					$dbo->setQuery($q, 0, 1);
+					$dbo->execute();
+
+					// register room switching details
+					$switching_details[$index] = $switch_room_id;
+
+					// register CM sync operation
+					$trigger_operations[] = 'vcm_sync';
+				}
+
+				// register history description row
+				$switched_room_info = VikBooking::getRoomInfo($switch_room_id, ['id', 'name', 'units']);
+				$prev_room_info     = VikBooking::getRoomInfo($roomBooking[$index]['idroom'] ?? 0, ['id', 'name', 'units']);
+				$history_descr_rows[] = sprintf('%s switched with %s.', $prev_room_info['name'] ?? '', $switched_room_info['name'] ?? '');
+			}
+		}
+
+		// start query builder for booking record
+		$bookingQ = $dbo->getQuery(true)
+			->update($dbo->qn('#__vikbooking_orders'))
+			->where($dbo->qn('id') . ' = ' . (int) $booking_id);
+
+		// modify stay dates, if requested
+		if ($diff_stay_dates) {
+			// ensure all rooms are bookable on the new stay dates
+			if ($prev_booking['status'] == 'confirmed') {
+				foreach ($roomBooking as $kor => $or) {
+					if ($switching_details[$kor] ?? null) {
+						// this room index was switched with another room, hence we know it was available
+						continue;
+					}
+					if (!VikBooking::roomBookable($or['idroom'], 1, $set_checkin_ts, $set_checkout_ts, $busy_ids)) {
+						// abort
+						$abort_room_info = VikBooking::getRoomInfo($or['idroom'], ['id', 'name', 'units']);
+						$this->setError(sprintf(
+							'The room %s is not available from %s to %s, and so the stay dates cannot be modified.',
+							$abort_room_info['name'] ?? '',
+							$set_checkin,
+							$set_checkout
+						));
+						return false;
+					}
+				}
+			}
+
+        	// set booking values to update
+        	$bookingQ->set($dbo->qn('checkin') . ' = ' . $dbo->q($set_checkin_ts));
+        	$bookingQ->set($dbo->qn('checkout') . ' = ' . $dbo->q($set_checkout_ts));
+        	$bookingQ->set($dbo->qn('days') . ' = ' . $dbo->q($set_nights));
+
+        	// update busy records, if any (reservation status could be confirmed)
+        	if ($busy_ids) {
+        		// update busy records with new stay dates for all rooms
+        		$dbo->setQuery(
+        			$dbo->getQuery(true)
+		        		->update($dbo->qn('#__vikbooking_busy'))
+		        		->set($dbo->qn('checkin') . ' = ' . $dbo->q($set_checkin_ts))
+		        		->set($dbo->qn('checkout') . ' = ' . $dbo->q($set_checkout_ts))
+		        		->set($dbo->qn('realback') . ' = ' . $dbo->q($set_checkout_ts + (VikBooking::getHoursRoomAvail() * 3600)))
+		        		->where($dbo->qn('id') . ' IN (' . implode(', ', array_map('intval', $busy_ids)) . ')')
+        		);
+        		$dbo->execute();
+
+        		// register CM sync operation
+				$trigger_operations[] = 'vcm_sync';
+        	}
+
+        	// register operation to trigger the shared calendars
+        	$trigger_operations[] = 'shared_calendars';
+		}
+
+		// update number of guests, if requested
+		if (($options['guests']['adults'] ?? null) || ($options['guests']['children'] ?? null)) {
+			// update the requested number of guests ONLY on the first room booked
+			$q = $dbo->getQuery(true)
+				->update($dbo->qn('#__vikbooking_ordersrooms'))
+				->set($dbo->qn('adults') . ' = ' . (int) ($options['guests']['adults'] ?? $roomBooking[0]['adults']))
+				->set($dbo->qn('children') . ' = ' . (int) ($options['guests']['children'] ?? $roomBooking[0]['children']))
+				->where($dbo->qn('idorder') . ' = ' . (int) $booking_id);
+			$dbo->setQuery($q, 0, 1);
+			$dbo->execute();
+
+			// register history description row
+			$history_descr_rows[] = sprintf(
+				'New adults %d, new children %d.',
+				(int) ($options['guests']['adults'] ?? $roomBooking[0]['adults']),
+				(int) ($options['guests']['children'] ?? $roomBooking[0]['children'])
+			);
+		}
+
+		// check if extra services should be added and calculate the booking cost difference
+		$new_extras_cost = 0;
+		if (is_array(($options['add_extra_services'] ?? null))) {
+			$current_extras = !empty($roomBooking[0]['extracosts']) ? json_decode($roomBooking[0]['extracosts'], true) : [];
+			$current_extras = is_array($current_extras) ? $current_extras : [];
+			$new_extras = [];
+			foreach ($options['add_extra_services'] as $extras) {
+				if (!is_array($extras) || (!isset($extras['name']) && !isset($extras['cost']))) {
+					// invalid extra service structure
+					continue;
+				}
+
+				// build new extra service
+				$new_extra = [
+					'name'  => (string) ($extras['name'] ?? 'Custom Extra'),
+					'cost'  => (float) ($extras['cost'] ?? 0),
+					'idtax' => null,
+				];
+
+				// push custom extra service
+				$current_extras[] = $new_extra;
+
+				// push the custom extra service in the new list
+				$new_extras[] = $new_extra;
+			}
+
+			if ($new_extras) {
+				// update the extra services ONLY on the first room booked
+				$q = $dbo->getQuery(true)
+					->update($dbo->qn('#__vikbooking_ordersrooms'))
+					->set($dbo->qn('extracosts') . ' = ' . $dbo->q(json_encode($current_extras)))
+					->where($dbo->qn('idorder') . ' = ' . (int) $booking_id);
+				$dbo->setQuery($q, 0, 1);
+				$dbo->execute();
+
+				// register history description row
+				$history_descr_rows[] = sprintf(
+					'New extras: %s.',
+					implode(', ', array_column($new_extras, 'name'))
+				);
+
+				// check if we need to increase the booking total amount
+				$new_extras_cost = array_sum(array_column($new_extras, 'cost'));
+
+				if ($new_extras_cost > 0 && (float) ($options['cost_difference'] ?? 0) < $new_extras_cost) {
+					// increase the "cost difference" due to the newly added extra services
+					$options['cost_difference'] = ($options['cost_difference'] ?? 0) + $new_extras_cost;
+				}
+			}
+		}
+
+		// check if the booking total amount should change
+		if ($options['cost_difference'] ?? null) {
+			// this difference should be summed to (or deducted from) the current booking total value
+			$bookingQ->set($dbo->qn('total') . ' = ' . ($prev_booking['total'] + (float) $options['cost_difference']));
+
+			// register history description row
+			$history_descr_rows[] = sprintf(
+				'Booking total cost difference calculated: %d.',
+				(float) $options['cost_difference']
+			);
+
+			// calculate the cost difference just for the rooms
+			$rooms_cost_difference = (float) $options['cost_difference'] - $new_extras_cost;
+
+			if ($rooms_cost_difference) {
+				// this value should be summed to (or deducted from) the current room rate to have a proper calculation
+				$new_room_cost  = null;
+				$room_cost_prop = null;
+				if (!empty($roomBooking[0]['cust_cost'])) {
+					$new_room_cost  = $roomBooking[0]['cust_cost'] + $rooms_cost_difference;
+					$room_cost_prop = 'cust_cost';
+				} elseif (!empty($roomBooking[0]['room_cost'])) {
+					$new_room_cost  = $roomBooking[0]['room_cost'] + $rooms_cost_difference;
+					$room_cost_prop = 'room_cost';
+				}
+
+				if ($room_cost_prop) {
+					// we can update the room cost for the difference calculated ONLY on the first room booked
+					// if no room cost was found, maybe because of a tariff, we would keep just the total changed
+					$q = $dbo->getQuery(true)
+						->update($dbo->qn('#__vikbooking_ordersrooms'))
+						->set($dbo->qn($room_cost_prop) . ' = ' . $new_room_cost)
+						->where($dbo->qn('idorder') . ' = ' . (int) $booking_id);
+					$dbo->setQuery($q, 0, 1);
+					$dbo->execute();
+				}
+			}
+		}
+
+		if ($options['extra_notes'] ?? '') {
+			// update administrator notes
+			$bookingQ->set($dbo->qn('adminnotes') . ' = ' . $dbo->q(trim($prev_booking['adminnotes'] . "\n" . $options['extra_notes'])));
+		}
+
+		// finally, update the booking record
+		try {
+			// make sure something to update was set by using the apposite getter magic method
+			if ($bookingQ->set) {
+				// some booking record values should be updated
+				$dbo->setQuery($bookingQ);
+				$dbo->execute();
+			}
+		} catch (Throwable $e) {
+			$this->setError($e->getMessage());
+			return false;
+		}
+
+		// update booking history
+		$history_obj = VikBooking::getBookingHistoryInstance($booking_id);
+
+		$now_user  = JFactory::getUser();
+		$caller_id = $now_user->name ? "({$now_user->name})" : '';
+		if ($this->getCaller()) {
+			$caller_id = '(' . $this->getCaller() . ')';
+			if ($this->getHistoryData()) {
+				$history_obj->setExtraData($this->getHistoryData());
+			}
+		}
+
+		// update Booking History
+		$history_obj->store('MB', $caller_id . ($history_descr_rows ? "\n" . implode("\n", $history_descr_rows) : ''));
+
+		// check for the operations to perform
+		if (in_array('shared_calendars', $trigger_operations)) {
+			// unset any previously booked room due to calendar sharing
+			VikBooking::cleanSharedCalendarsBusy($booking_id);
+			// check if some of the rooms booked have shared calendars
+			VikBooking::updateSharedCalendars($booking_id);
+		}
+
+		if (in_array('vcm_sync', $trigger_operations)) {
+			// invoke Channel Manager
+			$vcm_autosync = VikBooking::vcmAutoUpdate();
+			if ($vcm_autosync > 0) {
+				$vcm_obj = VikBooking::getVcmInvoker();
+				$vcm_obj->setOids([$booking_id])->setSyncType('modify')->setOriginalBooking($prev_booking);
+				$sync_result = $vcm_obj->doSync();
+				if ($sync_result === false) {
+					// set error message
+					$vcm_err = $vcm_obj->getError();
+					$this->setError(JText::translate('VBCHANNELMANAGERRESULTKO') . (!empty($vcm_err) ? ' - ' . $vcm_err : ''));
+				}
+			} elseif (is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'synch.vikbooking.php')) {
+				// set the necessary action to invoke VCM manually
+				$this->setChannelManagerAction(
+					JText::translate('VBCHANNELMANAGERINVOKEASK') . ' ' .
+					'<form action="index.php?option=com_vikbooking" method="post">' .
+					'<input type="hidden" name="option" value="com_vikbooking"/>' .
+					'<input type="hidden" name="task" value="invoke_vcm"/>' .
+					'<input type="hidden" name="stype" value="modify"/>' .
+					'<input type="hidden" name="cid[]" value="' . $booking_id . '"/>' .
+					'<input type="hidden" name="origb" value="' . urlencode(json_encode($prev_booking)) . '"/>' .
+					'<button type="submit" class="btn btn-primary">' . JText::translate('VBCHANNELMANAGERSENDRQ') . '</button>' .
+					'</form>'
+				);
+			}
+		}
+
+		if (($options['ota_reporting'] ?? null) && $diff_stay_dates) {
+			// perform the OTA reporting action, if allowed
+			if (class_exists('VCMOtaReporting') && VCMOtaReporting::getInstance($ord)->stayChangeAllowed()) {
+				// check if an OTA reporting action is needed
+				$ota_stay_change_data = [];
+				foreach ($roomBooking as $kor => $or) {
+					// set room data for stay change
+					$ota_stay_change_room = [
+						'idroom'   => $or['idroom'],
+						'checkin'  => $set_checkin,
+						'checkout' => $set_checkout,
+					];
+					if (isset($or['modified_price'])) {
+						$ota_stay_change_room['price'] = $or['modified_price'];
+					}
+					// push room data for stay change
+					$ota_stay_change_data[] = $ota_stay_change_room;
+				}
+
+				// notify the OTA through Vik Channel Manager
+				$ota_reporting = VCMOtaReporting::getInstance();
+				$ota_result    = $ota_reporting->notifyStayChange($ota_stay_change_data);
+				if (!$ota_result) {
+					// register error message
+					$this->setError($ota_reporting->getError());
+				}
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Deletes the requested booking ID.
+	 * 
+	 * @param 	array 	$options 	List of details to perform the cancellation.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function delete(array $options)
+	{
+		$dbo = JFactory::getDbo();
+
+		$booking_id   = $options['booking_id'] ?? 0;
+		$canc_reason  = $options['cancellation_reason'] ?? '';
+		$purge_remove = $options['purge_remove'] ?? false;
+
+		$booking = VikBooking::getBookingInfoFromID($booking_id);
+
+		if (!$booking) {
+			$this->setError('Booking not found.');
+			return false;
+		}
+
+		if ($booking['status'] === 'cancelled' && !$purge_remove) {
+			$this->setError(sprintf('Booking ID %d is already cancelled.', $booking['id']));
+			return false;
+		}
+
+		if (class_exists('VCMFeesCancellation')) {
+			// let VCM detect if there are any constraints for the cancellation
+			$canc_denied = VCMFeesCancellation::getInstance($booking, $anew = true)->isBookingConstrained();
+			if ($canc_denied) {
+				// set error message
+				$canc_deny_error = VCMFeesCancellation::getInstance()->getError();
+				$this->setError($canc_deny_error ?: 'Booking cannot be cancelled due to OTA contraints.');
+				return false;
+			}
+		}
+
+		// access the current user
+		$now_user = JFactory::getUser();
+
+		// whether OTAs should be notified
+		$notify_otas = false;
+
+		if ($booking['status'] != 'cancelled') {
+			// update status to cancelled
+			$q = $dbo->getQuery(true)
+				->update($dbo->qn('#__vikbooking_orders'))
+				->set($dbo->qn('status') . ' = ' . $dbo->q('cancelled'))
+				->where($dbo->qn('id') . ' = ' . (int) $booking['id']);
+			if (!empty($canc_reason)) {
+				$set_canc_reason = (!empty($booking['adminnotes']) ? $booking['adminnotes'] . "\n" : '') . $canc_reason;
+				$q->set($dbo->qn('adminnotes') . ' = ' . $dbo->q($set_canc_reason));
+			}
+			$dbo->setQuery($q);
+			$dbo->execute();
+
+			// delete temporarily locked records, if any
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->delete($dbo->qn('#__vikbooking_tmplock'))
+					->where($dbo->qn('idorder') . ' = ' . (int) $booking['id'])
+			);
+			$dbo->execute();
+
+			if ($booking['status'] == 'confirmed') {
+				// turn flag on
+				$notify_otas = true;
+			}
+
+			// access history object
+			$history_obj = VikBooking::getBookingHistoryInstance($booking['id']);
+
+			$caller_id = $now_user->name ? "({$now_user->name})" : '';
+			if ($this->getCaller()) {
+				$caller_id = '(' . $this->getCaller() . ')';
+				if ($this->getHistoryData()) {
+					$history_obj->setExtraData($this->getHistoryData());
+				}
+			}
+
+			// update Booking History
+			$history_obj->store('CB', $caller_id);
+		}
+
+		// always attempt to free records up
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_ordersbusy'))
+				->where($dbo->qn('idorder') . ' = ' . (int) $booking['id'])
+		);
+		foreach ($dbo->loadAssocList() as $ob) {
+			// delete busy record
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->delete($dbo->qn('#__vikbooking_busy'))
+					->where($dbo->qn('id') . ' = ' . (int) $ob['idbusy'])
+			);
+			$dbo->execute();
+		}
+
+		// delete booking-busy-record relations
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->delete($dbo->qn('#__vikbooking_ordersbusy'))
+				->where($dbo->qn('idorder') . ' = ' . (int) $booking['id'])
+		);
+		$dbo->execute();
+
+		// check for purge removal
+		if ($booking['status'] === 'cancelled' && $purge_remove) {
+			// delete booking-customer relation
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->delete($dbo->qn('#__vikbooking_customers_orders'))
+					->where($dbo->qn('idorder') . ' = ' . (int) $booking['id'])
+			);
+			$dbo->execute();
+
+			// delete booking-room relations
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->delete($dbo->qn('#__vikbooking_ordersrooms'))
+					->where($dbo->qn('idorder') . ' = ' . (int) $booking['id'])
+			);
+			$dbo->execute();
+
+			// delete booking-history relations
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->delete($dbo->qn('#__vikbooking_orderhistory'))
+					->where($dbo->qn('idorder') . ' = ' . (int) $booking['id'])
+			);
+			$dbo->execute();
+
+			// delete the booking record
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->delete($dbo->qn('#__vikbooking_orders'))
+					->where($dbo->qn('id') . ' = ' . (int) $booking['id'])
+			);
+			$dbo->execute();
+
+			// in case of split stay booking, remove the transient
+			if ($booking['split_stay']) {
+				VBOFactory::getConfig()->remove('split_stay_' . $booking['id']);
+			}
+		}
+
+		if ($notify_otas) {
+			$vcm_autosync = VikBooking::vcmAutoUpdate();
+			if ($vcm_autosync > 0) {
+				$vcm_obj = VikBooking::getVcmInvoker();
+				$vcm_obj->setOids([$booking['id']])->setSyncType('cancel');
+				$sync_result = $vcm_obj->doSync();
+				if ($sync_result === false) {
+					// set error message
+					$vcm_err = $vcm_obj->getError();
+					$this->setError(JText::translate('VBCHANNELMANAGERRESULTKO') . (!empty($vcm_err) ? ' - ' . $vcm_err : ''));
+				}
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Tells if the booking record set can be modified and/or cancelled.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getAlterationDetails()
+	{
+		$dbo = JFactory::getDbo();
+
+		$booking = $this->getBooking();
+		$roomBooking = $this->getRoomBooking();
+
+		if (!$booking || !$roomBooking) {
+			$this->setError('Missing booking or room booking record details.');
+			return [];
+		}
+
+		// gather room booking tariffs
+		$tars = [];
+		foreach ($roomBooking as $kor => $or) {
+			$num = $kor + 1;
+			if (!empty($order['pkg']) || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
+				// package or custom cost set from the back-end
+				continue;
+			}
+
+			// get room tariff details
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->select($dbo->qn('t') . '.*')
+					->select([
+						$dbo->qn('p.name'),
+						$dbo->qn('p.free_cancellation'),
+						$dbo->qn('p.canc_deadline'),
+						$dbo->qn('p.canc_policy'),
+					])
+					->from($dbo->qn('#__vikbooking_dispcost', 't'))
+					->leftJoin($dbo->qn('#__vikbooking_prices', 'p') . ' ON ' . $dbo->qn('t.idprice') . ' = ' . $dbo->qn('p.id'))
+					->where($dbo->qn('t.id') . ' = ' . (int) ($or['idtar'] ?? 0))
+			);
+			$tar = $dbo->loadAssoc();
+
+			if ($tar) {
+				// push room booking tariff
+				$tars[$num] = $tar;
+			}
+		}
+
+		// count days to arrival
+		$days_to_arrival = 0;
+		$now_info = getdate();
+		$checkin_info = getdate($booking['checkin'] ?? 0);
+		if ($now_info[0] < $checkin_info[0]) {
+			while ($now_info[0] < $checkin_info[0]) {
+				if (!($now_info['mday'] != $checkin_info['mday'] || $now_info['mon'] != $checkin_info['mon'] || $now_info['year'] != $checkin_info['year'])) {
+					break;
+				}
+				$days_to_arrival++;
+				$now_info = getdate(mktime(0, 0, 0, $now_info['mon'], ($now_info['mday'] + 1), $now_info['year']));
+			}
+		}
+
+		// check if the rate plan(s) are refundable
+		$is_refundable = 0;
+		$daysadv_refund_arr = [];
+		$daysadv_refund = 0;
+		$canc_policy = '';
+		foreach ($tars as $num => $tar) {
+			if (!$tar['free_cancellation']) {
+				// if at least one rate plan is non-refundable, the whole reservation cannot be cancelled
+				$is_refundable = 0;
+				$daysadv_refund_arr = [];
+				break;
+			}
+			$is_refundable = 1;
+			$daysadv_refund_arr[] = $tar['canc_deadline'];
+		}
+
+		// get the rate plan with the lowest cancellation deadline
+		$daysadv_refund = $daysadv_refund_arr ? min($daysadv_refund_arr) : $daysadv_refund;
+		if ($daysadv_refund > 0) {
+			foreach ($tars as $num => $tar) {
+				if ($tar['free_cancellation'] && $tar['canc_deadline'] == $daysadv_refund) {
+					// get the cancellation policy from the first rate plan with free cancellation and same cancellation deadline
+					$canc_policy = $tar['canc_policy'];
+					break;
+				}
+			}
+		}
+
+		// access global settings to determine the alterations available
+		$resmodcanc = VikBooking::getReservationModCanc();
+		$resmodcanc = !$days_to_arrival ? 0 : $resmodcanc;
+		$resmodcancmin = VikBooking::getReservationModCancMin();
+
+		// build alteration deadline date
+		$checkin_dt = JFactory::getDate(date('Y-m-d', ($booking['checkin'] ?? 0)));
+		$checkin_dt->modify("-{$resmodcancmin} days");
+		$alteration_deadline = $checkin_dt->format('Y-m-d');
+
+		return [
+			'refundable'          => ($resmodcanc > 1 && $resmodcanc != 2 && $is_refundable > 0 && $daysadv_refund <= $days_to_arrival && $days_to_arrival >= $resmodcancmin),
+			'modifiable'          => ($resmodcanc > 1 && $resmodcanc != 3 && $days_to_arrival >= $resmodcancmin),
+			'alteration_disabled' => $resmodcanc === 0,
+			'request_alteration'  => $resmodcanc === 1,
+			'cancellation_policy' => $canc_policy ?: null,
+			'alteration_deadline' => $alteration_deadline,
+		];
+	}
+
+	/**
+	 * Attempts to invoke the payment processor assigned to the current booking.
+	 * 
+	 * @param 	array 	$card 	Optional credit card details to bind.
+	 * 
+	 * @return 	object 			The payment processor dispatcher instance.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getPaymentProcessor(array $card = [])
+	{
+		$booking   = $this->getProperties();
+		$processor = null;
+		$payment   = [];
+
+		if (!$booking) {
+			throw new Exception('Missing booking details', 500);
+		}
+
+		if (!empty($booking['idpayment'])) {
+			$payment = VikBooking::getPayment($booking['idpayment']);
+		}
+
+		if (!$payment) {
+			throw new Exception('Missing payment method details', 500);
+		}
+
+		// set payment details internally
+		$this->set('_payment_info', $payment);
+
+		if ($card) {
+			// inject CC details for the payment processor
+			$booking['card'] = $card;
+		}
+
+		if (VBOPlatformDetection::isWordPress()) {
+			/**
+			 * @wponly 	The payment gateway is loaded 
+			 * 			through the apposite dispatcher.
+			 */
+			JLoader::import('adapter.payment.dispatcher');
+			$processor = JPaymentDispatcher::getInstance('vikbooking', $payment['file'], $booking, $payment['params']);
+		} elseif (VBOPlatformDetection::isJoomla()) {
+			/**
+			 * @joomlaonly 	The Payment Factory library will invoke the gateway.
+			 */
+			require_once VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'payments' . DIRECTORY_SEPARATOR . 'libraries' . DIRECTORY_SEPARATOR . 'factory.php';
+			$processor = VBOPaymentFactory::getPaymentInstance($payment['file'], $booking, $payment['params']);
+		}
+
+		if (!$processor) {
+			throw new Exception('Could not invoke the payment processor', 500);
+		}
+
+		// return the valid payment processor instance
+		return $processor;
+	}
+
+	/**
+	 * Gets the reservation's payment method name.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getPaymentName()
+	{
+		// access the reserved property
+		$payment = (array) $this->get('_payment_info', []);
+
+		if (!$payment) {
+			return '';
+		}
+
+		return $payment['name'] ?? '';
+	}
+
+	/**
+	 * Attempts to get the credit card value pairs from the current booking.
+	 * 
+	 * @return 	array 	Associative list of CC value-pairs, if any.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getCardValuePairs()
+	{
+		$booking_info = $this->getProperties();
+
+		if (empty($booking_info['paymentlog'])) {
+			return [];
+		}
+
+		// build complete credit card payload, if available
+		$cc_payload_str = '';
+
+		// extract CC data from payment logs by ensuring they're not null
+		$booking_info['paymentlog'] = (string) $booking_info['paymentlog'];
+		if (stripos($booking_info['paymentlog'], 'card number') !== false && strpos($booking_info['paymentlog'], '*') !== false) {
+			// matched a log for an OTA CC
+			$cc_payload_str = $booking_info['paymentlog'];
+		} elseif (preg_match("/(([\d\*]{4,4}\s*){4,4})|(([\d\*]{4,6}\s*){3,3})/", $booking_info['paymentlog'])) {
+			// matched a credit card
+			$cc_payload_str = $booking_info['paymentlog'];
+		}
+
+		// check if this is an OTA reservation with remotely decoded CC details required
+		$remote_cc_data = [];
+		if (!empty($booking_info['idorderota']) && !empty($booking_info['channel'])) {
+			// channel source
+			$channel_source = (string)$booking_info['channel'];
+			if (strpos($booking_info['channel'], '_') !== false) {
+				$channelparts = explode('_', $booking_info['channel']);
+				$channel_source = $channelparts[0];
+			}
+
+			// only updated versions of VCM will support remote CC decoding for OTA reservations
+			if (class_exists('VCMOtaBooking')) {
+				// invoke the OTA Booking helper class from VCM
+				$cc_helper = VCMOtaBooking::getInstance([
+					'channel_source' => $channel_source,
+					'ota_id' 		 => $booking_info['idorderota'],
+				], $anew = true);
+
+				if (method_exists($cc_helper, 'decodeCreditCardDetails')) {
+					$remote_cc_data = $cc_helper->decodeCreditCardDetails();
+					// make sure the response was valid
+					if (!$remote_cc_data || !empty($remote_cc_data['error'])) {
+						// we ignore the error by simply resetting the array
+						$remote_cc_data = [];
+					}
+				}
+			}
+		}
+
+		// merge remotely decoded CC details with parsed payment log (if any)
+		return array_merge($remote_cc_data, $this->parseCreditCardValuePairs($cc_payload_str, $remote_cc_data));
+	}
+
+	/**
+	 * Given a raw string of credit card key-value pairs from payments log,
+	 * parse the corresponding keys and values into an associative array.
+	 * In case of conflicting keys with the remotely decoded CC details,
+	 * attempts to replace the masked numbers with asterisks.
+	 * 
+	 * @param 	string 	$cc_payload 		the raw CC details from payment logs.
+	 * @param 	array 	$remote_cc_data 	associative array of decoded CC data.
+	 * 
+	 * @return 	array 						associative or empty array.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)   moved from widget Virtual Terminal.
+	 */
+	protected function parseCreditCardValuePairs($cc_payload, array $remote_cc_data = [])
+	{
+		$cc_value_pairs = [];
+
+		if (empty($cc_payload)) {
+			return $cc_value_pairs;
+		}
+
+		$cc_lines = preg_split("/(\r\n|\n|\r)/", $cc_payload);
+
+		foreach ($cc_lines as $cc_line) {
+			if (strpos($cc_line, ':') === false) {
+				continue;
+			}
+
+			$cc_line_parts = explode(':', $cc_line);
+
+			if (empty($cc_line_parts[0]) || !strlen(trim($cc_line_parts[1]))) {
+				continue;
+			}
+
+			$key   = str_replace(' ', '_', strtolower($cc_line_parts[0]));
+			$value = trim($cc_line_parts[1]);
+
+			if (isset($cc_value_pairs[$key])) {
+				/**
+				 * Do not overwrite existing keys because this probably means that the
+				 * credit card was updated by an OTA like Booking.com, hence the payment
+				 * logs string in VBO may contain the information of two different cards.
+				 * New credit card details are always pre-pended by VCM in the payment logs.
+				 */
+				continue;
+			}
+
+			if (!empty($remote_cc_data[$key]) && is_string($remote_cc_data[$key]) && strpos($value, '*') !== false) {
+				// replace masked numbers with remote content
+				$value = $this->replaceMaskedNumbers($value, $remote_cc_data[$key]);
+			}
+
+			$cc_value_pairs[$key] = $value;
+		}
+
+		return $cc_value_pairs;
+	}
+
+	/**
+	 * Given a local and a remote credit card number string with
+	 * masked symbols, replaces the values in the corresponding
+	 * positions with the unmasked numbers.
+	 * 
+	 * @param 	string 	$local 		current string with masked values.
+	 * @param 	string 	$remote 	remote string with unmasked values.
+	 * 
+	 * @return 	string 				the local string with unmasked values.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)   moved from widget Virtual Terminal.
+	 */
+	protected function replaceMaskedNumbers($local, $remote)
+	{
+		// split anything but numbers
+		$numbers = preg_split("/([^0-9]+)/", trim($remote));
+
+		if ($numbers) {
+			// filter empty values
+			$numbers = array_filter($numbers);
+		}
+
+		if (!$numbers) {
+			// unable to proceed
+			return $local;
+		}
+
+		// split anything but stars (asterisks)
+		$stars = preg_split("/([^\*]+)/", trim($local));
+
+		if ($stars) {
+			// filter empty values
+			$stars = array_filter($stars);
+		}
+
+		if (!$stars) {
+			// unable to proceed
+			return $local;
+		}
+
+		// replace masked symbols with numbers at their first occurrence
+		foreach ($numbers as $k => $unmasked) {
+			if (!isset($stars[$k])) {
+				continue;
+			}
+
+			$masked_pos = strpos($local, $stars[$k]);
+
+			if ($masked_pos === false) {
+				continue;
+			}
+
+			$local = substr_replace($local, $unmasked, $masked_pos, strlen($stars[$k]));
+		}
+
+		// return the string with possibly unmasked values
+		return $local;
+	}
+
+	/**
+	 * Tells whether the booking can be created. By default this
+	 * is only allowed from the administrator section of the site.
 	 * 
 	 * @return 	bool
 	 */
 	protected function canCreate()
 	{
-		if (!JFactory::getApplication()->isClient('administrator') && !$this->get('_isAdministrator')) {
-			return false;
-		}
-
-		return true;
+		return $this->get('_isAdministrator') || JFactory::getApplication()->isClient('administrator');
 	}
 
 	/**
@@ -538,7 +1822,7 @@ class VBOModelReservation extends JObject
 		$force_booking = $this->get('force_booking', 0);
 		$set_closed = $this->get('set_closed', 0);
 
-		$forced_reason = '';
+		$forced_reason = $this->get('forced_reason', '');
 		$all_rooms = VikBooking::getAvailabilityInstance()->loadRooms();
 
 		if (empty($split_stay_data)) {
@@ -669,10 +1953,34 @@ class VBOModelReservation extends JObject
 			}
 			$set_total = $cust_cost;
 
+			if (!$id_tax && ($inj_room['guess_tax'] ?? false)) {
+				// try to guess the tax rate
+				$dbo->setQuery(
+					$dbo->getQuery(true)
+						->select($dbo->qn('id'))
+						->from($dbo->qn('#__vikbooking_iva'))
+						->order($dbo->qn('aliq') . ' ASC'),
+				0, 1);
+				$guessed_id_tax = $dbo->loadResult();
+				if ($guessed_id_tax) {
+					// update the id_tax values
+					$id_tax = $guessed_id_tax;
+					$inj_room['id_tax'] = $guessed_id_tax;
+					$this->setRoom($inj_room);
+				}
+			}
+
 			// apply taxes, if necessary
 			if ($id_tax) {
-				$q = "SELECT `i`.`aliq`,`i`.`taxcap` FROM `#__vikbooking_iva` AS `i` WHERE `i`.`id`=" . $id_tax . ";";
-				$dbo->setQuery($q);
+				$dbo->setQuery(
+					$dbo->getQuery(true)
+						->select([
+							$dbo->qn('i.aliq'),
+							$dbo->qn('i.taxcap'),
+						])
+						->from($dbo->qn('#__vikbooking_iva', 'i'))
+						->where($dbo->qn('i.id') . ' = ' . (int) $id_tax),
+				0, 1);
 				$taxdata = $dbo->loadAssoc();
 				if ($taxdata) {
 					$aliq = $taxdata['aliq'];
@@ -763,10 +2071,11 @@ class VBOModelReservation extends JObject
 
 		$set_closed   = $this->get('set_closed', 0);
 		$units_closed = $this->get('units_closed', 0);
-		$daysdiff 	  = (int)$this->get('nights', 1);
-		$num_rooms 	  = (int)$this->get('num_rooms', 1);
-		$adults 	  = (int)$this->get('adults', 1);
-		$children 	  = (int)$this->get('children', 0);
+		$daysdiff 	  = (int) $this->get('nights', 1);
+		$num_rooms 	  = (int) $this->get('num_rooms', 1);
+		$adults 	  = (int) $this->get('adults', 1);
+		$children 	  = (int) $this->get('children', 0);
+		$children_age = (array) $this->get('children_age', []);
 		$status 	  = $this->get('status', 'confirmed');
 
 		$split_stay_data = $this->get('split_stay', []);
@@ -784,8 +2093,8 @@ class VBOModelReservation extends JObject
 		$valid_statuses = ['confirmed', 'standby'];
 		$status 		= in_array($status, $valid_statuses) ? $status : 'confirmed';
 		$paymentmeth 	= $this->get('id_payment', '');
-		$set_total 		= (float)$this->get('_total', 0);
-		$set_taxes 		= (float)$this->get('_total_tax', 0);
+		$set_total 		= (float) $this->get('_total', 0);
+		$set_taxes 		= (float) $this->get('_total_tax', 0);
 
 		// stay dates
 		$now_ts 	 = time();
@@ -795,10 +2104,10 @@ class VBOModelReservation extends JObject
 
 		// room
 		$inj_room  = $this->getRoom();
-		$cust_cost = !empty($inj_room['cust_cost']) ? (float)$inj_room['cust_cost'] : 0;
-		$room_cost = !empty($inj_room['room_cost']) ? (float)$inj_room['room_cost'] : 0;
-		$id_price  = !empty($inj_room['id_price']) ? (int)$inj_room['id_price'] : 0;
-		$id_tax    = !empty($inj_room['id_tax']) ? (int)$inj_room['id_tax'] : 0;
+		$cust_cost = !empty($inj_room['cust_cost']) ? (float) $inj_room['cust_cost'] : 0;
+		$room_cost = !empty($inj_room['room_cost']) ? (float) $inj_room['room_cost'] : 0;
+		$id_price  = !empty($inj_room['id_price']) ? (int) $inj_room['id_price'] : 0;
+		$id_tax    = !empty($inj_room['id_tax']) ? (int) $inj_room['id_tax'] : 0;
 		$id_tariff = $this->get('id_tariff', 0);
 
 		// custom rate modifier per night
@@ -821,6 +2130,25 @@ class VBOModelReservation extends JObject
 
 		if ($set_closed) {
 			$customer_data = JText::translate('VBDBTEXTROOMCLOSED');
+		}
+
+		// check for default customer raw data
+		if (!$customer_data && $t_first_name) {
+			// build a default raw data string
+			$customer_data = "Name: {$t_first_name}\n";
+			if ($t_last_name) {
+				$customer_data .= "Last Name: {$t_last_name}\n";
+			}
+			if ($customer_email) {
+				$customer_data .= "eMail: {$customer_email}\n";
+			}
+			if ($country_code) {
+				$customer_data .= "Country: {$country_code}\n";
+			}
+			if ($phone_number) {
+				$customer_data .= "Phone: {$phone_number}\n";
+			}
+			$customer_data = rtrim($customer_data, "\n");
 		}
 
 		// generate booking SID
@@ -881,6 +2209,9 @@ class VBOModelReservation extends JObject
 		$booking->ujid 		 = (int)$store_ujid;
 		$booking->roomsnum 	 = $totalrooms;
 		$booking->total 	 = $set_total > 0 ? $set_total : null;
+		if ($this->get('admin_notes')) {
+			$booking->adminnotes = $this->get('admin_notes', '');
+		}
 		$booking->lang 	 	 = VikBooking::guessBookingLangFromCountry($country_code);
 		$booking->country 	 = $country_code;
 		$booking->tot_taxes  = $set_taxes > 0 ? $set_taxes : null;
@@ -1009,16 +2340,33 @@ class VBOModelReservation extends JObject
 					$room_adults = isset($adults_map[$r]) && empty($split_stay_data) ? $adults_map[$r] : $adults;
 					$room_children = isset($children_map[$r]) && empty($split_stay_data) ? $children_map[$r] : $children;
 
+					// attempt to gather the children age for this room
+					$room_children_age = null;
+					if ($room_children && $children_age) {
+						$children_age_pool = [];
+						for ($ic = 0; $ic < $room_children; $ic++) {
+							if (!$children_age) {
+								$children_age_pool[] = 0;
+								continue;
+							}
+							// shorten the list and push the current child age
+							$current_child_age = array_shift($children_age);
+							$children_age_pool[] = (int) $current_child_age;
+						}
+						$room_children_age = json_encode(['age' => $children_age_pool]);
+					}
+
 					// store room record
 					$room_record = new stdClass;
-					$room_record->idorder 	   = (int)$newoid;
-					$room_record->idroom 	   = (int)$nowroom['id'];
+					$room_record->idorder 	   = (int) $newoid;
+					$room_record->idroom 	   = (int) $nowroom['id'];
 					$room_record->adults 	   = $room_adults;
 					$room_record->children 	   = $room_children;
 					$room_record->idtar 	   = !empty($id_tariff) ? $id_tariff : null;
+					$room_record->childrenage  = $room_children_age;
 					$room_record->t_first_name = $t_first_name;
 					$room_record->t_last_name  = $t_last_name;
-					$room_record->roomindex    = count($room_indexes) ? (int)$room_indexes[$use_ind_key] : null;
+					$room_record->roomindex    = count($room_indexes) ? (int) $room_indexes[$use_ind_key] : null;
 					$room_record->cust_cost    = $cust_cost > 0.00 ? $or_cust_cost : null;
 					$room_record->cust_idiva   = $cust_cost > 0.00 && !empty($id_tax) ? $id_tax : null;
 					$room_record->room_cost    = $room_cost > 0.00 ? $or_room_cost : null;
@@ -1079,13 +2427,30 @@ class VBOModelReservation extends JObject
 					$room_adults = isset($adults_map[$r]) && empty($split_stay_data) ? $adults_map[$r] : $adults;
 					$room_children = isset($children_map[$r]) && empty($split_stay_data) ? $children_map[$r] : $children;
 
+					// attempt to gather the children age for this room
+					$room_children_age = null;
+					if ($room_children && $children_age) {
+						$children_age_pool = [];
+						for ($ic = 0; $ic < $room_children; $ic++) {
+							if (!$children_age) {
+								$children_age_pool[] = 0;
+								continue;
+							}
+							// shorten the list and push the current child age
+							$current_child_age = array_shift($children_age);
+							$children_age_pool[] = (int) $current_child_age;
+						}
+						$room_children_age = json_encode(['age' => $children_age_pool]);
+					}
+
 					// store room record
 					$room_record = new stdClass;
-					$room_record->idorder 	   = (int)$newoid;
-					$room_record->idroom 	   = (int)$nowroom['id'];
+					$room_record->idorder 	   = (int) $newoid;
+					$room_record->idroom 	   = (int) $nowroom['id'];
 					$room_record->adults 	   = $room_adults;
 					$room_record->children 	   = $room_children;
 					$room_record->idtar 	   = !empty($id_tariff) ? $id_tariff : null;
+					$room_record->childrenage  = $room_children_age;
 					$room_record->t_first_name = $t_first_name;
 					$room_record->t_last_name  = $t_last_name;
 					$room_record->cust_cost    = $cust_cost > 0.00 ? $or_cust_cost : null;
@@ -1143,8 +2508,16 @@ class VBOModelReservation extends JObject
 		$cpin->saveCustomerBooking($newoid);
 
 		// Booking History
+		$history_obj = VikBooking::getBookingHistoryInstance($newoid);
 		$forced_reason = !empty($forced_reason) ? " {$forced_reason}" : $forced_reason;
-		VikBooking::getBookingHistoryInstance()->setBid($newoid)->store('NB', "({$now_user->name}){$forced_reason}");
+		$caller_id = $now_user->name ? "({$now_user->name})" : '';
+		if ($this->getCaller()) {
+			$caller_id = '(' . $this->getCaller() . ')';
+			if ($this->getHistoryData()) {
+				$history_obj->setExtraData($this->getHistoryData());
+			}
+		}
+		$history_obj->store('NB', trim($caller_id . $forced_reason));
 
 		if ($status == 'confirmed' || ($status == 'standby' && class_exists('VCMRequestAvailability'))) {
 			// Invoke Channel Manager

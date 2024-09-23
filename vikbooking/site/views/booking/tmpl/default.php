@@ -1134,13 +1134,19 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 	if (VBOPlatformDetection::isWordPress()) {
 		$elapsed_redirect_uri = $return_url;
 	} else {
-		$elapsed_redirect_uri = JRoute::rewrite('index.php?option=com_vikbooking&view=booking&sid='.(!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']).'&ts='.$ord['ts'].(!empty($bestitemid) ? '&Itemid='.$bestitemid : (!empty($pitemid) ? '&Itemid='.$pitemid : '')), false);;
+		$elapsed_redirect_uri = JRoute::rewrite('index.php?option=com_vikbooking&view=booking&sid='.(!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']).'&ts='.$ord['ts'].(!empty($bestitemid) ? '&Itemid='.$bestitemid : (!empty($pitemid) ? '&Itemid='.$pitemid : '')), false);
 	}
 
 	//Auto Removal Minutes
 	$minautoremove = VikBooking::getMinutesAutoRemove();
 	$mins_elapsed = floor(($now_info[0] - $ord['ts']) / 60);
-	if ($minautoremove > 0) {
+	if ($minautoremove > 0 && $minautoremove < 35791) {
+		/**
+		 * Ensure the timeout milliseconds in 32-bit do not exceed
+		 * the maximum value of 2,147,483,647ms (~35791,39 minutes).
+		 * 
+		 * @since 	1.16.10 (J) - 1.6.10 (WP)
+		 */
 		$booktime_info = getdate($ord['ts']);
 		$booktime_offset = date('Z', $ord['ts']) / 60;
 		$remainmin = $minautoremove - $mins_elapsed;

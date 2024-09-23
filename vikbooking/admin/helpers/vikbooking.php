@@ -678,7 +678,7 @@ class VikBookingHelper
 			 * 
 			 * @since 	1.16.8 (J) - 1.6.8 (WP)
 			 */
-			$ncInstance = new VBONotificationCenter;
+			$ncInstance = VBOFactory::getNotificationCenter();
 
 			// read "old" notifications
 			$ncInstance->readOldNotifications();
@@ -827,7 +827,13 @@ class VikBookingHelper
 
 					// check if menu actions should be merged with the fallback scope
 					if (scope != 'widgets' && menu_scope_actions[0].hasOwnProperty('fallback')) {
+						let before_fill_length = menu_scope_actions.length;
 						menu_scope_actions = VBOCore.fillAdminMenuActions(menu_scope_actions, menu_widgets_actions, scope);
+						let after_fill_length = menu_scope_actions.length;
+						if (before_fill_length && after_fill_length > before_fill_length) {
+							// update scope for the filled entries
+							VBOCore.storageSetItem(VBOCore.getStorageScopeName(scope), menu_scope_actions);
+						}
 					}
 
 					wrapper.addClass('vbo-submenu-wrap-multi');
@@ -945,6 +951,12 @@ class VikBookingHelper
 				);
 			}, 300));
 
+			// append shortcut to title
+			jQuery('.vbo-multitasking-apps').attr('title',
+				jQuery('.vbo-multitasking-apps').attr('title') + ' '
+				+ (navigator.platform.toUpperCase().indexOf('MAC') === 0 ? '⌘' : '⌃') + '⏎'
+			);
+
 			// register shortcuts
 			var vbo_menu_last_keydown = null;
 			window.addEventListener('keydown', (e) => {
@@ -952,24 +964,36 @@ class VikBookingHelper
 				if (!e.key) {
 					return;
 				}
-				if (e.key === 'Enter' && e.metaKey) {
+
+				let modifier = 'ctrl';
+
+				// change the modifier depending on the platform
+				if (navigator.platform.toUpperCase().indexOf('MAC') === 0) {
+					modifier = 'meta';
+				}
+
+				if (e.shortcut([modifier, 13])) {
 					// toggle multitask panel
 					VBOCore.emitEvent(VBOCore.multitask_shortcut_event);
 					return;
 				}
-				if (VBOCore.side_panel_on && e.key === 'f' && e.metaKey) {
+
+				if (VBOCore.side_panel_on && e.shortcut([modifier, 'F'])) {
 					// focus search admin widget in multitask panel
 					VBOCore.emitEvent(VBOCore.multitask_searchfs_event);
 					e.preventDefault();
+
 					return;
 				}
-				if (e.key === 'k' && e.metaKey) {
+
+				if (e.shortcut([modifier, 'K'])) {
 					// set special key listener for sequences of combos
 					e.preventDefault();
 					vbo_menu_last_keydown = 'k';
 					return;
 				}
-				if (vbo_menu_last_keydown === 'k' && e.metaKey && ['a', 'd', 'l'].includes(e.key)) {
+
+				if (vbo_menu_last_keydown === 'k' && (e.shortcut([modifier, 'A']) || e.shortcut([modifier, 'D']) || e.shortcut([modifier, 'L']))) {
 					// trigger event to change color scheme preferences
 					e.preventDefault();
 					// unset special key
@@ -983,6 +1007,7 @@ class VikBookingHelper
 					jQuery('.vbo-sidepanel-colorscheme-option[data-scheme="' + color_schemes[e.key] + '"]').trigger('click');
 					return;
 				}
+
 				// always unset last key if this point gets reached
 				vbo_menu_last_keydown = '';
 			}, true);

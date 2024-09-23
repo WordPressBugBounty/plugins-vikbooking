@@ -25,7 +25,7 @@ class VBOBackupManager
 	 * 
 	 * @var string
 	 */
-	const MINIMUM_REQUIRED_VERSION_JOOMLA = '1.16.5';
+	const MINIMUM_REQUIRED_VERSION_JOOMLA = '1.17.0';
 
 	/**
 	 * Indicates the minimum required version while creating a
@@ -34,7 +34,7 @@ class VBOBackupManager
 	 * 
 	 * @var string
 	 */
-	const MINIMUM_REQUIRED_VERSION_WORDPRESS = '1.6.5';
+	const MINIMUM_REQUIRED_VERSION_WORDPRESS = '1.7.0';
 
 	/**
 	 * An associative array containing the supported export types, where the

@@ -124,6 +124,42 @@ class VBOTaxonomyFinance
 	}
 
 	/**
+	 * Counts the number of days of difference between two timestamps.
+	 * 
+	 * @param 	int 	$from_ts 	the starting date timestamp.
+	 * @param 	int 	$to_ts 		the target end date timestamp.
+	 * 
+	 * @return 	int 	the days of difference from the given dates.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function countDaysDiff($from_ts, $to_ts)
+	{
+		if (empty($from_ts) || empty($to_ts)) {
+			return 0;
+		}
+
+		$from_ymd = date('Y-m-d', $from_ts);
+		$to_ymd = date('Y-m-d', $to_ts);
+
+		if ($from_ymd == $to_ymd) {
+			return 0;
+		}
+
+		$from_date = new DateTime($from_ymd);
+		$to_date   = new DateTime($to_ymd);
+		$daysdiff  = (int)$from_date->diff($to_date)->format('%a');
+
+		if ($to_ts < $from_ts) {
+			// we need a negative integer number in this case
+			$daysdiff = $daysdiff - ($daysdiff * 2);
+		}
+
+		return $daysdiff;
+	}
+
+
+	/**
 	 * Helper method to format long currency values into short numbers.
 	 * I.e. 2.600.000 = 2.6M (empty decimals are always removed to keep the string short).
 	 * 
@@ -276,6 +312,8 @@ class VBOTaxonomyFinance
 			'adr' 			=> 0,
 			// revenue per available room
 			'revpar' 		=> 0,
+			// average booking window
+			'abw' 			=> 0,
 			// amount of taxes
 			'taxes' 		=> 0,
 			// commissions (amount)
@@ -292,6 +330,12 @@ class VBOTaxonomyFinance
 			'ota_avg_cmms' 	=> 0,
 			// commission savings amount
 			'cmm_savings' 	=> 0,
+			// total cancelled reservations
+			'tot_cancellations' => 0,
+			// cancelled reservation IDs
+			'cancellation_ids'  => [],
+			// total amount of cancelled bookings
+			'cancellations_amt' => 0,
 		];
 
 		// get all (real/completed) bookings in the given range of dates
@@ -299,6 +343,7 @@ class VBOTaxonomyFinance
 		$q->select($dbo->qn([
 			'o.id',
 			'o.ts',
+			'o.status',
 			'o.days',
 			'o.checkin',
 			'o.checkout',
@@ -330,9 +375,13 @@ class VBOTaxonomyFinance
 		$q->leftjoin($dbo->qn('#__vikbooking_ordersbusy', 'ob') . ' ON ' . $dbo->qn('ob.idorder') . ' = ' . $dbo->qn('o.id'));
 		$q->leftjoin($dbo->qn('#__vikbooking_busy', 'b') . ' ON ' . $dbo->qn('b.id') . ' = ' . $dbo->qn('ob.idbusy'));
 		$q->leftjoin($dbo->qn('#__vikbooking_countries', 'c') . ' ON ' . $dbo->qn('c.country_3_code') . ' = ' . $dbo->qn('o.country'));
-		$q->where($dbo->qn('o.status') . ' = ' . $dbo->q('confirmed'));
 		$q->where($dbo->qn('o.total') . ' > 0');
 		$q->where($dbo->qn('o.closure') . ' = 0');
+		// use the "andWhere" method after having set some "where" clauses
+		$q->andWhere([
+			$dbo->qn('o.status') . ' = ' . $dbo->q('confirmed'),
+			$dbo->qn('o.status') . ' = ' . $dbo->q('cancelled'),
+		], 'OR');
 		if ($type == 'stay_dates') {
 			// regular calculation based on stay dates
 			$q->where($dbo->qn('o.checkout') . ' >= ' . $from_ts);
@@ -357,6 +406,30 @@ class VBOTaxonomyFinance
 		if (!$records) {
 			// no bookings found, do not proceed
 			return $stats;
+		}
+
+		/**
+		 * Immediately count cancellations and unset the records found.
+		 * 
+		 * @since 	1.16.10 (J) - 1.6.10 (WP)
+		 */
+		foreach ($records as $k => $b) {
+			if (!strcasecmp($b['status'], 'cancelled')) {
+				if (!in_array($b['id'], $stats['cancellation_ids'])) {
+					// add statistics for the cancelled booking only once
+					$stats['tot_cancellations']++;
+					$stats['cancellations_amt'] += (float) $b['total'];
+					$stats['cancellation_ids'][] = $b['id'];
+				}
+
+				// get rid of this record to not alter the regular statistics
+				unset($records[$k]);
+			}
+		}
+
+		if ($stats['cancellation_ids']) {
+			// reset key values
+			$records = array_values($records);
 		}
 
 		// nest records with multiple rooms booked inside sub-arrays
@@ -387,6 +460,9 @@ class VBOTaxonomyFinance
 		$pos_counter = [];
 		$countries 	 = [];
 		$country_map = [];
+
+		// sum of booking window
+		$sum_booking_window = 0;
 
 		// parse all bookings
 		foreach ($bookings as $bid => $booking) {
@@ -445,6 +521,10 @@ class VBOTaxonomyFinance
 				$stats['gross_revenue'] += $room_total;
 				$stats['nights_booked'] += $los_affected;
 
+				// increase booking window for this room-booking
+				$booking_window = $this->countDaysDiff($room_booking['ts'], $room_booking['stay_from_ts']);
+				$sum_booking_window += $booking_window >= 0 ? $booking_window : 0;
+
 				// increase country stats
 				$country_code = !empty($room_booking['country']) ? $room_booking['country'] : 'unknown';
 				if (!isset($countries[$country_code])) {
@@ -502,6 +582,9 @@ class VBOTaxonomyFinance
 		// count the revenue per available room (RevPAR)
 		$stats['revpar'] = $stats['revenue'] / $total_room_units;
 
+		// count the average booking window (ABW - number of days between the reservation date and the check-in date)
+		$stats['abw'] = $stats['rooms_booked'] > 0 ? $sum_booking_window / $stats['rooms_booked'] : 0;
+
 		// count OTAs average commission amount
 		if ($stats['ota_tot_net'] > 0 && $stats['ota_cmms'] > 0) {
 			// find the average percent value of OTA commissions (tot_net : tot_cmms = 100 : x)
@@ -517,7 +600,7 @@ class VBOTaxonomyFinance
 		$vcm_logos = VikBooking::getVcmChannelsLogo('', true);
 
 		// sort and build pos revenues
-		if (count($pos_pool) && $stats['revenue'] > 0) {
+		if ($pos_pool && $stats['revenue'] > 0) {
 			// apply sorting descending
 			arsort($pos_pool);
 			// build readable pos values

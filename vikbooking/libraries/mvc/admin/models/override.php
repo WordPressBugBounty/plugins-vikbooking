@@ -48,6 +48,16 @@ class VikBookingModelOverride extends JModelForm
 			return false;
 		}
 
+		/**
+		 * Use the unpublished version in case the status is inactive.
+		 * 
+		 * @since 1.6.10
+		 */
+		if (($data['published'] ?? true) == false)
+		{
+			$data['file'] = dirname($data['file']) . '/__' . basename($data['file']);
+		}
+
 		// generate override
 		return JFile::write($data['file'], $data['code']);
 	}

@@ -65,6 +65,10 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 		JText::script('VBO_COMPARE_WITH_PREV_W');
 		JText::script('VBO_COMPARE_WITH_PREV_D');
 		JText::script('VBNOTRACKINGS');
+		JText::script('VBO_ERR_LOAD_RESULTS');
+		JText::script('VBNOROOMSFOUND');
+		JText::script('VBO_SEARCHING');
+		JText::script('VBROOMFILTER');
 	}
 
 	/**
@@ -78,12 +82,16 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 	 */
 	public function loadFinancialStats()
 	{
-		$wrapper = VikRequest::getString('wrapper', '', 'request');
+		$app = JFactory::getApplication();
 
-		$fromdate = VikRequest::getString('fromdate', '', 'request');
-		$todate   = VikRequest::getString('todate', '', 'request');
-		$step 	  = VikRequest::getString('step', 'quarter', 'request');
-		$date_dir = VikRequest::getInt('date_dir', 0, 'request');
+		$wrapper = $app->input->getString('wrapper', '');
+
+		$fromdate = $app->input->getString('fromdate', '');
+		$todate   = $app->input->getString('todate', '');
+		$step 	  = $app->input->getString('step', 'quarter');
+		$date_dir = $app->input->getInt('date_dir', 0);
+		$room_ids = (array) $app->input->getInt('room_ids', []);
+
 		if (empty($fromdate)) {
 			// default to current quarter (3 full months)
 			$now_info = getdate();
@@ -119,7 +127,7 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 
 		// get the financial stats for the requested dates
 		try {
-			$stats = $finance->getStats($fromdate, $todate, [], $calc_type);
+			$stats = $finance->getStats($fromdate, $todate, $room_ids, $calc_type);
 		} catch (Exception $e) {
 			// make the AJAX request fail nicely
 			VBOHttpDocument::getInstance()->close($e->getCode(), $e->getMessage());
@@ -137,6 +145,19 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 
 		// start output buffering
 		ob_start();
+
+		if ($room_ids) {
+			// get the details of the rooms filtered
+			$rooms_filtered = VikBooking::getAvailabilityInstance()->loadRooms($room_ids);
+
+			if ($rooms_filtered) {
+				?>
+		<div class="vbo-widget-finance-rooms-filtered-cont">
+			<?php echo implode(', ', array_column($rooms_filtered, 'name')); ?>
+		</div>
+				<?php
+			}
+		}
 
 		?>
 		<div class="vbo-widget-finance-data-blocks">
@@ -308,6 +329,20 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 				</div>
 			</div>
 
+			<div class="vbo-widget-finance-data-block" data-typestat="abw">
+				<div class="vbo-widget-finance-stat">
+					<div class="vbo-widget-finance-stat-info">
+						<span class="vbo-widget-finance-stat-name"><?php echo JText::translate('VBO_AVG_BOOK_WINDOW'); ?></span>
+						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
+					</div>
+					<div class="vbo-widget-finance-stat-amount">
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo htmlspecialchars(JText::translate('VBOCRONSMSREMPARAMBEFD')); ?>">
+							<span><?php echo round($stats['abw'], 1); ?></span>
+						</span>
+					</div>
+				</div>
+			</div>
+
 			<div class="vbo-widget-finance-data-block" data-typestat="rooms_booked">
 				<div class="vbo-widget-finance-stat">
 					<div class="vbo-widget-finance-stat-info">
@@ -317,6 +352,21 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 					<div class="vbo-widget-finance-stat-amount">
 						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo htmlspecialchars(JText::translate('VBOGRAPHTOTUNITSLBL') . ' ' . $stats['room_units']); ?>">
 							<span><?php echo $stats['rooms_booked']; ?></span>
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="vbo-widget-finance-data-block" data-typestat="cancellations_amt">
+				<div class="vbo-widget-finance-stat">
+					<div class="vbo-widget-finance-stat-info">
+						<span class="vbo-widget-finance-stat-name"><?php echo JText::translate('VBO_CANCELLATIONS'); ?></span>
+						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
+					</div>
+					<div class="vbo-widget-finance-stat-amount">
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['cancellations_amt']) . ($stats['tot_cancellations'] ? ' (' . $stats['tot_cancellations'] . ')' : ''); ?>">
+							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
+							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['cancellations_amt']); ?></span>
 						</span>
 					</div>
 				</div>
@@ -502,12 +552,14 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 	 */
 	public function loadComparisonStats()
 	{
-		$wrapper = VikRequest::getString('wrapper', '', 'request');
+		$app = JFactory::getApplication();
 
-		$fromdate 	= VikRequest::getString('fromdate', '', 'request');
-		$todate   	= VikRequest::getString('todate', '', 'request');
-		$step 	  	= VikRequest::getString('step', 'quarter', 'request');
-		$prev_stats = VikRequest::getVar('stats', array());
+		$wrapper = $app->input->getString('wrapper', '');
+
+		$fromdate 	= $app->input->getString('fromdate', '');
+		$todate   	= $app->input->getString('todate', '');
+		$step 	  	= $app->input->getString('step', 'quarter');
+		$prev_stats = $app->input->get('stats', [], 'array');
 		$date_dir 	= -1;
 
 		if (empty($fromdate) || empty($todate) || empty($prev_stats)) {
@@ -596,8 +648,14 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 			'avg_los' 		=> [
 				'fixednum' => 1,
 			],
+			'abw' 			=> [
+				'fixednum' => 1,
+			],
 			'rooms_booked' 	=> [
 				'fixednum' => 1,
+			],
+			'cancellations_amt' => [
+				'reverse'  => 1,
 			],
 		];
 
@@ -621,6 +679,7 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 				'diff_f'   => VikBooking::numberFormat($diff),
 				'diff_s'   => $finance->numberFormatShort($diff),
 				'pcent'    => isset($stat_opt['no_pcent']) ? null : $finance->calcAbsPercent($prev_stats[$stat_name], $compare_stats[$stat_name]),
+				'reverse'  => $stat_opt['reverse'] ?? false,
 			];
 
 			// inject property for fixed number with no currency
@@ -738,10 +797,14 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 		}
 
 		// check multitask data
+		$rooms_filtered = [];
 		if ($data) {
 			$inj_fromdate = $data->get('fromdate', $this->options()->get('fromdate', ''));
 			$inj_todate   = $data->get('todate', $this->options()->get('todate', ''));
 			$inj_type 	  = $data->get('type', $this->options()->get('type', ''));
+
+			// check if some room IDs were filtered
+			$rooms_filtered = (array) $data->get('room_ids', $this->options()->get('room_ids', []));
 
 			if (preg_match("/^\d{4}-\d{2}-\d{2}$/", $inj_fromdate) && preg_match("/^\d{4}-\d{2}-\d{2}$/", $inj_todate)) {
 				// valid dates injected in Y-m-d format
@@ -809,6 +872,19 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 									<option value="month"<?php echo $cookie_step == 'month' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBPVIEWRESTRICTIONSTWO'); ?></option>
 									<option value="quarter"<?php echo $cookie_step == 'quarter' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_QUARTER'); ?></option>
 									<option value="booking_dates"<?php echo !strcasecmp($cookie_step, 'booking_dates') ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBPCHOOSEBUSYORDATE'); ?></option>
+								</select>
+							</div>
+							<div class="vbo-reportwidget-filter vbo-widget-finance-rooms-filter-wrap">
+								<select class="vbo-widget-finance-rooms-filter" multiple="multiple">
+								<?php
+								foreach ($rooms_filtered as $room_filtered) {
+									if ($room_info = VikBooking::getRoomInfo($room_filtered, ['id', 'name'], true)) {
+										?>
+									<option value="<?php echo $room_info['id']; ?>" selected="selected"><?php echo $room_info['name']; ?></option>
+										<?php
+									}
+								}
+								?>
 								</select>
 							</div>
 							<div class="vbo-reportwidget-filter vbo-reportwidget-filter-confirm">
@@ -898,6 +974,7 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 				var from_date 		= widget_instance.find('.vbo-finance-dtpicker-from').val();
 				var to_date 		= widget_instance.find('.vbo-finance-dtpicker-to').val();
 				var dates_step 		= widget_instance.find('.vbo-finance-period-nav').val();
+				var room_ids        = widget_instance.find('select.vbo-widget-finance-rooms-filter').val();
 				var auto_compare 	= widget_instance.find('.vbo-finance-compare-auto').val();
 
 				// the widget method to call
@@ -913,6 +990,7 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						fromdate: from_date,
 						todate: to_date,
 						step: dates_step,
+						room_ids: room_ids,
 						date_dir: dates_direction,
 						wrapper: wrapper,
 						tmpl: "component"
@@ -1103,13 +1181,13 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 								let pcent_icon  = '';
 								if (obj_res[call_method]['compare'][stat_name]['diff'] == 0) {
 									pcent_block.addClass('vbo-widget-finance-compare-pcent-equal');
-									pcent_icon  = '<?php VikBookingIcons::e('equals') ?>';
+									pcent_icon = '<?php VikBookingIcons::e('equals') ?>';
 								} else if (obj_res[call_method]['compare'][stat_name]['diff'] > 0) {
 									pcent_block.addClass('vbo-widget-finance-compare-pcent-up');
-									pcent_icon  = '<?php VikBookingIcons::e('arrow-up') ?>';
+									pcent_icon = obj_res[call_method]['compare'][stat_name]['reverse'] ? '<?php VikBookingIcons::e('arrow-down') ?>' : '<?php VikBookingIcons::e('arrow-up') ?>';
 								} else if (obj_res[call_method]['compare'][stat_name]['diff'] < 0) {
 									pcent_block.addClass('vbo-widget-finance-compare-pcent-down');
-									pcent_icon  = '<?php VikBookingIcons::e('arrow-down') ?>';
+									pcent_icon = obj_res[call_method]['compare'][stat_name]['reverse'] ? '<?php VikBookingIcons::e('arrow-up') ?>' : '<?php VikBookingIcons::e('arrow-down') ?>';
 								}
 								if (obj_res[call_method]['compare'][stat_name]['pcent'] != null) {
 									pcent_block.append('<span class="vbo-widget-finance-compare-val">' + pcent_icon + ' ' + obj_res[call_method]['compare'][stat_name]['pcent'] + '%</span>');
@@ -1239,6 +1317,27 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 					var jdp = jQuery(this).parent().find('input.hasDatepicker');
 					if (jdp.length) {
 						jdp.focus();
+					}
+				});
+
+				// register room filters search via AJAX
+				jQuery('#<?php echo $wrapper_id; ?>').find('select.vbo-widget-finance-rooms-filter').select2({
+					placeholder: Joomla.JText._('VBROOMFILTER'),
+					language: {
+						errorLoading: () => {
+							return Joomla.JText._('VBO_ERR_LOAD_RESULTS');
+						},
+						noResults: () => {
+							return Joomla.JText._('VBNOROOMSFOUND');
+						},
+						searching: () => {
+							return Joomla.JText._('VBO_SEARCHING');
+						},
+					},
+					ajax: {
+						delay: 350,
+						url: "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.rooms_search'); ?>",
+						dataType: 'json',
 					}
 				});
 

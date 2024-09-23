@@ -84,7 +84,7 @@ class VikBookingLanguageSite implements JLanguageHandler
 				$result = __('Error, Booking not found', 'vikbooking');
 				break;
 			case 'VBERRCALCTAR':
-				$result = __('An Error occured processing fares. Please choose new dates', 'vikbooking');
+				$result = __('An Error occurred processing fares. Please choose new dates', 'vikbooking');
 				break;
 			case 'VBTARNOTFOUND':
 				$result = __('Error, Not Existing Fare', 'vikbooking');

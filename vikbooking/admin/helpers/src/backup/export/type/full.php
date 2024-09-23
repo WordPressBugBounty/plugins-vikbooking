@@ -216,6 +216,9 @@ class VBOBackupExportTypeFull implements VBOBackupExportType
 			'vikbooking' => [
 				'update_extra_fields',
 				'backupfolder',
+				'licensekey',
+				'licenseval',
+				'licensehash',
 			],
 			'vikchannelmanager' => [
 				'version',

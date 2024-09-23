@@ -51,6 +51,10 @@ foreach ($this->arrpeople as $aduchild) {
 	$totchildren += $aduchild['children'];
 }
 
+// change dates URI
+$use_category_filter = !$pcategory_id && $pcategories ? $pcategories : $pcategory_id;
+$change_dates_uri = JRoute::rewrite('index.php?option=com_vikbooking&view=vikbooking&checkin='.$this->checkin.'&checkout='.$this->checkout.'&category_id='.$use_category_filter.(!empty($pitemid) ? '&Itemid='.$pitemid : ''));
+
 ?>
 <script type="text/javascript">
 var vbdialog_on = false;
@@ -283,7 +287,7 @@ if (count($this->mod_booking)) {
 
 <div class="vbstepsbarcont">
 	<ol class="vbo-stepbar" data-vbosteps="4">
-		<li class="vbo-step vbo-step-complete"><a href="<?php echo JRoute::rewrite('index.php?option=com_vikbooking&view=vikbooking&checkin='.$this->checkin.'&checkout='.$this->checkout.'&category_id='.$pcategory_id.(!empty($pitemid) ? '&Itemid='.$pitemid : '')); ?>"><?php echo JText::translate('VBSTEPDATES'); ?></a></li>
+		<li class="vbo-step vbo-step-complete"><a href="<?php echo $change_dates_uri; ?>"><?php echo JText::translate('VBSTEPDATES'); ?></a></li>
 		<li class="vbo-step vbo-step-current"><span><?php echo JText::translate('VBSTEPROOMSELECTION'); ?></span></li>
 		<li class="vbo-step vbo-step-next"><span><?php echo JText::translate('VBSTEPOPTIONS'); ?></span></li>
 		<li class="vbo-step vbo-step-next"><span><?php echo JText::translate('VBSTEPCONFIRM'); ?></span></li>
@@ -342,7 +346,7 @@ if (count($this->mod_booking)) {
 		<div class="vbo-results-chdates">
 			<div class="vbo-results-head-det">
 				<span class="vbo-results-head-det-val">
-					<a href="<?php echo JRoute::rewrite('index.php?option=com_vikbooking&view=vikbooking&checkin='.$this->checkin.'&checkout='.$this->checkout.'&category_id='.$pcategory_id.(!empty($pitemid) ? '&Itemid='.$pitemid : '')); ?>" class="vbo-pref-color-btn-secondary"><?php echo JText::translate('VBCHANGEDATES'); ?></a>
+					<a href="<?php echo $change_dates_uri; ?>" class="vbo-pref-color-btn-secondary"><?php echo JText::translate('VBCHANGEDATES'); ?></a>
 				</span>
 			</div>
 		</div>
@@ -412,7 +416,7 @@ if ($this->roomsnum < 2) {
 	}
 	?>
 	<div class="goback">
-		<a class="vbo-goback-link vbo-pref-color-btn-secondary" href="<?php echo JRoute::rewrite('index.php?option=com_vikbooking&view=vikbooking&checkin='.$this->checkin.'&checkout='.$this->checkout.'&category_id='.$pcategory_id.(!empty($pitemid) ? '&Itemid='.$pitemid : '')); ?>"><?php echo JText::translate('VBCHANGEDATES'); ?></a>
+		<a class="vbo-goback-link vbo-pref-color-btn-secondary" href="<?php echo $change_dates_uri; ?>"><?php echo JText::translate('VBCHANGEDATES'); ?></a>
 	</div>
 	<div id="vbsearchmainsbmt" class="vbsearchmainsbmt" style="display: none;">
 		<input type="submit" name="continue" value="<?php echo JText::translate('VBSEARCHCONTINUESUBM'); ?>" class="btn vbsubmit vbo-pref-color-btn"/>

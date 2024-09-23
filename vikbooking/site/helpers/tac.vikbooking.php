@@ -28,6 +28,27 @@ class TACVBO
 	public static $ignoreRestrictions = false;
 
 	/**
+	 * @var  	bool 	flag to ignore rooms availability.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public static $ignoreAvailability = false;
+
+	/**
+	 * @var  	int 	optional max rooms limit.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public static $maxRoomsLimit = 0;
+
+	/**
+	 * @var  	array 	optional list of room ids involved.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public static $forcedRoomIds = [];
+
+	/**
 	 * Error code identifier:
 	 * 
 	 * 1 = missing/invalid request options.
@@ -54,7 +75,7 @@ class TACVBO
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP) added $options argument.
 	 */
-	public static function tac_av_l($options = array())
+	public static function tac_av_l(array $options = [])
 	{
 		$dbo = JFactory::getDbo();
 		$vbo_tn = VikBooking::getTranslator();
@@ -99,9 +120,9 @@ class TACVBO
 		// API v4
 		$args['num_adults'] = empty($args['num_adults']) ? VikRequest::getInt('num_adults', 1, 'request') : $args['num_adults'];
 		// API v5
-		$args['adults'] = empty($args['adults']) ? VikRequest::getVar('adults', array()) : $args['adults'];
-		$args['children'] = empty($args['children']) ? VikRequest::getVar('children', array()) : $args['children'];
-		$args['children_age'] = empty($args['children_age']) ? VikRequest::getVar('children_age', array()) : $args['children_age'];
+		$args['adults'] = empty($args['adults']) ? VikRequest::getVar('adults', []) : $args['adults'];
+		$args['children'] = empty($args['children']) ? VikRequest::getVar('children', []) : $args['children'];
+		$args['children_age'] = empty($args['children_age']) ? VikRequest::getVar('children_age', []) : $args['children_age'];
 		if (!empty($args['adults']) && !empty($args['children'])) {
 			$tac_apiv = 5;
 		}
@@ -121,7 +142,7 @@ class TACVBO
 		 */
 		$only_rates = VikRequest::getInt('only_rates', 0, 'request');
 		$only_rates = empty($only_rates) && !empty($args['only_rates']) ? $args['only_rates'] : $only_rates;
-		$fullybooked = array();
+		$fullybooked = [];
 
 		if (!$valid) {
 			// set error code
@@ -135,7 +156,7 @@ class TACVBO
 		}
 
 		$checkauth = md5('vbo.e4j.vbo');
-		if ($checkauth != $args['hash'] && !count($options)) {
+		if ($checkauth != $args['hash'] && !$options) {
 			// set error code
 			self::$errorCode = 2;
 
@@ -147,13 +168,12 @@ class TACVBO
 			exit;
 		}
 
-		$avail_rooms = array();
 		if ($tac_apiv == 5) {
 			// compose adults-children array and sql clause
-			$arradultsrooms = array();
-			$arradultsclause = array();
-			$arrpeople = array();
-			if (count($args['adults']) > 0) {
+			$arradultsrooms = [];
+			$arradultsclause = [];
+			$arrpeople = [];
+			if ($args['adults']) {
 				foreach ($args['adults'] as $kad => $adu) {
 					$roomnumb = $kad + 1;
 					if (strlen($adu)) {
@@ -165,11 +185,11 @@ class TACVBO
 							if (!empty($args['children'][$kad]) && intval($args['children'][$kad]) > 0) {
 								$numchildren = intval($args['children'][$kad]);
 								$arrpeople[$roomnumb]['children'] = $numchildren;
-								$arrpeople[$roomnumb]['children_age'] = isset($args['children_age'][$roomnumb]) && count($args['children_age'][$roomnumb]) ? $args['children_age'][$roomnumb] : array();
+								$arrpeople[$roomnumb]['children_age'] = isset($args['children_age'][$roomnumb]) && $args['children_age'][$roomnumb] ? $args['children_age'][$roomnumb] : [];
 								$strclause .= " AND `fromchild`<=".$numchildren." AND `tochild`>=".$numchildren."";
 							} else {
 								$arrpeople[$roomnumb]['children'] = 0;
-								$arrpeople[$roomnumb]['children_age'] = array();
+								$arrpeople[$roomnumb]['children_age'] = [];
 								if (intval($args['children'][$kad]) == 0) {
 									$strclause .= " AND `fromchild` = 0";
 								}
@@ -185,24 +205,26 @@ class TACVBO
 			// set $args['adults'] to the number of adults occupying the first room but it could be a party of multiple rooms
 			$args['num_adults'] = $arrpeople[1]['adults'];
 			// this clause would return one room type for each party type: implode(" OR ", $arradultsclause) - the AND clause must be used rather than OR.
-			$q = "SELECT `id`, `units` FROM `#__vikbooking_rooms` WHERE `avail`=1 AND (".implode(" AND ", $arradultsclause).");";
+			$q = "SELECT `id`, `units` FROM `#__vikbooking_rooms` WHERE `avail`=1 AND (" . implode(" AND ", $arradultsclause) . ")" . (self::$forcedRoomIds ? ' AND `id` IN (' . implode(', ', array_map('intval', self::$forcedRoomIds)) . ')' : '');
 		} else {
 			// API v4
-			$arrpeople = array();
+			$arrpeople = [];
 			$arrpeople[1]['adults'] = $args['num_adults'];
 			$arrpeople[1]['children'] = 0;
-			$q = "SELECT `id`, `units` FROM `#__vikbooking_rooms` WHERE `avail`=1 AND `toadult`>=".$args['num_adults'].";";
+			$q = "SELECT `id`, `units` FROM `#__vikbooking_rooms` WHERE `avail`=1 AND `toadult` >= " . $args['num_adults'] . (self::$forcedRoomIds ? ' AND `id` IN (' . implode(', ', array_map('intval', self::$forcedRoomIds)) . ')' : '');
 		}
-		$dbo->setQuery($q);
+
+		$dbo->setQuery($q, 0, self::$maxRoomsLimit);
 		$avail_rooms = $dbo->loadAssocList();
+
 		if (!$avail_rooms) {
 			// set error code
 			self::$errorCode = 3;
 
 			if (self::$getArray) {
-				return array('e4j.error' => 'The Query for fetching the rooms returned an empty result');
+				return array('e4j.error' => 'No valid rooms were found for the requested number of guests');
 			}
-			echo json_encode(array('e4j.error' => 'The Query for fetching the rooms returned an empty result'));
+			echo json_encode(array('e4j.error' => 'No valid rooms were found for the requested number of guests'));
 			exit;
 		}
 
@@ -213,7 +235,7 @@ class TACVBO
 			$args['end_ts'] += $check_in_out[1];
 		}
 
-		$room_ids = array();
+		$room_ids = [];
 		for ($i = 0; $i < count($avail_rooms); $i++) {
 			$room_ids[$i] = $avail_rooms[$i]['id'];
 		}
@@ -222,9 +244,9 @@ class TACVBO
 		$glob_restrictions = VikBooking::globalRestrictions($all_restrictions);
 
 		// validate restrictions error message
-		$x_restr = count($glob_restrictions) ? VikBooking::validateRoomRestriction($glob_restrictions, getdate($args['start_ts']), getdate($args['end_ts']), $args['nights']) : '';
+		$x_restr = $glob_restrictions ? VikBooking::validateRoomRestriction($glob_restrictions, getdate($args['start_ts']), getdate($args['end_ts']), $args['nights']) : '';
 
-		if (!self::$ignoreRestrictions && strlen($x_restr) > 0) {
+		if (!self::$ignoreRestrictions && strlen($x_restr)) {
 			// set error code
 			self::$errorCode = 4;
 
@@ -260,11 +282,11 @@ class TACVBO
 		$hoursdiff = VikBooking::countHoursToArrival($args['start_ts']);
 
 		// get rates
-		$room_ids = array();
+		$room_ids = [];
 		foreach ($avail_rooms as $k => $room) {
 			$room_ids[$room['id']] = $room;
 		}
-		$rates = array();
+		$rates = [];
 		$q = "SELECT `p`.*, `r`.`id` AS `r_reference_id`, `r`.`name` AS `r_short_desc`, `r`.`img`, `r`.`units`, `r`.`moreimgs`, `r`.`imgcaptions`, `prices`.`id` AS `price_reference_id`, `prices`.`name` AS `pricename`, `prices`.`breakfast_included`, `prices`.`free_cancellation`, `prices`.`canc_deadline`, `prices`.`minlos`, `prices`.`minhadv` FROM `#__vikbooking_dispcost` AS `p`, `#__vikbooking_rooms` AS `r`, `#__vikbooking_prices` AS `prices` WHERE `r`.`id`=`p`.`idroom` AND `p`.`idprice`=`prices`.`id` AND `p`.`days`=".$args['nights']." AND `r`.`id` IN (".implode(',', array_keys($room_ids)).") ORDER BY `p`.`cost` ASC;";
 		$dbo->setQuery($q);
 		$rates = $dbo->loadAssocList();
@@ -280,7 +302,7 @@ class TACVBO
 		}
 		$vbo_tn->translateContents($rates, '#__vikbooking_rooms', array('id' => 'r_reference_id', 'r_short_desc' => 'name'));
 		$vbo_tn->translateContents($rates, '#__vikbooking_prices', array('id' => 'price_reference_id', 'pricename' => 'name'));
-		$arr_rates = array();
+		$arr_rates = [];
 		/**
 		 * If all results are excluded because of restrictions at rate plan level, we use this flag
 		 * to know that the rate plans have a Min LOS or a Min Hours in Advance (Advance Booking Offset).
@@ -302,7 +324,7 @@ class TACVBO
 				unset($rate['minhadv']);
 			}
 			if (!isset($arr_rates[$rate['idroom']])) {
-				$arr_rates[$rate['idroom']] = array();
+				$arr_rates[$rate['idroom']] = [];
 			}
 			$arr_rates[$rate['idroom']][] = $rate;
 		}
@@ -319,7 +341,7 @@ class TACVBO
 		foreach ($arr_rates as $k => $datarate) {
 			$room = $room_ids[$k];
 			$consider_units = $room['units'] - $minus_units;
-			if (!VikBooking::roomBookable($room['id'], $consider_units, $args['start_ts'], $args['end_ts']) || $consider_units <= 0) {
+			if (!self::$ignoreAvailability && (!VikBooking::roomBookable($room['id'], $consider_units, $args['start_ts'], $args['end_ts']) || $consider_units <= 0)) {
 				// unset room from results
 				unset($arr_rates[$k]);
 				// push room as fully booked
@@ -327,9 +349,9 @@ class TACVBO
 				// turn flag on
 				$err_rtype_booked = true;
 			} else {
-				if (!self::$ignoreRestrictions && count($all_restrictions)) {
+				if (!self::$ignoreRestrictions && $all_restrictions) {
 					$room_restr = VikBooking::roomRestrictions($room['id'], $all_restrictions);
-					if (count($room_restr)) {
+					if ($room_restr) {
 						if (strlen(VikBooking::validateRoomRestriction($room_restr, getdate($args['start_ts']), getdate($args['end_ts']), $args['nights'])) > 0) {
 							// unset room from results
 							unset($arr_rates[$k]);
@@ -349,7 +371,7 @@ class TACVBO
 			$err_mess = JText::translate('VBNOROOMSINDATE');
 			$err_mess = $err_mess == 'VBNOROOMSINDATE' ? JText::translate('VBO_AV_ECODE_7') : $err_mess;
 			$res = array('e4j.error' => $err_mess);
-			if ($only_rates && count($fullybooked)) {
+			if ($only_rates && $fullybooked) {
 				$res['fullybooked'] = $fullybooked;
 			}
 
@@ -374,7 +396,7 @@ class TACVBO
 		}
 		if ($multi_rates > 1) {
 			for ($r = 1; $r < $multi_rates; $r++) {
-				$deeper_rates = array();
+				$deeper_rates = [];
 				foreach ($arr_rates as $idr => $tars) {
 					foreach ($tars as $tk => $tar) {
 						if ($tk == $r) {
@@ -383,7 +405,7 @@ class TACVBO
 						}
 					}
 				}
-				if (!count($deeper_rates) > 0) {
+				if (!$deeper_rates) {
 					continue;
 				}
 				$deeper_rates = VikBooking::applySeasonalPrices($deeper_rates, $args['start_ts'], $args['end_ts']);
@@ -396,14 +418,14 @@ class TACVBO
 		}
 		
 		// children ages charge
-		$children_sums = array();
+		$children_sums = [];
 		
 		// sum charges/discounts per occupancy for each room party
 		foreach ($arrpeople as $roomnumb => $party) {
 			// charges/discounts per adults occupancy
 			foreach ($arr_rates as $r => $rates) {
 				$children_charges = VikBooking::getChildrenCharges($r, $party['children'], $party['children_age'], $args['nights']);
-				if (count($children_charges) > 0) {
+				if ($children_charges) {
 					$children_sums[$r] += $children_charges['total'];
 				}
 				$diffusageprice = VikBooking::loadAdultsDiff($r, $party['adults']);
@@ -420,7 +442,7 @@ class TACVBO
 				if (is_array($diffusageprice)) {
 					foreach ($rates as $kpr => $vpr) {
 						if ($roomnumb == 1) {
-							$arr_rates[$r][$kpr]['costbeforeoccupancy'] = $arr_rates[$r][$kpr]['cost'];
+							$arr_rates[$r][$kpr]['costbeforeoccupancy'] = (float) $arr_rates[$r][$kpr]['cost'];
 						}
 						// Occupancy Override
 						if (array_key_exists('occupancy_ovr', $vpr) && array_key_exists($party['adults'], $vpr['occupancy_ovr']) && strlen($vpr['occupancy_ovr'][$party['adults']]['value'])) {
@@ -457,7 +479,7 @@ class TACVBO
 					}
 				} elseif ($roomnumb == 1) {
 					foreach ($rates as $kpr => $vpr) {
-						$arr_rates[$r][$kpr]['costbeforeoccupancy'] = $arr_rates[$r][$kpr]['cost'];
+						$arr_rates[$r][$kpr]['costbeforeoccupancy'] = (float) $arr_rates[$r][$kpr]['cost'];
 					}
 				}
 			}
@@ -473,7 +495,7 @@ class TACVBO
 		}
 		
 		// children ages charge
-		if (count($children_sums) > 0) {
+		if ($children_sums) {
 			foreach ($arr_rates as $r => $rates) {
 				if (array_key_exists($r, $children_sums)) {
 					foreach ($rates as $kpr => $vpr) {
@@ -488,7 +510,7 @@ class TACVBO
 
 		// compose taxes information
 		$ivainclusa = VikBooking::ivaInclusa();
-		$rates_ids = array();
+		$rates_ids = [];
 		foreach ($arr_rates as $r => $rate) {
 			foreach ($rate as $ids) {
 				if (!in_array($ids['idprice'], $rates_ids)) {
@@ -496,7 +518,7 @@ class TACVBO
 				}
 			}
 		}
-		$tax_rates = array();
+		$tax_rates = [];
 		$q = "SELECT `p`.`id`,`t`.`aliq`,`t`.`taxcap` FROM `#__vikbooking_prices` AS `p` LEFT JOIN `#__vikbooking_iva` `t` ON `p`.`idiva`=`t`.`id` WHERE `p`.`id` IN (".implode(',', $rates_ids).");";
 		$dbo->setQuery($q);
 		$alltaxrates = $dbo->loadAssocList();
@@ -512,7 +534,7 @@ class TACVBO
 				}
 			}
 		}
-		if (count($tax_rates) > 0) {
+		if ($tax_rates) {
 			foreach ($arr_rates as $r => $rates) {
 				foreach ($rates as $k => $rate) {
 					if (array_key_exists($rate['idprice'], $tax_rates)) {
@@ -582,7 +604,7 @@ class TACVBO
 			return $arr_rates;
 		}
 
-		if ($only_rates && count($fullybooked)) {
+		if ($only_rates && $fullybooked) {
 			$arr_rates['fullybooked'] = $fullybooked;
 		}
 

@@ -484,7 +484,7 @@ if (empty($rows)) {
 												<?php echo JText::translate('VBMAILROOMNUM').$numroom; ?>
 											</span>
 											<span class="vbo-tracking-info-val">
-												<?php echo $guests->adults." ".($guests->adults > 1 ? JText::translate('VBMAILADULTS') : JText::translate('VBMAILADULT')).($guests->children > 0 ? ", ".$guests->children." ".($guests->children > 1 ? JText::translate('VBMAILCHILDREN') : JText::translate('VBMAILCHILD')) : "");; ?>
+												<?php echo $guests->adults." ".($guests->adults > 1 ? JText::translate('VBMAILADULTS') : JText::translate('VBMAILADULT')).($guests->children > 0 ? ", ".$guests->children." ".($guests->children > 1 ? JText::translate('VBMAILCHILDREN') : JText::translate('VBMAILCHILD')) : ""); ?>
 											</span>
 										</div>
 										<?php

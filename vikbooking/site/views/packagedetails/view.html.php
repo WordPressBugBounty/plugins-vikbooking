@@ -19,7 +19,7 @@ class VikbookingViewPackagedetails extends JViewVikBooking {
 		$vbo_tn = VikBooking::getTranslator();
 		$pkgid = VikRequest::getInt('pkgid', '', 'request');
 		$pitemid = VikRequest::getInt('Itemid', '', 'request');
-		$q = "SELECT SQL_CALC_FOUND_ROWS * FROM `#__vikbooking_packages` WHERE `id`='".(int)$pkgid."' AND `dto`>=".time().";";
+		$q = "SELECT * FROM `#__vikbooking_packages` WHERE `id`='".(int)$pkgid."' AND `dto`>=".time().";";
 		$dbo->setQuery($q);
 		$dbo->execute();
 		if($dbo->getNumRows() == 1) {

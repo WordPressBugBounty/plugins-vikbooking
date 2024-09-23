@@ -669,6 +669,18 @@ class JDatabase
 	}
 
 	/**
+	 * Returns the error faced (if any) during the last query execution.
+	 * 
+	 * @return  string  The error message.
+	 * 
+	 * @since   10.1.58
+	 */
+	public function getLastError()
+	{
+		return $this->db->last_error;
+	}
+
+	/**
 	 * Returns a PHP date() function compliant date format for the database driver.
 	 *
 	 * @return  string  The format string.

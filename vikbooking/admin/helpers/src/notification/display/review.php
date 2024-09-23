@@ -70,8 +70,18 @@ final class VBONotificationDisplayReview extends JObject implements VBONotificat
 		$notif_data->title 	 = $notif_title;
 		$notif_data->message = $this->get('score', '') . ' ' . $this->get('content', '');
 		$notif_data->icon 	 = $notif_icon;
-		$notif_data->onclick = 'VBOCore.handleGoto';
+		$notif_data->onclick = 'VBOCore.handleDisplayWidgetNotification';
 		$notif_data->gotourl = VBOFactory::getPlatform()->getUri()->admin("index.php?option=com_vikbooking&task=editorder&cid[]={$booking_id}", false);
+
+		// set additional properties to the (Web, not Push) notification payload
+		$notif_data->widget_id = 'guest_reviews';
+		// data options for a Web notification should NOT set a "type" or this will be overridden
+		$notif_data->_options  = [
+			'_web' 	  => 1,
+			'title'   => $notif_data->title,
+			'message' => $notif_data->message,
+			'bid' 	  => $booking_id,
+		];
 
 		return $notif_data;
 	}

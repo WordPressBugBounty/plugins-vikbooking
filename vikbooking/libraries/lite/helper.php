@@ -78,7 +78,7 @@ class VikBookingLiteHelper
 
 	/**
 	 * Intercepts the request to return a custom error message when the current
-	 * task is equals to "pricing.setnewrates".
+	 * task is equal to "pricing.setnewrates".
 	 * 
 	 * @return  void
 	 */

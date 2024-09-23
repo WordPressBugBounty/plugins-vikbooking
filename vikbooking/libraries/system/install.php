@@ -427,6 +427,7 @@ class VikBookingInstaller
 			}
 
 			// make sure no time limits will impact the process to restore the necessary files
+			ignore_user_abort(true);
 			set_time_limit(0);
 
 			// enter maintenance mode for the current version

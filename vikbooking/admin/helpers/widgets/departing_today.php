@@ -223,6 +223,11 @@ class VikBookingAdminWidgetDepartingToday extends VikBookingAdminWidget
 						} catch(err) {
 							console.error('could not parse JSON response', err, response);
 						}
+
+						// in case of search keywords, trigger the keyup event after loading a new arrival type
+						setTimeout(() => {
+							jQuery(".checkout-search").trigger('keyup');
+						}, 200);
 					},
 					function(error) {
 						console.error(error);

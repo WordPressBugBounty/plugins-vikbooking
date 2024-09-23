@@ -436,9 +436,9 @@ class VikBookingCustomersPin
 		// check what field to look for
 		$clause = [];
 		if (strlen($country) == 2) {
-			array_push($clause, "`country_2_code`=" . $this->dbo->quote($country));
+			array_push($clause, "`country_2_code`=" . $this->dbo->q($country));
 		} else {
-			array_push($clause, "`country_name` LIKE " . $this->dbo->quote("%{$country}%"));
+			array_push($clause, "`country_name` LIKE " . $this->dbo->q("%{$country}%"));
 		}
 
 		// query the db
@@ -464,12 +464,8 @@ class VikBookingCustomersPin
 			return false;
 		}
 
-		/**
-		 * We convert any 2-char country code into a 3-char country code
-		 * 
-		 * @since 	1.13.5
-		 */
-		if (!empty($country) && strlen($country) == 2) {
+		// convert any 2-char country code or country name into a 3-char country code
+		if (!empty($country) && (strlen($country) == 2 || strlen($country) > 3)) {
 			$country = $this->get3CharCountry($country);
 		}
 

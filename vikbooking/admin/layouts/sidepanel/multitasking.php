@@ -26,6 +26,13 @@ $vbo_page = isset($vbo_page) ? htmlspecialchars($vbo_page, ENT_QUOTES) : '';
 $vbo_page_uri = htmlspecialchars((string) JUri::getInstance(), ENT_QUOTES);
 $root_uri 	  = htmlspecialchars(JUri::root(), ENT_QUOTES);
 
+/**
+ * We allow to sort the admin widgets.
+ * 
+ * @since 	1.16.10 (J) - 1.6.10 (WP)
+ */
+JHtml::fetch('script', VBO_SITE_URI.'resources/jquery-ui.sortable.min.js');
+
 // get admin widgets helper
 $widgets_helper = VikBooking::getAdminWidgetsInstance();
 
@@ -166,6 +173,17 @@ JText::script('VBO_APPEARANCE_PREF_DARK');
 		?>
 		</div>
 
+		<div class="vbo-sidepanel-shortcut" style="<?php echo $active_widgets ? 'display: none;' : ''; ?>">
+				<div class="shortcut-keys">
+				<span class="mod"></span>
+				<span class="key">⏎</span>
+			</div>
+			<div class="shortcut-desc">
+				<?php echo JText::translate('VBO_KEYBOARD_SHORTCUT'); ?>
+			</div>
+			<div class="shortcut-subdesc"></div>
+		</div>
+
 		<div class="vbo-sidepanel-edit-widgets">
 			<div class="vbo-sidepanel-edit-widgets-wrap">
 				<button class="btn btn-small vbo-sidepanel-edit-widgets-trig" style="<?php echo !count($active_widgets) ? 'display: none;' : ''; ?>"><?php echo JText::translate('VBO_WIDGETS_CUSTWIDGETS'); ?></button>
@@ -259,6 +277,7 @@ JText::script('VBO_APPEARANCE_PREF_DARK');
 
 			let vbo_css_base_uri = '<?php echo VBO_ADMIN_URI . (VBOPlatformDetection::isWordPress() ? 'resources/' : '') . 'vbo-appearance-%s.css'; ?>';
 			let vbo_css_base_id  = 'vbo-css-appearance-';
+			let vcm_css_base_id  = 'vcm-css-appearance-';
 			let vbo_css_modes 	 = {
 				auto: vbo_css_base_uri.replace('%s', 'auto'),
 				dark: vbo_css_base_uri.replace('%s', 'dark'),
@@ -304,6 +323,13 @@ JText::script('VBO_APPEARANCE_PREF_DARK');
 						// WP framework may add "-css" as suffix to the given ID
 						jQuery('link#' + vbo_css_base_id + app_mode + '-css').remove();
 					}
+					// check if the VCM related CSS file should be unset too
+					if (jQuery('link#' + vcm_css_base_id + app_mode).length) {
+						jQuery('link#' + vcm_css_base_id + app_mode).remove();
+					} else if (jQuery('link#' + vcm_css_base_id + app_mode + '-css').length) {
+						// WP framework may add "-css" as suffix to the given ID
+						jQuery('link#' + vcm_css_base_id + app_mode + '-css').remove();
+					}
 				}
 			}
 
@@ -334,5 +360,9 @@ JText::script('VBO_APPEARANCE_PREF_DARK');
 			}
 		});
 
+		// dinamycally change the shortcut modifier depending on the OS
+		const isMacOs = navigator.platform.toUpperCase().indexOf('MAC') === 0;
+		jQuery('.vbo-sidepanel-shortcut .shortcut-keys .mod').text(isMacOs ? '⌘' : '⌃');
+		jQuery('.vbo-sidepanel-shortcut .shortcut-subdesc').text(isMacOs ? '(CMD + ENTER)' : '(CTRL + ENTER)');
 	});
 </script>

@@ -30,6 +30,10 @@ if (empty($rows)) {
 	// load wizard template
 	echo $this->loadTemplate('wizard');
 } else {
+	$rplan_assoc = [];
+	foreach ($rows as $row) {
+		$rplan_assoc[$row['id']] = $row['name'];
+	}
 	?>
 <form action="index.php?option=com_vikbooking" method="post" name="adminForm" id="adminForm" class="vbo-list-form">
 <div class="table-responsive">
@@ -40,7 +44,7 @@ if (empty($rows)) {
 				<input type="checkbox" onclick="Joomla.checkAll(this)" value="" name="checkall-toggle">
 			</th>
 			<th class="title left" width="200"><?php echo JText::translate( 'VBPVIEWPRICESONE' ); ?></th>
-			<th class="title left" width="100"><?php echo JText::translate( 'VBPVIEWPRICESTWO' ); ?></th>
+			<th class="title center" width="100"><?php echo JText::translate( 'VBO_MODIFICATION_MODE' ); ?></th>
 			<th class="title center" width="100"><?php echo JText::translate( 'VBPVIEWPRICESTHREE' ); ?></th>
 			<th class="title left" width="150"><?php echo JText::translate( 'VBOPRICETYPESRESTR' ); ?></th>
 			<th class="title center" width="100"><?php echo JText::translate( 'VBNEWPRICEBREAKFAST' ); ?></th>
@@ -64,7 +68,25 @@ if (empty($rows)) {
 		<tr class="row<?php echo $k; ?>">
 			<td><input type="checkbox" id="cb<?php echo $i;?>" name="cid[]" value="<?php echo $row['id']; ?>" onclick="Joomla.isChecked(this.checked);"></td>
 			<td class="vbo-highlighted-td"><a href="index.php?option=com_vikbooking&amp;task=editprice&cid[]=<?php echo $row['id']; ?>"><?php echo $row['name']; ?></a></td>
-			<td><?php echo $row['attr']; ?></td>
+			<td class="center"><?php
+			if ($row['derived_id'] && $row['derived_data']) {
+				$row['derived_data'] = json_decode($row['derived_data'], true);
+				$row['derived_data'] = is_array($row['derived_data']) ? $row['derived_data'] : [];
+				// build derived info string
+				$derived_info_str = ($rplan_assoc[$row['derived_id']] ?? '') . ' ';
+				$derived_info_str .= ($row['derived_data']['type'] ?? 'percent') == 'absolute' ? VikBooking::getCurrencySymb() . ' ' : '';
+				$derived_info_str .= ($row['derived_data']['mode'] ?? 'discount') == 'discount' ? '-' : '+';
+				$derived_info_str .= $row['derived_data']['value'] ?? 0;
+				$derived_info_str .= ($row['derived_data']['type'] ?? 'percent') == 'percent' ? ' %' : '';
+				?>
+				<span class="vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $this->escape($derived_info_str); ?>"><?php VikBookingIcons::e('link'); ?> <?php echo JText::translate('VBO_IS_DERIVED_RATE'); ?></span>
+				<?php
+			} else {
+				?>
+				<span><?php VikBookingIcons::e('check'); ?> <?php echo JText::translate('VBO_PARENT_RATE'); ?></span>
+				<?php
+			}
+			?></td>
 			<td class="center"><?php echo !empty($aliq) ? $aliq.'%' : '----'; ?></td>
 			<td><?php echo implode(', ', $restr); ?></td>
 			<td class="center"><?php echo (intval($row['breakfast_included'])==1 ? "<i class=\"".VikBookingIcons::i('check', 'vbo-icn-img')."\" style=\"color: #099909;\"></i>" : "<i class=\"".VikBookingIcons::i('times-circle', 'vbo-icn-img')."\" style=\"color: #ff0000;\"></i>"); ?></td>

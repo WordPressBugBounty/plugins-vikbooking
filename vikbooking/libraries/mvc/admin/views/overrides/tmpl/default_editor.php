@@ -155,6 +155,7 @@ JText::script('VBO_WANT_PROCEED');
 						client: '<?php echo addslashes($this->filters['client']); ?>',
 						selectedfile: '<?php echo addslashes($this->filters['file']); ?>',
 						overridefile: '<?php echo base64_encode($this->filters['override']); ?>',
+						status: isPublished ? 1 : 0,
 					};
 
 					// save code

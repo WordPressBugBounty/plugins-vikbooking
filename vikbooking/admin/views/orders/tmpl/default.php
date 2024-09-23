@@ -608,7 +608,7 @@ $filters_set = false;
 				echo $custdata;
 			}
 			?>
-				<span class="vbo-orders-review-link" style="display: none;" title="<?php echo addslashes(JText::translate('VBOSEEGUESTREVIEW')); ?>" data-bid="<?php echo $row['id']; ?>"></span>
+				<span class="vbo-orders-review-link" title="<?php echo $this->escape(JText::translate('VBOSEEGUESTREVIEW')); ?>" data-bid="<?php echo $row['id']; ?>" style="display: none;"></span>
 			</td>
 			<td class="center">
 				<?php
@@ -770,7 +770,15 @@ $filters_set = false;
 				<div class="vbo-order-admin-notes-cnt" data-bid="<?php echo $row['id']; ?>" style="display: none;"><?php echo nl2br($row['adminnotes']); ?></div>
 					<?php
 				}
-				$invoice_path = implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'helpers', 'invoices', 'generated', "{$row['id']}_{$row['sid']}.pdf"]);
+
+				// build the proper invoice SID for bc
+				$inv_sid = $row['sid'] ?: $row['idorderota'] ?: '';
+				if (empty($row['sid']) && is_file(implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'helpers', 'invoices', 'generated', "{$row['id']}_{$row['sid']}.pdf"]))) {
+					// use the old file name signature for OTA bookings
+					$inv_sid = $row['sid'];
+				}
+				$invoice_path = implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'helpers', 'invoices', 'generated', "{$row['id']}_{$inv_sid}.pdf"]);
+
 				echo (is_file($invoice_path) ? '<a class="hasTooltip vbo-admin-invoiceicon" href="'.VBO_SITE_URI.'helpers/invoices/generated/'.$row['id'].'_'.$row['sid'].'.pdf" target="_blank" title="' . htmlspecialchars(JText::translate('VBOINVDOWNLOAD')) . '"><i class="' . VikBookingIcons::i('invoice') . '"></i></a>' : '');
 				?>
 				<span class="vbo-bookings-guestmessages-bubble-cont vbo-admin-tipsicon" style="display: none;" data-bid="<?php echo $row['id']; ?>">
@@ -819,8 +827,6 @@ $filters_set = false;
 <?php echo JHtml::fetch('form.token'); ?>
 <?php echo $navbut; ?>
 </form>
-
-<a style="display: none;" id="vcm-review-details-base" href="index.php?option=com_vikchannelmanager&task=reviews&revid="></a>
 
 <script type="text/javascript">
 if (jQuery.isFunction(jQuery.fn.tooltip)) {
@@ -1058,13 +1064,27 @@ jQuery(function() {
 		},
 		(res) => {
 			try {
-				var obj = JSON.parse(res);
-				var base_link = jQuery('#vcm-review-details-base').attr('href');
-				for (var bid in obj) {
+				// loop through all bookings with a review
+				var obj = typeof res === 'object' ? res : JSON.parse(res);
+				for (let bid in obj) {
 					if (!obj.hasOwnProperty(bid)) {
 						continue;
 					}
-					jQuery('.vbo-orders-review-link[data-bid="' + bid + '"]').html('<a href="' + base_link + obj[bid] + '" target="_blank"><?php VikBookingIcons::e('star'); ?></a>').fadeIn();
+
+					// the review ID
+					let review_id = obj[bid];
+
+					// click-able element
+					var rev_elem = jQuery('<a></a>').addClass('vbo-staropen-greview').html('<?php VikBookingIcons::e('star'); ?>');
+					rev_elem.on('click', (e) => {
+						e.stopPropagation();
+						VBOCore.handleDisplayWidgetNotification({widget_id: 'guest_reviews'}, {review_id: review_id});
+					});
+
+					// review trigger element
+					var trigger = jQuery('.vbo-orders-review-link[data-bid="' + bid + '"]');
+					trigger.append(rev_elem);
+					trigger.fadeIn();
 				}
 			} catch(err) {
 				console.error(err);

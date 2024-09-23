@@ -96,6 +96,8 @@ class VboBookingHistory
 		'PO',
 		// Pre-checkin updated via front-end
 		'PC',
+		// Guest review received
+		'GR',
 	];
 
 	/**
@@ -443,7 +445,7 @@ class VboBookingHistory
 
 		/**
 		 * Store the extra data for this history log. Useful to store
-		 * information about the amount paid and its invoicing status.
+		 * information about the amount paid, its invoicing status or any custom data.
 		 * 
 		 * @since 	1.12 (J) - 1.1.7 (WP)
 		 */
@@ -993,12 +995,38 @@ class VboBookingHistory
 			$this->typesMap = $this->getTypesMap();
 		}
 
+		// notification payload extra options
+		$notif_payload_opts = [];
+
 		// determine the notification sender
 		$sender  = 'website';
 		$channel = null;
 		if (!empty($booking_info['channel']) && !empty($booking_info['idorderota'])) {
+			// set proper notification group
 			$sender  = 'otas';
 			$channel = $booking_info['channel'];
+
+			/**
+			 * Set proper notification group and payload in case of a new OTA guest review.
+			 * 
+			 * @since 	1.16.10 (J) - 1.6.10 (WP)
+			 */
+			if (!strcasecmp($history_record->type, 'GR')) {
+				$sender = 'guests';
+				$ev_edata = (array) $this->data;
+				if (($ev_edata['review_id'] ?? null) || ($ev_edata['ota_review_id'] ?? null)) {
+					// build CTA payload for the notification
+					$notif_payload_opts = [
+						'summary'        => JText::sprintf('VBO_NEW_GUEST_REVIEW_SUMM', ($ev_edata['guest_name'] ?? ''), ($ev_edata['score'] ?? '?') . '/10'),
+						'label'          => JText::translate('VBO_NEW_GUEST_REVIEW'),
+						'widget'         => 'guest_reviews',
+						'widget_options' => [
+							'review_id' => $ev_edata['review_id'] ?? 0,
+							'ota_review_id' => $ev_edata['ota_review_id'] ?? '',
+						],
+					];
+				}
+			}
 		}
 
 		// build the notification summary
@@ -1011,9 +1039,9 @@ class VboBookingHistory
 
 		// store the notification
 		try {
-			$result = (new VBONotificationCenter)
+			$result = VBOFactory::getNotificationCenter()
 				->store([
-					[
+					array_merge([
 						'sender'     => $sender,
 						'type'       => $history_record->type,
 						'title'      => $this->validType($history_record->type, true),
@@ -1021,7 +1049,7 @@ class VboBookingHistory
 						'idorder'    => $history_record->idorder,
 						'idorderota' => $booking_info['idorderota'] ?: null,
 						'channel'    => $channel,
-					],
+					], $notif_payload_opts),
 				]);
 		} catch (Exception $e) {
 			return false;

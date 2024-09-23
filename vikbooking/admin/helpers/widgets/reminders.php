@@ -137,6 +137,7 @@ class VikBookingAdminWidgetReminders extends VikBookingAdminWidget
 		$completed = VikRequest::getInt('completed', 0, 'request');
 		$expired = VikRequest::getInt('expired', 0, 'request');
 		$bid = VikRequest::getInt('bid', 0, 'request');
+		$reminder_id = VikRequest::getInt('reminder_id', 0, 'request');
 		$wrapper = VikRequest::getString('wrapper', '', 'request');
 
 		// load reminders starting from today at 00:00:00
@@ -160,6 +161,28 @@ class VikBookingAdminWidgetReminders extends VikBookingAdminWidget
 
 		// compose bookings base URI
 		$bookings_base_uri = VBOFactory::getPlatform()->getUri()->admin('index.php?option=com_vikbooking&task=editorder&cid[]=%d', $xhtml = false);
+
+		// check if a specific reminder ID was requested
+		if ($reminder_id) {
+			// check if the requested ID was found among the most recent ones
+			$reminder_found = false;
+			foreach ($reminders as $reminder) {
+				if ($reminder->id == $reminder_id) {
+					$reminder_found = true;
+					break;
+				}
+			}
+
+			if (!$reminder_found) {
+				// fetch the record by ID
+				$reminder_record = $helper->getReminder($reminder_id);
+
+				if ($reminder_record) {
+					// prepend element to the list
+					array_unshift($reminders, $reminder_record);
+				}
+			}
+		}
 
 		// start output buffering
 		ob_start();
@@ -300,6 +323,16 @@ class VikBookingAdminWidgetReminders extends VikBookingAdminWidget
 			</div>
 		</div>
 		<?php
+
+		if ($reminder_id) {
+			?>
+		<script type="text/javascript">
+			setTimeout(() => {
+				vboWidgetRemindersEdit('<?php echo $wrapper; ?>', '<?php echo $reminder_id; ?>');
+			}, 200);
+		</script>
+			<?php
+		}
 
 		// get the HTML buffer
 		$html_content = ob_get_contents();
@@ -504,6 +537,7 @@ class VikBookingAdminWidgetReminders extends VikBookingAdminWidget
 		$wrapper_id = 'vbo-widget-reminders-' . $wrapper_instance;
 
 		// default filters
+		$reminder_id   = 0;
 		$def_completed = 0;
 		$def_expired   = 0;
 		$def_duedate   = time();
@@ -526,9 +560,10 @@ class VikBookingAdminWidgetReminders extends VikBookingAdminWidget
 			$page_bid = !$page_bid ? $this->options()->fetchBookingId() : $page_bid;
 
 			// check for options
+			$reminder_id   = (int) $this->getOption('reminder_id', 0);
 			$auto_action   = $this->getOption('action', '');
-			$def_completed = (int)$this->getOption('completed', $def_completed);
-			$def_expired   = (int)$this->getOption('expired', $def_expired);
+			$def_completed = (int) $this->getOption('completed', $def_completed);
+			$def_expired   = (int) $this->getOption('expired', $def_expired);
 
 			// attempt to define values for this precise booking
 			$booking_info = $page_bid ? VikBooking::getBookingInfoFromID($page_bid) : [];
@@ -1017,7 +1052,7 @@ class VikBookingAdminWidgetReminders extends VikBookingAdminWidget
 			/**
 			 * Perform the request to load the reminders.
 			 */
-			function vboWidgetRemindersLoad(wrapper) {
+			function vboWidgetRemindersLoad(wrapper, reminder_id) {
 				var widget_instance = jQuery('#' + wrapper);
 				if (!widget_instance.length) {
 					return false;
@@ -1047,6 +1082,7 @@ class VikBookingAdminWidgetReminders extends VikBookingAdminWidget
 						completed: show_completed,
 						expired: show_expired,
 						bid: page_bid,
+						reminder_id: reminder_id,
 						wrapper: wrapper,
 						tmpl: "component"
 					},
@@ -1312,7 +1348,7 @@ class VikBookingAdminWidgetReminders extends VikBookingAdminWidget
 				});
 
 				// when document is ready, load reminders for this widget's instance
-				vboWidgetRemindersLoad('<?php echo $wrapper_id; ?>');
+				vboWidgetRemindersLoad('<?php echo $wrapper_id; ?>', <?php echo $reminder_id; ?>);
 
 				// subscribe to the multitask-panel-close event to emit the event for the reminders changed
 				document.addEventListener(VBOCore.multitask_close_event, function() {

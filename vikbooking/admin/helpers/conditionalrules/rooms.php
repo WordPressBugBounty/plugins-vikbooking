@@ -189,6 +189,7 @@ class VikBookingConditionalRuleRooms extends VikBookingConditionalRule
 		// check sub-units
 		$use_sub_units = (int)$this->getParam('use_sub_units', 0);
 		if ($use_sub_units) {
+			$sub_unit_matched = false;
 			// parse again the rooms booked
 			foreach ($rooms_booked as $rb) {
 				// grab the sub-unit index for this room id
@@ -197,11 +198,13 @@ class VikBookingConditionalRuleRooms extends VikBookingConditionalRule
 					// no sub-unit defined for this room ID
 					continue;
 				}
-				if ($rb['roomindex'] != $room_sub_unit_filt) {
-					// the index of the room booked is not the one in the params
-					return false;
+				if ($rb['roomindex'] == $room_sub_unit_filt) {
+					// the index of the room booked matched the one in the params
+					$sub_unit_matched = true;
 				}
 			}
+
+			return $one_found && $sub_unit_matched;
 		}
 
 		// return true if at least one room booked is in the parameters

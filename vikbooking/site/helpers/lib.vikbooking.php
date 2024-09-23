@@ -319,39 +319,40 @@ class VikBooking
 		$dbo = JFactory::getDbo();
 
 		$restrictions = [];
-		$limts = strtotime(date('Y').'-'.date('m').'-'.date('d'));
+		$limts = strtotime(date('Y-m-d'));
 
 		if (!$filters) {
-			$q = "SELECT * FROM `#__vikbooking_restrictions` WHERE `dto` = 0 OR `dto` >= ".$limts.";";
+			$q = "SELECT * FROM `#__vikbooking_restrictions` WHERE `dto` = 0 OR `dto` >= ".$limts." ORDER BY `id` ASC;";
 		} else {
-			if (count($rooms) == 0) {
-				$q = "SELECT * FROM `#__vikbooking_restrictions` WHERE `allrooms` = 1 AND (`dto` = 0 OR `dto` >= ".$limts.");";
+			if (!$rooms) {
+				$q = "SELECT * FROM `#__vikbooking_restrictions` WHERE `allrooms` = 1 AND (`dto` = 0 OR `dto` >= ".$limts.") ORDER BY `id` ASC;";
 			} else {
-				$clause = array();
+				$clause = [];
 				foreach ($rooms as $idr) {
-					if (empty($idr)) continue;
-					$clause[] = "`idrooms` LIKE '%-".intval($idr)."-%'";
+					if (empty($idr)) {
+						continue;
+					}
+					$clause[] = "`idrooms` LIKE '%-" . (int) $idr . "-%'";
 				}
-				if (count($clause) > 0) {
-					$q = "SELECT * FROM `#__vikbooking_restrictions` WHERE (`dto` = 0 OR `dto` >= ".$limts.") AND (`allrooms` = 1 OR (`allrooms` = 0 AND (".implode(" OR ", $clause).")));";
+				if ($clause) {
+					$q = "SELECT * FROM `#__vikbooking_restrictions` WHERE (`dto` = 0 OR `dto` >= " . $limts . ") AND (`allrooms` = 1 OR (`allrooms` = 0 AND (" . implode(" OR ", $clause) . "))) ORDER BY `id` ASC;";
 				} else {
-					$q = "SELECT * FROM `#__vikbooking_restrictions` WHERE `allrooms` = 1 AND (`dto` = 0 OR `dto` >= ".$limts.");";
+					$q = "SELECT * FROM `#__vikbooking_restrictions` WHERE `allrooms` = 1 AND (`dto` = 0 OR `dto` >= " . $limts . ") ORDER BY `id` ASC;";
 				}
 			}
 		}
+
 		$dbo->setQuery($q);
 		$allrestrictions = $dbo->loadAssocList();
 
-		if ($allrestrictions) {
-			foreach ($allrestrictions as $k => $res) {
-				if (!empty($res['month'])) {
-					$restrictions[$res['month']] = $res;
-				} else {
-					if (!isset($restrictions['range'])) {
-						$restrictions['range'] = array();
-					}
-					$restrictions['range'][$k] = $res;
+		foreach ($allrestrictions as $k => $res) {
+			if (!empty($res['month'])) {
+				$restrictions[$res['month']] = $res;
+			} else {
+				if (!isset($restrictions['range'])) {
+					$restrictions['range'] = array();
 				}
+				$restrictions['range'][$k] = $res;
 			}
 		}
 
@@ -602,9 +603,13 @@ class VikBooking
 		return $ret;
 	}
 	
-	public static function validateRoomRestriction($roomrestr, $restrcheckin, $restrcheckout, $daysdiff) {
+	public static function validateRoomRestriction($roomrestr, $restrcheckin, $restrcheckout, $daysdiff)
+	{
+		// default states
 		$restrictionerrmsg = '';
 		$restrictions_affcount = 0;
+
+		// check for month-level or range-level restrictions
 		if (array_key_exists($restrcheckin['mon'], $roomrestr)) {
 			//restriction found for this month, checking:
 			$restrictions_affcount++;
@@ -651,7 +656,9 @@ class VikBooking
 				$restrictionerrmsg = JText::sprintf('VBRESTRTIPMINLOSEXCEEDED', self::sayMonth($restrcheckin['mon']), $roomrestr[$restrcheckin['mon']]['minlos']);
 			}
 		} elseif (array_key_exists('range', $roomrestr)) {
+			// start valid flag
 			$restrictionsvalid = true;
+
 			/**
 			 * We use this map to know which restriction IDs are okay or not okay with the Min LOS.
 			 * The most recent restrictions will have a higher priority over the oldest ones.
@@ -662,6 +669,17 @@ class VikBooking
 				'ok'  => array(),
 				'nok' => array()
 			);
+
+			/**
+			 * Build a map of CTA/CTD priorities to be compared, to ensure they are regularly applied.
+			 * 
+			 * @since 	1.16.10 (J) - 1.6.10 (WP)
+			 */
+			$ctad_priority = [
+				'ok'  => [],
+				'nok' => [],
+			];
+
 			foreach ($roomrestr['range'] as $restr) {
 				/**
 				 * We should not always add 82799 seconds to the end date of the restriction
@@ -671,10 +689,14 @@ class VikBooking
 				 * @since 	1.13 (J) - 1.2.18 (WP)
 				 */
 				$end_operator = date('Y-m-d', $restr['dfrom']) != date('Y-m-d', $restr['dto']) ? 82799 : 0;
-				//
+
 				if ($restr['dfrom'] <= $restrcheckin[0] && ($restr['dto'] + $end_operator) >= $restrcheckin[0]) {
 					// restriction found for this date range based on arrival date, check if compliant
 					$restrictions_affcount++;
+
+					// set flag for CTA/CTD compliance
+					$cta_ctd_passed = true;
+
 					if (strlen((string)$restr['wday']) > 0) {
 						$rvalidwdays = array($restr['wday']);
 						if (strlen((string)$restr['wdaytwo']) > 0) {
@@ -702,22 +724,37 @@ class VikBooking
 						if (!empty($restr['ctad'])) {
 							$ctarestrictions = explode(',', $restr['ctad']);
 							if (in_array('-'.$restrcheckin['wday'].'-', $ctarestrictions)) {
+								$restrictionsvalid = false;
 								$restrictionerrmsg = JText::sprintf('VBRESTRERRWDAYCTARANGE', self::sayWeekDay($restrcheckin['wday']));
+								$cta_ctd_passed = false;
 							}
 						}
 						if (!empty($restr['ctdd'])) {
 							$ctdrestrictions = explode(',', $restr['ctdd']);
 							if (in_array('-'.$restrcheckout['wday'].'-', $ctdrestrictions) && $restrcheckout[0] <= ($restr['dto'] + $end_operator)) {
+								$restrictionsvalid = false;
 								$restrictionerrmsg = JText::sprintf('VBRESTRERRWDAYCTDRANGE', self::sayWeekDay($restrcheckout['wday']));
+								$cta_ctd_passed = false;
 							}
 						}
 					}
+
+					// check CTA/CTD compliance
+					if (!$cta_ctd_passed) {
+						array_push($ctad_priority['nok'], (int)$restr['id']);
+					} else {
+						array_push($ctad_priority['ok'], (int)$restr['id']);
+					}
+
+					// max LOS validation
 					if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] > $restr['minlos']) {
 						if ($daysdiff > $restr['maxlos']) {
 							$restrictionsvalid = false;
 							$restrictionerrmsg = JText::sprintf('VBRESTRTIPMAXLOSEXCEEDEDRANGE', $restr['maxlos']);
 						}
 					}
+
+					// min LOS validation
 					if ($daysdiff < $restr['minlos']) {
 						$restrictionsvalid = false;
 						$restrictionerrmsg = JText::sprintf('VBRESTRTIPMINLOSEXCEEDEDRANGE', $restr['minlos']);
@@ -739,21 +776,34 @@ class VikBooking
 					}
 				}
 			}
-			if (!$restrictionsvalid && count($minlos_priority['ok']) && count($minlos_priority['nok']) && max($minlos_priority['ok']) > max($minlos_priority['nok'])) {
-				// we unset the error message because a more recent restriction is allowing this MinLOS
-				$restrictionerrmsg = '';
+
+			if (!$restrictionsvalid && $minlos_priority['ok'] && $minlos_priority['nok'] && max($minlos_priority['ok']) > max($minlos_priority['nok'])) {
+				// a more recent restriction is allowing this MinLOS
+				// ensure there are no recent CTA/CTD rules not compliant
+				$cta_ctd_priority_ok = true;
+
+				if ($ctad_priority['ok'] && $ctad_priority['nok'] && max($ctad_priority['nok']) > max($ctad_priority['ok'])) {
+					// a more recent restriction is not compliant with the CTA/CTD rules
+					$cta_ctd_priority_ok = false;
+				}
+
+				if ($cta_ctd_priority_ok) {
+					// we unset the error message because more recent restriction(s) are allowing this stay dates
+					$restrictionerrmsg = '';
+				}
 			}
 		}
-		//April 2017 - Check global restriction of Min LOS for TAC functions in VBO and VCM
+
+		// check global restriction of Min LOS for TAC functions in VBO and VCM
 		if (empty($restrictionerrmsg) && count($roomrestr) && $restrictions_affcount <= 0) {
-			//Check global MinLOS (only in case there are no restrictions affecting these dates or no restrictions at all)
+			// check global MinLOS (only in case there are no restrictions affecting these dates or no restrictions at all)
 			$globminlos = self::getDefaultNightsCalendar();
 			if ($globminlos > 1 && $daysdiff < $globminlos) {
 				$restrictionerrmsg = JText::sprintf('VBRESTRERRMINLOSEXCEEDEDRANGE', $globminlos);
 			}
 		}
-		//
 
+		// return the restriction error message string, if anything wrong was found
 		return $restrictionerrmsg;
 	}
 	
@@ -3592,7 +3642,7 @@ class VikBooking
 			return false;
 		}
 
-		$room_info = self::getRoomInfo($idroom, ['id', 'name', 'units', 'img']);
+		$room_info = self::getRoomInfo($idroom, ['id', 'name', 'units', 'img'], $no_cache = true);
 		if (!$room_info) {
 			return false;
 		}
@@ -3631,7 +3681,7 @@ class VikBooking
 		$dbo->setQuery($q);
 		$busy = $dbo->loadAssocList();
 		if (!$busy) {
-			return ($units <= $room_info['units']);
+			return ($units <= ($room_info['units'] ?? 1));
 		}
 
 		$groupdays = self::getGroupDays($first, $second, $daysdiff);
@@ -3651,7 +3701,7 @@ class VikBooking
 			}
 		}
 
-		return ($units <= $room_info['units']);
+		return ($units <= ($room_info['units'] ?? 1));
 	}
 
 	public static function payTotal()
@@ -4013,11 +4063,22 @@ class VikBooking
 		return $coupon;
 	}
 
-	public static function getRoomInfo($idroom, $columns = [])
+	/**
+	 * Reads the details of a given room record ID.
+	 * 
+	 * @param 	int 	$idroom 	The room ID to fetch.
+	 * @param 	array 	$columns 	The optional room columns to fetch.
+	 * @param 	bool 	$no_cache 	Whether to ignore a previously cached record.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP) added argument $no_cache.
+	 */
+	public static function getRoomInfo($idroom, $columns = [], $no_cache = false)
 	{
 		static $room_infos = [];
 
-		if (isset($room_infos[$idroom])) {
+		if (isset($room_infos[$idroom]) && !$no_cache) {
 			return $room_infos[$idroom];
 		}
 
@@ -4035,7 +4096,11 @@ class VikBooking
 		$dbo->setQuery($q);
 		$room = $dbo->loadAssoc();
 
-		$room_infos[$idroom] = $room ? $room : [];
+		if ($no_cache) {
+			return $room ?: [];
+		}
+
+		$room_infos[$idroom] = $room ?: [];
 
 		return $room_infos[$idroom];
 	}
@@ -5270,6 +5335,13 @@ class VikBooking
 		$parsed = $tmpl;
 
 		/**
+		 * Trigger event to allow third-party plugins to manipulate the template string.
+		 * 
+		 * @since 	1.16.10 (J) - 1.6.10 (WP)
+		 */
+		VBOFactory::getPlatform()->getDispatcher()->trigger('onBeforeParseEmailTemplate', [$parsed, $order_info, $rooms]);
+
+		/**
 		 * Parse all conditional text rules.
 		 * 
 		 * @since 	1.14 (J) - 1.4.0 (WP)
@@ -5277,8 +5349,7 @@ class VikBooking
 		self::getConditionalRulesInstance()
 			->set(array('booking', 'rooms'), array($order_info, $rooms))
 			->parseTokens($parsed);
-		//
-		
+
 		// special tokens (tags) replacement
 		$parsed = str_replace("{logo}", $company_logo, $parsed);
 		$parsed = str_replace("{company_name}", $company_name, $parsed);
@@ -6530,6 +6601,102 @@ class VikBooking
 	}
 
 	/**
+	 * Fetches all season records affecting a range of date timestamps.
+	 * Useful to pre-cache season records in case of hundreds of thousands
+	 * of records, but it can use up several MBs of server's memory.
+	 * 
+	 * @param 	int 	$from 	unix timestamp for start date.
+	 * @param 	int 	$to 	unix timestamp for end date.
+	 * @param 	array 	$rooms 	optional list of involved room IDs.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public static function getDateSeasonRecords($from, $to, array $rooms = [])
+	{
+		$dbo = JFactory::getDbo();
+
+		$one = getdate($from);
+
+		// leap years
+		if (($one['year'] % 4) == 0 && ($one['year'] % 100 != 0 || $one['year'] % 400 == 0)) {
+			$isleap = true;
+		} else {
+			$isleap = false;
+		}
+
+		$baseone = mktime(0, 0, 0, 1, 1, $one['year']);
+		$tomidnightone = intval($one['hours']) * 3600;
+		$tomidnightone += intval($one['minutes']) * 60;
+		$sfrom = $from - $baseone - $tomidnightone;
+		$fromdayts = mktime(0, 0, 0, $one['mon'], $one['mday'], $one['year']);
+		$two = getdate($to);
+		$basetwo = mktime(0, 0, 0, 1, 1, $two['year']);
+		$tomidnighttwo = intval($two['hours']) * 3600;
+		$tomidnighttwo += intval($two['minutes']) * 60;
+		$sto = $to - $basetwo - $tomidnighttwo;
+
+		// leap years, check what dates to manipulate
+		if ($isleap) {
+			$leapts = mktime(0, 0, 0, 2, 29, $one['year']);
+			if ($one[0] > $leapts) {
+				/**
+				 * Timestamp must be greater than the leap-day of Feb 29th.
+				 * It used to be checked for >= $leapts.
+				 * 
+				 * @since 	July 3rd 2019
+				 */
+				$sfrom -= 86400;
+			}
+			if ($two[0] > $leapts && $one['year'] == $two['year']) {
+				// lower checkin date when in leap year but not for checkout
+				$sto -= 86400;
+			}
+		}
+
+		// check for DST changes to adjust the query values to fetch
+		if (date('I', $from) != date('I', mktime($one['hours'], $one['minutes'], $one['seconds'], $one['mon'], ($one['mday'] - 1), $one['year']))) {
+			if (date('Y-m-d', $to) == date('Y-m-d', mktime($one['hours'], $one['minutes'], $one['seconds'], $one['mon'], ($one['mday'] + 1), $one['year']))) {
+				// we are parsing the day when the DST changed (probably a Sunday)
+				if (!date('I', $from)) {
+					// DST was just turned off
+					$sfrom -= 3600;
+				}
+			}
+		}
+
+		$q = "SELECT * FROM `#__vikbooking_seasons` WHERE (" .
+		 	($sto > $sfrom ? "(`from` <= " . $sfrom . " AND `to` >= " . $sto . ") " : "") .
+		 	($sto > $sfrom ? "OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . ") " : "(`from` <= " . $sfrom . " AND `to` <= " . $sfrom . " AND `from` > `to`) ") .
+		 	($sto > $sfrom ? "OR (`from` <= " . $sto . " AND `to` >= " . $sto . ") " : "OR (`from` >= " . $sto . " AND `to` >= " . $sto . " AND `from` > `to`) ") .
+		 	($sto > $sfrom ? "OR (`from` >= " . $sfrom . " AND `from` <= " . $sto . " AND `to` >= " . $sfrom . " AND `to` <= " . $sto . ")" : "OR (`from` >= " . $sfrom . " AND `from`>" . $sto . " AND `to`<" . $sfrom . " AND `to` <= " . $sto . " AND `from` > `to`)") .
+		 	($sto > $sfrom ? " OR (`from` <= " . $sfrom . " AND `from` <= " . $sto . " AND `to`<" . $sfrom . " AND `to`<" . $sto . " AND `from` > `to`) OR (`from`>" . $sfrom . " AND `from`>" . $sto . " AND `to` >= " . $sfrom . " AND `to` >= " . $sto . " AND `from` > `to`)" : " OR (`from` <= " . $sfrom . " AND `to` >=" . $sfrom . " AND `from` >= " . $sto . " AND `to` > " . $sto . " AND `from` < `to`)") .
+		 	($sto > $sfrom ? " OR (`from` >= " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` < " . $sfrom . " AND `to` >=" . $sto . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `from` < `to`)") .
+		 	($sto > $sfrom ? " OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >=" . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` > " . $sfrom . " AND `to` > " . $sto . " AND `from` < `to`) OR (`from` < " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` < `to`)") . 
+		 	($sto < $sfrom ? " OR (`from` = 0 AND `to` >= " . $sto . " AND `to` >= " . $sfrom . ")" : '') .
+			") ORDER BY `#__vikbooking_seasons`.`promo` ASC;";
+
+		$dbo->setQuery($q);
+		$seasons = $dbo->loadAssocList();
+
+		if ($rooms) {
+			// filter records by affected room IDs
+			$seasons = array_filter($seasons, function($s) use ($rooms) {
+				$allrooms = !empty($s['idrooms']) ? explode(',', $s['idrooms']) : [];
+				foreach ($rooms as $idroom) {
+					if (in_array("-" . $idroom . "-", $allrooms)) {
+						return true;
+					}
+				}
+				return false;
+			});
+		}
+
+		return $seasons;
+	}
+
+	/**
 	 * Applies the seasonal rates over a list of room rate records.
 	 * 
 	 * @param 	array 	$arr 	list of room rate records.
@@ -7311,9 +7478,12 @@ class VikBooking
 
 		$cache_signature 	   = '';
 		$cache_signature_wdays = '';
-		if (self::setSeasonsCache() !== false && !$parsed_season && !$seasons_dates && !$seasons_wdays) {
+		if (self::setSeasonsCache() !== false && !$parsed_season && !$seasons_dates) {
 			// enable season records caching
-			$cache_signature 	   = "{$from}_{$to}";
+			$cache_signature = "{$from}_{$to}";
+		}
+		if (self::setSeasonsCache() !== false && !$parsed_season && !$seasons_wdays) {
+			// enable week-day season records caching
 			$cache_signature_wdays = "wdays";
 		}
 
@@ -7324,7 +7494,7 @@ class VikBooking
 		$one = getdate($from);
 
 		// leap years
-		if ($one['year'] % 4 == 0 && ($one['year'] % 100 != 0 || $one['year'] % 400 == 0)) {
+		if (($one['year'] % 4) == 0 && ($one['year'] % 100 != 0 || $one['year'] % 400 == 0)) {
 			$isleap = true;
 		} else {
 			$isleap = false;
@@ -8833,119 +9003,48 @@ class VikBooking
 		return $room_features_bookings;
 	}
 
-	public static function getSendEmailWhen() {
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='emailsendwhen';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$cval = $dbo->loadAssocList();
-			return intval($cval[0]['setting']) > 1 ? 2 : 1;
-		} else {
-			$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('emailsendwhen','1');";
-			$dbo->setQuery($q);
-			$dbo->execute();
-		}
-		return 1;
+	public static function getSendEmailWhen()
+	{
+		return VBOFactory::getConfig()->getInt('emailsendwhen', 1);
 	}
 
-	public static function getMinutesAutoRemove() {
-		$dbo = JFactory::getDbo();
-		$minar = 0;
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='minautoremove';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$minar = (int)$dbo->loadResult();
-		}
-		return $minar;
+	public static function getMinutesAutoRemove()
+	{
+		return VBOFactory::getConfig()->getInt('minautoremove', 0);
 	}
 
-	public static function getSMSAPIClass() {
-		$dbo = JFactory::getDbo();
-		$cfile = '';
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='smsapi';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$cval = $dbo->loadAssocList();
-			$cfile = $cval[0]['setting'];
-		}
-		return $cfile;
+	public static function getSMSAPIClass()
+	{
+		return VBOFactory::getConfig()->getString('smsapi', '');
 	}
 
-	public static function autoSendSMSEnabled() {
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='smsautosend';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$cval = $dbo->loadAssocList();
-			return intval($cval[0]['setting']) > 0 ? true : false;
-		}
-		return false;
+	public static function autoSendSMSEnabled()
+	{
+		return VBOFactory::getConfig()->getBool('smsautosend', false);
 	}
 
-	public static function getSendSMSTo() {
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='smssendto';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$cval = $dbo->loadAssocList();
-			if (!empty($cval[0]['setting'])) {
-				$sto = json_decode($cval[0]['setting'], true);
-				if (is_array($sto)) {
-					return $sto;
-				}
-			}
-		}
-		return array();
+	public static function getSendSMSTo()
+	{
+		return (array) VBOFactory::getConfig()->getArray('smssendto', []);
 	}
 
-	public static function getSendSMSWhen() {
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='smssendwhen';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$cval = $dbo->loadAssocList();
-			return intval($cval[0]['setting']) > 1 ? 2 : 1;
-		}
-		return 1;
+	public static function getSendSMSWhen()
+	{
+		return VBOFactory::getConfig()->getInt('smssendwhen', 1);
 	}
 
-	public static function getSMSAdminPhone() {
-		$dbo = JFactory::getDbo();
-		$pnum = '';
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='smsadminphone';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$cval = $dbo->loadAssocList();
-			$pnum = $cval[0]['setting'];
-		}
-		return $pnum;
+	public static function getSMSAdminPhone()
+	{
+		return VBOFactory::getConfig()->getString('smsadminphone', '');
 	}
 
-	public static function getSMSParams($as_array = true) {
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='smsparams';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$cval = $dbo->loadAssocList();
-			if (!empty($cval[0]['setting'])) {
-				if (!$as_array) {
-					return $cval[0]['setting'];
-				}
-				$sparams = json_decode($cval[0]['setting'], true);
-				if (is_array($sparams)) {
-					return $sparams;
-				}
-			}
+	public static function getSMSParams($as_array = true)
+	{
+		if (!$as_array) {
+			return VBOFactory::getConfig()->getString('smsparams', '');
 		}
-		return array();
+
+		return (array) VBOFactory::getConfig()->getArray('smsparams', []);
 	}
 
 	public static function getSMSTemplate($vbo_tn = null, $booking_status = 'confirmed', $type = 'admin') {
@@ -9018,6 +9117,13 @@ class VikBooking
 		$tpl = self::getSMSAdminTemplate($vbo_tn, $booking['status']);
 
 		/**
+		 * Trigger event to allow third-party plugins to manipulate the template string.
+		 * 
+		 * @since 	1.16.10 (J) - 1.6.10 (WP)
+		 */
+		VBOFactory::getPlatform()->getDispatcher()->trigger('onBeforeParseAdminSMSTemplate', [$tpl, $booking, $booking_rooms]);
+
+		/**
 		 * Parse all conditional text rules.
 		 * 
 		 * @since 	1.14 (J) - 1.4.0 (WP)
@@ -9025,7 +9131,6 @@ class VikBooking
 		self::getConditionalRulesInstance()
 			->set(array('booking', 'rooms'), array($booking, $booking_rooms))
 			->parseTokens($tpl);
-		//
 
 		$vbo_df = self::getDateFormat();
 		$df = $vbo_df == "%d/%m/%Y" ? 'd/m/Y' : ($vbo_df == "%m/%d/%Y" ? 'm/d/Y' : 'Y-m-d');
@@ -9087,6 +9192,13 @@ class VikBooking
 		$tpl = !empty($force_text) ? $force_text : self::getSMSCustomerTemplate($vbo_tn, $booking['status']);
 
 		/**
+		 * Trigger event to allow third-party plugins to manipulate the template string.
+		 * 
+		 * @since 	1.16.10 (J) - 1.6.10 (WP)
+		 */
+		VBOFactory::getPlatform()->getDispatcher()->trigger('onBeforeParseCustomerSMSTemplate', [$tpl, $booking, $booking_rooms]);
+
+		/**
 		 * Parse all conditional text rules.
 		 * 
 		 * @since 	1.14 (J) - 1.4.0 (WP)
@@ -9094,7 +9206,6 @@ class VikBooking
 		self::getConditionalRulesInstance()
 			->set(array('booking', 'rooms'), array($booking, $booking_rooms))
 			->parseTokens($tpl);
-		//
 
 		$vbo_df = self::getDateFormat();
 		$df = $vbo_df == "%d/%m/%Y" ? 'd/m/Y' : ($vbo_df == "%m/%d/%Y" ? 'm/d/Y' : 'Y-m-d');
@@ -10103,7 +10214,7 @@ class VikBooking
 		}
 
 		// the PDF file name
-		$pdffname = $booking['id'] . '_' . $booking['sid'] . '.pdf';
+		$pdffname = $booking['id'] . '_' . ($booking['sid'] ?: ($booking['idorderota'] ?? '') ?: '') . '.pdf';
 
 		/**
 		 * If an analogic invoice is not available, make sure to create the record
@@ -12506,11 +12617,14 @@ class VikBooking
 	/**
 	 * Returns an instance of the Rates Flow helper class of VCM, if available.
 	 * 
-	 * @return 	mixed 	VCMRatesFlow if VCM available and updated, or null.
+	 * @param 	bool 	$anew 	True to request a new object instance.
+	 * 
+	 * @return 	VCMRatesFlow|null
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP)
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)  added argument $anew.
 	 */
-	public static function getRatesFlowInstance()
+	public static function getRatesFlowInstance($anew = false)
 	{
 		$vcm_fpath = VCM_ADMIN_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'rates_flow.php';
 		if (!is_file($vcm_fpath)) {
@@ -12521,7 +12635,7 @@ class VikBooking
 		require_once $vcm_fpath;
 
 		// return the instance of the class
-		return VCMRatesFlow::getInstance();
+		return VCMRatesFlow::getInstance($anew);
 	}
 
 	/**
@@ -12719,6 +12833,7 @@ class VikBooking
 	 * @return 	array 					the sorted list of rate plan arrays.
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP)
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)  added support for derived rate plans.
 	 */
 	public static function sortRatePlans($rate_plans, $assoc = false)
 	{
@@ -12731,6 +12846,7 @@ class VikBooking
 				// do not proceed in case of a weird array structure
 				return $rate_plans;
 			}
+
 			// count the sorting-score of this rate plan
 			$sort_score = 0;
 			if (stripos($rate_plan['name'], 'Standard') !== false || stripos($rate_plan['name'], 'Base') !== false) {
@@ -12739,6 +12855,16 @@ class VikBooking
 			} else {
 				$sort_score--;
 			}
+
+			// check for derived rate plan
+			if (!empty($rate_plan['derived_id']) && !empty($rate_plan['derived_data'])) {
+				// derived rates should go last
+				$sort_score -= 2;
+			} else {
+				// parent rates should go first
+				$sort_score += 2;
+			}
+
 			if (stripos($rate_plan['name'], 'Non') === false && stripos($rate_plan['name'], 'Not') === false) {
 				// this doesn't seem to be a "non refundable rate" so it should go first
 				$sort_score += 2;
@@ -12765,17 +12891,20 @@ class VikBooking
 	/**
 	 * Returns an instance of the Availability helper class.
 	 * 
+	 * @param 	bool 	$anew 	True for forcing a new instance.
+	 * 
 	 * @return 	VikBookingAvailability
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP)
+	 * @since 	1.16.10 (J) - 1.6.10 (WP) added $anew argument.
 	 */
-	public static function getAvailabilityInstance()
+	public static function getAvailabilityInstance($anew = false)
 	{
 		// require library
 		require_once VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'availability.php';
 
 		// return the instance of the class
-		return VikBookingAvailability::getInstance();
+		return VikBookingAvailability::getInstance($anew);
 	}
 
 	/**

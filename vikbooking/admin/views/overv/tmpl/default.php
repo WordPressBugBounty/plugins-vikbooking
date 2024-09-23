@@ -22,6 +22,8 @@ $vbo_app = VikBooking::getVboApplication();
 JHtml::fetch('script', VBO_SITE_URI.'resources/jquery-ui.min.js');
 JHtml::fetch('script', VBO_ADMIN_URI.'resources/js_upload/jquery.stickytableheaders.min.js');
 
+$file_base = VBOPlatformDetection::isWordPress() ? 'admin.php' : 'index.php';
+
 // JS lang defs
 JText::script('VBSAVE');
 JText::script('VBPVIEWORDERSTHREE');
@@ -674,11 +676,11 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 												}
 											}
 											// set customer nominative built
-											$customer_descr .= '<span class="vbo-tableaux-guest-name">' . $customer_nominative . '</span>';;
+											$customer_descr .= '<span class="vbo-tableaux-guest-name">' . $customer_nominative . '</span>';
 										}
 									}
 									if (!$enoughinfo) {
-										$customer_descr .= '<span class="vbo-tableaux-guest-name">#' . $day_booking_data['idorder'] . '</span>';;
+										$customer_descr .= '<span class="vbo-tableaux-guest-name">#' . $day_booking_data['idorder'] . '</span>';
 									}
 								}
 							}
@@ -873,7 +875,7 @@ var debug_mode = '<?php echo $pdebug; ?>';
 var bctags_count = <?php echo count($colortags); ?>;
 var bctags_pool = <?php echo json_encode($colortags); ?>;
 <?php
-if (count($colortags) > 0) {
+if ($colortags) {
 	$bctags_tip = '<div class=\"vbo-overview-tip-bctag-subtip-inner\">';
 	foreach ($colortags as $ctagk => $ctagv) {
 		$bctags_tip .= '<div class=\"vbo-overview-tip-bctag-subtip-circle hasTooltip\" data-ctagkey=\"'.$ctagk.'\" data-ctagcolor=\"'.$ctagv['color'].'\" title=\"'.addslashes(JText::translate($ctagv['name'])).'\"><div class=\"vbo-overview-tip-bctag-subtip-circlecont\" style=\"background-color: '.$ctagv['color'].';\"></div></div>';
@@ -1098,7 +1100,7 @@ function doAlterBooking(bid, roomid, landrid) {
 					if (obj_res.message.length) {
 						alert(obj_res.message);
 					}
-					document.location.href='index.php?option=com_vikbooking&task=overv';
+					document.location.href='<?php echo $file_base; ?>?option=com_vikbooking&task=overv';
 				} else {
 					finalizeDndUpdate(mustReload, obj_res);
 				}
@@ -1155,11 +1157,11 @@ function finalizeDndUpdate(mustReload, obj_res) {
 	//hide modal window
 	window.setTimeout(function () {
 		if (obj_res.vcm.length) {
-			var vcmbtn = '<br clear="all"/><button type="button" class="btn btn-danger" onclick="'+(mustReload === true ? 'document.location.href=\'index.php?option=com_vikbooking&task=overv\'' : 'closeEsitDialog();')+'">' + Joomla.JText._('VBANNULLA') + '</button>';
+			var vcmbtn = '<br clear="all"/><button type="button" class="btn btn-danger" onclick="'+(mustReload === true ? 'document.location.href=\'<?php echo $file_base; ?>?option=com_vikbooking&task=overv\'' : 'closeEsitDialog();')+'">' + Joomla.JText._('VBANNULLA') + '</button>';
 			jQuery('#vbo-dnd-response').append(vcmbtn);
 		} else {
 			if (mustReload === true) {
-				document.location.href='index.php?option=com_vikbooking&task=overv';
+				document.location.href='<?php echo $file_base; ?>?option=com_vikbooking&task=overv';
 			} else {
 				jQuery('.vbo-info-overlay-block').fadeOut(400, function(){
 					//clear/reset canvas in case of previous drawing and response text
@@ -1211,16 +1213,30 @@ function registerHoveringTooltip(that) {
 		// turn flag on
 		hovtip = true;
 
-		// set default content
-		jQuery(
-			"<div class=\"vbo-overview-tipblock\">" +
-				"<div class=\"vbo-overview-tipinner\"><span class=\"vbo-overview-tiploading\">" + Joomla.JText._('VIKLOADING') + "</span></div>" +
-				"<div class=\"vbo-overview-tipexpander\" style=\"display: none;\"><div class=\"vbo-overview-expandtoggle\"><i class=\"<?php echo VikBookingIcons::i('expand'); ?>\"></i></div></div>" +
-			"</div>"
-		).appendTo(elem);
+		// calculate cell-element position
+		let pos_top = elem.offset().top;
+		let pos_left = elem.offset().left;
+		let elem_height = elem.outerHeight();
+		let screen_width = window?.screen?.width || 0;
 
-		// set default bottom value to have the tooptip displayed above the cell
-		jQuery(".vbo-overview-tipblock").css("bottom", "+=" + cellheight);
+		// build tooltip block element
+		let tooltip_block = jQuery('<div></div>');
+		tooltip_block.addClass('vbo-overview-tipblock');
+		tooltip_block.append("<div class=\"vbo-overview-tipinner\"><span class=\"vbo-overview-tiploading\">" + Joomla.JText._('VIKLOADING') + "</span></div>");
+		tooltip_block.append("<div class=\"vbo-overview-tipexpander\" style=\"display: none;\"><div class=\"vbo-overview-expandtoggle\"><i class=\"<?php echo VikBookingIcons::i('expand'); ?>\"></i></div></div>");
+
+		// calculate block position
+		tooltip_block.css('top', (pos_top + elem_height - 16) + 'px');
+		if (screen_width > 600 && (pos_left + 400) > screen_width) {
+			// place the tooltip starting from right
+			tooltip_block.css('left', (pos_left - (400 - elem.outerWidth())) + 'px');
+		} else {
+			// regular placing starting from left
+			tooltip_block.css('left', (pos_left - 6) + 'px');
+		}
+
+		// append block to body
+		tooltip_block.appendTo(jQuery('body'));
 
 		// load tooltip bookings
 		loadTooltipBookings(elem.attr('data-bids'), celldata);
@@ -1232,6 +1248,9 @@ function unregisterHoveringTooltip() {
 	hovtimer = null;
 }
 
+/**
+ * @deprecated  1.16.10 (J) - 1.6.10 (WP)
+ */
 function adjustHoveringTooltip() {
 	setTimeout(() => {
 		var ver_difflim = 35;
@@ -1312,7 +1331,7 @@ function loadTooltipBookings(bids, celldata) {
 					var bcont = "<div class=\"vbo-overview-tip-bookingcont\">";
 					bcont += "<div class=\"vbo-overview-tip-bookingcont-left\">";
 					bcont += "<div class=\"vbo-overview-tip-bid\"><span class=\"vbo-overview-tip-lbl\">ID <span class=\"vbo-overview-tip-lbl-innerleft\"><a href=\"" + base_uri_edit.replace('%d', v.id) + "\"><i class=\"<?php echo VikBookingIcons::i('edit'); ?>\"></i></a></span></span><span class=\"vbo-overview-tip-cnt\">"+v.id+"</span></div>";
-					bcont += "<div class=\"vbo-overview-tip-bstatus\"><span class=\"vbo-overview-tip-lbl\"><?php echo addslashes(JText::translate('VBPVIEWORDERSEIGHT')); ?></span><span class=\"vbo-overview-tip-cnt\"><div class=\"label "+(v.status == 'confirmed' ? 'label-success' : 'label-warning')+"\">"+v.status_lbl+"</div></span></div>";
+					bcont += "<div class=\"vbo-overview-tip-bstatus\"><span class=\"vbo-overview-tip-lbl\"><?php echo addslashes(JText::translate('VBPVIEWORDERSEIGHT')); ?></span><span class=\"vbo-overview-tip-cnt\"><div class=\"badge "+(v.status == 'confirmed' ? 'badge-success' : 'badge-warning')+"\">"+v.status_lbl+"</div></span></div>";
 					bcont += "<div class=\"vbo-overview-tip-bdate\"><span class=\"vbo-overview-tip-lbl\"><?php echo addslashes(JText::translate('VBPVIEWORDERSONE')); ?></span><span class=\"vbo-overview-tip-cnt\"><a href=\"" + base_uri_details.replace('%d', v.id) + "\">"+v.ts+"</a></span></div>";
 					if (bctags_count > 0) {
 						var bctag_title = '';
@@ -1321,7 +1340,7 @@ function loadTooltipBookings(bids, celldata) {
 							bctag_color = v.colortag.color;
 							bctag_title = v.colortag.name;
 						}
-						bcont += "<div class=\"vbo-overview-tip-bctag-wrap\"><div class=\"vbo-overview-tip-bctag\" data-bid=\""+v.id+"\" data-ctagcolor=\""+bctag_color+"\" style=\"background-color: "+bctag_color+"; color: "+v.colortag.fontcolor+";\" title=\""+bctag_title+"\"><i class=\"vboicn-price-tags\"></i></div></div>";
+						bcont += "<div class=\"vbo-overview-tip-bctag-wrap\"><div class=\"vbo-overview-tip-bctag\" data-bid=\""+v.id+"\" data-ctagcolor=\""+bctag_color+"\" style=\"background-color: "+bctag_color+"; color: "+v.colortag.fontcolor+";\"><i class=\"vboicn-price-tags\"></i></div><span class=\"vbo-overview-tip-bctag-name\">" + bctag_title + "</span></div>";
 					}
 					bcont += "</div>";
 					bcont += "<div class=\"vbo-overview-tip-bookingcont-right\">";
@@ -1347,7 +1366,7 @@ function loadTooltipBookings(bids, celldata) {
 					bcont += "<div class=\"vbo-overview-tip-bookingcont-total\">";
 					bcont += "<div class=\"vbo-overview-tip-btot\"><span class=\"vbo-overview-tip-lbl\">" + Joomla.JText._('VBEDITORDERNINE') + "</span><span class=\"vbo-overview-tip-cnt\">" + vboMessages.currencySymb + " " + v.format_tot + "</span></div>";
 					if (v.totpaid > 0.00) {
-						bcont += "<div class=\"vbo-overview-tip-btot\"><span class=\"vbo-overview-tip-lbl\">" + Joomla.JText._('VBPEDITBUSYTOTPAID') + "</span><span class=\"vbo-overview-tip-cnt\">" + vboMessages.currencySymb + " " + v.format_totpaid + "</span></div>";
+						bcont += "<div class=\"vbo-overview-tip-btot vbo-overview-tip-btotpaid\"><span class=\"vbo-overview-tip-lbl\">" + Joomla.JText._('VBPEDITBUSYTOTPAID') + "</span><span class=\"vbo-overview-tip-cnt\">" + vboMessages.currencySymb + " " + v.format_totpaid + "</span></div>";
 					}
 					var getnotes = v.adminnotes;
 					if (getnotes !== null && getnotes.length) {
@@ -1359,9 +1378,13 @@ function loadTooltipBookings(bids, celldata) {
 					container.append(bcont);
 					jQuery('.vbo-overview-tipexpander').show();
 				});
+
+				/**
+				 * @deprecated  1.16.10 (J) - 1.6.10 (WP)
+				 */
 				// adjust the position so that it won't go under other contents
-				adjustHoveringTooltip()
-				//
+				// adjustHoveringTooltip();
+
 				jQuery(".hasTooltip").tooltip();
 			} catch(err) {
 				// restore
@@ -2317,12 +2340,13 @@ jQuery(function() {
 							rday_booking_html += '		<div class="vbo-dashboard-guest-activity-content-info-details">' + "\n";
 							rday_booking_html += '			<h4 class="vbo-w-guestmessages-message-gtitle">' + (!obj_res[b]['closure'] ? obj_res[b]['cinfo'] : obj_res[b]['closure_txt']) + '</h4>' + "\n";
 							rday_booking_html += '			<div class="vbo-dashboard-guest-activity-content-info-icon">' + "\n";
-							rday_booking_html += '				<span class="label label-info">' + obj_res[b]['id'] + '</span> ' + "\n";
+							rday_booking_html += '				<span class="badge badge-info">' + obj_res[b]['id'] + '</span> ' + "\n";
 							if (obj_res[b]['type'] && obj_res[b]['type'] == 'overbooking') {
 								rday_booking_html += '			<span class="label label-error vbo-label-overbooking">' + Joomla.JText._('VBO_BTYPE_OVERBOOKING') + '</span>' + "\n";
 							}
 							rday_booking_html += '				<span class="badge badge-' + badge_type + '">' + obj_res[b]['status_lbl'] + '</span>' + "\n";
 							rday_booking_html += '				<span class="vbo-w-guestmessages-message-staydates">' + "\n";
+							rday_booking_html += '					<?php VikBookingIcons::e('calendar-alt'); ?>' + "\n";
 							rday_booking_html += '					<span class="vbo-w-guestmessages-message-staydates-in">' + obj_res[b]['checkin_short'] + '</span>' + "\n";
 							rday_booking_html += '					<span class="vbo-w-guestmessages-message-staydates-sep">-</span>' + "\n";
 							rday_booking_html += '					<span class="vbo-w-guestmessages-message-staydates-out">' + obj_res[b]['checkout_short'] + '</span>' + "\n";
@@ -2342,7 +2366,7 @@ jQuery(function() {
 							rday_booking_html += '		</div>' + "\n";
 							rday_booking_html += '	</div>' + "\n";
 							rday_booking_html += '	<div class="vbo-dashboard-guest-activity-content-info-msg">' + "\n";
-							rday_booking_html += '		<div>' + ota_bid_info + nights_guests.join(', ') + '</div>' + "\n";
+							rday_booking_html += '		<div>' + ota_bid_info + '<?php VikBookingIcons::e('bed'); ?> ' + nights_guests.join(', ') + '</div>' + "\n";
 							if (obj_res[b].hasOwnProperty('sub_units_data')) {
 								rday_booking_html += '	<div class="vbo-rdaybooking-subunits">' + "\n";
 								for (let sub_rname in obj_res[b]['sub_units_data']) {
@@ -2644,7 +2668,7 @@ jQuery(function() {
 					}
 					orphans_list += '	</div>';
 					orphans_list += '	<div class="vbo-orphans-info-btn">';
-					orphans_list += '		<a href="index.php?option=com_vikbooking&task=ratesoverv&cid[]='+rid+'&startdate='+obj_res[rid]['linkd']+'" class="btn btn-primary" target="_blank"><?php echo addslashes(JText::translate('VBORPHANSCHECKBTN')); ?></a>';
+					orphans_list += '		<a href="<?php echo $file_base; ?>?option=com_vikbooking&task=ratesoverv&cid[]='+rid+'&startdate='+obj_res[rid]['linkd']+'" class="btn btn-primary" target="_blank"><?php echo addslashes(JText::translate('VBORPHANSCHECKBTN')); ?></a>';
 					orphans_list += '	</div>';
 					orphans_list += '</div>';
 				}

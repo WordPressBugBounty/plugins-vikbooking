@@ -13,34 +13,55 @@ defined('ABSPATH') or die('No script kiddies please!');
 // import Joomla view library
 jimport('joomla.application.component.view');
 
-class VikBookingViewManageprice extends JViewVikBooking {
-	
-	function display($tpl = null) {
+class VikBookingViewManageprice extends JViewVikBooking
+{
+	public function display($tpl = null)
+	{
 		// Set the toolbar
 		$this->addToolBar();
+
+		$dbo = JFactory::getDBO();
 
 		$cid = VikRequest::getVar('cid', array(0));
 		if (!empty($cid[0])) {
 			$id = $cid[0];
 		}
 
-		$row = array();
-		$dbo = JFactory::getDBO();
+		$row = [];
+
 		if (!empty($cid[0])) {
-			$q = "SELECT * FROM `#__vikbooking_prices` WHERE `id`=".(int)$id.";";
-			$dbo->setQuery($q);
-			$dbo->execute();
-			if ($dbo->getNumRows() != 1) {
+			$q = "SELECT * FROM `#__vikbooking_prices` WHERE `id`=" . (int)$id;
+			$dbo->setQuery($q, 0, 1);
+			$row = $dbo->loadAssoc();
+			if (!$row) {
 				VikError::raiseWarning('', 'Not found.');
 				$mainframe = JFactory::getApplication();
 				$mainframe->redirect("index.php?option=com_vikbooking&task=prices");
 				exit;
 			}
-			$row = $dbo->loadAssoc();
 		}
-		
+
+		$q = $dbo->getQuery(true)
+			->select([
+				$dbo->qn('id'),
+				$dbo->qn('name'),
+			])
+			->from($dbo->qn('#__vikbooking_prices'))
+			->where($dbo->qn('derived_id') . ' = 0')
+			->where($dbo->qn('derived_data') . ' IS NULL');
+		if ($row) {
+			$q->where($dbo->qn('id') . ' != ' . $row['id']);
+		}
+		$dbo->setQuery($q);
+
+		$parent_rates = [];
+		foreach ($dbo->loadAssocList() as $parent_rate) {
+			$parent_rates[$parent_rate['id']] = $parent_rate['name'];
+		}
+
 		$this->row = $row;
-		
+		$this->parent_rates = $parent_rates;
+
 		// Display the template
 		parent::display($tpl);
 	}
@@ -48,7 +69,8 @@ class VikBookingViewManageprice extends JViewVikBooking {
 	/**
 	 * Sets the toolbar
 	 */
-	protected function addToolBar() {
+	protected function addToolBar()
+	{
 		$cid = VikRequest::getVar('cid', array(0));
 		
 		if (!empty($cid[0])) {
@@ -75,5 +97,4 @@ class VikBookingViewManageprice extends JViewVikBooking {
 			JToolBarHelper::spacer();
 		}
 	}
-
 }

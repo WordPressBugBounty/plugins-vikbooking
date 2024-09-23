@@ -174,12 +174,12 @@ class VikBookingModelShortcode extends JModelForm
 	 *
 	 * @param 	object 	 &$data  The record to insert.
 	 *
-	 * @return 	boolean  True if the record has been inserted/updated, otherwise false.
+	 * @return 	mixed  The ID of the inserted record on success, false otherwise.
 	 */
 	public function save(&$data)
 	{
 		// get old item to get previous shortcode
-		$old = $this->getItem($data->id);
+		$old = ($data->id ?? 0) ? $this->getItem($data->id) : null;
 
 		// save shortcode
 		$res = parent::save($data);

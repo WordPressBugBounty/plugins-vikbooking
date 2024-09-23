@@ -31,6 +31,9 @@ class VikBookingViewEditorder extends JViewVikBooking
 			$document = JFactory::getDocument();
 			$document->addStyleSheet(VCM_ADMIN_URI.'assets/css/vikchannelmanager.css');
 			$document->addStyleSheet(VCM_ADMIN_URI.'assets/css/vcm-channels.css');
+			if (method_exists('VikChannelManager', 'loadAppearancePreferenceAssets')) {
+				VikChannelManager::loadAppearancePreferenceAssets();
+			}
 		}
 
 		$dbo = JFactory::getDbo();
@@ -411,20 +414,18 @@ class VikBookingViewEditorder extends JViewVikBooking
 		}
 
 		// detect if VCM exists
-		$vcm_exists = is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikchannelmanager.php');
+		$vcm_exists = class_exists('VikChannelManager');
 
-		// attempt to get the VCM review ID with a try-catch to avoid SQL errors
-		$vcm_review = array();
+		// attempt to get the VCM review ID within a try-catch statement to avoid SQL errors
+		$vcm_review = null;
 		if ($vcm_exists) {
 			try {
 				$q = "SELECT * FROM `#__vikchannelmanager_otareviews` WHERE `idorder`=" . (int)$row['id'] . ";";
 				$dbo->setQuery($q);
-				$dbo->execute();
-				if ($dbo->getNumRows()) {
-					$vcm_review = $dbo->loadAssoc();
-				}
+				$vcm_review = $dbo->loadAssoc();
 			} catch (Exception $e) {
 				// do nothing as VCM is probably not available/enabled/updated
+				$vcm_review = null;
 			}
 		}
 
@@ -440,7 +441,6 @@ class VikBookingViewEditorder extends JViewVikBooking
 		$vcm_cancel_active_res = 0;
 		if ($vcm_exists) {
 			try {
-				require_once VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikchannelmanager.php';
 				if (method_exists('VikChannelManager', 'reservationNeedsDeclineReasons')) {
 					$vcm_decline_actions = (int)VikChannelManager::reservationNeedsDeclineReasons($row);
 				}

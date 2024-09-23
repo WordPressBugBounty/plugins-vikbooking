@@ -3,7 +3,7 @@
 Plugin Name:  VikBooking
 Plugin URI:   https://vikwp.com/plugin/vikbooking
 Description:  Certified Booking Engine for Hotels and Accommodations.
-Version:      1.6.9
+Version:      1.7.0
 Author:       E4J s.r.l.
 Author URI:   https://vikwp.com
 License:      GPL2
@@ -268,6 +268,29 @@ add_shortcode('vikbooking', function($atts, $content = null)
 	foreach ($fields as $k)
 	{
 		$input->def($k, $args->get($k));
+	}
+
+	/**
+	 * When saving a shortcode block through Gutenberg,
+	 * WordPress tries to reach the page to check what happens.
+	 * Some views of VikBooking may immediately redirect the users to
+	 * another page URI.
+	 * This redirect breaks the request made by WordPress for the 
+	 * validation of the page, which follows the new location.
+	 * The code below prevents the execution of the controller
+	 * in case the URI matches the REST API end-point.
+	 * 
+	 * @since 1.7
+	 */
+	$rest_prefix = trailingslashit(rest_get_url_prefix());
+	$is_rest_api = strpos($input->server->getString('REQUEST_URI', ''), $rest_prefix) !== false
+		|| JUri::getInstance($input->server->getString('REQUEST_URI', ''))->hasVar('rest_route')
+		|| strpos($input->server->getString('REQUEST_URI', ''), '/wp-admin/') !== false;
+
+	if ($is_rest_api && in_array($input->get('view'), ['tinyurl']))
+	{
+		// return an empty string to prevent any redirects
+		return '';
 	}
 
 	// dispatch the controller
@@ -563,6 +586,35 @@ add_action('deleted_blog', function($blog_id, $drop)
  * 					to have all the intervals scheduled by Vik Booking.
  */
 add_action('plugins_loaded', array('VikBookingCron', 'setup'), (PHP_INT_MAX - 1));
+
+/**
+ * Action used to register a periodic check of the automatic payments scheduled.
+ * This hook will be called by a scheduled event in WP-Cron.
+ * 
+ * @since 	1.6.10
+ */
+add_action('vikbooking_cron_payments_scheduled', function()
+{
+	// watch the automatic payments scheduled, if any
+	VBOModelPayschedules::getInstance()->watch();
+});
+
+/**
+ * Install the scheduling of the hook within WP-Cron needed
+ * to watch and process the automatic payments scheduled.
+ * 
+ * @since 	1.6.10
+ */
+add_action('plugins_loaded', function()
+{
+	// make sure the cron event hasn't been yet scheduled.
+	if (!wp_next_scheduled('vikbooking_cron_payments_scheduled'))
+	{
+		// schedule event starting from the current time for "every half hour"
+		// such interval will be installed by VikBookingCron::setup()
+		wp_schedule_event(time(), 'half_hour', 'vikbooking_cron_payments_scheduled');
+	}
+}, (PHP_INT_MAX - 1));
 
 /**
  * Filters the action links displayed for each plugin in the Plugins list table.

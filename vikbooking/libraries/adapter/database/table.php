@@ -481,6 +481,18 @@ class JTable extends JObject
 			$result = $dbo->insertObject($this->_table, $this, $this->_tableKeys[0]);
 		}
 
+		/**
+		 * The table is now able to propagate the error message faced during
+		 * the database insert/update execution.
+		 * 
+		 * @since 10.1.58
+		 */
+		if (!$result)
+		{
+			// propagate error message
+			$this->setError($dbo->getLastError() ?: 'Database query error.');
+		}
+
 		// post-processing by observers
 		$event->trigger('onAfterStore', array(&$result));
 

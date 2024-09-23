@@ -35,6 +35,7 @@
 	
 		/* Config bg and text color */
 		--vbo-config-bg-color: #282b33;
+		--vbo-config-bg-dark: #666;
 		--vbo-input-style: #282b33;
 		--vbo-config-text-color: inherit;
 		--vbo-config-border-color: #0f1216;
@@ -59,18 +60,30 @@
 		--vbo-green-color: #489e48;
 		--vbo-green-color-hover: #428242;
 		--vbo-green-color-focus: #65c265;
+		--vbo-light-green-color: #4e754c;
+		--vbo-light-green-color-hover: #365335;
 		--vbo-blue-color: #2f6f8e;
 		--vbo-blue-color-hover: #498fb3;
 		--vbo-gold-color: #ccc450;
 		--vbo-purple-color: #b746df;
 		
 		/* Notification Status */
-		--vbo-info-bg: #315775;
+		--vbo-info-bg: #5488b0;
 		--vbo-info-border: #4e7891;
-		--vbo-warning-bg: #55503a;
+		--vbo-warning-bg: #ffe8bb;
+		--vbo-warning-bg-txt: #df7212;
 		--vbo-warning-border: #d99323;
-		--vbo-error-bg: #7e5959;
+		--vbo-error-bg: #eab0b0;
+		--vbo-error-txt: #800;
 		--vbo-error-border: #ea6060;
+	
+		/* VCM Chat Message */
+		--vcm-chat-bubble-host-background: #50575d;
+		--vcm-chat-bubble-host-color: #fff;
+		--vcm-chat-bubble-guest-background: #3c404c;
+		--vcm-chat-bubble-guest-color: #fff;
+		--vcm-chat-dot-flashing-on: #ddd;
+		--vcm-chat-dot-flashing-off: rgba(221, 221, 221, 0.2);
 	}
 	body {
 		background: var(--vbo-body-bg-color) !important;
@@ -102,12 +115,16 @@
 	.vbo-list-table tbody > tr > td, .vbo-list-table tbody > tr > th {
 		border-top: 1px solid var(--vbo-config-border-color) !important;
 	}
-
-	/* Config tabs */
-	.vbo-config-tabs-wrap dl.tabs {
-		border-bottom: 1px solid var(--vbo-light-color-btn);
+	.btn.vbo-btn-black {
+		background: var(--vbo-config-bg-dark);
+		border: 1px solid #999;
 	}
-
+	
+	/* Config tabs */
+		.vbo-config-tabs-wrap dl.tabs {
+			border-bottom: 1px solid var(--vbo-light-color-btn);
+	}
+	
 	/* Color action buttons */
 	.jtoolbar .page-title-action {
 		background: transparent;
@@ -413,7 +430,7 @@
 		background-color: var(--vbo-green-color-hover) !important;
 	}
 	.vbo-inspector-wrap {
-		background-color: rgba(255, 255, 255, 0.94);;
+		background-color: rgba(255, 255, 255, 0.94);
 	}
 	.vbo-roverview-datecmd-top .vbo-roverview-datecmd-date {
 		background: var(--vbo-input-style);
@@ -555,6 +572,17 @@
 		background-color: var(--vbo-light-color-btn) !important;
 		border-color: var(--vbo-config-border-color) !important;
 	}
+	.chat-conversation .chat-message .speech-bubble.sent.ai-reply:before {
+		background: #50575d !important;
+	}
+	.chat-conversation .chat-message .speech-bubble.sent ~ .reactions {
+		background: #50575d !important;
+		border: 1px solid #898e93 !important;
+	}
+	.chat-conversation .chat-message .speech-bubble.received ~ .reactions {
+		background: #3c404c !important;
+		border: 1px solid #72757c !important;
+	}
 	/* VikBooking Telephone */
 	.iti__country-list {
 		background: var(--vbo-config-bg-color);
@@ -685,8 +713,8 @@
 	body.admin .label, .badge {
 		background-color: #666;
 	}
-	body.admin .label-info, .label-info, .badge-info {
-		background: #2c5f78 !important;
+	body.admin .label.label-info, .label.label-info, .badge.badge-info {
+		background: var(--vbo-info-bg) !important;
 		color: #fff;
 	}
 	body.admin .label-info:hover, .label-info:hover, .badge-info:hover {
@@ -696,13 +724,13 @@
 		background: var(--vbo-blue-color) !important;
 	}
 	body.admin .label-success, .label-success, .badge-success {
-		background-color: var(--vbo-green-color) !important;
+		background-color: var(--vbo-success-bg) !important;
 	}
 	body.admin .label-danger, .label-danger, .badge-danger, body.admin .label-error, .label-error, .badge-error {
-		background-color: var(--vbo-red-color) !important;
+		background-color: var(--vbo-error-bg) !important;
 	}
 	body.admin .label-warning, .label-warning, .badge-warning {
-		background-color: var(--vbo-orange-color) !important;
+		background-color: var(--vbo-warning-bg) !important;
 	}
 	.js-editor-tinymce .mce-panel {
 		background-color: var(--vbo-config-child-bg-color);
@@ -831,7 +859,7 @@
 	#status.navbar-fixed-bottom .btn-toolbar a:hover {
 		color: var(--vbo-base-color);
 	}
-
+	
 	/* Main Menu */
 	.vbo-submenu-wrap li > div .vbo-submenu-item-helper-link .vbo-submenu-item-helper-avatar img {
 		border: 1px solid var(--vbo-body-bg-color);
@@ -893,6 +921,15 @@
 	}
 	.vbo-reportwidget-filters {
 		box-shadow: 0 4px 14px rgba(0,0,0,.6);
+	}
+	.vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar-table td[data-cta="1"][data-ctd="1"] {
+		background: repeating-linear-gradient( -45deg, var(--vbo-body-bg-color), var(--vbo-body-bg-color) 10px, var(--vbo-toolbar-bg-color) 10px, var(--vbo-toolbar-bg-color) 20px );
+	}
+	.vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar-table td[data-cta="1"][data-ctd="1"]:hover {
+		background: var(--vbo-main-bg-color);
+	}
+	.vbo-widget-booskcal-cell-mday.busy.vbo-partially .vbo-widget-booskcal-mday-roomrate span {
+		color: var(--vbo-orange-color);
 	}
 	.js-editor-tinymce .tox-tinymce {
 		border-color: var(--vbo-config-border-color);
@@ -1058,10 +1095,14 @@
 		border-top: 1px solid var(--vbo-config-border-color);
 		box-shadow: none;
 	}
+	.vbo-info-overlay-loading-dnd {
+		color: #fff;
+		background: rgb(28, 28, 28);
+	}
 	.vbo-loading-dnd-response {
 		background: rgba(58, 58, 58, 0.87);
 	}
-
+	
 	#contextual-help-back {
 		background-color: var(--vbo-light-blue);
 		border-color: var(--vbo-config-border-color);
@@ -1073,7 +1114,7 @@
 	#screen-meta-links .show-settings {
 		border-color: var(--vbo-basic-btn-focus);
 	}
-
+	
 	/* Widgets customizations */
 	.vbo-widget-notifscenter-wrap .vbo-widget-notifscenter-group span:not([data-badge-count=""])::after {
 		background: var(--vbo-grey-blue-bg);
@@ -1081,11 +1122,19 @@
 	.vbo-widget-notifscenter-wrap .vbo-widget-notifscenter-group-active span:not([data-badge-count=""])::after, .vbo-widget-notifscenter-wrap .vbo-widget-notifscenter-group:hover span:not([data-badge-count=""])::after {
 		background: var(--vbo-info-bg);
 	}
-	.vbo-widget-notifscenter-list .vbo-widget-notifscenter-notif-wrap .vbo-widget-notifscenter-notif-cta .vbo-notifscenter-cta-btn {
-		background: #666;
+	.vbo-widget-notifscenter-list .vbo-widget-notifscenter-notif-wrap .vbo-widget-notifscenter-notif-cta .vbo-notifscenter-cta-btn, .aitools-message-addon .btn.vbo-ai-assistant-addon-btn {
+		background: var(--vbo-config-bg-dark);
 		border: 1px solid #999;
+	}
+	.aitools-message-addon .btn.vbo-ai-assistant-addon-btn:focus {
+		background: var(--vbo-config-bg-color);
 	}
 	.vbo-w-guestmessages-message-new .vbo-w-guestmessages-message-gtitle .message-new {
 		color: #78afdd;
+	}
+	
+	/* AI channel */
+	.aitools-message-addon .vbo-ai-source-badge-details {
+		color: #fff;
 	}
 }

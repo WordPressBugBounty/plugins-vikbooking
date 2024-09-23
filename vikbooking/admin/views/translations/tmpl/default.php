@@ -24,6 +24,7 @@ $active_table_key = '';
 
 // JS lang vars
 JText::script('VBO_COPY_ORIGINAL_TN');
+JText::script('VCM_TRANSLATE');
 
 if (!(count($langs) > 1)) {
 	//Error: only one language is published. Translations are useless
@@ -249,7 +250,7 @@ foreach ($langs as $ltag => $lang) {
 								$tn_value = $lang_record_tn[$reference_id]['content'][$field];
 							}
 							?>
-									<textarea name="tn[<?php echo $ltag; ?>][<?php echo $reference_id; ?>][<?php echo $field; ?>]" rows="7" cols="170"><?php echo $tn_value; ?></textarea>
+									<textarea name="tn[<?php echo $ltag; ?>][<?php echo $reference_id; ?>][<?php echo $field; ?>]" rows="7" cols="170" placeholder="<?php echo htmlspecialchars($def_value); ?>"><?php echo $tn_value; ?></textarea>
 							<?php
 						} elseif ($type == 'html') {
 							if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, $lang_record_tn[$reference_id]['content'])) {
@@ -463,61 +464,150 @@ function vboHoverCopyTranslation(elem) {
 	if (!orig_elem || !orig_elem.length || !orig_elem.html().length) {
 		return false;
 	}
+
+	const label = elem.find('.vbo-translations-element-lbl');
+
+	// translation actions wrapper
+	const txActions = jQuery('<div class="vbo-tn-actions"></div>');
+
+	let tn_field_val;
+
+	try {
+		let lang_reference_arr = elem.closest('.vbo-translations-element-row[data-copyoriginal]').attr('data-reference').split('-');
+		lang_reference_arr.splice(lang_reference_arr.length - 1, 1);
+		let wysiwyg_hipo_id = 'tn_' + (lang_reference_arr.join('-') + '-' + copy_reference).replace(/-/g, '_');
+
+		tn_field_val = Joomla.editors.instances[wysiwyg_hipo_id].getValue();
+	} catch (err) {
+		// fallback to default input/textarea
+		tn_field_val = elem.find('.vbo-translations-element-val').find('input[type="text"],textarea').val();
+	}
+
 	// check if translation field has got a value
-	var tn_field_val = elem.find('.vbo-translations-element-val').find('input[type="text"],textarea').val();
 	if (!(tn_field_val || '').trim()) {
-		// append button to copy the original content
-		elem.
-			find('.vbo-translations-element-lbl').
-			append('<div class="vbo-tn-copyoriginal"><span title="' + Joomla.JText._('VBO_COPY_ORIGINAL_TN') + '" onclick="vboApplyCopyTranslation(this);"><?php VikBookingIcons::e('copy'); ?></span></div>');
+		// add button to copy the original translation
+		txActions.append(
+			jQuery('<span class="tn-copy-original vbo-tooltip vbo-tooltip-bottom" onclick="vboApplyCopyTranslation(this)"></span>')
+				.attr('data-tooltiptext', Joomla.JText._('VBO_COPY_ORIGINAL_TN'))
+				.html('<?php VikBookingIcons::e('copy'); ?>')
+		);
+
+		// check whether the channel manager is installed
+		if (<?php echo (int) class_exists('VikChannelManager'); ?>) {
+			// add button to translate the original text
+			txActions.append(
+				jQuery('<span class="tn-translate-original vbo-tooltip vbo-tooltip-bottom" onclick="vboTranslateOriginal(this)"></span>')
+					.attr('data-tooltiptext', Joomla.JText._('VCM_TRANSLATE'))
+					.html('<?php VikBookingIcons::e('language'); ?>')
+			);
+		}
+
+		// append the actions below the label
+		label.append(txActions);
 	}
 }
 
-function vboApplyCopyTranslation(elem) {
-	elem = jQuery(elem).closest('.vbo-translations-element-row[data-copyoriginal]');
-	if (!elem || !elem.length) {
+async function vboApplyCopyTranslation(elem) {
+	let orig_elem = null;
+
+	try {
+		orig_elem = await vboGetOriginalTranslationElement(elem);
+	} catch (error) {
 		return false;
 	}
-	var copy_reference = elem.attr('data-copyoriginal');
-	if (!copy_reference) {
-		return false;
-	}
-	var orig_elem = jQuery('.vbo-translations-element-val[data-origvalue="' + copy_reference + '"]');
-	if (!orig_elem || !orig_elem.length) {
-		return false;
-	}
+
+	vboSetTranslation(jQuery(elem).closest('.vbo-translations-element-row[data-copyoriginal]'), orig_elem.html());
 
 	// make sure to remove any copy-from-original button
-	jQuery('.vbo-tn-copyoriginal').remove();
+	// jQuery('.vbo-tn-actions').remove();
+}
 
-	// set original content to translation field
-	var input = elem.find('.vbo-translations-element-val').find('input[type="text"]');
-	if (input && input.length) {
-		input.val(orig_elem.html()).trigger('change');
-	}
-	var tarea = elem.find('.vbo-translations-element-val').find('textarea');
-	if (tarea && tarea.length) {
-		tarea.val(orig_elem.html()).trigger('change');
-	}
+function vboGetOriginalTranslationElement(elem) {
+	return new Promise((resolve, reject) => {
+		elem = jQuery(elem).closest('.vbo-translations-element-row[data-copyoriginal]');
 
-	// grab lang tag, which could be part of the ID of a WYSIWYG editor
-	var lang_reference_arr = elem.attr('data-reference').split('-');
-	lang_reference_arr.splice((lang_reference_arr.length - 1), 1);
-	var current_lang = lang_reference_arr.join('-');
-	var wysiwyg_hipo_id = current_lang + '-' + copy_reference;
-	wysiwyg_hipo_id = 'tn_' + wysiwyg_hipo_id.replaceAll('-', '_');
-	
-	// attempt to inject value inside wysiwyg editor
-	try {
-		// native wysiwyg editor
-		if (typeof Joomla !== undefined && Joomla.editors && Joomla.editors.instances) {
-			if (Joomla.editors.instances.hasOwnProperty(wysiwyg_hipo_id)) {
-				Joomla.editors.instances[wysiwyg_hipo_id].setValue(orig_elem.html());
-			}
+		if (!elem || !elem.length) {
+			reject(new Error('Copiable record not found'));
+			return false;
 		}
+
+		const copy_reference = elem.attr('data-copyoriginal');
+		if (!copy_reference) {
+			reject(new Error('Reference dara attribute not found'));
+			return false;
+		}
+
+		const orig_elem = jQuery('.vbo-translations-element-val[data-origvalue="' + copy_reference + '"]');
+		if (!orig_elem || !orig_elem.length) {
+			reject(new Error('Missing original value'));
+			return false;
+		}
+
+		resolve(orig_elem);
+	});
+}
+
+function vboSetTranslation(elem, translation) {
+	const copy_reference = elem.attr('data-copyoriginal');
+	
+	try {
+		// grab lang tag, which could be part of the ID of a WYSIWYG editor
+		let lang_reference_arr = elem.attr('data-reference').split('-');
+		lang_reference_arr.splice((lang_reference_arr.length - 1), 1);
+		let wysiwyg_hipo_id = 'tn_' + (lang_reference_arr.join('-') + '-' + copy_reference).replace(/-/g, '_');
+
+		// attempt to inject value inside wysiwyg editor
+		Joomla.editors.instances[wysiwyg_hipo_id].setValue(translation);
 	} catch(e) {
-		// do nothing
+		// fallback to standard input/textarea
+		const input = elem.find('.vbo-translations-element-val').find('input[type="text"]');
+		if (input && input.length) {
+			input.val(translation).trigger('change');
+		}
+
+		const textarea = elem.find('.vbo-translations-element-val').find('textarea');
+		if (textarea && textarea.length) {
+			textarea.val(translation).trigger('change');
+		}
 	}
+}
+
+async function vboTranslateOriginal(elem) {
+	if (jQuery(elem).prop('aria-disabled') == true) {
+		return false;
+	}
+
+	let orig_elem = null;
+
+	try {
+		orig_elem = await vboGetOriginalTranslationElement(elem);
+	} catch (error) {
+		return false;
+	}
+
+	const originalRow = jQuery(elem).closest('.vbo-translations-element-row[data-copyoriginal]');
+
+	const locale = originalRow.attr('data-reference').split('-').slice(0, -1).join('-');
+
+	jQuery(elem).prop('aria-disabled', true);
+	jQuery(elem).find('i').attr('class', '<?php echo VikBookingIcons::i('spinner', 'fa-spin'); ?>');
+
+	VBOCore.doAjax(
+		'<?php echo VikBooking::ajaxUrl('index.php?option=com_vikchannelmanager&task=ai.translate'); ?>',
+		{
+			text: orig_elem.html(),
+			locale: locale,
+		},
+		(response) => {
+			vboSetTranslation(originalRow, response.translated);
+			jQuery(elem).hide();
+		},
+		(error) => {
+			alert(error.responseText || error.statusText || 'An error has occurred.');
+			jQuery(elem).find('i').attr('class', '<?php echo VikBookingIcons::i('language'); ?>');
+			jQuery(elem).prop('aria-disabled', false);
+		}
+	);
 }
 
 jQuery(function() {
@@ -551,7 +641,7 @@ jQuery(function() {
 		// cancel scheduled hovering function
 		clearTimeout(vbo_copy_timeout);
 		// make sure to remove any copy-from-original button
-		jQuery('.vbo-tn-copyoriginal').remove();
+		jQuery('.vbo-tn-actions').remove();
 	});
 <?php
 if (!empty($cur_langtab)) {

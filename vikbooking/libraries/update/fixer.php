@@ -108,6 +108,8 @@ class VikBookingUpdateFixer
 	 */
 	public function afterInstallation()
 	{
+		$dbo = JFactory::getDbo();
+
 		/**
 		 * Unpublish overrides and obtain tracking list.
 		 *
@@ -126,6 +128,89 @@ class VikBookingUpdateFixer
 				$old_vcm_data = file_get_contents(VCM_ADMIN_PATH . DIRECTORY_SEPARATOR . 'controller.php');
 				$old_vcm_data = str_replace("'forcecheck'", "'force_check'", $old_vcm_data);
 				file_put_contents(VCM_ADMIN_PATH . DIRECTORY_SEPARATOR . 'controller.php', $old_vcm_data);
+			}
+		}
+
+		if (version_compare($this->version, '1.7.0', '<'))
+		{
+			/**
+			 * Install the new "tinyurl" Shortcode.
+			 */
+			$model = JModel::getInstance('vikbooking', 'shortcode', 'admin');
+
+			$shortcode = new stdClass;
+			$shortcode->createdby = JFactory::getUser()->id;
+			$shortcode->createdon = JFactory::getDate()->toSql();
+			$shortcode->title 	  = 'COM_VIKBOOKING_TINYURL_VIEW_DEFAULT_TITLE';
+			$shortcode->name  	  = 'Tiny URL';
+			$shortcode->type 	  = 'tinyurl';
+			$shortcode->shortcode = '[vikbooking view="tinyurl" lang="*"]';
+
+			try {
+				$sh_id = $model->save($shortcode);
+
+				if ($sh_id) {
+					// assign the shortcode to a new page
+					$model->addPage($sh_id);
+				}
+			} catch (Throwable $e) {
+				// do nothing, but prevent fatal errors
+			}
+
+			/**
+			 * Normalize invoice and check-in document names for OTA bookings.
+			 * 
+			 * @since 1.7.0
+			 */
+			$fixing_invoices  = JFolder::files(implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'helpers', 'invoices', 'generated']), '[0-9]+_\.pdf$', $recursive = false, $fullpath = true);
+			$fixing_checkdocs = JFolder::files(implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'helpers', 'checkins', 'generated']), '[0-9]+_\.pdf$', $recursive = false, $fullpath = true);
+			foreach (array_merge($fixing_invoices, $fixing_checkdocs) as $fix_doc) {
+				$doc_bid = (int) preg_replace('/[^0-9]/', '', basename($fix_doc));
+				if (!$doc_bid) {
+					continue;
+				}
+				// whether it's an invoice or a check-in document
+				$is_invoice = strpos($fix_doc, 'invoices') !== false;
+				// get the OTA booking ID
+				$dbo->setQuery(
+					$dbo->getQuery(true)
+						->select($dbo->qn('idorderota'))
+						->from($dbo->qn('#__vikbooking_orders'))
+						->where($dbo->qn('id') . ' = ' . $doc_bid)
+				, 0, 1);
+				$idorderota = $dbo->loadResult();
+				if (!$idorderota) {
+					// delete file for security reason if the booking does not exist
+					JFile::delete($fix_doc);
+					continue;
+				}
+				// build new safe document name
+				$safe_fname = $doc_bid . '_' . $idorderota . '.pdf';
+				$safe_fpath = str_replace(basename($fix_doc), $safe_fname, $fix_doc);
+				// rename document file
+				rename($fix_doc, $safe_fpath);
+				// update db reference
+				if ($is_invoice) {
+					// invoice
+					$q = $dbo->getQuery(true)
+						->update($dbo->qn('#__vikbooking_invoices'))
+						->set($dbo->qn('file_name') . ' = ' . $dbo->q($safe_fname))
+						->where($dbo->qn('idorder') . ' = ' . $doc_bid)
+						->where($dbo->qn('file_name') . ' = ' . $dbo->q(basename($fix_doc)));
+				} else {
+					// check-in document
+					$q = $dbo->getQuery(true)
+						->update($dbo->qn('#__vikbooking_customers_orders'))
+						->set($dbo->qn('checkindoc') . ' = ' . $dbo->q($safe_fname))
+						->where($dbo->qn('idorder') . ' = ' . $doc_bid)
+						->where($dbo->qn('checkindoc') . ' = ' . $dbo->q(basename($fix_doc)));
+				}
+				$dbo->setQuery($q);
+				$dbo->execute();
+				if (VBOPlatformDetection::isWordPress()) {
+					// trigger files mirroring
+					VikBookingUpdateManager::triggerUploadBackup($safe_fpath);
+				}
 			}
 		}
 

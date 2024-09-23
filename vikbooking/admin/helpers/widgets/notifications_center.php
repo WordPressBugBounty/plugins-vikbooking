@@ -36,7 +36,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 	 *
 	 * @var 	int
 	 */
-	protected $max_groups = 4;
+	protected $max_groups = 6;
 
 	/**
 	 * The total number of skeleton loading elements.
@@ -890,8 +890,8 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				}
 
 				// ensure we've got other pages to load
-				var pageNumber = notificationsList.getAttribute('data-page-number');
-				var pagesCount = notificationsList.getAttribute('data-pages-count');
+				var pageNumber = parseInt(notificationsList.getAttribute('data-page-number')) || 1;
+				var pagesCount = parseInt(notificationsList.getAttribute('data-pages-count')) || 1;
 
 				if (pageNumber >= pagesCount) {
 					// no more pages available, abort
@@ -988,8 +988,8 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				}
 
 				// ensure we've got more pages to load
-				var pageNumber = notificationsList.getAttribute('data-page-number');
-				var pagesCount = notificationsList.getAttribute('data-pages-count');
+				var pageNumber = parseInt(notificationsList.getAttribute('data-page-number')) || 1;
+				var pagesCount = parseInt(notificationsList.getAttribute('data-pages-count')) || 1;
 
 				if (pageNumber >= pagesCount) {
 					// no pagination needed
@@ -1039,8 +1039,8 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 						.querySelector('.vbo-widget-notifscenter-list');
 
 					// ensure we've got more pages to load
-					var pageNumber = notificationsList.getAttribute('data-page-number');
-					var pagesCount = notificationsList.getAttribute('data-pages-count');
+					var pageNumber = parseInt(notificationsList.getAttribute('data-page-number')) || 1;
+					var pagesCount = parseInt(notificationsList.getAttribute('data-pages-count')) || 1;
 
 					if (pageNumber >= pagesCount) {
 						// unregister the infinite scroll
@@ -1532,6 +1532,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 
 			// determine the notification group icon and color
 			$group_badge_icon = '';
+			$group_badge_cnt  = '';
 			$group_badge_cls  = '';
 			if (!strcasecmp($notif->group, 'website')) {
 				$group_badge_icon = 'clipboard-list';
@@ -1562,6 +1563,13 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 			} elseif (!strcasecmp($notif->group, 'operators')) {
 				$group_badge_icon = 'broom';
 				$group_badge_cls  = 'vbo-badge-group-orange';
+			} elseif (!strcasecmp($notif->group, 'ai')) {
+				$group_badge_cnt = '<img class="vbo-ai-icn" src="' . VBO_ADMIN_URI . 'resources/channels/ai-icn-white.png" />';
+				if (strpos($notif->type, 'error') !== false) {
+					$group_badge_cls = 'vbo-badge-group-red';
+				} else {
+					$group_badge_cls = 'vbo-badge-group-green';
+				}
 			}
 
 			?>
@@ -1617,6 +1625,12 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 								<?php VikBookingIcons::e($group_badge_icon); ?>
 							</span>
 							<?php
+						} elseif ($group_badge_cnt) {
+							?>
+							<span class="vbo-customer-avatar-badge <?php echo $group_badge_cls; ?>">
+								<?php echo $group_badge_cnt; ?>
+							</span>
+							<?php
 						}
 						?>
 						</div>
@@ -1644,13 +1658,6 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 					</div>
 					<?php
 				}
-				if ((!$group_website || !strcasecmp($notif->type, 'info')) && $notif->summary) {
-					?>
-					<div class="vbo-widget-notifscenter-notif-summary">
-						<span><?php echo $notif->summary; ?></span>
-					</div>
-					<?php
-				}
 				?>
 					<div class="vbo-widget-notifscenter-notif-dt">
 					<?php
@@ -1663,6 +1670,13 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 						<span class="vbo-tooltip vbo-tooltip-<?php echo !$index && !$page_num ? 'bottom' : 'top'; ?>" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', $human_dtime); ?>"><?php echo $relative_dt; ?></span>
 					</div>
 				<?php
+				if ((!$group_website || !strcasecmp($notif->type, 'info')) && $notif->summary) {
+					?>
+					<div class="vbo-widget-notifscenter-notif-summary" data-group-name="<?php echo $notif->group; ?>" data-notif-type="<?php echo $notif->type; ?>">
+						<span><?php echo $notif->summary; ?></span>
+					</div>
+					<?php
+				}
 				if (is_object($notif->cta_data) && (!empty($notif->cta_data->url) || !empty($notif->cta_data->widget))) {
 					// call-to-action data available
 					$cta_btn_lbl = !empty($notif->cta_data->label) ? $notif->cta_data->label : JText::translate('VBO_TAKE_ACTION');

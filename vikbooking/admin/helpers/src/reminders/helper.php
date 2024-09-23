@@ -338,6 +338,44 @@ final class VBORemindersHelper extends JObject
 	}
 
 	/**
+	 * Searches for a reminder according to the provided criteria.
+	 * 
+	 * @param 	array 	$criteria 	Associative list of data to look for.
+	 * 
+	 * @return 	object|null
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function searchReminder(array $criteria)
+	{
+		if (!$criteria) {
+			return null;
+		}
+
+		$dbo = JFactory::getDbo();
+
+		$q = $dbo->getQuery(true)
+			->select('*')
+			->from($dbo->qn('#__vikbooking_reminders'));
+
+		foreach ($criteria as $col => $val) {
+			if (is_array($val) || is_object($val)) {
+				$val = json_encode($val);
+			}
+
+			if (is_null($val)) {
+				$q->where($dbo->qn($col) . ' IS NULL');
+			} else {
+				$q->where($dbo->qn($col) . ' = ' . $dbo->q($val));
+			}
+		}
+
+		$dbo->setQuery($q);
+
+		return $dbo->loadObject();
+	}
+
+	/**
 	 * Removes the reminders with a due date in the past.
 	 * 
 	 * @return 	void
@@ -518,5 +556,36 @@ final class VBORemindersHelper extends JObject
 		$dbo->setQuery($q);
 
 		return $dbo->loadAssocList();
+	}
+
+	/**
+	 * Completes the reminder(s) of a specific booking with an optional payload type.
+	 * 
+	 * @param 	int 	$booking_id 	The reservation ID to check.
+	 * @param 	array 	$payload 		Optional payload to compare.
+	 * @param 	int 	$lim 			Query update limit.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function completeBookingReminders($booking_id, array $payload = [], $lim = 0)
+	{
+		$dbo = JFactory::getDbo();
+
+		$q = $dbo->getQuery(true);
+
+		$q->update($dbo->qn('#__vikbooking_reminders'))
+			->set($dbo->qn('completed') . ' = 1')
+			->where($dbo->qn('idorder') . ' = ' . (int) $booking_id);
+
+		if ($payload) {
+			$q->where($dbo->qn('payload') . ' = ' . $dbo->q(json_encode($payload)));
+		}
+
+		$dbo->setQuery($q, 0, $lim);
+		$dbo->execute();
+
+		return (bool) $dbo->getAffectedRows();
 	}
 }

@@ -118,56 +118,16 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 			];
 		}
 
-		// build complete credit card payload, if any
-		$cc_payload_str = '';
-		$booking_info['paymentlog'] = (string)$booking_info['paymentlog'];
-		if (stripos($booking_info['paymentlog'], 'card number') !== false && strpos($booking_info['paymentlog'], '*') !== false) {
-			// matched a log for an OTA CC
-			$cc_payload_str = $booking_info['paymentlog'];
-		} elseif (preg_match("/(([\d\*]{4,4}\s*){4,4})|(([\d\*]{4,6}\s*){3,3})/", $booking_info['paymentlog'])) {
-			// matched a credit card
-			$cc_payload_str = $booking_info['paymentlog'];
+		// make sure the permissions are met
+		if ($this->vcm_exists && !JFactory::getUser()->authorise('core.admin', 'com_vikchannelmanager')) {
+			// insufficient permissions to handle CC details
+			return [
+				'html' => '<p class="err">' . JText::translate('JERROR_ALERTNOAUTHOR') . '</p>',
+			];
 		}
 
-		// check if this is an OTA reservation with remotely decoded CC details
-		$remote_cc_data = [];
-		if ($this->vcm_exists && !empty($booking_info['idorderota']) && !empty($booking_info['channel'])) {
-			// make sure the permissions are met
-			if (!JFactory::getUser()->authorise('core.admin', 'com_vikchannelmanager')) {
-				// insufficient permissions to handle CC details
-				return [
-					'html' => '<p class="err">' . JText::translate('JERROR_ALERTNOAUTHOR') . '</p>',
-				];
-			}
-
-			// channel source
-			$channel_source = (string)$booking_info['channel'];
-			if (strpos($booking_info['channel'], '_') !== false) {
-				$channelparts = explode('_', $booking_info['channel']);
-				$channel_source = $channelparts[0];
-			}
-
-			// only updated versions of VCM will support remote CC decoding for OTA reservations
-			if (class_exists('VCMOtaBooking')) {
-				// invoke the OTA Booking helper class from VCM
-				$cc_helper = VCMOtaBooking::getInstance([
-					'channel_source' => $channel_source,
-					'ota_id' 		 => $booking_info['idorderota'],
-				], $anew = true);
-
-				if (method_exists($cc_helper, 'decodeCreditCardDetails')) {
-					$remote_cc_data = $cc_helper->decodeCreditCardDetails();
-					// make sure the response was valid
-					if (!$remote_cc_data || !empty($remote_cc_data['error'])) {
-						// we ignore the error by simply resetting the array
-						$remote_cc_data = [];
-					}
-				}
-			}
-		}
-
-		// merge remotely decoded CC details to parsed payment log (if any)
-		$cc_value_pairs = array_merge($remote_cc_data, $this->parseCreditCardValuePairs($cc_payload_str, $remote_cc_data));
+		// get the reservation credit card value pairs
+		$cc_value_pairs = VBOModelReservation::getInstance($booking_info, true)->getCardValuePairs();
 
 		// currency code
 		$currency_code = !empty($booking_info['chcurrency']) ? $booking_info['chcurrency'] : VikBooking::getCurrencyName();
@@ -1147,120 +1107,5 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 		}
 
 		return null;
-	}
-
-	/**
-	 * Given a raw string of credit card key-value pairs from payments log,
-	 * parse the corresponding keys and values into an associative array.
-	 * In case of conflicting keys with the remotely decoded CC details,
-	 * attempts to replace the masked numbers with asterisks.
-	 * 
-	 * @param 	string 	$cc_payload 		the raw CC details from payment logs.
-	 * @param 	array 	$remote_cc_data 	associative array of decoded CC data.
-	 * 
-	 * @return 	array 						associative or empty array.
-	 */
-	protected function parseCreditCardValuePairs($cc_payload, array $remote_cc_data = [])
-	{
-		$cc_value_pairs = [];
-
-		if (empty($cc_payload)) {
-			return $cc_value_pairs;
-		}
-
-		$cc_lines = preg_split("/(\r\n|\n|\r)/", $cc_payload);
-
-		foreach ($cc_lines as $cc_line) {
-			if (strpos($cc_line, ':') === false) {
-				continue;
-			}
-
-			$cc_line_parts = explode(':', $cc_line);
-
-			if (empty($cc_line_parts[0]) || !strlen(trim($cc_line_parts[1]))) {
-				continue;
-			}
-
-			$key   = str_replace(' ', '_', strtolower($cc_line_parts[0]));
-			$value = trim($cc_line_parts[1]);
-
-			if (isset($cc_value_pairs[$key])) {
-				/**
-				 * Do not overwrite existing keys because this probably means that the
-				 * credit card was updated by an OTA like Booking.com, hence the payment
-				 * logs string in VBO may contain the information of two different cards.
-				 * New credit card details are always pre-pended by VCM in the payment logs.
-				 * 
-				 * @since 	1.16.5 (J) - 1.6.5 (WP)
-				 */
-				continue;
-			}
-
-			if (!empty($remote_cc_data[$key]) && is_string($remote_cc_data[$key]) && strpos($value, '*') !== false) {
-				// replace masked numbers with remote content
-				$value = $this->replaceMaskedNumbers($value, $remote_cc_data[$key]);
-			}
-
-			$cc_value_pairs[$key] = $value;
-		}
-
-		return $cc_value_pairs;
-	}
-
-	/**
-	 * Given a local and a remote credit card number string with
-	 * masked symbols, replaces the values in the corresponding
-	 * positions with the unmasked numbers.
-	 * 
-	 * @param 	string 	$local 		current string with masked values.
-	 * @param 	string 	$remote 	remote string with unmasked values.
-	 * 
-	 * @return 	string 				the local string with unmasked values.
-	 */
-	protected function replaceMaskedNumbers($local, $remote)
-	{
-		// split anything but numbers
-		$numbers = preg_split("/([^0-9]+)/", trim($remote));
-
-		if ($numbers) {
-			// filter empty values
-			$numbers = array_filter($numbers);
-		}
-
-		if (!$numbers) {
-			// unable to proceed
-			return $local;
-		}
-
-		// split anything but stars (asterisks)
-		$stars = preg_split("/([^\*]+)/", trim($local));
-
-		if ($stars) {
-			// filter empty values
-			$stars = array_filter($stars);
-		}
-
-		if (!$stars) {
-			// unable to proceed
-			return $local;
-		}
-
-		// replace masked symbols with numbers at their first occurrence
-		foreach ($numbers as $k => $unmasked) {
-			if (!isset($stars[$k])) {
-				continue;
-			}
-
-			$masked_pos = strpos($local, $stars[$k]);
-
-			if ($masked_pos === false) {
-				continue;
-			}
-
-			$local = substr_replace($local, $unmasked, $masked_pos, strlen($stars[$k]));
-		}
-
-		// return the string with possibly unmasked values
-		return $local;
 	}
 }

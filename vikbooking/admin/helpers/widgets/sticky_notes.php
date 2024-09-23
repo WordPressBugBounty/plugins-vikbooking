@@ -287,18 +287,6 @@ class VikBookingAdminWidgetStickyNotes extends VikBookingAdminWidget
 			}
 		}
 
-		/**
-		 * This widget requires the jQuery UI Sortable library, but we do not preload it
-		 * in order to save resources. We only load this JS asset when the widget is saved.
-		 * The page Dashboard always loads the Sortable library, but not the Multitask panel.
-		 * 
-		 * @since 	1.15.0 (J) - 1.5.0 (WP)
-		 */
-		if (!$is_ajax) {
-			// load assets (with no "preloading")
-			JHtml::fetch('script', VBO_SITE_URI.'resources/jquery-ui.sortable.min.js');
-		}
-
 		// generate a unique ID for the sticky notes wrapper instance
 		$wrapper_instance = !$is_ajax ? static::$instance_counter : rand();
 		$wrapper_id = 'vbo-widget-sticky-' . $wrapper_instance;

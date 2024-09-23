@@ -1863,7 +1863,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('or', 'vikbooking');
 				break;
 			case 'VBNEWRESTRICTIONDATERANGE':
-				$result = __('Dates Range', 'vikbooking');
+				$result = __('Date Range', 'vikbooking');
 				break;
 			case 'VBNEWRESTRICTIONDFROMRANGE':
 				$result = __('From Date', 'vikbooking');
@@ -1872,10 +1872,10 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('To Date', 'vikbooking');
 				break;
 			case 'VBRESTRICTIONERRDRANGE':
-				$result = __('Error: restrictions must have a month or a dates range, from and to.', 'vikbooking');
+				$result = __('Error: restrictions must have a month or a range of dates, from and to.', 'vikbooking');
 				break;
 			case 'VBRESTRICTIONSDRANGE':
-				$result = __('Dates Range', 'vikbooking');
+				$result = __('Date Range', 'vikbooking');
 				break;
 			case 'VBMAINNEWRESTRICTIONTITLE':
 				$result = __('Vik Booking - New Restriction', 'vikbooking');
@@ -3867,7 +3867,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('VAT ID', 'vikbooking');
 				break;
 			case 'VBCSVEXPDATESRANGE':
-				$result = __('Dates Range', 'vikbooking');
+				$result = __('Date Range', 'vikbooking');
 				break;
 			case 'VBOPREVROOMMOVED':
 				$result = __('Previous room %s was switched on %s', 'vikbooking');
@@ -6453,7 +6453,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Set to Pending (Standby)', 'vikbooking');
 				break;
 			case 'VBO_W_GUESTMESSAGES_TITLE':
-				$result = __('Guest messages', 'vikbooking');
+				$result = __('Guest Messages', 'vikbooking');
 				break;
 			case 'VBO_W_GUESTMESSAGES_DESCR':
 				$result = __('Navigate through all your guest messages.', 'vikbooking');
@@ -6785,15 +6785,15 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_SECOND':
 				// @TRANSLATORS: 1 second (singular)
-				$result = __('second', 'vikbooking');
+				$result = _x('second', '1 second (singular)', 'vikbooking');
 				break;
 			case 'VBO_MINUTE':
 				// @TRANSLATORS: 1 minute (singular)
-				$result = __('minute', 'vikbooking');
+				$result = _x('minute', '1 minute (singular)', 'vikbooking');
 				break;
 			case 'VBO_HOUR':
 				// @TRANSLATORS: 1 hour (singular)
-				$result = __('hour', 'vikbooking');
+				$result = _x('hour', '1 hour (singular)', 'vikbooking');
 				break;
 			case 'VBO_NOMORE_NOTIFS':
 				$result = __('There are no more notifications to display!', 'vikbooking');
@@ -6806,14 +6806,14 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_TAKE_ACTION':
 				// @TRANSLATORS: Click the button to visit the URL and take action
-				$result = __('Take action', 'vikbooking');
+				$result = _x('Take action', 'Click the button to visit the URL and take action', 'vikbooking');
 				break;
 			case 'VBO_NOTIFS_GROUP_WEBSITE':
 				$result = __('Website', 'vikbooking');
 				break;
 			case 'VBO_NOTIFS_GROUP_OTAS':
 				// @TRANSLATORS: OTAs stands for channels, like Booking.com, Airbnb, Expedia
-				$result = __('OTAs', 'vikbooking');
+				$result = _x('OTAs', 'OTAs stands for channels, like Booking.com, Airbnb, Expedia', 'vikbooking');
 				break;
 			case 'VBO_NOTIFS_GROUP_CM':
 				$result = __('Channel Manager', 'vikbooking');
@@ -6829,15 +6829,15 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_BOOK_MOD_SUMMARY_SNG':
 				// @TRANSLATORS: Summary of what was changed with a booking modification, singular version
-				$result = __('%s was modified', 'vikbooking');
+				$result = _x('%s was modified', 'Summary of what was changed with a booking modification, singular version', 'vikbooking');
 				break;
 			case 'VBO_BOOK_MOD_SUMMARY_PLR':
 				// @TRANSLATORS: Summary of what was changed with a booking modification, plural version
-				$result = __('%s were modified', 'vikbooking');
+				$result = _x('%s were modified', 'Summary of what was changed with a booking modification, plural version', 'vikbooking');
 				break;
 			case 'VBO_MESSAGE_FROM':
 				// @TRANSLATORS: Message from John
-				$result = __('Message from %s', 'vikbooking');
+				$result = _x('Message from %s', 'Message from John', 'vikbooking');
 				break;
 			case 'VBO_REPLY':
 				$result = __('Reply', 'vikbooking');
@@ -6904,7 +6904,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_PAGE_NUMBER':
 				// @TRANSLATORS: Page 2
-				$result = __('Page %d', 'vikbooking');
+				$result = _x('Page %d', 'Page 2', 'vikbooking');
 				break;
 			case 'VBO_FILTERS_APPLIED':
 				$result = __('Filters applied', 'vikbooking');
@@ -6923,6 +6923,429 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_CREDIT_CARD':
 				$result = __('Credit Card', 'vikbooking');
+				break;
+			case 'VBO_NOTIFS_GROUP_AI':
+				$result = __('AI', 'vikbooking');
+				break;
+			case 'VBO_AVG_BOOK_WINDOW':
+				$result = __('Average Booking Window', 'vikbooking');
+				break;
+			case 'VBO_BOOK_WINDOW_DESCR':
+				$result = __('The booking window indicates the difference in days between the booking date and the check-in date.', 'vikbooking');
+				break;
+			case 'VBO_IS_DERIVED_RATE':
+				$result = __('Derived rate plan', 'vikbooking');
+				break;
+			case 'VBO_DERIVED_RATE_HELP':
+				$result = __('Derived rate plans will automatically inherit any pricing modification from one parent rate plan. Useful, for example, to set up a Non-Refundable Rate that is always 10% cheaper than the Standard Rate.', 'vikbooking');
+				break;
+			case 'VBO_PARENT_RATE':
+				$result = __('Parent rate plan', 'vikbooking');
+				break;
+			case 'VBO_MODIFICATION_MODE':
+				$result = __('Pricing modification', 'vikbooking');
+				break;
+			case 'VBO_MODIFICATION_MODE_HELP':
+				$result = __('Choose whether this rate plan should be cheaper or more expensive than the parent rate.', 'vikbooking');
+				break;
+			case 'VBO_MODIFICATION_TYPE':
+				$result = __('Modification type', 'vikbooking');
+				break;
+			case 'VBO_PERCENT':
+				$result = __('Percent', 'vikbooking');
+				break;
+			case 'VBO_ABSOLUTE':
+				$result = __('Absolute', 'vikbooking');
+				break;
+			case 'VBO_FOLLOW_RESTRICTIONS':
+				$result = __('Follow restrictions', 'vikbooking');
+				break;
+			case 'VBO_FOLLOW_RESTRICTIONS_HELP':
+				$result = __('If enabled, also the restrictions will be automatically inherited from the parent rate plan.', 'vikbooking');
+				break;
+			case 'VBO_W_AITOOLS_TITLE':
+				$result = __('AI - Assistant', 'vikbooking');
+				break;
+			case 'VBO_W_AITOOLS_DESCR':
+				$result = __('Ask the AI assistant to perform specific tasks.', 'vikbooking');
+				break;
+			case 'VBO_RATES_AND_RESTR':
+				$result = __('Rates and restrictions', 'vikbooking');
+				break;
+			case 'VBO_MIN_STAY_SHORT':
+				// @TRANSLATORS: Short for "Minimum Length of Stay"
+				$result = _x('Min. LOS', 'Short for "Minimum Length of Stay"', 'vikbooking');
+				break;
+			case 'VBO_CTA_SHORT':
+				// @TRANSLATORS: Short for "Closed to Arrival"
+				$result = _x('CTA', 'Short for "Closed to Arrival"', 'vikbooking');
+				break;
+			case 'VBO_CTD_SHORT':
+				// @TRANSLATORS: Short for "Closed to Departure"
+				$result = _x('CTD', 'Short for "Closed to Departure"', 'vikbooking');
+				break;
+			case 'VBO_AUTOPAY_SCHEDULED':
+				$result = __('Automatic payment collection', 'vikbooking');
+				break;
+			case 'VBO_NEW_PAYSCHEDULE':
+				$result = __('Schedule new payment', 'vikbooking');
+				break;
+			case 'VBO_AI_ASSISTANT_DISCLAIMER':
+				$result = __('Operations are performed using artificial intelligence. This is an experimental technology, and results may occasionally be incorrect or misleading.', 'vikbooking');
+				break;
+			case 'VBO_AI_ASSISTANT_DISCOVER_HINT':
+				$result = __('Discover what the AI can do', 'vikbooking');
+				break;
+			case 'VBO_AI_ASSISTANT_DISCOVER_TITLE':
+				$result = __('AI Assistant - Capabilities', 'vikbooking');
+				break;
+			case 'VBO_AI_ASSISTANT_CHAT_NO_MESSAGES':
+				$result = __('No messages yet', 'vikbooking');
+				break;
+			case 'VBO_AI_ASSISTANT_CHAT_MESSAGE_PLACEHOLDER':
+				// @TRANSLATORS: The HTML entity "&#9166;" stands for the keyboard Enter symbol
+				$result = _x('Type something and hit &#9166; (Enter) to submit a message', 'The HTML entity "&#9166;" stands for the keyboard Enter symbol', 'vikbooking');
+				break;
+			case 'VBO_TOTAL_RESULTS':
+				$result = __('Total results: %d', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_ROOM_ARI':
+				$result = __('Inventory', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_ROOM_RATES':
+				$result = __('Rates', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_SEARCH_BOOKINGS':
+				$result = __('Search Bookings', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_STATS':
+				$result = __('Statistics', 'vikbooking');
+				break;
+			case 'VBO_CTA_SEE':
+				$result = __('View reservation', 'vikbooking');
+				break;
+			case 'VBO_CTA_SEE_CLOSURE':
+				$result = __('View closure', 'vikbooking');
+				break;
+			case 'VBO_CTA_SEE_NEW':
+				$result = __('View new reservation', 'vikbooking');
+				break;
+			case 'VBO_CTA_SEE_MODIFY':
+				$result = __('View modified reservation', 'vikbooking');
+				break;
+			case 'VBO_CTA_SEE_CANCEL':
+				$result = __('View cancelled reservation', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_RESERVATION':
+				$result = __('Reservation', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_RESERVATION_CLOSURE':
+				$result = __('Closure', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_RESERVATION_NEW':
+				$result = __('Reservation created', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_RESERVATION_MODIFY':
+				$result = __('Reservation modified', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_RESERVATION_CANCEL':
+				$result = __('Reservation cancelled', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_MODIFY_RATES_SEE':
+				$result = __('See Rates', 'vikbooking');
+				break;
+			case 'VBO_TRY':
+				$result = __('Try', 'vikbooking');
+				break;
+			case 'VBO_N_ADULTS':
+				$result = __('%d adults', 'vikbooking');
+				break;
+			case 'VBO_N_ADULTS_1':
+				$result = __('1 adult', 'vikbooking');
+				break;
+			case 'VBO_N_CHILDREN':
+				$result = __('%d children', 'vikbooking');
+				break;
+			case 'VBO_N_CHILDREN_1':
+				$result = __('1 child', 'vikbooking');
+				break;
+			case 'VCM_HOST_TO_GUEST_REVIEW':
+				$result = __('Host-to-guest review submitted', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_NOTIFICATION':
+				$result = __('Notification', 'vikbooking');
+				break;
+			case 'VCM_AITOOL_NOTIFICATION_SUMMARY_EMAIL':
+				// @TRANSLATORS: The wildcard %s will be replaced with the customer email address
+				$result = _x('The customer was notified via email at %s.', 'The wildcard %s will be replaced with the customer email address', 'vikbooking');
+				break;
+			case 'VCM_AITOOL_NOTIFICATION_SUMMARY_MESSAGING':
+				// @TRANSLATORS: The wildcard %s will be replaced with the OTA messaging service, like "Booking.com Messaging"
+				$result = _x('The customer was notified through %s.', 'The wildcard %s will be replaced with the OTA messaging service, like "Booking.com Messaging"', 'vikbooking');
+				break;
+			case 'VBO_AI_AUTO_GUEST_REV_WILLRUN':
+				$result = __('The AI tools will automatically review this guest.', 'vikbooking');
+				break;
+			case 'VBO_AI_AUTO_GUEST_REV_RESIGNORE':
+				$result = __('The AI tools will not review this guest automatically.', 'vikbooking');
+				break;
+			case 'VBO_AI_AUTO_GUEST_REV_EXCLUDE':
+				$result = __('Exclude from automatic review', 'vikbooking');
+				break;
+			case 'VBO_AI_AUTO_GUEST_REV_INCLUDE':
+				$result = __('Enable for automatic review', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_STATS_TITLE':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Statistics', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_STATS_DESCR':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Access, calculate and compare financial statistics and various business metrics.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_STATS_BC_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Number of active bookings in a range of dates.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_STATS_BC_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('How many reservations have we collected this year so far?', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_STATS_BR_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Total revenue for specific dates and listings.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_STATS_BR_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('What\'s the revenue generated last month by %s?', 'Section "discover the AI capabilities"', 'vikbooking');
+					break;
+			case 'VBO_AI_DISC_FN_STATS_LOS_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Calculate and compare the average length of stay on specific date intervals.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_STATS_LOS_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('How\'s the average length of stay this month? Is it higher or lower than last month?', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_BSRCH_TITLE':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Search Bookings', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_BSRCH_DESCR':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Find reservations and related details through various criteria and filters.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_BSRCH_IO_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Find who is arriving, departing or staying on specific dates.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_BSRCH_IO_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Who\'s arriving today? Is anybody checking out?', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_BSRCH_CI_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Search bookings by customer name, email and phone number.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_BSRCH_CI_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Is there any confirmed reservation for John Smith?', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_REMIND_TITLE':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Reminders', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_REMIND_DESCR':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Quickly schedule reminders and notifications for specific dates and reservations.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_REMIND_GR_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Set a reminder for a date.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_REMIND_GR_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('We need to change the beds of the room %s before the guests arrive tomorrow. Please set a reminder for early in the morning.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_REMIND_BR_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Set a reminder for a booking.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_REMIND_BR_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Set a reminder for the reservation of John Smith because we need to collect the outstanding balance upon their arrival.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_TITLE':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Room Rates', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_DESCR':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Calculate the total cost for a stay. Apply new rates and restrictions to your website and OTA rooms.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_RQ_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Get quotes for dates, guests and listings.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_RQ_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('How much does a room for 2 guests cost for next weekend?', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_CP_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Calculate and apply the desired cost for your listings.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_CP_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Get the cost for %s for next Saturday and double it.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_MR_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Modify room rates and restrictions on website and OTAs.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_MR_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Set the cost of %s to %s 190 for next Friday, and set a minimum stay of 2 nights.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_LR_SUMM':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Change room rates just for your website by excluding OTAs.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_RR_LR_EXA':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Change the cost per night of %s to %s 200 only for my website direct bookings for the whole Christmas week.', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_FN_ARI_TITLE':
+				// @TRANSLATORS: Section "discover the AI capabilities"
+				$result = _x('Availability Inventory', 'Section "discover the AI capabilities"', 'vikbooking');
+				break;
+		    case 'VBO_AI_DISC_FN_ARI_DESCR':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Obtain and analyze information related to availability and restrictions for various listings and dates.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_ARI_RA_SUMM':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Check the availability for specific dates.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_ARI_RA_EXA':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Are there any rooms left for next Saturday?', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_ARI_AV_SUMM':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Check if a precise room/listing is available for booking.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_ARI_AV_EXA':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Is the %s available next weekend for 3 nights?', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_BOOK_TITLE':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Room Bookings', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_BOOK_DESCR':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Create new bookings for a specific customer, room and dates. Close and occupy your rooms on specific dates.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_BOOK_MK_SUMM':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Make a reservation for a guest.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_BOOK_MK_EXA':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Mario Rossi would like to book the room %s for 3 nights and 2 guests this Thursday. Please make a reservation for %s 200 per night. They need parking.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_BOOK_CL_SUMM':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Make a room occupied on specific dates to stop the reservations.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_BOOK_CL_EXA':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Please close the room %s from Monday to Friday of next week.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_MODBOOK_TITLE':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Booking Modification', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_MODBOOK_DESCR':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Quickly alter reservations by changing the stay dates, extra services and the total booking amount.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_MODBOOK_CS_SUMM':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Change the stay dates for a reservation.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_MODBOOK_CS_EXA':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Postpone the check-out by one night for the booking ID %d for an extra %s 150.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_MODBOOK_AE_SUMM':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Add extras to existing bookings.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_MODBOOK_AE_EXA':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('John Smith ordered a bottle of wine that costs %s 50. Can you update their bill?', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_DELBOOK_TITLE':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Booking Deletion', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_DELBOOK_DESCR':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Let the assistant find and cancel reservations for you.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_DELBOOK_SD_SUMM':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Search specific reservations and ask to cancel them.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_DELBOOK_SD_EXA':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Please cancel the booking made by John Smith for tomorrow because they lost the flight.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_NOTIFCUST_TITLE':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Customer Notifications', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_NOTIFCUST_DESCR':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Ask the assistant to generate messages and to send them to your guests.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_NOTIFCUST_WB_SUMM':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Search for a specific guest reservation and ask to send a notification.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_NOTIFCUST_WB_EXA':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Find the reservation from John Smith and notify him that the Wi-Fi access was changed to ABCD12345.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_NOTIFCUST_OT_SUMM':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Identify an OTA reservation and send a message to the guest through their messaging API.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_AI_DISC_FN_NOTIFCUST_OT_EXA':
+		    	// @TRANSLATORS: Section "discover the AI capabilities"
+		    	$result = _x('Find the Airbnb reservation of John Smith and send them a message to make sure they will arrive before 9PM.', 'Section "discover the AI capabilities"', 'vikbooking');
+		    	break;
+		    case 'VBO_KEYBOARD_SHORTCUT':
+				$result = __('Keyboard shortcut', 'vikbooking');
+				break;
+			case 'VBO_NEW_GUEST_REVIEW':
+				$result = __('New guest review', 'vikbooking');
+				break;
+			case 'VBO_NEW_GUEST_REVIEW_SUMM':
+				// @TRANSLATORS: John Smith left a review with a score of 10/10
+				$result = _x('%s left a review with a score of %s.', 'John Smith left a review with a score of 10/10', 'vikbooking');
+				break;
+			case 'VBO_REG_NEW_PAYMENT':
+				$result = __('Register new payment', 'vikbooking');
+				break;
+			case 'VBO_MODIFIED_ON_SMT':
+				// @TRANSLATORS: Modified on "2024-09-17 12:00:00"
+				$result = _x('Modified on %s', 'Modified on "2024-09-17 12:00:00"', 'vikbooking');
+				break;
+			case 'VBO_UPDATE_PAYMENT':
+				$result = __('Update payment', 'vikbooking');
 				break;
 		}
 

@@ -13,15 +13,16 @@ defined('ABSPATH') or die('No script kiddies please!');
 // import Joomla view library
 jimport('joomla.application.component.view');
 
-class VikBookingViewPrices extends JViewVikBooking {
-	
-	function display($tpl = null) {
+class VikBookingViewPrices extends JViewVikBooking
+{
+	public function display($tpl = null)
+	{
 		// Set the toolbar
 		$this->addToolBar();
 
 		$navbut = "";
+		$app = JFactory::getApplication();
 		$dbo = JFactory::getDbo();
-		$mainframe = JFactory::getApplication();
 
 		// wizard
 		$wizard = VikRequest::getInt('wizard', 0, 'request');
@@ -40,14 +41,13 @@ class VikBookingViewPrices extends JViewVikBooking {
 				$dbo->setQuery($q);
 				$dbo->execute();
 			}
-			$mainframe->redirect('index.php?option=com_vikbooking&wizard=1');
+			$app->redirect('index.php?option=com_vikbooking&wizard=1');
 			exit;
 		}
-		//
-		
-		$lim = $mainframe->getUserStateFromRequest("com_vikbooking.limit", 'limit', $mainframe->get('list_limit'), 'int');
+
+		$lim = $app->getUserStateFromRequest("com_vikbooking.limit", 'limit', $app->get('list_limit'), 'int');
 		$lim0 = VikRequest::getVar('limitstart', 0, '', 'int');
-		$q = "SELECT SQL_CALC_FOUND_ROWS * FROM `#__vikbooking_prices`";
+		$q = "SELECT SQL_CALC_FOUND_ROWS * FROM `#__vikbooking_prices` ORDER BY `derived_id` ASC, `id` ASC";
 		$dbo->setQuery($q, $lim0, $lim);
 		$rows = $dbo->loadAssocList();
 		if ($rows) {
@@ -56,11 +56,11 @@ class VikBookingViewPrices extends JViewVikBooking {
 			$pageNav = new JPagination( $dbo->loadResult(), $lim0, $lim );
 			$navbut="<table align=\"center\"><tr><td>".$pageNav->getListFooter()."</td></tr></table>";
 		}
-		
+
 		$this->rows = $rows;
 		$this->lim0 = $lim0;
 		$this->navbut = $navbut;
-		
+
 		// Display the template
 		parent::display($tpl);
 	}
@@ -68,7 +68,8 @@ class VikBookingViewPrices extends JViewVikBooking {
 	/**
 	 * Sets the toolbar
 	 */
-	protected function addToolBar() {
+	protected function addToolBar()
+	{
 		JToolBarHelper::title(JText::translate('VBMAINPRICETITLE'), 'vikbooking');
 		if (JFactory::getUser()->authorise('core.create', 'com_vikbooking')) {
 			JToolBarHelper::addNew('newprice', JText::translate('VBMAINPRICENEW'));
@@ -83,5 +84,4 @@ class VikBookingViewPrices extends JViewVikBooking {
 			JToolBarHelper::spacer();
 		}
 	}
-
 }

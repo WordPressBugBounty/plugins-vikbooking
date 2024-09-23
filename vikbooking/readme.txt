@@ -2,8 +2,8 @@
 Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
-Tested up to: 6.6
-Stable tag: 1.6.9
+Tested up to: 6.5
+Stable tag: 1.7.0
 Requires PHP: 7.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -128,6 +128,24 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 13. Browser (web push) notifications will turn your device into a real-time updated system.
 
 == Changelog ==
+
+= 1.7.0 =
+*Release date - 23 September 2024*
+
+* Major framework release.
+* AI framework powered by ChatGPT (Channel Manager and E4jConnect subscription required).
+* New admin-widget "AI Assistant" (Channel Manager and E4jConnect subscription required).
+* New admin-widget "Guest Reviews" (Channel Manager and E4jConnect subscription required).
+* Added support to Airbnb reactions in "Guest Messages" admin-widget.
+* Derived rate plans with automatic rates and restrictions update from parent rate plans.
+* Tiny URLs generated automatically to improve the OTA messaging capabilities.
+* Room rates and restrictions management in admin-widget "Bookings Calendar".
+* Improved Notifications Center functionalities and CTA buttons.
+* Schedule automatic payment collections.
+* Register, update and delete offline payments.
+* New financial statistics.
+* New back-end styles.
+* Several framework improvements.
 
 = 1.6.9 =
 *Release date - 11 June 2024*

@@ -36,8 +36,11 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 		$festivities = $fests->loadFestDates();
 
 		$dbo = JFactory::getDbo();
-		$mainframe = JFactory::getApplication();
+		$app = JFactory::getApplication();
 		$session = JFactory::getSession();
+
+		// define the maximum number of days
+		$MAX_DAYS = VBOFactory::getConfig()->getInt('roverv_max_days', 60);
 
 		$cid = VikRequest::getVar('cid', array(0));
 		$sesscids = $session->get('vbRatesOviewCids', array());
@@ -60,7 +63,7 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 			}
 		}
 		if (empty($roomid)) {
-			$mainframe->redirect("index.php?option=com_vikbooking&task=rooms");
+			$app->redirect("index.php?option=com_vikbooking&task=rooms");
 			exit;
 		}
 		// make sure to set at least the first index of cid[]
@@ -97,13 +100,13 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 			}
 		}
 		if (!count($reqcats) && !count($reqids)) {
-			$mainframe->redirect("index.php?option=com_vikbooking&task=rooms");
+			$app->redirect("index.php?option=com_vikbooking&task=rooms");
 			exit;
 		}
 
 		if (!count($reqcats) && empty($sesscids) && count($reqids) === 1 && count($all_rooms) > 1) {
 			// push the first 5 rooms by default
-			$max_def_rooms = 5;
+			$max_def_rooms = VBOFactory::getConfig()->getInt('roverv_def_max_rooms', 5);
 			$def_rooms_count = 0;
 			$reqids = [];
 			foreach ($all_rooms as $aroom) {
@@ -131,7 +134,7 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 			}
 		}
 		if (!$roomrows) {
-			$mainframe->redirect("index.php?option=com_vikbooking&task=rooms");
+			$app->redirect("index.php?option=com_vikbooking&task=rooms");
 			exit;
 		}
 		if (!$reqids) {
@@ -280,8 +283,9 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 				$tsstart = $prevts;
 			}
 		}
-		$roomrates = [];
+
 		// read the rates for the lowest number of nights for each room requested
+		$roomrates = [];
 		foreach ($req_room_ids as $rid) {
 			/**
 			 * Some types of price may not have a cost for 1 or 2 nights,
@@ -293,9 +297,14 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 			 * 
 			 * @since 	1.10 (J) - 1.0.14 (WP)
 			 */
-			$q = "SELECT `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name`,`p`.`minlos` FROM `#__vikbooking_dispcost` AS `r` LEFT JOIN `#__vikbooking_prices` `p` ON `p`.`id`=`r`.`idprice` WHERE `r`.`idroom`=".(int)$rid." ORDER BY `r`.`days` ASC, `r`.`cost` ASC LIMIT 50;";
-			$dbo->setQuery($q);
+			$q = "SELECT `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name`,`p`.`minlos`,`p`.`derived_id` 
+				FROM `#__vikbooking_dispcost` AS `r` 
+				LEFT JOIN `#__vikbooking_prices` `p` ON `p`.`id`=`r`.`idprice` 
+				WHERE `r`.`idroom`=".(int)$rid." 
+				ORDER BY `r`.`days` ASC, `r`.`cost` ASC";
+			$dbo->setQuery($q, 0, 50);
 			$nowroomrates = $dbo->loadAssocList();
+
 			if ($nowroomrates) {
 				$parsed_room_prices = [];
 				foreach ($nowroomrates as $rrk => $rrv) {
@@ -308,7 +317,9 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 					$parsed_room_prices[$rrv['idprice']] = 1;
 				}
 			}
+
 			$nowroomrates = array_values($nowroomrates);
+
 			// push rates for this room
 			$roomrates[(int)$rid] = $nowroomrates;
 		}
@@ -320,7 +331,6 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 
 		// read all the bookings between these dates for all rooms
 		$booked_dates = [];
-		$MAX_DAYS = 60;
 		$info_start = getdate($tsstart);
 		$endts = mktime(23, 59, 59, $info_start['mon'], ($info_start['mday'] + $MAX_DAYS), $info_start['year']);
 		$q = "SELECT `b`.*,`ob`.`idorder` FROM `#__vikbooking_busy` AS `b`,`#__vikbooking_ordersbusy` AS `ob` WHERE `b`.`idroom` IN (".implode(', ', $reqids).") AND `b`.`id`=`ob`.`idbusy` AND (`b`.`checkin`>=".$tsstart." OR `b`.`checkout`>=".$tsstart.") AND (`b`.`checkin`<=".$endts." OR `b`.`checkout`<=".$tsstart.");";
@@ -359,6 +369,7 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 		$this->firstroom = $roomid;
 		$this->festivities = $festivities;
 		$this->rdaynotes = $rdaynotes;
+		$this->max_days = $MAX_DAYS;
 		
 		// Display the template
 		parent::display($tpl);

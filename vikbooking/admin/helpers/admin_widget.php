@@ -122,6 +122,30 @@ abstract class VikBookingAdminWidget
 	}
 
 	/**
+	 * Tells if the admin-widget can be installed on the current environment.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function preflight()
+	{
+		return true;
+	}
+
+	/**
+	 * Returns the admin-widget priority for a custom ordering.
+	 * 
+	 * @return 	int
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function getPriority()
+	{
+		return 10;
+	}
+
+	/**
 	 * Gets the name of the current widget.
 	 * 
 	 * @return 	string 	the widget name.

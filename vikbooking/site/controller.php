@@ -33,6 +33,7 @@ class VikBookingController extends JControllerVikBooking
 			case 'tableaux':
 			case 'precheckin':
 			case 'revstay':
+			case 'tinyurl':
 				VikRequest::setVar('view', $view);
 				break;
 			default:
@@ -2230,11 +2231,24 @@ class VikBookingController extends JControllerVikBooking
 			// check if some of the rooms booked have shared calendars
 			VikBooking::updateSharedCalendars($row['id'], array(), $row['checkin'], $row['checkout']);
 
-			// send email notification to guest and admin
-			VikBooking::sendBookingEmail($row['id'], array('guest', 'admin'));
+			/**
+			 * Trigger event to allow third-party plugins to choose whether payment notifications should be sent
+			 * 
+			 * @since 	1.16.10 (J) - 1.6.10 (WP)
+			 */
+			$send_notifications = true;
+			$should_send = VBOFactory::getPlatform()->getDispatcher()->filter('onPaymentReceivedShouldSendNotifications', [$row]);
+			if (is_array($should_send) && in_array(false, $should_send, true)) {
+				$send_notifications = false;
+			}
 
-			// SMS
-			VikBooking::sendBookingSMS($row['id']);
+			if ($send_notifications) {
+				// send email notification to guest and admin
+				VikBooking::sendBookingEmail($row['id'], array('guest', 'admin'));
+
+				// SMS
+				VikBooking::sendBookingSMS($row['id']);
+			}
 
 			/**
 			 * Payment gateways may set and return the transaction information
@@ -2749,7 +2763,11 @@ class VikBookingController extends JControllerVikBooking
 			VikRequest::setVar('end_date', $end_date);
 			//make call to get the result
 			TACVBO::$getArray = true;
-			$website_rates = TACVBO::tac_av_l();
+			$website_rates = TACVBO::tac_av_l([
+				// always force adults and children to be injected as arguments to avoid request conflicts
+				'adults'   => VikRequest::getVar('adults', array()),
+				'children' => VikRequest::getVar('children', array()) ?: [0],
+			]);
 			//validate response
 			if (!is_array($website_rates)) {
 				//error returned
@@ -3315,7 +3333,7 @@ class VikBookingController extends JControllerVikBooking
 		if (count($customer)) {
 			$review_content->reviewer->name = $customer['first_name'];
 			$review_content->reviewer->country_code = $customer['country'];
-			$customer_name = $customer['first_name'] . ' ' . $customer['last_name'];;
+			$customer_name = $customer['first_name'] . ' ' . $customer['last_name'];
 		} else {
 			$revuname = '';
 			if (!empty($order['custdata'])) {
@@ -4545,5 +4563,18 @@ class VikBookingController extends JControllerVikBooking
 
 		// output the JSON encoded successful response
 		VBOHttpDocument::getInstance()->json(['success' => 1]);
+	}
+
+	/**
+	 * End-point used to ping the execution of the scheduled crontab runners.
+	 * 
+	 * @return  void
+	 * 
+	 * @since   1.17 (J) - 1.7 (WP)
+	 */
+	public function crontab()
+	{
+		VBOFactory::getCrontabSimulator()->run();
+		exit;
 	}
 }

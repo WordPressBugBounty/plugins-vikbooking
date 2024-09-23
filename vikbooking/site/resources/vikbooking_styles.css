@@ -5604,7 +5604,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	content: "";
 	width: 100%;
 	height: 3px;
-	background: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px);;
+	background: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px);
 	position: absolute;
 	bottom: 0;
 	left: 0;
@@ -6198,25 +6198,20 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 .vbo-booking-chat-inner .chat-conversation .chat-message .speech-bubble.sent {
 	background: var(--vbo-blue-color); 
 }
+.vbo-booking-chat-inner .chat-conversation .chat-message .speech-bubble {
+	font-size: 16px;
+	line-height: 24px;
+}
+.vbo-booking-chat-inner .chat-conversation .chat-datetime-separator {
+	font-size: 12px;
+}
+.vbo-booking-chat-inner .chat-input-footer .textarea-input .chat-action-btn {
+	background: var(--vbo-border-color);
+}
 .vbo-booking-chat-inner .chat-input-footer {
-	background: var(--vbo-white-bg-color);
-	margin: 0 -10px -10px;
-	border-top: 1px solid var(--vbo-light-border-color);
-}
-.vbo-booking-chat-inner .chat-input-footer .textarea-input textarea {
-	padding: 20px 30px 20px 18px;
-	border: 1px solid var(--vbo-white-bg-color);
-	width: calc(100% - 50px);
-	border-radius: 0;
-	outline: none !important;
-}
-.vbo-booking-chat-inner .chat-input-footer .textarea-input textarea:focus {
-	box-shadow: none !important;
-	border-color: var(--vbo-blue-color);
-}
-.vbo-booking-chat-inner .chat-input-footer .textarea-input label.attachment-label {
-	margin-top: 23px;
-	margin-left: -25px;
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: column;
 }
 .vbo-booking-chat-inner .chat-input-footer .chat-uploads-tab .chat-attachment {
 	border: 1px solid var(--vbo-blue-color);
@@ -6243,8 +6238,18 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	background: var(--vbo-grey-bg-color);
 	color: var(--vbo-text-color);
 }
+.vbo-booking-chat-inner .chat-input-footer #chat-input-box {
+	margin: 0;
+	padding: 0;
+}
+.vbo-booking-chat-inner .chat-input-footer .textarea-input textarea {
+	background-image: none;
+}
 .chat-messages-panel .chat-conversation .chat-message {
 	margin: 3px 0;
+}
+.chat-input-footer .textarea-input .manual-send-message i, .vbo-booking-chat-inner .chat-input-footer .textarea-input .chat-action-btn i {
+	line-height: 34px;
 }
 .chat-input-footer .chat-uploads-bar {
 	border-top: 1px solid var(--vbo-light-border-color);
@@ -8564,7 +8569,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	color: var(--vbo-lightblue-color);
 }
 .notice-success > p {
-	color: var(--vbo-lightblue-color) !important;;
+	color: var(--vbo-lightblue-color) !important;
 	margin-bottom: 0 !important;
 }
 .notice-error {
@@ -8574,7 +8579,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	color: var(--vbo-red-color);
 }
 .notice-error > p {
-	color: var(--vbo-red-color) !important;;
+	color: var(--vbo-red-color) !important;
 	margin-bottom: 0 !important;
 }
 .notice-warning {
@@ -8584,7 +8589,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	color: var(--vbo-orange-color);
 }
 .notice-warning > p {
-	color: var(--vbo-orange-color) !important;;
+	color: var(--vbo-orange-color) !important;
 	margin-bottom: 0 !important;
 }
 .notice-info {
@@ -8594,7 +8599,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	color: var(--vbo-blue-color);
 }
 .notice-info > p {
-	color: var(--vbo-blue-color) !important;;
+	color: var(--vbo-blue-color) !important;
 	margin-bottom: 0 !important;
 }
 

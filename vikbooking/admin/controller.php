@@ -6345,6 +6345,9 @@ class VikBookingController extends JControllerVikBooking
 
 	private function do_createprice($new = false)
 	{
+		$app = JFactory::getApplication();
+		$dbo = JFactory::getDbo();
+
 		$pprice = VikRequest::getString('price', '', 'request');
 		$pattr = VikRequest::getString('attr', '', 'request');
 		$ppraliq = VikRequest::getInt('praliq', '', 'request');
@@ -6358,14 +6361,33 @@ class VikBookingController extends JControllerVikBooking
 		$pminhadv = VikRequest::getInt('minhadv', '', 'request');
 		$pminhadv = $pminhadv < 0 ? 0 : $pminhadv;
 		$pcanc_policy = VikRequest::getString('canc_policy', '', 'request', VIKREQUEST_ALLOWHTML);
+
+		$is_derived = $app->input->getInt('is_derived', 0);
+		$derived_id = $app->input->getUInt('derived_id', 0);
+		$derived_data = $app->input->get('derived_data', [], 'array');
+
+		$parent_id = 0;
+		$derived_info = null;
+
+		if ($is_derived && $derived_id && $derived_data) {
+			$parent_id = $derived_id;
+			$derived_info = $derived_data;
+			$derived_info['mode'] = ($derived_info['mode'] ?? '') == 'charge' ? 'charge' : 'discount';
+			$derived_info['type'] = ($derived_info['type'] ?? '') == 'absolute' ? 'absolute' : 'percent';
+			$derived_info['value'] = (float) ($derived_info['value'] ?? 0);
+			$derived_info['follow_restr'] = (int) ($derived_info['follow_restr'] ?? 1);
+			if (!$derived_info['value']) {
+				$parent_id = 0;
+				$derived_info = null;
+			}
+		}
+
 		if (!empty($pprice)) {
-			$dbo = JFactory::getDbo();
-			$q = "INSERT INTO `#__vikbooking_prices` (`name`,`attr`,`idiva`,`breakfast_included`,`free_cancellation`,`canc_deadline`,`canc_policy`,`minlos`,`minhadv`,`meal_plans`) VALUES(" . $dbo->q($pprice) . ", " . $dbo->q($pattr) . ", " . $dbo->q($ppraliq) . ", " . $pbreakfast_included . ", " . $pfree_cancellation . ", " . $pcanc_deadline . ", " . $dbo->q($pcanc_policy) . ", " . $pminlos . ", " . $pminhadv . ", " . $dbo->q(json_encode($pmeal_plans)) . ");";
+			$q = "INSERT INTO `#__vikbooking_prices` (`name`,`attr`,`idiva`,`breakfast_included`,`free_cancellation`,`canc_deadline`,`canc_policy`,`minlos`,`minhadv`,`meal_plans`,`derived_id`,`derived_data`) VALUES(" . $dbo->q($pprice) . ", " . $dbo->q($pattr) . ", " . $dbo->q($ppraliq) . ", " . $pbreakfast_included . ", " . $pfree_cancellation . ", " . $pcanc_deadline . ", " . $dbo->q($pcanc_policy) . ", " . $pminlos . ", " . $pminhadv . ", " . $dbo->q(json_encode($pmeal_plans)) . ", {$parent_id}, " . ($derived_info ? $dbo->q(json_encode($derived_info)) : 'NULL') . ");";
 			$dbo->setQuery($q);
 			$dbo->execute();
 		}
 
-		$app = JFactory::getApplication();
 		$app->redirect("index.php?option=com_vikbooking&task=" . ($new ? 'newprice' : 'prices'));
 		$app->close();
 	}
@@ -6398,6 +6420,9 @@ class VikBookingController extends JControllerVikBooking
 
 	private function do_updateprice($stay = false)
 	{
+		$app = JFactory::getApplication();
+		$dbo = JFactory::getDbo();
+
 		$pprice = VikRequest::getString('price', '', 'request');
 		$pattr = VikRequest::getString('attr', '', 'request');
 		$ppraliq = VikRequest::getInt('praliq', '', 'request');
@@ -6412,14 +6437,33 @@ class VikBookingController extends JControllerVikBooking
 		$pminhadv = $pminhadv < 0 ? 0 : $pminhadv;
 		$pcanc_policy = VikRequest::getString('canc_policy', '', 'request', VIKREQUEST_ALLOWHTML);
 		$pwhereup = VikRequest::getInt('whereup', 0, 'request');
+
+		$is_derived = $app->input->getInt('is_derived', 0);
+		$derived_id = $app->input->getUInt('derived_id', 0);
+		$derived_data = $app->input->get('derived_data', [], 'array');
+
+		$parent_id = 0;
+		$derived_info = null;
+
+		if ($is_derived && $derived_id && $derived_data) {
+			$parent_id = $derived_id;
+			$derived_info = $derived_data;
+			$derived_info['mode'] = ($derived_info['mode'] ?? '') == 'charge' ? 'charge' : 'discount';
+			$derived_info['type'] = ($derived_info['type'] ?? '') == 'absolute' ? 'absolute' : 'percent';
+			$derived_info['value'] = (float) ($derived_info['value'] ?? 0);
+			$derived_info['follow_restr'] = (int) ($derived_info['follow_restr'] ?? 1);
+			if (!$derived_info['value']) {
+				$parent_id = 0;
+				$derived_info = null;
+			}
+		}
+
 		if (!empty($pprice) && $pwhereup) {
-			$dbo = JFactory::getDbo();
-			$q = "UPDATE `#__vikbooking_prices` SET `name`=" . $dbo->q($pprice) . ",`attr`=" . $dbo->q($pattr) . ",`idiva`=" . $dbo->q($ppraliq) . ",`breakfast_included`=" . $pbreakfast_included . ",`free_cancellation`=" . $pfree_cancellation . ",`canc_deadline`=" . $pcanc_deadline . ",`canc_policy`=" . $dbo->q($pcanc_policy) . ",`minlos`=" . $pminlos . ",`minhadv`=" . $pminhadv . ",`meal_plans`=" . $dbo->q(json_encode($pmeal_plans)) . " WHERE `id`=" . $dbo->q($pwhereup) . ";";
+			$q = "UPDATE `#__vikbooking_prices` SET `name`=" . $dbo->q($pprice) . ",`attr`=" . $dbo->q($pattr) . ",`idiva`=" . $dbo->q($ppraliq) . ",`breakfast_included`=" . $pbreakfast_included . ",`free_cancellation`=" . $pfree_cancellation . ",`canc_deadline`=" . $pcanc_deadline . ",`canc_policy`=" . $dbo->q($pcanc_policy) . ",`minlos`=" . $pminlos . ",`minhadv`=" . $pminhadv . ",`meal_plans`=" . $dbo->q(json_encode($pmeal_plans)) . ",`derived_id`={$parent_id},`derived_data`=" . ($derived_info ? $dbo->q(json_encode($derived_info)) : 'NULL') . " WHERE `id`=" . $dbo->q($pwhereup) . ";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 		}
 
-		$app = JFactory::getApplication();
 		$app->redirect("index.php?option=com_vikbooking&task=" . ($stay ? 'editprice&cid[]=' . $pwhereup : 'prices'));
 		$app->close();
 	}
@@ -8180,9 +8224,13 @@ class VikBookingController extends JControllerVikBooking
 		 * Appearance preferences (light, auto, dark mode).
 		 * 
 		 * @since 	1.15.0 (J) - 1.5.0 (WP)
+		 * @since 	1.16.10 (J) - 1.6.10 (WP) mirrored on VCM.
 		 */
 		$appearance_pref = VikRequest::getString('appearance_pref', '');
 		$config->set('appearance_pref', $appearance_pref);
+		if (class_exists('VCMFactory')) {
+			VCMFactory::getConfig()->set('appearance_pref', $appearance_pref);
+		}
 
 		$res_backend_path = VBO_ADMIN_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR;
 		$picon = "";
@@ -11174,12 +11222,11 @@ jQuery(".' . $selector . '").hover(function() {
 		$ppad_ratio = VikRequest::getInt('pad_ratio', '', 'request');
 		$q = "SELECT * FROM `#__vikbooking_orders` WHERE `id`=".(int)$id." AND `status`='confirmed' AND `checked` > 0;";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() < 1) {
+		$row = $dbo->loadAssoc();
+		if (!$row) {
 			$mainframe->redirect('index.php');
 			exit;
 		}
-		$row = $dbo->loadAssoc();
 		if (!empty($row['lang'])) {
 			if ($lang->getTag() != $row['lang']) {
 				if (VBOPlatformDetection::isWordPress()) {
@@ -11288,7 +11335,11 @@ jQuery(".' . $selector . '").hover(function() {
 
 		list($checkintpl, $pdfparams) = VikBooking::loadCheckinDocTmpl($row, $booking_rooms, $customer);
 		$checkin_body = VikBooking::parseCheckinDocTemplate($checkintpl, $row, $booking_rooms, $customer);
-		$pdffname = $row['id'] . '_' . $row['sid'] . '.pdf';
+
+		// build the proper document SID for bc
+		$doc_sid = $row['sid'] ?: $row['idorderota'] ?: '';
+		$pdffname = $row['id'] . '_' . $doc_sid . '.pdf';
+
 		$pathpdf = VBO_SITE_PATH . DIRECTORY_SEPARATOR . "helpers" . DIRECTORY_SEPARATOR . "checkins" . DIRECTORY_SEPARATOR . "generated" . DIRECTORY_SEPARATOR . $pdffname;
 		if (file_exists($pathpdf)) @unlink($pathpdf);
 		$pdf_page_format = is_array($pdfparams['pdf_page_format']) ? $pdfparams['pdf_page_format'] : constant($pdfparams['pdf_page_format']);
@@ -11441,10 +11492,12 @@ jQuery(".' . $selector . '").hover(function() {
 				}
 			}
 		}
-		if (count($guests_details)) {
+
+		if ($guests_details) {
 			// current pax data may contain some extra information collected via front-end pre-checkin so we need to merge them
 			$curpaxdata = json_decode($custorder['pax_data'], true);
-			if (is_array($curpaxdata) && count($curpaxdata)) {
+			if (is_array($curpaxdata) && $curpaxdata) {
+				// scan new guest registration details
 				foreach ($guests_details as $ind => $groom) {
 					foreach ($groom as $aduind => $aduinfo) {
 						if (isset($curpaxdata[$ind][$aduind])) {
@@ -11459,9 +11512,34 @@ jQuery(".' . $selector . '").hover(function() {
 						}
 					}
 				}
+
+				/**
+				 * In order to not lose any custom registration data added through PMS reports,
+				 * we scan the previous registration data to ensure we keep them in the update.
+				 * 
+				 * @since 	1.16.10 (J) - 1.6.10 (WP)
+				 */
+				foreach ($curpaxdata as $ind => $groom) {
+					if (!isset($guests_details[$ind])) {
+						// ignore deleted room registration
+						continue;
+					}
+					foreach ($groom as $aduind => $aduinfo) {
+						if (!isset($guests_details[$ind][$aduind]) || !is_array($aduinfo)) {
+							// ignore deleted room-guest registration
+							continue;
+						}
+						foreach ($aduinfo as $field_key => $field_val) {
+							if (!isset($guests_details[$ind][$aduind][$field_key]) && !empty($field_val)) {
+								// merge previous room-guest registration data
+								$guests_details[$ind][$aduind][$field_key] = $field_val;
+							}
+						}
+					}
+				}
 			}
-			//
-			$q = "UPDATE `#__vikbooking_customers_orders` SET `pax_data`=".$dbo->quote(json_encode($guests_details))." WHERE `id`=".$custorder['id'].";";
+
+			$q = "UPDATE `#__vikbooking_customers_orders` SET `pax_data`=" . $dbo->q(json_encode($guests_details)) . " WHERE `id`=" . (int) $custorder['id'] . ";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 		}
@@ -13893,29 +13971,36 @@ jQuery(".' . $selector . '").hover(function() {
 	 */
 	public function bookings_have_reviews()
 	{
-		$dbo = JFactory::getDbo();
-		$bids = VikRequest::getVar('bids', array(), 'request', 'array');
-		$vcm_installed = is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikchannelmanager.php');
-		$withreviews = array();
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
 
-		if ($vcm_installed && is_array($bids) && count($bids)) {
+		$dbo = JFactory::getDbo();
+
+		$bids = VikRequest::getVar('bids', [], 'request', 'array');
+		$vcm_installed = class_exists('VikChannelManager');
+		$withreviews = [];
+
+		if ($vcm_installed && $bids) {
+			$bids = array_filter(array_map('intval', (array) $bids));
+			$bids = $bids ?: [0];
+
 			try {
 				$q = "SELECT `id`, `idorder` FROM `#__vikchannelmanager_otareviews` WHERE `idorder` IN (" . implode(', ', $bids) . ");";
 				$dbo->setQuery($q);
-				$dbo->execute();
-				if ($dbo->getNumRows()) {
-					$reviews = $dbo->loadAssocList();
-					foreach ($reviews as $r) {
-						$withreviews[$r['idorder']] = $r['id'];
-					}
+				$reviews = $dbo->loadAssocList();
+
+				foreach ($reviews as $r) {
+					$withreviews[$r['idorder']] = $r['id'];
 				}
 			} catch (Exception $e) {
 				// do nothing, outdated version
 			}
 		}
 
-		echo json_encode($withreviews);
-		exit;
+		// output list of booking IDs found, if any
+		VBOHttpDocument::getInstance()->json($withreviews);
 	}
 
 	/**
@@ -15038,7 +15123,7 @@ jQuery(".' . $selector . '").hover(function() {
 			VBOHttpDocument::getInstance()->close($e->getCode(), $e->getMessage());
 		}
 
-		// prepare response object with a property equal to the called method
+		// prepare response object with the result property
 		$response = new stdClass;
 		$response->result = $result;
 

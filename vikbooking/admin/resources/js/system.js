@@ -491,7 +491,7 @@ function wpOpenJModal(id, href, onShow, onHide) {
 	// add workaround to trigger hide|hidden events also when
 	// clicking the dismiss button of the modal
 	closeBtn.on('click', function() {
-		jQuery('#jmodal-' + id).trigger('hide').trigger('hidden').trigger('hide.bs.modal');;
+		jQuery('#jmodal-' + id).trigger('hide').trigger('hidden').trigger('hide.bs.modal');
 	});
 
 	// hide on backdrop click only in case the modal is dismissable
@@ -517,7 +517,7 @@ function wpCloseJModal(id) {
 	}
 
 	// close modal and trigger hide|hidden events
-	jQuery(id).modal('hide').trigger('hide').trigger('hidden').trigger('hide.bs.modal');;
+	jQuery(id).modal('hide').trigger('hide').trigger('hidden').trigger('hide.bs.modal');
 }
 
 function wpAppendModalContent(id, href) {

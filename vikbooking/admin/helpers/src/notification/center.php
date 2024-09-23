@@ -421,6 +421,8 @@ final class VBONotificationCenter
 	 */
 	private function storeNotification(VBONotificationElements $notification)
 	{
+		$dbo = JFactory::getDbo();
+
 		if (!$notification->get('sender') || !$notification->get('type')) {
 			$notification->setError('Notification sender and type are mandatory');
 			return false;
@@ -436,17 +438,21 @@ final class VBONotificationCenter
 			$this->loadLanguageDefs();
 		}
 
+		// build notification record to store or update
+		$record = new stdClass;
+
 		// ensure the same notification does not exist already
-		if ($this->signatureExists($notification->getSignature())) {
-			// abort without raising any errors to skip a duplicate notification
+		if ($duplicate_id = $this->signatureExists($notification->getSignature())) {
+			// update the date for the existing notification ID
+			$record->id = $duplicate_id;
+			$record->createdon = JFactory::getDate('now')->toSql();
+			$dbo->updateObject('#__vikbooking_notifications', $record, 'id');
+
+			// abort without raising any errors to skip a duplicate notification from being created
 			return false;
 		}
 
-		$dbo = JFactory::getDbo();
-
-		// build notification record to store
-		$record = new stdClass;
-
+		// set record properties for creation
 		$record->signature  = $notification->getSignature();
 		$record->group 	    = $notification->getGroup();
 		$record->type 	    = $notification->getType();
@@ -565,9 +571,9 @@ final class VBONotificationCenter
 	/**
 	 * Checks if a notification exists from the given signature.
 	 * 
-	 * @param 	string 	$signature 	the notification elements signature.
+	 * @param 	string 	$signature 	The notification elements signature.
 	 * 
-	 * @return 	bool
+	 * @return 	int|null 			Either the existing record ID or null.
 	 */
 	private function signatureExists(string $signature)
 	{
@@ -580,11 +586,7 @@ final class VBONotificationCenter
 				->where($dbo->qn('signature') . ' = ' . $dbo->q($signature))
 		);
 
-		if ($dbo->loadResult()) {
-			return true;
-		}
-
-		return false;
+		return $dbo->loadResult();
 	}
 
 	/**

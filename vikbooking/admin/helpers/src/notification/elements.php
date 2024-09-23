@@ -34,6 +34,8 @@ final class VBONotificationElements extends JObject
 		'guests',
 		// notifications from Operators
 		'operators',
+		// notifications from AI
+		'ai',
 	];
 
 	/**
@@ -345,7 +347,7 @@ final class VBONotificationElements extends JObject
 		// shorten the string to the desired length
 		if (!function_exists('mb_strlen')) {
 			// use a regular sub-string without multi-byte support
-			return substr($value, 0, $length);
+			return rtrim(substr($value, 0, $length - 3), '.,?!;:#\'"([{ ') . '...';
 		}
 
 		// calculate string length
@@ -355,13 +357,13 @@ final class VBONotificationElements extends JObject
 
 		if ($ch_diff <= 0) {
 			// no multi-byte chars found
-			return substr($value, 0, $length);
+			return rtrim(substr($value, 0, $length - 3), '.,?!;:#\'"([{ ') . '...';
 		}
 
 		// safely construct the string with one multibyte char per time
 		$mb_value = '';
 		$mb_char_start = 0;
-		while (strlen($mb_value) < $length) {
+		while (strlen($mb_value) < $length - 3) {
 			// get a one-char multi-byte portion
 			$mb_portion = mb_substr($value, $mb_char_start, 1, 'UTF-8');
 
@@ -377,6 +379,6 @@ final class VBONotificationElements extends JObject
 			$mb_char_start++;
 		}
 
-		return $mb_value;
+		return rtrim($mb_value, '.,?!;:#\'"([{ ') . '...';
 	}
 }

@@ -18,6 +18,9 @@ class VikBookingViewBookingcheckin extends JViewVikBooking {
 	function display($tpl = null) {
 		// This view is usually called within a modal box, so it does not require the toolbar or page title
 
+		$dbo = JFactory::getDbo();
+		$mainframe = JFactory::getApplication();
+
 		/**
 		 * @wponly - if we fall here because of a redirect after the generation of the check-in doc, and we are not doing Ajax,
 		 * we need to print a button in the toolbar to go back to the booking details page.
@@ -36,9 +39,11 @@ class VikBookingViewBookingcheckin extends JViewVikBooking {
 			$document = JFactory::getDocument();
 			$document->addStyleSheet(VCM_ADMIN_URI.'assets/css/vikchannelmanager.css');
 			$document->addStyleSheet(VCM_ADMIN_URI.'assets/css/vcm-channels.css');
+			if (method_exists('VikChannelManager', 'loadAppearancePreferenceAssets')) {
+				VikChannelManager::loadAppearancePreferenceAssets();
+			}
 		}
-		$dbo = JFactory::getDBO();
-		$mainframe = JFactory::getApplication();
+
 		$ptmpl = VikRequest::getString('tmpl', '', 'request');
 		$q = "SELECT * FROM `#__vikbooking_orders` WHERE `id`=".(int)$id." AND `status`='confirmed';";
 		$dbo->setQuery($q);

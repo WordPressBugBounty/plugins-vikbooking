@@ -42,4 +42,6 @@ DROP TABLE IF EXISTS `#__vikbooking_reminders`;
 DROP TABLE IF EXISTS `#__vikbooking_states`;
 DROP TABLE IF EXISTS `#__vikbooking_customers_coupons`;
 DROP TABLE IF EXISTS `#__vikbooking_notifications`;
+DROP TABLE IF EXISTS `#__vikbooking_shortenurls`;
+DROP TABLE IF EXISTS `#__vikbooking_payschedules`;
 DROP TABLE IF EXISTS `#__vikbooking_wpshortcodes`;

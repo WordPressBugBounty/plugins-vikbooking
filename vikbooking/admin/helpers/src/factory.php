@@ -20,148 +20,218 @@ JPluginHelper::importPlugin('vikbooking');
  */
 final class VBOFactory
 {
-	/**
-	 * Application configuration handler.
-	 *
-	 * @var VBOConfigRegistry
-	 */
-	private static $config;
+    /**
+     * Application configuration handler.
+     *
+     * @var VBOConfigRegistry
+     */
+    private static $config;
 
-	/**
-	 * Application platform handler.
-	 *
-	 * @var VBOPlatformInterface
-	 */
-	private static $platform;
+    /**
+     * Application platform handler.
+     *
+     * @var VBOPlatformInterface
+     */
+    private static $platform;
 
-	/**
-	 * Cron jobs factory instance.
-	 * 
-	 * @var VBOCronFactory
-	 */
-	private static $cronFactory;
+    /**
+     * Cron jobs factory instance.
+     * 
+     * @var VBOCronFactory
+     */
+    private static $cronFactory;
 
-	/**
-	 * Notification Center handler instance.
-	 * 
-	 * @var VBONotificationCenter
-	 */
-	private static $notificationCenter;
+    /**
+     * Notification Center handler instance.
+     * 
+     * @var VBONotificationCenter
+     */
+    private static $notificationCenter;
 
-	/**
-	 * Class constructor.
-	 * @private This object cannot be instantiated. 
-	 */
-	private function __construct()
-	{
-		// never called
-	}
+    /**
+     * Crontab simulator instance.
+     * 
+     * @var VBOCrontabSimulator
+     */
+    private static $crontabSimulator;
 
-	/**
-	 * Class cloner.
-	 * @private This object cannot be cloned.
-	 */
-	private function __clone()
-	{
-		// never called
-	}
+    /**
+     * Class constructor.
+     * @private This object cannot be instantiated. 
+     */
+    private function __construct()
+    {
+        // never called
+    }
 
-	/**
-	 * Returns the current configuration object.
-	 *
-	 * @return 	VBOConfigRegistry
-	 */
-	public static function getConfig()
-	{
-		// check if config class is already instantiated
-		if (is_null(static::$config))
-		{
-			// cache instantiation
-			static::$config = new VBOConfigRegistryDatabase([
-				'db' => JFactory::getDbo(),
-			]);
-		}
+    /**
+     * Class cloner.
+     * @private This object cannot be cloned.
+     */
+    private function __clone()
+    {
+        // never called
+    }
 
-		return static::$config;
-	}
+    /**
+     * Returns the current configuration object.
+     *
+     * @return  VBOConfigRegistry
+     */
+    public static function getConfig()
+    {
+        // check if config class is already instantiated
+        if (is_null(static::$config))
+        {
+            // cache instantiation
+            static::$config = new VBOConfigRegistryDatabase([
+                'db' => JFactory::getDbo(),
+            ]);
+        }
 
-	/**
-	 * Returns the current platform handler.
-	 *
-	 * @return 	VBOPlatformInterface
-	 */
-	public static function getPlatform()
-	{
-		// check if platform class is already instantiated
-		if (is_null(static::$platform))
-		{
-			if (VBOPlatformDetection::isWordPress())
-			{
-				// running WordPress platform
-				static::$platform = new VBOPlatformOrgWordpress();
-			}
-			else
-			{
-				// running Joomla platform
-				static::$platform = new VBOPlatformOrgJoomla();
-			}
-		}
+        return static::$config;
+    }
 
-		return static::$platform;
-	}
+    /**
+     * Returns the current platform handler.
+     *
+     * @return  VBOPlatformInterface
+     */
+    public static function getPlatform()
+    {
+        // check if platform class is already instantiated
+        if (is_null(static::$platform))
+        {
+            if (VBOPlatformDetection::isWordPress())
+            {
+                // running WordPress platform
+                static::$platform = new VBOPlatformOrgWordpress();
+            }
+            else
+            {
+                // running Joomla platform
+                static::$platform = new VBOPlatformOrgJoomla();
+            }
+        }
 
-	/**
-	 * Returns the current cron factory.
-	 *
-	 * @return 	VBOCronFactory
-	 * 
-	 * @since   1.5.10
-	 */
-	public static function getCronFactory()
-	{
-		// check if cron factory class is already instantiated
-		if (is_null(static::$cronFactory))
-		{
-			// create cron factory class and register the default folder
-			static::$cronFactory = new VBOCronFactory;
-			static::$cronFactory->setIncludePaths(VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'cronjobs');
+        return static::$platform;
+    }
 
-			/**
-			 * Trigger hook to allow third-party plugin to register custom folders in which
-			 * VikBooking should look for the creation of new cron job instances.
-			 * 
-			 * In example:
-			 * $factory->addIncludePath($path);
-			 * $factory->addIncludePaths([$path1, $path2, ...]);
-			 * 
-			 * @param   VBOCronFactory  $factory  The cron jobs factory.
-			 * 
-			 * @return  void
-			 * 
-			 * @since   1.5.10
-			 */
-			VBOFactory::getPlatform()->getDispatcher()->trigger('onCreateCronJobsFactoryVikBooking', [static::$cronFactory]);
-		}
+    /**
+     * Returns the current cron factory.
+     *
+     * @return  VBOCronFactory
+     * 
+     * @since   1.5.10
+     */
+    public static function getCronFactory()
+    {
+        // check if cron factory class is already instantiated
+        if (is_null(static::$cronFactory))
+        {
+            // create cron factory class and register the default folder
+            static::$cronFactory = new VBOCronFactory;
+            static::$cronFactory->setIncludePaths(VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'cronjobs');
 
-		return static::$cronFactory;
-	}
+            /**
+             * Trigger hook to allow third-party plugin to register custom folders in which
+             * VikBooking should look for the creation of new cron job instances.
+             * 
+             * In example:
+             * $factory->addIncludePath($path);
+             * $factory->addIncludePaths([$path1, $path2, ...]);
+             * 
+             * @param   VBOCronFactory  $factory  The cron jobs factory.
+             * 
+             * @return  void
+             * 
+             * @since   1.5.10
+             */
+            VBOFactory::getPlatform()->getDispatcher()->trigger('onCreateCronJobsFactoryVikBooking', [static::$cronFactory]);
+        }
 
-	/**
-	 * Returns the current cron notification center instance.
-	 *
-	 * @return 	VBONotificationCenter
-	 * 
-	 * @since   1.6.8
-	 */
-	public static function getNotificationCenter()
-	{
-		// check if the notification center class is already instantiated
-		if (is_null(static::$notificationCenter))
-		{
-			// create Notification Center class
-			static::$notificationCenter = new VBONotificationCenter;
-		}
+        return static::$cronFactory;
+    }
 
-		return static::$notificationCenter;
-	}
+    /**
+     * Returns the current cron notification center instance.
+     *
+     * @return  VBONotificationCenter
+     * 
+     * @since   1.6.8
+     */
+    public static function getNotificationCenter()
+    {
+        // check if the notification center class is already instantiated
+        if (is_null(static::$notificationCenter))
+        {
+            // create Notification Center class
+            static::$notificationCenter = new VBONotificationCenter;
+        }
+
+        return static::$notificationCenter;
+    }
+
+    /**
+     * Returns the current crontab simulator.
+     *
+     * @return  VBOCrontabSimulator
+     * 
+     * @since   1.7
+     */
+    public static function getCrontabSimulator()
+    {
+        // check if cron factory class is already instantiated
+        if (is_null(static::$crontabSimulator)) {
+            // set up the preferred semaphore instance
+            $semaphore = new VBOCrontabSemaphoreConfig;
+
+            // set up the preferred logger instance
+            $logger = new VBOCrontabLoggerFile;
+
+            // instantiate simulator
+            static::$crontabSimulator = new VBOCrontabSimulator($semaphore, $logger);
+
+            if (VBOPlatformDetection::isJoomla()) {
+                /**
+                 * Watch the automatic payments scheduled, if any.
+                 * Should run every 5 minutes.
+                 */
+                static::$crontabSimulator->schedule(new VBOCrontabRunnerAware('pay_schedules_watcher', 5 * 60, function(VBOCrontabLogger $logger) {
+                    VBOModelPayschedules::getInstance()->watch();
+                }));
+            }
+
+            if (class_exists('VCMCrontabProvider')) {
+                // in case VikChannelManager is installed, schedule the native background tasks
+                (new VCMCrontabProvider)->provide(static::$crontabSimulator);
+            }
+
+            /**
+             * Trigger hook to allow third-party plugins to register custom background tasks.
+             * 
+             * The following example explains how to schedule a task that runs every hour.
+             * 
+             * ```
+             * $crontab->schedule('unique_id', 60 * 60, function($logger) {
+             *   // do stuff
+             * });
+             * ```
+             * 
+             * @param   VBOCrontabSimulator  $crontab  The crontab simulator instance.
+             * 
+             * @return  void
+             * 
+             * @since   1.7
+             */
+            VBOFactory::getPlatform()->getDispatcher()->trigger('onSetupCrontabSimulator', [static::$crontabSimulator]);
+
+            // do not run in case we are doing an AJAX request
+            if (!strcasecmp(JFactory::getApplication()->input->server->get('HTTP_X_REQUESTED_WITH', ''), 'xmlhttprequest')) {
+                static::$crontabSimulator->stop();
+            }
+        }
+
+        return static::$crontabSimulator;
+    }
 }

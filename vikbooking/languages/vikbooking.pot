@@ -2,19 +2,20 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: VikBooking 1.6.8\n"
+"Project-Id-Version: VikBooking 1.7.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/vikbooking\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-06-11T14:42:52+02:00\n"
+"POT-Creation-Date: 2024-09-18T15:44:27+02:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.6.0\n"
+"X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: vikbooking\n"
 
 #. Plugin Name of the plugin
+#: vikbooking.php
 #: libraries/language/admin.php:1212
 #: libraries/language/adminsys.php:52
 #: modules/mod_vikbooking_channelrates/widget.php:48
@@ -26,18 +27,22 @@ msgid "VikBooking"
 msgstr ""
 
 #. Plugin URI of the plugin
+#: vikbooking.php
 msgid "https://vikwp.com/plugin/vikbooking"
 msgstr ""
 
 #. Description of the plugin
+#: vikbooking.php
 msgid "Certified Booking Engine for Hotels and Accommodations."
 msgstr ""
 
 #. Author of the plugin
+#: vikbooking.php
 msgid "E4J s.r.l."
 msgstr ""
 
 #. Author URI of the plugin
+#: vikbooking.php
 msgid "https://vikwp.com"
 msgstr ""
 
@@ -209,7 +214,7 @@ msgstr ""
 
 #: libraries/html/rss/feed.php:21
 #: libraries/html/rss/feed.php:72
-#: libraries/language/adminsys.php:425
+#: libraries/language/adminsys.php:431
 msgid "Don't show again"
 msgstr ""
 
@@ -628,6 +633,7 @@ msgid "Payment Method Updated"
 msgstr ""
 
 #: libraries/language/admin.php:288
+#: libraries/language/admin.php:7040
 #: libraries/language/site.php:48
 #: libraries/language/site.php:174
 #: libraries/language/site.php:216
@@ -1874,7 +1880,7 @@ msgstr ""
 
 #: libraries/language/admin.php:1170
 #: libraries/language/admin.php:2688
-#: libraries/language/adminsys.php:383
+#: libraries/language/adminsys.php:389
 msgid "Payment Methods"
 msgstr ""
 
@@ -2644,7 +2650,7 @@ msgstr ""
 #: libraries/language/admin.php:1866
 #: libraries/language/admin.php:1878
 #: libraries/language/admin.php:3870
-msgid "Dates Range"
+msgid "Date Range"
 msgstr ""
 
 #: libraries/language/admin.php:1869
@@ -2660,7 +2666,7 @@ msgid "To Date"
 msgstr ""
 
 #: libraries/language/admin.php:1875
-msgid "Error: restrictions must have a month or a dates range, from and to."
+msgid "Error: restrictions must have a month or a range of dates, from and to."
 msgstr ""
 
 #: libraries/language/admin.php:1881
@@ -4298,7 +4304,7 @@ msgstr ""
 
 #: libraries/language/admin.php:3261
 #: libraries/language/admin.php:3354
-#: libraries/language/adminsys.php:356
+#: libraries/language/adminsys.php:362
 msgid "Invoices"
 msgstr ""
 
@@ -8355,7 +8361,7 @@ msgid "Set to Pending (Standby)"
 msgstr ""
 
 #: libraries/language/admin.php:6456
-msgid "Guest messages"
+msgid "Guest Messages"
 msgstr ""
 
 #: libraries/language/admin.php:6459
@@ -8800,14 +8806,17 @@ msgid "Shows a list of notifications."
 msgstr ""
 
 #: libraries/language/admin.php:6788
+msgctxt "1 second (singular)"
 msgid "second"
 msgstr ""
 
 #: libraries/language/admin.php:6792
+msgctxt "1 minute (singular)"
 msgid "minute"
 msgstr ""
 
 #: libraries/language/admin.php:6796
+msgctxt "1 hour (singular)"
 msgid "hour"
 msgstr ""
 
@@ -8824,10 +8833,12 @@ msgid "Mark all as read"
 msgstr ""
 
 #: libraries/language/admin.php:6809
+msgctxt "Click the button to visit the URL and take action"
 msgid "Take action"
 msgstr ""
 
 #: libraries/language/admin.php:6816
+msgctxt "OTAs stands for channels, like Booking.com, Airbnb, Expedia"
 msgid "OTAs"
 msgstr ""
 
@@ -8836,14 +8847,17 @@ msgid "Virtual Credit Card Balance"
 msgstr ""
 
 #: libraries/language/admin.php:6832
+msgctxt "Summary of what was changed with a booking modification, singular version"
 msgid "%s was modified"
 msgstr ""
 
 #: libraries/language/admin.php:6836
+msgctxt "Summary of what was changed with a booking modification, plural version"
 msgid "%s were modified"
 msgstr ""
 
 #: libraries/language/admin.php:6840
+msgctxt "Message from John"
 msgid "Message from %s"
 msgstr ""
 
@@ -8937,6 +8951,7 @@ msgid "Maximum date filter."
 msgstr ""
 
 #: libraries/language/admin.php:6907
+msgctxt "Page 2"
 msgid "Page %d"
 msgstr ""
 
@@ -8962,6 +8977,545 @@ msgstr ""
 
 #: libraries/language/admin.php:6925
 msgid "Credit Card"
+msgstr ""
+
+#: libraries/language/admin.php:6928
+msgid "AI"
+msgstr ""
+
+#: libraries/language/admin.php:6931
+msgid "Average Booking Window"
+msgstr ""
+
+#: libraries/language/admin.php:6934
+msgid "The booking window indicates the difference in days between the booking date and the check-in date."
+msgstr ""
+
+#: libraries/language/admin.php:6937
+msgid "Derived rate plan"
+msgstr ""
+
+#: libraries/language/admin.php:6940
+msgid "Derived rate plans will automatically inherit any pricing modification from one parent rate plan. Useful, for example, to set up a Non-Refundable Rate that is always 10% cheaper than the Standard Rate."
+msgstr ""
+
+#: libraries/language/admin.php:6943
+msgid "Parent rate plan"
+msgstr ""
+
+#: libraries/language/admin.php:6946
+msgid "Pricing modification"
+msgstr ""
+
+#: libraries/language/admin.php:6949
+msgid "Choose whether this rate plan should be cheaper or more expensive than the parent rate."
+msgstr ""
+
+#: libraries/language/admin.php:6952
+msgid "Modification type"
+msgstr ""
+
+#: libraries/language/admin.php:6955
+msgid "Percent"
+msgstr ""
+
+#: libraries/language/admin.php:6958
+msgid "Absolute"
+msgstr ""
+
+#: libraries/language/admin.php:6961
+msgid "Follow restrictions"
+msgstr ""
+
+#: libraries/language/admin.php:6964
+msgid "If enabled, also the restrictions will be automatically inherited from the parent rate plan."
+msgstr ""
+
+#: libraries/language/admin.php:6967
+msgid "AI - Assistant"
+msgstr ""
+
+#: libraries/language/admin.php:6970
+msgid "Ask the AI assistant to perform specific tasks."
+msgstr ""
+
+#: libraries/language/admin.php:6973
+msgid "Rates and restrictions"
+msgstr ""
+
+#: libraries/language/admin.php:6977
+msgctxt "Short for \"Minimum Length of Stay\""
+msgid "Min. LOS"
+msgstr ""
+
+#: libraries/language/admin.php:6981
+msgctxt "Short for \"Closed to Arrival\""
+msgid "CTA"
+msgstr ""
+
+#: libraries/language/admin.php:6985
+msgctxt "Short for \"Closed to Departure\""
+msgid "CTD"
+msgstr ""
+
+#: libraries/language/admin.php:6988
+msgid "Automatic payment collection"
+msgstr ""
+
+#: libraries/language/admin.php:6991
+msgid "Schedule new payment"
+msgstr ""
+
+#: libraries/language/admin.php:6994
+msgid "Operations are performed using artificial intelligence. This is an experimental technology, and results may occasionally be incorrect or misleading."
+msgstr ""
+
+#: libraries/language/admin.php:6997
+msgid "Discover what the AI can do"
+msgstr ""
+
+#: libraries/language/admin.php:7000
+msgid "AI Assistant - Capabilities"
+msgstr ""
+
+#: libraries/language/admin.php:7003
+msgid "No messages yet"
+msgstr ""
+
+#: libraries/language/admin.php:7007
+msgctxt "The HTML entity \"&#9166;\" stands for the keyboard Enter symbol"
+msgid "Type something and hit &#9166; (Enter) to submit a message"
+msgstr ""
+
+#: libraries/language/admin.php:7010
+msgid "Total results: %d"
+msgstr ""
+
+#: libraries/language/admin.php:7013
+msgid "Inventory"
+msgstr ""
+
+#: libraries/language/admin.php:7016
+msgid "Rates"
+msgstr ""
+
+#: libraries/language/admin.php:7019
+#: libraries/language/site.php:954
+msgid "Search Bookings"
+msgstr ""
+
+#: libraries/language/admin.php:7022
+msgid "Statistics"
+msgstr ""
+
+#: libraries/language/admin.php:7025
+msgid "View reservation"
+msgstr ""
+
+#: libraries/language/admin.php:7028
+msgid "View closure"
+msgstr ""
+
+#: libraries/language/admin.php:7031
+msgid "View new reservation"
+msgstr ""
+
+#: libraries/language/admin.php:7034
+msgid "View modified reservation"
+msgstr ""
+
+#: libraries/language/admin.php:7037
+msgid "View cancelled reservation"
+msgstr ""
+
+#: libraries/language/admin.php:7043
+msgid "Closure"
+msgstr ""
+
+#: libraries/language/admin.php:7046
+msgid "Reservation created"
+msgstr ""
+
+#: libraries/language/admin.php:7049
+msgid "Reservation modified"
+msgstr ""
+
+#: libraries/language/admin.php:7052
+msgid "Reservation cancelled"
+msgstr ""
+
+#: libraries/language/admin.php:7055
+msgid "See Rates"
+msgstr ""
+
+#: libraries/language/admin.php:7058
+msgid "Try"
+msgstr ""
+
+#: libraries/language/admin.php:7061
+msgid "%d adults"
+msgstr ""
+
+#: libraries/language/admin.php:7064
+msgid "1 adult"
+msgstr ""
+
+#: libraries/language/admin.php:7067
+msgid "%d children"
+msgstr ""
+
+#: libraries/language/admin.php:7070
+msgid "1 child"
+msgstr ""
+
+#: libraries/language/admin.php:7073
+msgid "Host-to-guest review submitted"
+msgstr ""
+
+#: libraries/language/admin.php:7076
+msgid "Notification"
+msgstr ""
+
+#: libraries/language/admin.php:7080
+msgctxt "The wildcard %s will be replaced with the customer email address"
+msgid "The customer was notified via email at %s."
+msgstr ""
+
+#: libraries/language/admin.php:7084
+msgctxt "The wildcard %s will be replaced with the OTA messaging service, like \"Booking.com Messaging\""
+msgid "The customer was notified through %s."
+msgstr ""
+
+#: libraries/language/admin.php:7087
+msgid "The AI tools will automatically review this guest."
+msgstr ""
+
+#: libraries/language/admin.php:7090
+msgid "The AI tools will not review this guest automatically."
+msgstr ""
+
+#: libraries/language/admin.php:7093
+msgid "Exclude from automatic review"
+msgstr ""
+
+#: libraries/language/admin.php:7096
+msgid "Enable for automatic review"
+msgstr ""
+
+#: libraries/language/admin.php:7100
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Statistics"
+msgstr ""
+
+#: libraries/language/admin.php:7104
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Access, calculate and compare financial statistics and various business metrics."
+msgstr ""
+
+#: libraries/language/admin.php:7108
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Number of active bookings in a range of dates."
+msgstr ""
+
+#: libraries/language/admin.php:7112
+msgctxt "Section \"discover the AI capabilities\""
+msgid "How many reservations have we collected this year so far?"
+msgstr ""
+
+#: libraries/language/admin.php:7116
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Total revenue for specific dates and listings."
+msgstr ""
+
+#: libraries/language/admin.php:7120
+msgctxt "Section \"discover the AI capabilities\""
+msgid "What's the revenue generated last month by %s?"
+msgstr ""
+
+#: libraries/language/admin.php:7124
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Calculate and compare the average length of stay on specific date intervals."
+msgstr ""
+
+#: libraries/language/admin.php:7128
+msgctxt "Section \"discover the AI capabilities\""
+msgid "How's the average length of stay this month? Is it higher or lower than last month?"
+msgstr ""
+
+#: libraries/language/admin.php:7132
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Search Bookings"
+msgstr ""
+
+#: libraries/language/admin.php:7136
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Find reservations and related details through various criteria and filters."
+msgstr ""
+
+#: libraries/language/admin.php:7140
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Find who is arriving, departing or staying on specific dates."
+msgstr ""
+
+#: libraries/language/admin.php:7144
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Who's arriving today? Is anybody checking out?"
+msgstr ""
+
+#: libraries/language/admin.php:7148
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Search bookings by customer name, email and phone number."
+msgstr ""
+
+#: libraries/language/admin.php:7152
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Is there any confirmed reservation for John Smith?"
+msgstr ""
+
+#: libraries/language/admin.php:7156
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Reminders"
+msgstr ""
+
+#: libraries/language/admin.php:7160
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Quickly schedule reminders and notifications for specific dates and reservations."
+msgstr ""
+
+#: libraries/language/admin.php:7164
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Set a reminder for a date."
+msgstr ""
+
+#: libraries/language/admin.php:7168
+msgctxt "Section \"discover the AI capabilities\""
+msgid "We need to change the beds of the room %s before the guests arrive tomorrow. Please set a reminder for early in the morning."
+msgstr ""
+
+#: libraries/language/admin.php:7172
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Set a reminder for a booking."
+msgstr ""
+
+#: libraries/language/admin.php:7176
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Set a reminder for the reservation of John Smith because we need to collect the outstanding balance upon their arrival."
+msgstr ""
+
+#: libraries/language/admin.php:7180
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Room Rates"
+msgstr ""
+
+#: libraries/language/admin.php:7184
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Calculate the total cost for a stay. Apply new rates and restrictions to your website and OTA rooms."
+msgstr ""
+
+#: libraries/language/admin.php:7188
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Get quotes for dates, guests and listings."
+msgstr ""
+
+#: libraries/language/admin.php:7192
+msgctxt "Section \"discover the AI capabilities\""
+msgid "How much does a room for 2 guests cost for next weekend?"
+msgstr ""
+
+#: libraries/language/admin.php:7196
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Calculate and apply the desired cost for your listings."
+msgstr ""
+
+#: libraries/language/admin.php:7200
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Get the cost for %s for next Saturday and double it."
+msgstr ""
+
+#: libraries/language/admin.php:7204
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Modify room rates and restrictions on website and OTAs."
+msgstr ""
+
+#: libraries/language/admin.php:7208
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Set the cost of %s to %s 190 for next Friday, and set a minimum stay of 2 nights."
+msgstr ""
+
+#: libraries/language/admin.php:7212
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Change room rates just for your website by excluding OTAs."
+msgstr ""
+
+#: libraries/language/admin.php:7216
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Change the cost per night of %s to %s 200 only for my website direct bookings for the whole Christmas week."
+msgstr ""
+
+#: libraries/language/admin.php:7220
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Availability Inventory"
+msgstr ""
+
+#: libraries/language/admin.php:7224
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Obtain and analyze information related to availability and restrictions for various listings and dates."
+msgstr ""
+
+#: libraries/language/admin.php:7228
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Check the availability for specific dates."
+msgstr ""
+
+#: libraries/language/admin.php:7232
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Are there any rooms left for next Saturday?"
+msgstr ""
+
+#: libraries/language/admin.php:7236
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Check if a precise room/listing is available for booking."
+msgstr ""
+
+#: libraries/language/admin.php:7240
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Is the %s available next weekend for 3 nights?"
+msgstr ""
+
+#: libraries/language/admin.php:7244
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Room Bookings"
+msgstr ""
+
+#: libraries/language/admin.php:7248
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Create new bookings for a specific customer, room and dates. Close and occupy your rooms on specific dates."
+msgstr ""
+
+#: libraries/language/admin.php:7252
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Make a reservation for a guest."
+msgstr ""
+
+#: libraries/language/admin.php:7256
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Mario Rossi would like to book the room %s for 3 nights and 2 guests this Thursday. Please make a reservation for %s 200 per night. They need parking."
+msgstr ""
+
+#: libraries/language/admin.php:7260
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Make a room occupied on specific dates to stop the reservations."
+msgstr ""
+
+#: libraries/language/admin.php:7264
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Please close the room %s from Monday to Friday of next week."
+msgstr ""
+
+#: libraries/language/admin.php:7268
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Booking Modification"
+msgstr ""
+
+#: libraries/language/admin.php:7272
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Quickly alter reservations by changing the stay dates, extra services and the total booking amount."
+msgstr ""
+
+#: libraries/language/admin.php:7276
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Change the stay dates for a reservation."
+msgstr ""
+
+#: libraries/language/admin.php:7280
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Postpone the check-out by one night for the booking ID %d for an extra %s 150."
+msgstr ""
+
+#: libraries/language/admin.php:7284
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Add extras to existing bookings."
+msgstr ""
+
+#: libraries/language/admin.php:7288
+msgctxt "Section \"discover the AI capabilities\""
+msgid "John Smith ordered a bottle of wine that costs %s 50. Can you update their bill?"
+msgstr ""
+
+#: libraries/language/admin.php:7292
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Booking Deletion"
+msgstr ""
+
+#: libraries/language/admin.php:7296
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Let the assistant find and cancel reservations for you."
+msgstr ""
+
+#: libraries/language/admin.php:7300
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Search specific reservations and ask to cancel them."
+msgstr ""
+
+#: libraries/language/admin.php:7304
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Please cancel the booking made by John Smith for tomorrow because they lost the flight."
+msgstr ""
+
+#: libraries/language/admin.php:7308
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Customer Notifications"
+msgstr ""
+
+#: libraries/language/admin.php:7312
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Ask the assistant to generate messages and to send them to your guests."
+msgstr ""
+
+#: libraries/language/admin.php:7316
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Search for a specific guest reservation and ask to send a notification."
+msgstr ""
+
+#: libraries/language/admin.php:7320
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Find the reservation from John Smith and notify him that the Wi-Fi access was changed to ABCD12345."
+msgstr ""
+
+#: libraries/language/admin.php:7324
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Identify an OTA reservation and send a message to the guest through their messaging API."
+msgstr ""
+
+#: libraries/language/admin.php:7328
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Find the Airbnb reservation of John Smith and send them a message to make sure they will arrive before 9PM."
+msgstr ""
+
+#: libraries/language/admin.php:7331
+msgid "Keyboard shortcut"
+msgstr ""
+
+#: libraries/language/admin.php:7334
+msgid "New guest review"
+msgstr ""
+
+#: libraries/language/admin.php:7338
+msgctxt "John Smith left a review with a score of 10/10"
+msgid "%s left a review with a score of %s."
+msgstr ""
+
+#: libraries/language/admin.php:7341
+msgid "Register new payment"
+msgstr ""
+
+#: libraries/language/admin.php:7345
+msgctxt "Modified on \"2024-09-17 12:00:00\""
+msgid "Modified on %s"
+msgstr ""
+
+#: libraries/language/admin.php:7348
+msgid "Update payment"
 msgstr ""
 
 #: libraries/language/adminsys.php:45
@@ -9204,500 +9758,508 @@ msgstr ""
 msgid "List"
 msgstr ""
 
-#: libraries/language/adminsys.php:257
-msgid "Vik Booking - Upgrade to Pro"
+#: libraries/language/adminsys.php:253
+msgid "Tiny URL"
 msgstr ""
 
-#: libraries/language/adminsys.php:260
-msgid "License Key valid until %s"
+#: libraries/language/adminsys.php:256
+msgid "Turns long URLs into tiny URLs. Useful to shorten booking details or similar URLs."
 msgstr ""
 
 #: libraries/language/adminsys.php:263
-msgid "Your License Key expired on %s"
+msgid "Vik Booking - Upgrade to Pro"
 msgstr ""
 
 #: libraries/language/adminsys.php:266
-msgid "Please enter a valid License Key"
+msgid "License Key valid until %s"
 msgstr ""
 
 #: libraries/language/adminsys.php:269
-msgid "No valid and active License Key found."
+msgid "Your License Key expired on %s"
 msgstr ""
 
 #: libraries/language/adminsys.php:272
-msgid "Vik Booking - Downloading Pro version"
+msgid "Please enter a valid License Key"
 msgstr ""
 
 #: libraries/language/adminsys.php:275
-msgid "Update Completed. Please click here"
+msgid "No valid and active License Key found."
 msgstr ""
 
 #: libraries/language/adminsys.php:278
-msgid "Update Failed. Please click here"
+msgid "Vik Booking - Downloading Pro version"
 msgstr ""
 
 #: libraries/language/adminsys.php:281
-msgid "Please wait"
+msgid "Update Completed. Please click here"
 msgstr ""
 
 #: libraries/language/adminsys.php:284
-msgid "Downloading the package..."
+msgid "Update Failed. Please click here"
 msgstr ""
 
 #: libraries/language/adminsys.php:287
-msgid "Thanks for using the Pro version"
+msgid "Please wait"
 msgstr ""
 
 #: libraries/language/adminsys.php:290
-msgid "Make sure to keep your License Key active in order to be able to receive future updates with all the new features."
+msgid "Downloading the package..."
 msgstr ""
 
 #: libraries/language/adminsys.php:293
-msgid "Get or renew your License Key from VikWP.com"
+msgid "Thanks for using the Pro version"
 msgstr ""
 
 #: libraries/language/adminsys.php:296
-msgid "Renew your licence"
+msgid "Make sure to keep your License Key active in order to be able to receive future updates with all the new features."
 msgstr ""
 
 #: libraries/language/adminsys.php:299
-msgid "Validate and Update"
+msgid "Get or renew your License Key from VikWP.com"
 msgstr ""
 
 #: libraries/language/adminsys.php:302
-msgid "Already have Vik Booking PRO? <br /> <small>Enter your licence key here</small>"
+msgid "Renew your licence"
 msgstr ""
 
 #: libraries/language/adminsys.php:305
-msgid "Why Upgrade to Pro?"
+msgid "Validate and Update"
 msgstr ""
 
 #: libraries/language/adminsys.php:308
-msgid "The true Vik Booking is Pro. Unleash the power of the only certified Booking Engine plugin for accomodations!"
+msgid "Already have Vik Booking PRO? <br /> <small>Enter your licence key here</small>"
 msgstr ""
 
 #: libraries/language/adminsys.php:311
-msgid "Get your License Key and Upgrade to PRO"
+msgid "Why Upgrade to Pro?"
 msgstr ""
 
 #: libraries/language/adminsys.php:314
-msgid "Set up your daily/seasonal prices with just a few clicks"
+msgid "The true Vik Booking is Pro. Unleash the power of the only certified Booking Engine plugin for accomodations!"
 msgstr ""
 
 #: libraries/language/adminsys.php:317
-msgid "Set different rates on some seasons, holidays, weekends or days of the year with just two clicks. Bookings Restrictions: define the minimum or maximum nights of stay for certain dates of the year and rooms, set days closed to arrival or departure."
+msgid "Get your License Key and Upgrade to PRO"
 msgstr ""
 
 #: libraries/language/adminsys.php:320
-msgid "Create and Modify Bookings via back-end"
+msgid "Set up your daily/seasonal prices with just a few clicks"
 msgstr ""
 
 #: libraries/language/adminsys.php:323
-msgid "The page Bookings Calendar will let you create new reservations manually, maybe to register walk-in customers or offline reservations. Modify the dates and switch, add or remove rooms of certain reservations."
+msgid "Set different rates on some seasons, holidays, weekends or days of the year with just two clicks. Bookings Restrictions: define the minimum or maximum nights of stay for certain dates of the year and rooms, set days closed to arrival or departure."
 msgstr ""
 
 #: libraries/language/adminsys.php:326
-msgid "Channels Management Capabilities"
+msgid "Create and Modify Bookings via back-end"
 msgstr ""
 
 #: libraries/language/adminsys.php:329
-msgid "<p>Only Vik Booking Pro is capable of working together on the same website with the complementary plugin Vik Channel Manager.</p><p>Turn your website into a professional and full solution of Booking Engine + PMS and Channel Manager to sync availability, rates and bookings with the most popular channels of the world.</p>"
+msgid "The page Bookings Calendar will let you create new reservations manually, maybe to register walk-in customers or offline reservations. Modify the dates and switch, add or remove rooms of certain reservations."
 msgstr ""
 
 #: libraries/language/adminsys.php:332
-msgid "Unlock over 50 must-have features"
+msgid "Channels Management Capabilities"
 msgstr ""
 
 #: libraries/language/adminsys.php:335
-msgid "Customers Management"
+msgid "<p>Only Vik Booking Pro is capable of working together on the same website with the complementary plugin Vik Channel Manager.</p><p>Turn your website into a professional and full solution of Booking Engine + PMS and Channel Manager to sync availability, rates and bookings with the most popular channels of the world.</p>"
 msgstr ""
 
 #: libraries/language/adminsys.php:338
-msgid "Keep track of the information of your guests without sharing such details with external systems"
+msgid "Unlock over 50 must-have features"
 msgstr ""
 
 #: libraries/language/adminsys.php:341
-msgid "PMS Reports"
+msgid "Customers Management"
 msgstr ""
 
 #: libraries/language/adminsys.php:344
-msgid "Reports for Revenue, Tourist Taxes and country-specific integrations for local authorities"
+msgid "Keep track of the information of your guests without sharing such details with external systems"
 msgstr ""
 
 #: libraries/language/adminsys.php:347
-msgid "Promotions and Packages"
+msgid "PMS Reports"
 msgstr ""
 
 #: libraries/language/adminsys.php:350
-msgid "Set charges/discounts with absolute/percent values. Create packages with services included"
+msgid "Reports for Revenue, Tourist Taxes and country-specific integrations for local authorities"
 msgstr ""
 
 #: libraries/language/adminsys.php:353
+msgid "Promotions and Packages"
+msgstr ""
+
+#: libraries/language/adminsys.php:356
+msgid "Set charges/discounts with absolute/percent values. Create packages with services included"
+msgstr ""
+
+#: libraries/language/adminsys.php:359
 #: libraries/language/site.php:1287
 msgid "Packages and Offers"
 msgstr ""
 
-#: libraries/language/adminsys.php:359
+#: libraries/language/adminsys.php:365
 msgid "Generate invoices, manually or automatically, and send them to your customers via email"
 msgstr ""
 
-#: libraries/language/adminsys.php:362
+#: libraries/language/adminsys.php:368
 msgid "Online Check-in and Registration"
 msgstr ""
 
-#: libraries/language/adminsys.php:365
+#: libraries/language/adminsys.php:371
 msgid "Guests registration supporting signature pads for check-in and check-out"
 msgstr ""
 
-#: libraries/language/adminsys.php:368
+#: libraries/language/adminsys.php:374
 msgid "Graphs and Statistics"
 msgstr ""
 
-#: libraries/language/adminsys.php:371
+#: libraries/language/adminsys.php:377
 msgid "Monitor your business trends thanks to the Graphs & Report functions"
 msgstr ""
 
-#: libraries/language/adminsys.php:374
+#: libraries/language/adminsys.php:380
 msgid "Automatise Email and SMS"
 msgstr ""
 
-#: libraries/language/adminsys.php:377
+#: libraries/language/adminsys.php:383
 msgid "Schedule the automated sending of certain reminders to your guests"
 msgstr ""
 
-#: libraries/language/adminsys.php:380
+#: libraries/language/adminsys.php:386
 msgid "SMS Gateways"
 msgstr ""
 
-#: libraries/language/adminsys.php:386
+#: libraries/language/adminsys.php:392
 msgid "PayPal, Offline Credit Card and Bank Transfer pre-installed"
 msgstr ""
 
-#: libraries/language/adminsys.php:389
+#: libraries/language/adminsys.php:395
 msgid "Ready to upgrade?"
 msgstr ""
 
-#: libraries/language/adminsys.php:392
+#: libraries/language/adminsys.php:398
 msgid "Get Vik Booking PRO and start now."
 msgstr ""
 
-#: libraries/language/adminsys.php:395
+#: libraries/language/adminsys.php:401
 msgid "Get your License Key"
 msgstr ""
 
-#: libraries/language/adminsys.php:398
+#: libraries/language/adminsys.php:404
 msgid "Upgrade Now"
 msgstr ""
 
-#: libraries/language/adminsys.php:401
+#: libraries/language/adminsys.php:407
 msgid "Upgrade to PRO"
 msgstr ""
 
-#: libraries/language/adminsys.php:404
+#: libraries/language/adminsys.php:410
 msgid "PRO Version"
 msgstr ""
 
-#: libraries/language/adminsys.php:407
+#: libraries/language/adminsys.php:413
 msgid "Active License Key"
 msgstr ""
 
-#: libraries/language/adminsys.php:410
+#: libraries/language/adminsys.php:416
 msgid "Want to avoid the risk of overbooking?"
 msgstr ""
 
-#: libraries/language/adminsys.php:413
+#: libraries/language/adminsys.php:419
 msgid "The Vik Booking + Vik Channel Manager plugins suite is the very first and only native solution for WordPress to be officially certificated as <strong>Premier Connectivity Partner of Booking.com</strong>."
 msgstr ""
 
-#: libraries/language/adminsys.php:416
+#: libraries/language/adminsys.php:422
 msgid "MORE INFORMATION"
 msgstr ""
 
-#: libraries/language/adminsys.php:419
+#: libraries/language/adminsys.php:425
 msgid "Some of the channels available"
 msgstr ""
 
-#: libraries/language/adminsys.php:422
+#: libraries/language/adminsys.php:428
 msgid "and many others..."
 msgstr ""
 
-#: libraries/language/adminsys.php:428
+#: libraries/language/adminsys.php:434
 msgid "Configure optional and mandatory Extra Services"
 msgstr ""
 
-#: libraries/language/adminsys.php:431
+#: libraries/language/adminsys.php:437
 msgid "Assign to your rooms some optional services that guests can order during the booking process, like breakfast, transfers or parking.<br />You can also define mandatory Fees or Taxes, like Cleaning Fees or Tourist Taxes to be paid at the time of booking."
 msgstr ""
 
-#: libraries/language/adminsys.php:434
+#: libraries/language/adminsys.php:440
 msgid "Occupancy Ranking report to analyse every detail"
 msgstr ""
 
-#: libraries/language/adminsys.php:437
+#: libraries/language/adminsys.php:443
 msgid "Get to monitor your future occupancy through the Occupancy Ranking report. Filter the targets by dates and analyse the data by day, week or month. The report will provide the information about the occupancy, the total number of rooms sold, nights booked, revenues and more."
 msgstr ""
 
-#: libraries/language/adminsys.php:440
+#: libraries/language/adminsys.php:446
 msgid "Notify your customers with automatic email and save time"
 msgstr ""
 
-#: libraries/language/adminsys.php:443
+#: libraries/language/adminsys.php:449
 msgid "<p>The relationship with your customers is fundamental for your business.</p><p>Automatise certain tasks, such as sending automatic reminders via email or SMS to your guests, either before the check-in to provide additional information, or after the check-out maybe by asking them to leave a review.</p><p>Generate and send the invoices automatically, invite your guests to fill the pre-checkin form, and much more.</p>"
 msgstr ""
 
-#: libraries/language/adminsys.php:446
+#: libraries/language/adminsys.php:452
 msgid "and much more..."
 msgstr ""
 
-#: libraries/language/adminsys.php:449
+#: libraries/language/adminsys.php:455
 msgid "Ready to increase your bookings?"
 msgstr ""
 
-#: libraries/language/adminsys.php:452
+#: libraries/language/adminsys.php:458
 msgid "Already have Vik Booking PRO? Upgrade to the PRO version <a href=\"#upgrade\">here</a>."
 msgstr ""
 
-#: libraries/language/adminsys.php:455
+#: libraries/language/adminsys.php:461
 msgid "Would you like to reduce OTA commissions?"
 msgstr ""
 
-#: libraries/language/adminsys.php:458
+#: libraries/language/adminsys.php:464
 msgid "Start collecting direct bookings from your own website"
 msgstr ""
 
-#: libraries/language/adminsys.php:461
+#: libraries/language/adminsys.php:467
 msgid "Vik Booking PRO: the Booking Engine and PMS plugin<br />for Hotels and Accommodations on WordPress"
 msgstr ""
 
-#: libraries/language/adminsys.php:464
+#: libraries/language/adminsys.php:470
 msgid "Start collecting direct bookings from your website"
 msgstr ""
 
-#: libraries/language/adminsys.php:467
+#: libraries/language/adminsys.php:473
 msgid "Reduce OTA commissions"
 msgstr ""
 
-#: libraries/language/adminsys.php:470
+#: libraries/language/adminsys.php:476
 msgid "No recurring fees. Become independent"
 msgstr ""
 
-#: libraries/language/adminsys.php:473
+#: libraries/language/adminsys.php:479
 msgid "1<span>.</span> Start collect<br />direct bookings"
 msgstr ""
 
-#: libraries/language/adminsys.php:476
+#: libraries/language/adminsys.php:482
 msgid "<p>Increase your reputation, receive and manage all the bookings through your website.</p><p>Collect payments through your preferred bank (PayPal is included for free).</p>"
 msgstr ""
 
-#: libraries/language/adminsys.php:479
+#: libraries/language/adminsys.php:485
 msgid "2<span>.</span> Save on<br />OTA commissions"
 msgstr ""
 
-#: libraries/language/adminsys.php:482
+#: libraries/language/adminsys.php:488
 msgid "<p>OTAs, such as Booking.com or Expedia, charge your property high fees for every booking.</p><p>Power up your website to create competition, and to reduce the costs.</p>"
 msgstr ""
 
-#: libraries/language/adminsys.php:485
+#: libraries/language/adminsys.php:491
 msgid "3<span>.</span> Become truly<br />independent"
 msgstr ""
 
-#: libraries/language/adminsys.php:488
+#: libraries/language/adminsys.php:494
 msgid "<p>A Booking Engine fully integrated with your website with no monthly fees or commissions.</p><p>Stop &quot;renting&quot; external systems and increase your revenue.</p>"
 msgstr ""
 
-#: libraries/language/adminsys.php:491
+#: libraries/language/adminsys.php:497
 msgid "Synchronize new bookings in real-time, manage the rates and keep the availability up to date with the most popular OTAs."
 msgstr ""
 
-#: libraries/language/adminsys.php:494
+#: libraries/language/adminsys.php:500
 msgid "With the complementary plugin Vik Channel Manager everything will be synced automatically."
 msgstr ""
 
-#: libraries/language/adminsys.php:500
+#: libraries/language/adminsys.php:506
 msgid "Shortcodes in Pages/Posts"
 msgstr ""
 
-#: libraries/language/adminsys.php:506
+#: libraries/language/adminsys.php:512
 msgid "Allow your guests to pay their bookings online through your preferred bank gateway. The Pro version comes with an integration for PayPal Standard and two more payment solutions, but the framework could be extended by installing apposite payment plugins for Vik Booking for your preferred bank."
 msgstr ""
 
-#: libraries/language/adminsys.php:509
+#: libraries/language/adminsys.php:515
 msgid "Thanks to the coupon codes you can give your clients some dedicated discounts for their reservations."
 msgstr ""
 
-#: libraries/language/adminsys.php:512
+#: libraries/language/adminsys.php:518
 msgid "The Packages will let you create some particular booking solutions with some benefits and restrictions. For example, you could offer a stay for a particular weekend with the access to the SPA if booked N days in advance."
 msgstr ""
 
-#: libraries/language/adminsys.php:515
+#: libraries/language/adminsys.php:521
 msgid "Allow your guests to book some extra services, either they are optional or mandatory. This function can be used to create services or fees like tourist taxes, breakfast, transfers and anything else that could be booked with the rooms."
 msgstr ""
 
-#: libraries/language/adminsys.php:518
+#: libraries/language/adminsys.php:524
 msgid "This function will let you create seasonal prices, promotions or special rates for the weekends or any other day of the week. Those who are used to work with seasonal rates will find this feature fundamental."
 msgstr ""
 
-#: libraries/language/adminsys.php:521
+#: libraries/language/adminsys.php:527
 msgid "The booking restrictions will let you define a minimum or maximum number of nights of stay for specific rooms and dates of the year. You could also allow or deny the arrival/departure on some specific days of the week."
 msgstr ""
 
-#: libraries/language/adminsys.php:524
+#: libraries/language/adminsys.php:530
 msgid "Here you can manage all of your customers information, send specific email or SMS messages, and manage their documents."
 msgstr ""
 
-#: libraries/language/adminsys.php:527
+#: libraries/language/adminsys.php:533
 msgid "Manage all the invoices generated for the various bookings or services."
 msgstr ""
 
-#: libraries/language/adminsys.php:530
+#: libraries/language/adminsys.php:536
 msgid "This page will display graphs and charts by showing important information and statistics about your reservations, occupancy and revenue."
 msgstr ""
 
-#: libraries/language/adminsys.php:533
+#: libraries/language/adminsys.php:539
 msgid "Cron Jobs are essentials to automatize certain functions, such as to send email/SMS reminders to your clients before the check-in, after the check-out, remaing balance payments and much more."
 msgstr ""
 
-#: libraries/language/adminsys.php:536
+#: libraries/language/adminsys.php:542
 msgid "This function will let you manage the operator accounts to access certain functions via front-end, such as the Tableaux to see the next arrivals or departures."
 msgstr ""
 
-#: libraries/language/adminsys.php:539
+#: libraries/language/adminsys.php:545
 msgid "Reports are essentials to obtain and/or export data. You can use them to calculate your revenue on some dates, your occupancy, or to generate documents for your local authorities. This framework is also extendable with custom PMS reports."
 msgstr ""
 
-#: libraries/language/adminsys.php:542
+#: libraries/language/adminsys.php:548
 msgid "Some countries may require the invoices to be generated in electronic format (XML) for transmitting them to the local authorities. This framework could be extended to meet your country requirements."
 msgstr ""
 
-#: libraries/language/adminsys.php:548
+#: libraries/language/adminsys.php:554
 msgid "Vik Booking - Import reservations from third party plugins"
 msgstr ""
 
-#: libraries/language/adminsys.php:551
+#: libraries/language/adminsys.php:557
 msgid "There are no rooms in Vik Booking yet. Please create some room-types before importing the reservations from third party plugins into Vik Booking."
 msgstr ""
 
-#: libraries/language/adminsys.php:554
+#: libraries/language/adminsys.php:560
 msgid "This tool is provided as-is, with no warranty of any kind. Third party plugins may change their structure or the data they contain may be unwanted. Please use this tool carefully, and consider uninstalling for then re-installing Vik Booking in case you do not obtain the desired result. If some reservations can be imported from a third party plugin, you may uninstall the third party plugin after the import, to continue with the setup of Vik Booking."
 msgstr ""
 
-#: libraries/language/adminsys.php:557
+#: libraries/language/adminsys.php:563
 msgid "Third party plugins installed for importing the reservations"
 msgstr ""
 
-#: libraries/language/adminsys.php:560
+#: libraries/language/adminsys.php:566
 msgid "No supported third party plugins found, or no third party plugins have some reservations that could be imported into Vik Booking."
 msgstr ""
 
-#: libraries/language/adminsys.php:563
+#: libraries/language/adminsys.php:569
 msgid "Load reservations from third party plugin"
 msgstr ""
 
-#: libraries/language/adminsys.php:566
+#: libraries/language/adminsys.php:572
 msgid "Load reservations"
 msgstr ""
 
-#: libraries/language/adminsys.php:569
+#: libraries/language/adminsys.php:575
 msgid "No valid reservations found for import from the selected third party plugin."
 msgstr ""
 
-#: libraries/language/adminsys.php:572
+#: libraries/language/adminsys.php:578
 msgid "Reservations found for import: %d"
 msgstr ""
 
-#: libraries/language/adminsys.php:575
+#: libraries/language/adminsys.php:581
 msgid "Please select the corresponding room-type of Vik Booking for each room found in the third party plugin. In case of room-types with multiple sub-units, just select the corresponding room-type in Vik Booking for each sub-unit of the third party plugin. If some rooms of the third party plugin will not have a corresponding room-type in Vik Booking, those reservations will not be imported. Make sure to make the right selections, as this will affect the availability in Vik Booking after importing the reservations."
 msgstr ""
 
-#: libraries/language/adminsys.php:578
+#: libraries/language/adminsys.php:584
 msgid "Select the corresponding rooms in Vik Booking"
 msgstr ""
 
-#: libraries/language/adminsys.php:581
+#: libraries/language/adminsys.php:587
 msgid "Third party plugin room"
 msgstr ""
 
-#: libraries/language/adminsys.php:584
+#: libraries/language/adminsys.php:590
 msgid "Corresponding room in Vik Booking"
 msgstr ""
 
-#: libraries/language/adminsys.php:587
+#: libraries/language/adminsys.php:593
 msgid "Import selected reservations into Vik Booking"
 msgstr ""
 
-#: libraries/language/adminsys.php:590
+#: libraries/language/adminsys.php:596
 msgid "Import reservations"
 msgstr ""
 
-#: libraries/language/adminsys.php:593
+#: libraries/language/adminsys.php:599
 msgid "All the selected reservations will be imported. Continue?"
 msgstr ""
 
-#: libraries/language/adminsys.php:596
+#: libraries/language/adminsys.php:602
 msgid "Total reservations imported from third party plugin: %d"
 msgstr ""
 
-#: libraries/language/adminsys.php:599
+#: libraries/language/adminsys.php:605
 msgid "Already imported on %s"
 msgstr ""
 
-#: libraries/language/adminsys.php:602
+#: libraries/language/adminsys.php:608
 msgid "Booking imported from third party plugin"
 msgstr ""
 
-#: libraries/language/adminsys.php:605
+#: libraries/language/adminsys.php:611
 msgid "Select the reservations you wish to import"
 msgstr ""
 
-#: libraries/language/adminsys.php:608
+#: libraries/language/adminsys.php:614
 msgid "Want to import the reservations from other plugins?"
 msgstr ""
 
-#: libraries/language/adminsys.php:611
+#: libraries/language/adminsys.php:617
 msgid "Import reservations from %s into Vik Booking"
 msgstr ""
 
-#: libraries/language/adminsys.php:617
+#: libraries/language/adminsys.php:623
 msgid "View page in front site"
 msgstr ""
 
-#: libraries/language/adminsys.php:620
+#: libraries/language/adminsys.php:626
 msgid "Create page"
 msgstr ""
 
-#: libraries/language/adminsys.php:623
+#: libraries/language/adminsys.php:629
 msgid "View trashed posts"
 msgstr ""
 
-#: libraries/language/adminsys.php:626
+#: libraries/language/adminsys.php:632
 msgid "You can always create a custom page or post manually and use this Shortcode text inside it. By proceeding, a page containing this Shortcode will be created automatically."
 msgstr ""
 
-#: libraries/language/adminsys.php:629
+#: libraries/language/adminsys.php:635
 msgid "The Shortcode was successfully added to a new page of your website. Visit the new page in the front site to see the content (if any)."
 msgstr ""
 
-#: libraries/language/adminsys.php:635
+#: libraries/language/adminsys.php:641
 msgid "Alternatively, you can install one Sample Data package to skip the initial setup steps."
 msgstr ""
 
-#: libraries/language/adminsys.php:638
+#: libraries/language/adminsys.php:644
 msgid "Select Sample Data"
 msgstr ""
 
-#: libraries/language/adminsys.php:641
+#: libraries/language/adminsys.php:647
 msgid "Vik Booking - Install Sample Data"
 msgstr ""
 
-#: libraries/language/adminsys.php:644
+#: libraries/language/adminsys.php:650
 msgid "Install Sample Data"
 msgstr ""
 
-#: libraries/language/adminsys.php:647
+#: libraries/language/adminsys.php:653
 msgid "Choose the type of Sample Data you would like to install. This operation will populate the plugin with some demo contents to complete the first configuration."
 msgstr ""
 
-#: libraries/language/adminsys.php:650
+#: libraries/language/adminsys.php:656
 msgid "To undo the installation of the sample data, you can deactivate and delete the plugin for then re-installing it. Otherwise, you can modify or remove some demo contents according to your needs."
 msgstr ""
 
@@ -9743,7 +10305,7 @@ msgid "Error, Booking not found"
 msgstr ""
 
 #: libraries/language/site.php:87
-msgid "An Error occured processing fares. Please choose new dates"
+msgid "An Error occurred processing fares. Please choose new dates"
 msgstr ""
 
 #: libraries/language/site.php:90
@@ -10284,10 +10846,6 @@ msgstr ""
 
 #: libraries/language/site.php:951
 msgid "Error, Invalid Confirmation Number"
-msgstr ""
-
-#: libraries/language/site.php:954
-msgid "Search Bookings"
 msgstr ""
 
 #: libraries/language/site.php:960
@@ -11334,15 +11892,15 @@ msgstr ""
 msgid "Your Pro version of Vik Booking was downgraded to the Free version after the update. Please visit the <a href=\"%s\">Go to Pro</a> page to restore your Pro settings and complete the update process."
 msgstr ""
 
-#: libraries/mvc/admin/controllers/override.php:96
+#: libraries/mvc/admin/controllers/override.php:103
 msgid "No code received"
 msgstr ""
 
-#: libraries/mvc/admin/controllers/override.php:121
+#: libraries/mvc/admin/controllers/override.php:128
 msgid "Cannot use the file as destination: [%s]"
 msgstr ""
 
-#: libraries/mvc/admin/controllers/override.php:241
+#: libraries/mvc/admin/controllers/override.php:248
 msgid "1 item deleted."
 msgstr ""
 
@@ -11374,23 +11932,23 @@ msgstr ""
 msgid "Inactive"
 msgstr ""
 
-#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:189
+#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:190
 msgid "Connection Lost! Please try again."
 msgstr ""
 
-#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:242
+#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:243
 msgid "Show files tree"
 msgstr ""
 
-#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:264
+#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:265
 msgid "Hide original file"
 msgstr ""
 
-#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:271
+#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:272
 msgid "Show both in columns"
 msgstr ""
 
-#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:278
+#: libraries/mvc/admin/views/overrides/tmpl/default_editor.php:279
 msgid "Show one over the other"
 msgstr ""
 

@@ -17,9 +17,9 @@ input, textarea, select, .wp-core-ui select {
     border-radius: 3px;
 }
 
-.btn-group button.btn,
-.input-append button.btn,
-.input-prepend button.btn {
+.btn-group button.btn:not(.btn-small),
+.input-append button.btn:not(.btn-small),
+.input-prepend button.btn:not(.btn-small) {
 	padding: 8px 10px;
 	margin: 0;
 	height: 40px;

@@ -32,6 +32,14 @@ JText::script('VBDELCONFIRM');
 JText::script('VBSENDCANCORDEMAIL');
 JText::script('VBO_SET_STANDBY');
 JText::script('VBO_CONF_RM_OVERBOOKING_FLAG');
+JText::script('VBO_NEW_PAYSCHEDULE');
+JText::script('VBANNULLA');
+JText::script('VBSAVE');
+JText::script('VBELIMINA');
+JText::script('VBO_REG_NEW_PAYMENT');
+JText::script('VBO_UPDATE_PAYMENT');
+JText::script('VBO_AI_AUTO_GUEST_REV_EXCLUDE');
+JText::script('VBO_AI_AUTO_GUEST_REV_INCLUDE');
 
 $dbo = JFactory::getDbo();
 
@@ -1100,7 +1108,7 @@ JS
 				?>
 				<div class="vbo-bookingdet-command">
 					<button type="button" class="btn btn-warning vbo-context-menu-btn vbo-context-menu-actionscanc">
-						<span class="vbo-context-menu-lbl"><?php echo JText::translate('VBCRONACTIONS'); ?> &#8230;</span>
+						<span class="vbo-context-menu-lbl"><?php echo JText::translate('VBCRONACTIONS'); ?></span>
 						<span class="vbo-context-menu-ico"><?php VikBookingIcons::e('sort-down'); ?></span>
 					</button>
 				</div>
@@ -1293,11 +1301,18 @@ JS
 					</div>
 
 				<?php
+				// build the proper invoice SID for bc
+				$inv_sid = $row['sid'] ?: $row['idorderota'] ?: '';
+				if (empty($row['sid']) && is_file(implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'helpers', 'invoices', 'generated', "{$row['id']}_{$row['sid']}.pdf"]))) {
+					// use the old file name signature for OTA bookings
+					$inv_sid = $row['sid'];
+				}
+
 				// build list of invoice details (path/uri & label/button), one by default
 				$invoice_details = [
 					[
-						'path'  => implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'helpers', 'invoices', 'generated', "{$row['id']}_{$row['sid']}.pdf"]),
-						'uri'   => VBO_SITE_URI . 'helpers/invoices/generated/' . "{$row['id']}_{$row['sid']}.pdf",
+						'path'  => implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'helpers', 'invoices', 'generated', "{$row['id']}_{$inv_sid}.pdf"]),
+						'uri'   => VBO_SITE_URI . 'helpers/invoices/generated/' . "{$row['id']}_{$inv_sid}.pdf",
 						'label' => JText::translate('VBOCOLORTAGRULEINVONE'),
 						'btn'   => JText::translate('VBOINVDOWNLOAD'),
 					]
@@ -1329,10 +1344,24 @@ JS
 					<div class="vbo-bookingdet-detcont vbo-bookingdet-detcont-labels-wrap vbo-hidein-print">
 					<?php
 					if (!empty($row['channel']) && !empty($row['idorderota'])) {
+						$tiny_logo_url = '';
+						$channelparts = explode('_', $row['channel']);
+						if ($ch_logo = VikBooking::getVcmChannelsLogo($row['channel'], true)) {
+							$tiny_logo_url = $ch_logo->getTinyLogoURL();
+						}
 						?>
-						<div class="vbo-bookingdet-detcont-label vbo-bookingdet-detcont-label-idorderota">
+						<div class="vbo-bookingdet-detcont-label vbo-bookingdet-detcont-label-idorderota <?php echo strtolower(preg_replace('/[^a-z0-9]/i', '', $channelparts[0])); ?>">
 							<span class="label label-info">
-								<span><?php echo $otachannel_name . ' ID'; ?></span>
+								<span class="vbo-bookingdet-ota-details">
+								<?php
+								if ($tiny_logo_url) {
+									?>
+									<span class="vbo-bookingdet-ota-logo"><img src="<?php echo $tiny_logo_url; ?>" /></span>
+									<?php
+								}
+								?>
+									<span class="vbo-bookingdet-ota-name"><?php echo $otachannel_name . ' ID'; ?></span>
+								</span>
 								<span class="badge"><?php echo !strcasecmp((string)$row['type'], 'Inquiry') && $row['status'] == 'standby' ? '-----' : $row['idorderota']; ?></span>
 							</span>
 						</div>
@@ -1348,6 +1377,101 @@ JS
 						</div>
 						<?php
 					}
+
+					/**
+					 * Check for AI automated host-to-guest reviews.
+					 * 
+					 * @since 	1.16.10 (J) - 1.6.10 (WP)
+					 */
+					if (class_exists('VikChannelManager') && VikChannelManager::hostToGuestReviewSupported($row, $willbe = true)) {
+						if (class_exists('VCMAiModelSettings') && (new VCMAiModelSettings)->isGuestReviewAutoResponderEnabled()) {
+							// host-to-guest review will be supported and AI auto-guest-review is enabled
+							$ai_auto_guest_review_opt = (array) VBOFactory::getConfig()->getArray('ai_auto_guest_review_opt_' . $row['id'], []);
+							?>
+						<div class="vbo-bookingdet-detcont-ai-info">
+							<p class="vbo-bookingdet-detcont-ai-info-status">
+								<span class="vbo-bookingdet-detcont-ai-info-status-on" style="<?php echo ($ai_auto_guest_review_opt['ignore'] ?? 0) ? 'display:  none;' : ''; ?>"><?php VikBookingIcons::e('check-circle'); ?> <span><?php echo JText::translate('VBO_AI_AUTO_GUEST_REV_WILLRUN'); ?></span></span>
+								<span class="vbo-bookingdet-detcont-ai-info-status-off" style="<?php echo !($ai_auto_guest_review_opt['ignore'] ?? 0) ? 'display:  none;' : ''; ?>"><?php VikBookingIcons::e('ban'); ?> <span><?php echo JText::translate('VBO_AI_AUTO_GUEST_REV_RESIGNORE'); ?></span></span>
+							</p>
+							<button type="button" class="btn btn-small btn-primary vbo-context-menu-btn vbo-context-menu-ai-autoreview">
+								<span class="vbo-context-menu-lbl"><?php echo JText::translate('VBCRONACTIONS'); ?></span>
+								<span class="vbo-context-menu-ico"><?php VikBookingIcons::e('sort-down'); ?></span>
+							</button>
+						</div>
+
+						<script type="text/javascript">
+							// build context menu
+							jQuery(function() {
+
+								// toggle ignore AI auto-review guest function
+								let vbo_action_ignore_ai_autorg = (now_ignore) => {
+									if (confirm(Joomla.JText._((now_ignore ? 'VBO_AI_AUTO_GUEST_REV_INCLUDE' : 'VBO_AI_AUTO_GUEST_REV_EXCLUDE')))) {
+										// update the auto-review ignore status for this booking
+										VBOCore.doAjax(
+											"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.set_ai_auto_guest_review_opt'); ?>",
+											{
+												bid: '<?php echo $row['id']; ?>',
+												opt: {
+													ignore: (now_ignore ? 0 : 1),
+												},
+											},
+											(opt) => {
+												// populate the new buttons
+												let new_auto_review_opt = [];
+												new_auto_review_opt.push({
+													icon: ((opt.ignore || 0) ? '<?php echo VikBookingIcons::i('check-circle'); ?>' : '<?php echo VikBookingIcons::i('ban'); ?>'),
+													text: Joomla.JText._((opt?.ignore ? 'VBO_AI_AUTO_GUEST_REV_INCLUDE' : 'VBO_AI_AUTO_GUEST_REV_EXCLUDE')),
+													class: (opt?.ignore ? 'vbo-context-menu-entry-success' : 'vbo-context-menu-entry-danger'),
+													separator: true,
+													action: (root, config) => {
+														// register callback
+														vbo_action_ignore_ai_autorg(opt.ignore || 0);
+													},
+												});
+
+												// set new buttons in context menu
+												jQuery('.vbo-context-menu-ai-autoreview').vboContextMenu('buttons', new_auto_review_opt);
+
+												// display the proper status label
+												if (opt?.ignore) {
+													jQuery('.vbo-bookingdet-detcont-ai-info-status-on').hide();
+													jQuery('.vbo-bookingdet-detcont-ai-info-status-off').show();
+												} else {
+													jQuery('.vbo-bookingdet-detcont-ai-info-status-off').hide();
+													jQuery('.vbo-bookingdet-detcont-ai-info-status-on').show();
+												}
+											},
+											(error) => {
+												// display error message
+												alert(error.responseText);
+											}
+										);
+									}
+								};
+
+								// render context menu
+								jQuery('.vbo-context-menu-ai-autoreview').vboContextMenu({
+									placement: 'bottom-left',
+									buttons:   [
+										{
+											icon: '<?php echo VikBookingIcons::i(($ai_auto_guest_review_opt['ignore'] ?? 0) ? 'check-circle' : 'ban'); ?>',
+											text: Joomla.JText._('<?php echo ($ai_auto_guest_review_opt['ignore'] ?? 0) ? 'VBO_AI_AUTO_GUEST_REV_INCLUDE' : 'VBO_AI_AUTO_GUEST_REV_EXCLUDE'; ?>'),
+											class: '<?php echo ($ai_auto_guest_review_opt['ignore'] ?? 0) ? 'vbo-context-menu-entry-success' : 'vbo-context-menu-entry-danger'; ?>',
+											separator: true,
+											action: (root, config) => {
+												// register callback
+												vbo_action_ignore_ai_autorg(<?php echo ($ai_auto_guest_review_opt['ignore'] ?? 0); ?>);
+											},
+										}
+									],
+								});
+
+							});
+						</script>
+							<?php
+						}
+					}
+
 					if ($invoiced) {
 						foreach ($invoice_details as $invoice_detail) {
 							?>
@@ -1363,19 +1487,21 @@ JS
 					if ($this->vcm_review) {
 						?>
 						<div class="vbo-bookingdet-detcont-label vbo-bookingdet-detcont-label-review">
-							<span class="label label-warning">
-								<a href="index.php?option=com_vikchannelmanager&task=reviews&revid=<?php echo $this->vcm_review['id']; ?>" target="_blank" style="color: #fff;"><i class="vboicn-star-full"></i> <?php echo JText::translate('VBOSEEGUESTREVIEW'); ?></a>
+							<span class="label label-warning" onclick="VBOCore.handleDisplayWidgetNotification({widget_id: 'guest_reviews'}, {review_id: '<?php echo $this->vcm_review['id']; ?>'});">
+								<a href="javascript: void(0);" style="color: #fff;"><i class="vboicn-star-full"></i> <?php echo JText::translate('VBOSEEGUESTREVIEW'); ?></a>
 							</span>
 						</div>
 						<?php
 						// check if a notification was clicked
 						if (VikRequest::getString('notif_action', '', 'request') == 'see_guest_review') {
 							$vcm_review_link = VBOFactory::getPlatform()->getUri()->admin('index.php?option=com_vikchannelmanager&task=reviews&revid=' . $this->vcm_review['id'], false);
+							$vcm_review_id = $this->vcm_review['id'];
 							JFactory::getDocument()->addScriptDeclaration(
 <<<JS
 jQuery(function() {
 	setTimeout(() => {
-		document.location.href = '$vcm_review_link';
+		// document.location.href = '$vcm_review_link';
+		VBOCore.handleDisplayWidgetNotification({widget_id: 'guest_reviews'}, {review_id: '$vcm_review_id'});
 	}, 200);
 });
 JS
@@ -1406,9 +1532,9 @@ JS
 						<div class="vbo-bookingdet-inpwrap">
 							<div class="vbo-bookingdet-inpcont">
 								<input type="text" name="custmail" id="custmail" value="<?php echo $this->escape($row['custmail']); ?>" size="25" onkeyup="vboKeyupEmail(event);"/>
-							</div>
-							<div class="vbo-bookingdet-btncont vbo-bookingdet-save-email" style="display: none;">
-								<button type="button" class="btn btn-success" onclick="document.adminForm.submit();"><?php VikBookingIcons::e('save'); ?> <?php echo JText::translate('VBSAVE'); ?></button>
+								<div class="vbo-bookingdet-btncont vbo-bookingdet-save-email" style="display: none;">
+									<button type="button" class="btn btn-success" onclick="document.adminForm.submit();"><?php VikBookingIcons::e('save'); ?> <?php echo JText::translate('VBSAVE'); ?></button>
+								</div>
 							</div>
 						<?php if (!empty($row['custmail'])) : ?>
 							<div class="vbo-bookingdet-btncont">
@@ -2387,7 +2513,7 @@ JS
 										// calculate amount paid and description
 										$tn_amount_paid = 0;
 										$tn_amount_fees = 0;
-										$tn_description = strpos($hist['descr'], '<') !== false ? $hist['descr'] : preg_replace("/\R/", ' - ', $hist['descr']);
+										$tn_description = strpos((string) $hist['descr'], '<') !== false ? $hist['descr'] : preg_replace("/\R/", ' - ', (string) $hist['descr']);
 										if (is_object($hist['data'])) {
 											// calculate amount paid or amount refunded
 											if (($hist['data']->amount_paid ?? 0)) {
@@ -2420,7 +2546,24 @@ JS
 										$booking_total_prfees += $tn_amount_fees;
 										?>
 										<tr class="vbo-booking-takings-row">
-											<td><?php echo $currencysymb . ' ' . VikBooking::numberFormat($tn_amount_paid); ?></td>
+											<td>
+											<?php
+											echo $currencysymb . ' ' . VikBooking::numberFormat($tn_amount_paid);
+											if (!strcasecmp($hist['type'], 'PU')) {
+												/**
+												 * Allow to edit or delete the history record.
+												 * 
+												 * @since 	1.16.10 (J) - 1.6.10 (WP)
+												 */
+												?>
+												<div class="vbo-booking-taking-cmds">
+													<button type="button" class="btn btn-small btn-primary vbo-booking-taking-edit vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $this->escape(JText::translate('VBMAINPAYMENTSEDIT')); ?>" data-historyid="<?php echo $hist['id']; ?>" data-amount="<?php echo $tn_amount_paid; ?>"><?php VikBookingIcons::e('edit'); ?></button>
+													<button type="button" class="btn btn-small btn-danger vbo-booking-taking-delete vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $this->escape(JText::translate('VBELIMINA')); ?>" data-historyid="<?php echo $hist['id']; ?>"><?php VikBookingIcons::e('times-circle'); ?></button>
+												</div>
+												<?php
+											}
+											?>
+											</td>
 											<td><?php echo JHtml::fetch('date', $hist['dt'], 'Y-m-d H:i:s'); ?></td>
 											<td><?php echo $history_obj->validType($hist['type'], true); ?></td>
 											<td><?php echo $currencysymb . ' ' . VikBooking::numberFormat($tn_amount_fees); ?></td>
@@ -2436,14 +2579,257 @@ JS
 												<span><?php echo $currencysymb . ' ' . VikBooking::numberFormat($booking_total_taking); ?></span>
 											</td>
 											<td></td>
-											<td colspan="2">
+											<td>
 												<span><?php echo $currencysymb . ' ' . VikBooking::numberFormat($booking_total_prfees); ?></span>
+											</td>
+											<td>
+												<button type="button" class="btn btn-small btn-success vbo-takings-addnew"><?php VikBookingIcons::e('plus-circle'); ?> <?php echo JText::translate('VBO_REG_NEW_PAYMENT'); ?></button>
 											</td>
 										</tr>
 									</tfoot>
 								</table>
 							</div>
+
+							<div class="vbo-eorder-newtaking-helper-wrap" style="display: none;">
+								<div class="vbo-eorder-newtaking-helper-cont">
+									<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
+										<div class="vbo-params-wrap">
+											<div class="vbo-params-container">
+												<div class="vbo-params-block">
+													<div class="vbo-param-container">
+														<div class="vbo-param-label">
+															<label for="new_taking_amount"><?php echo JText::translate('VBO_CC_AMOUNT'); ?></label>
+														</div>
+														<div class="vbo-param-setting">
+															<div class="vbo-input-currency-wrap">
+																<span><?php echo $currencysymb; ?></span>
+																<input type="number" id="new_taking_amount" value="" min="0" max="<?php echo $row['total']; ?>" step="any" />
+															</div>
+															<span class="vbo-param-setting-comment">
+																<?php echo JText::translate('VBOCUSTOMERCMMSONTOTAL') . ' ' . $currencysymb . ' ' . VikBooking::numberFormat($row['total']) . ' - ' . JText::translate('VBAMOUNTPAID') . ' ' . $currencysymb . ' ' . VikBooking::numberFormat($row['totpaid']); ?>
+															</span>
+														</div>
+													</div>
+													<div class="vbo-param-container">
+														<div class="vbo-param-label">
+															<label for="new_taking_descr"><?php echo JText::translate('VBLIBPAYNAME'); ?></label>
+														</div>
+														<div class="vbo-param-setting">
+															<select id="new_taking_payid">
+																<option value="">&nbsp;</option>
+															<?php
+															foreach ($this->payments as $paymeth) {
+																?>
+																<option value="<?php echo $paymeth['id']; ?>"><?php echo $paymeth['name']; ?></option>
+																<?php
+															}
+															?>
+															</select>
+														</div>
+													</div>
+													<div class="vbo-param-container vbo-param-nested" id="vbo-new-taking-custom-wrap">
+														<div class="vbo-param-label">&nbsp;</div>
+														<div class="vbo-param-setting">
+															<input id="new_taking_descr" type="text" value="" maxlength="200" placeholder="<?php echo $this->escape(JText::translate('VBPVIEWOPTIONALSTWO')); ?>" />
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
 						</div>
+
+						<script type="text/javascript">
+							jQuery(function() {
+
+								jQuery('#new_taking_payid').on('change', function() {
+									if (jQuery(this).val()) {
+										jQuery('#vbo-new-taking-custom-wrap').hide();
+										jQuery('#new_taking_descr').val('');
+									} else {
+										jQuery('#vbo-new-taking-custom-wrap').show();
+									}
+								});
+
+								jQuery('.vbo-takings-addnew').on('click', function() {
+									// build modal buttons
+									let footer_left = jQuery('<button></button>');
+									footer_left.addClass('btn');
+									footer_left.attr('type', 'button');
+									footer_left.text(Joomla.JText._('VBANNULLA'));
+									footer_left.on('click', function() {
+										// dismiss the modal
+										VBOCore.emitEvent('vbo-eorder-new-taking-dismiss');
+									});
+
+									let footer_right = jQuery('<button></button>');
+									footer_right.addClass('btn btn-success');
+									footer_right.attr('type', 'button');
+									footer_right.text(Joomla.JText._('VBSAVE'));
+									footer_right.on('click', function() {
+										// disable button to prevent double submissions
+										let submit_btn = jQuery(this);
+										submit_btn.prop('disabled', true);
+										// make the request
+										VBOCore.doAjax(
+											"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.add_taking'); ?>",
+											{
+												bid:    '<?php echo $row['id']; ?>',
+												amount: jQuery('#new_taking_amount').val(),
+												payid:  jQuery('#new_taking_payid').val(),
+												descr:  jQuery('#new_taking_descr').val(),
+											},
+											(success) => {
+												// dismiss the modal
+												VBOCore.emitEvent('vbo-eorder-new-taking-dismiss');
+												// reload the page by following the response URL
+												document.location.href = success.url;
+											},
+											(error) => {
+												// re-enable submit button
+												submit_btn.prop('disabled', false);
+												// display error message
+												alert(error.responseText);
+											}
+										);
+									});
+
+									// display modal
+									let modal_body = VBOCore.displayModal({
+										suffix: 	   'vbo-new-taking',
+										extra_class:   'vbo-modal-rounded vbo-modal-dialog',
+										title:         Joomla.JText._('VBO_REG_NEW_PAYMENT'),
+										body:          '',
+										body_prepend:  true,
+										footer_left:   footer_left,
+										footer_right:  footer_right,
+										draggable:     true,
+										dismiss_event: 'vbo-eorder-new-taking-dismiss',
+										onDismiss:     () => {
+											jQuery('.vbo-eorder-newtaking-helper-cont').appendTo(
+												jQuery('.vbo-eorder-newtaking-helper-wrap')
+											);
+										},
+									});
+
+									// reset helper input values
+									jQuery('#new_taking_amount').val('');
+									jQuery('#new_taking_payid').prop('disabled', false).val('').trigger('change');
+									jQuery('#new_taking_descr').val('');
+
+									// append modal body
+									jQuery('.vbo-eorder-newtaking-helper-cont').appendTo(modal_body);
+								});
+
+								jQuery('.vbo-booking-taking-edit').on('click', function() {
+									let edit_btn = jQuery(this);
+									let history_id = edit_btn.attr('data-historyid');
+									let curr_amount_paid = edit_btn.attr('data-amount');
+									let curr_pay_descr = edit_btn.closest('tr.vbo-booking-takings-row').find('td').last().text();
+
+									// build modal buttons
+									let footer_left = jQuery('<button></button>');
+									footer_left.addClass('btn');
+									footer_left.attr('type', 'button');
+									footer_left.text(Joomla.JText._('VBANNULLA'));
+									footer_left.on('click', function() {
+										// dismiss the modal
+										VBOCore.emitEvent('vbo-eorder-edit-taking-dismiss');
+									});
+
+									let footer_right = jQuery('<button></button>');
+									footer_right.addClass('btn btn-success');
+									footer_right.attr('type', 'button');
+									footer_right.text(Joomla.JText._('VBO_UPDATE_PAYMENT'));
+									footer_right.on('click', function() {
+										// disable button to prevent double submissions
+										let submit_btn = jQuery(this);
+										submit_btn.prop('disabled', true);
+										// make the request
+										VBOCore.doAjax(
+											"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.update_taking'); ?>",
+											{
+												bid:    '<?php echo $row['id']; ?>',
+												hid:    history_id,
+												amount: jQuery('#new_taking_amount').val(),
+												descr:  jQuery('#new_taking_descr').val(),
+												htype:  'PU',
+											},
+											(success) => {
+												// dismiss the modal
+												VBOCore.emitEvent('vbo-eorder-edit-taking-dismiss');
+												// reload the page by following the response URL
+												document.location.href = success.url;
+											},
+											(error) => {
+												// re-enable submit button
+												submit_btn.prop('disabled', false);
+												// display error message
+												alert(error.responseText);
+											}
+										);
+									});
+
+									// display modal
+									let modal_body = VBOCore.displayModal({
+										suffix: 	   'vbo-edit-taking',
+										extra_class:   'vbo-modal-rounded vbo-modal-dialog',
+										title:         Joomla.JText._('VBO_UPDATE_PAYMENT'),
+										body:          '',
+										body_prepend:  true,
+										footer_left:   footer_left,
+										footer_right:  footer_right,
+										draggable:     true,
+										dismiss_event: 'vbo-eorder-edit-taking-dismiss',
+										onDismiss:     () => {
+											jQuery('.vbo-eorder-newtaking-helper-cont').appendTo(
+												jQuery('.vbo-eorder-newtaking-helper-wrap')
+											);
+										},
+									});
+
+									// populate helper input values
+									jQuery('#new_taking_amount').val(curr_amount_paid);
+									jQuery('#new_taking_payid').val('').trigger('change').prop('disabled', true);
+									jQuery('#new_taking_descr').val(curr_pay_descr);
+
+									// append modal body
+									jQuery('.vbo-eorder-newtaking-helper-cont').appendTo(modal_body);
+								});
+
+								jQuery('.vbo-booking-taking-delete').on('click', function() {
+									if (!confirm(Joomla.JText._('VBDELCONFIRM'))) {
+										return false;
+									}
+									let del_btn = jQuery(this);
+									del_btn.prop('disabled', true);
+									let history_id = del_btn.attr('data-historyid');
+									// make the request
+									VBOCore.doAjax(
+										"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.delete_history_record'); ?>",
+										{
+											bid:   '<?php echo $row['id']; ?>',
+											hid:   history_id,
+											htype: 'PU',
+										},
+										(success) => {
+											// reload the page by following the response URL
+											document.location.href = success.url;
+										},
+										(error) => {
+											// re-enable delete button
+											del_btn.prop('disabled', false);
+											// display error message
+											alert(error.responseText);
+										}
+									);
+								});
+
+							});
+						</script>
 						<?php
 					}
 					if ($history) {
@@ -2463,7 +2849,7 @@ JS
 									<tbody>
 									<?php
 									foreach ($history as $hist) {
-										$hdescr = strpos($hist['descr'], '<') !== false ? $hist['descr'] : nl2br($hist['descr']);
+										$hdescr = strpos((string) $hist['descr'], '<') !== false ? $hist['descr'] : nl2br((string) $hist['descr']);
 										?>
 										<tr class="vbo-booking-history-row">
 											<td><?php echo $history_obj->validType($hist['type'], true); ?></td>
@@ -2518,19 +2904,354 @@ JS
 								 * @since 	1.13
 								 */
 								$cardlimit = mktime(23, 59, 59, $checkout_info['mon'], ($checkout_info['mday'] + 10), $checkout_info['year']);
-								if (time() < $cardlimit) {
-									$plain_log = htmlspecialchars($row['paymentlog']);
-									if (stripos($plain_log, 'card number') !== false && strpos($plain_log, '****') !== false) {
-										// log contains credit card details
-										// Prepare modal (Credit Card Details)
-										array_push($vbo_modals_html, $vbo_app->getJmodalHtml('vbo-vcm-pcid', JText::translate('GETFULLCARDDETAILS'), '', 'width: 80%; height: 60%; margin-left: -40%; top: 20% !important;'));
-										// end Prepare modal
+								$plain_log = htmlspecialchars($row['paymentlog']);
+								if (time() < $cardlimit && stripos($plain_log, 'card number') !== false && strpos($plain_log, '****') !== false) {
+									// log contains credit card details
+									// prepare modal (Credit Card Details)
+									array_push($vbo_modals_html, $vbo_app->getJmodalHtml('vbo-vcm-pcid', JText::translate('GETFULLCARDDETAILS'), '', 'width: 80%; height: 60%; margin-left: -40%; top: 20% !important;'));
 									?>
 								<div class="vcm-notif-pcidrq-container">
 									<button type="button" class="btn vbo-config-btn vcm-pcid-launch" onclick="vboOpenJModal('vbo-vcm-pcid', 'index.php?option=com_vikchannelmanager&task=execpcid&channel_source=<?php echo $channel_source; ?>&otaid=<?php echo $row['idorderota']; ?>&tmpl=component');"><?php VikBookingIcons::e('credit-card'); ?> <?php echo JText::translate('GETFULLCARDDETAILS'); ?></button>
 								</div>
 									<?php
+									/**
+									 * Check for automatic payment schedules support when an active CC/VCC is available.
+									 * 
+									 * @since 	1.16.10 (J) - 1.6.10 (WP)
+									 */
+									$can_payschedule = false;
+									$active_payschedules = [];
+									try {
+										$processor = VBOModelReservation::getInstance($row, true)->getPaymentProcessor();
+										if (method_exists($processor, 'isDirectChargeSupported') && $processor->isDirectChargeSupported()) {
+											// turn flag on
+											$can_payschedule = true;
+											// load current schedules
+											$active_payschedules = VBOModelPayschedules::getInstance()->getItems([
+												'idorder' => [
+													'value' => $row['id'],
+												],
+											]);
+										}
+									} catch (Exception $e) {
+										// do nothing
 									}
+
+									if ($can_payschedule) {
+										// calculate the total amount scheduled
+										$tot_scheduled = 0;
+										foreach ($active_payschedules as $active_payschedule) {
+											if (!$active_payschedule->status) {
+												$tot_scheduled += $active_payschedule->amount;
+											}
+										}
+
+										// display action buttons for payment schedules
+										?>
+								<div class="vbo-eorder-payschedules-wrap">
+									<button type="button" class="btn btn-<?php echo $active_payschedules ? 'success' : 'primary'; ?> vbo-context-menu-btn vbo-context-menu-payschedules">
+										<span class="vbo-context-menu-lbl"><?php echo JText::translate('VBO_AUTOPAY_SCHEDULED'); ?></span>
+										<span class="vbo-context-menu-ico"><?php VikBookingIcons::e('sort-down'); ?></span>
+									</button>
+								</div>
+
+								<div class="vbo-eorder-newpayschedule-helper-wrap" style="display: none;">
+									<div class="vbo-eorder-newpayschedule-helper-cont">
+										<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
+											<div class="vbo-params-wrap">
+												<div class="vbo-params-container">
+													<div class="vbo-params-block">
+														<div class="vbo-param-container">
+															<div class="vbo-param-label">
+																<label for="new_payschedule_amount"><?php echo JText::translate('VBO_CC_AMOUNT'); ?></label>
+															</div>
+															<div class="vbo-param-setting">
+																<div class="vbo-input-currency-wrap">
+																	<span><?php echo $currencysymb; ?></span>
+																	<input type="number" id="new_payschedule_amount" value="<?php echo $tot_scheduled < $row['total'] ? ($row['total'] - $tot_scheduled) : 0; ?>" min="0" step="any" />
+																</div>
+																<span class="vbo-param-setting-comment"><?php echo JText::translate('VBEDITORDERNINE') . ' ' . $currencysymb . ' ' . VikBooking::numberFormat($row['total']); ?></span>
+															</div>
+														</div>
+														<div class="vbo-param-container">
+															<div class="vbo-param-label">
+																<label for="new_payschedule_fordt"><?php echo JText::translate('VBPVIEWORDERSONE'); ?></label>
+															</div>
+															<div class="vbo-param-setting">
+																<?php echo $vbo_app->getCalendar(date($df, $row['checkin']), 'new_payschedule_fordt', 'new_payschedule_fordt', $nowdf, array('class'=>'', 'size'=>'10', 'maxlength'=>'19', 'todayBtn' => 'true')); ?>
+															</div>
+														</div>
+														<div class="vbo-param-container">
+															<div class="vbo-param-label">
+																<label for="new_payschedule_fordtime"><?php echo JText::translate('VBO_REMINDER_TIME'); ?></label>
+															</div>
+															<div class="vbo-param-setting">
+																<select id="new_payschedule_fordtime">
+																<?php
+																for ($h = 0; $h < 24; $h++) {
+																	$say_htime = ($h < 10 ? '0' : '') . $h;
+																	?>
+																	<option value="<?php echo $say_htime; ?>:00"><?php echo $say_htime; ?>:00</option>
+																	<option value="<?php echo $say_htime; ?>:30"><?php echo $say_htime; ?>:30</option>
+																	<?php
+																}
+																?>
+																</select>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<script type="text/javascript">
+
+									// build base buttons list for context menu
+									var vbo_payschedule_btns = [
+										// add new payment schedule button
+										{
+											icon: '<?php echo VikBookingIcons::i('plus-circle'); ?>',
+											text: Joomla.JText._('VBO_NEW_PAYSCHEDULE'),
+											separator: true,
+											action: (root, config) => {
+												// build modal buttons
+												let footer_left = jQuery('<button></button>');
+												footer_left.addClass('btn');
+												footer_left.attr('type', 'button');
+												footer_left.text(Joomla.JText._('VBANNULLA'));
+												footer_left.on('click', function() {
+													// dismiss the modal
+													VBOCore.emitEvent('vbo-eorder-new-payschedule-dismiss');
+												});
+
+												let footer_right = jQuery('<button></button>');
+												footer_right.addClass('btn btn-success');
+												footer_right.attr('type', 'button');
+												footer_right.text(Joomla.JText._('VBSAVE'));
+												footer_right.on('click', function() {
+													// disable button to prevent double submissions
+													let submit_btn = jQuery(this);
+													submit_btn.prop('disabled', true);
+													// make the request
+													VBOCore.doAjax(
+														"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=payschedules.save'); ?>",
+														{
+															bid:    '<?php echo $row['id']; ?>',
+															amount: jQuery('#new_payschedule_amount').val(),
+															dt:     jQuery('#new_payschedule_fordt').val(),
+															time:   jQuery('#new_payschedule_fordtime').val(),
+														},
+														(new_pay_schedules) => {
+															// re-enable submit button
+															submit_btn.prop('disabled', false);
+															// dismiss the modal
+															VBOCore.emitEvent('vbo-eorder-new-payschedule-dismiss');
+															// populate the new schedule buttons
+															let new_pay_schedule_btns = [];
+															// push the button to add a new schedule
+															new_pay_schedule_btns.push(vbo_payschedule_btns[0]);
+															// push all active schedules
+															new_pay_schedules.forEach((payschedule) => {
+																new_pay_schedule_btns.push(
+																	vboBuildPayScheduleBtn(payschedule)
+																);
+															});
+															// update trigger button class
+															if (new_pay_schedules.length) {
+																jQuery('.vbo-context-menu-payschedules').removeClass('btn-primary').addClass('btn-success');
+															} else {
+																jQuery('.vbo-context-menu-payschedules').removeClass('btn-success').addClass('btn-primary');
+															}
+															// set new buttons in context menu
+															jQuery('.vbo-context-menu-payschedules').vboContextMenu('buttons', new_pay_schedule_btns);
+														},
+														(error) => {
+															// re-enable submit button
+															submit_btn.prop('disabled', false);
+															// display error message
+															alert(error.responseText);
+														}
+													);
+												});
+
+												// display modal
+												let modal_body = VBOCore.displayModal({
+													suffix: 	   'vbo-new-pay-schedule',
+													extra_class:   'vbo-modal-rounded vbo-modal-dialog',
+													title:         Joomla.JText._('VBO_NEW_PAYSCHEDULE'),
+													body:          '',
+													body_prepend:  true,
+													footer_left:   footer_left,
+													footer_right:  footer_right,
+													draggable:     true,
+													dismiss_event: 'vbo-eorder-new-payschedule-dismiss',
+													onDismiss:     () => {
+														jQuery('.vbo-eorder-newpayschedule-helper-cont').appendTo(
+															jQuery('.vbo-eorder-newpayschedule-helper-wrap')
+														);
+													},
+												});
+
+												// append modal body
+												jQuery('.vbo-eorder-newpayschedule-helper-cont').appendTo(modal_body);
+											},
+										}
+									];
+
+									/**
+									 * Builds a button object for the context menu from the given payment schedule object.
+									 */
+									function vboBuildPayScheduleBtn(payschedule) {
+										let icn_to_process = '<?php echo VikBookingIcons::i('clock'); ?>';
+										let icn_processed = '<?php echo VikBookingIcons::i('check-circle'); ?>';
+										let icn_error = '<?php echo VikBookingIcons::i('exclamation-triangle'); ?>';
+										let dt_unit = (payschedule.dt_diff.days || payschedule.dt_diff.weeks || payschedule.dt_diff.months || payschedule.dt_diff.years || 0);
+										let say_dt = !payschedule.dt_diff.past && dt_unit > 0 ? payschedule.dt_diff.relative : payschedule?.fordt;
+										if (!payschedule.dt_diff.past && (payschedule.dt_diff.sameday || payschedule.dt_diff.today)) {
+											say_dt = payschedule.dt_diff.relative + ' (' + payschedule.time_hm + ')';
+										} else if (!payschedule.dt_diff.past && payschedule.dt_diff.tomorrow) {
+											say_dt = payschedule.dt_diff.relative + ' (' + payschedule.time_hm + ')';
+										}
+
+										return {
+											icon: ((payschedule.status || 0) > 0 ? (payschedule.status == 1 ? icn_processed : icn_error) : icn_to_process),
+											text: '<?php echo $currencysymb . ' '; ?>' + payschedule?.amount + ' - ' + say_dt,
+											class: ((payschedule.status || 0) == 1 ? 'vbo-context-menu-entry-success' : ((payschedule.status || 0) == 2 ? 'vbo-context-menu-entry-warning' : 'vbo-context-menu-entry-danger')),
+											separator: false,
+											action: (root, config) => {
+												if (payschedule.status == 0 || !payschedule.logs) {
+													// confirm deletion without displaying anything
+													if (confirm(Joomla.JText._('VBDELCONFIRM'))) {
+														// make the request
+														VBOCore.doAjax(
+															"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=payschedules.delete'); ?>",
+															{
+																bid:         payschedule.idorder,
+																schedule_id: payschedule.id,
+															},
+															(new_pay_schedules) => {
+																// populate the new schedule buttons
+																let new_pay_schedule_btns = [];
+																// push the button to add a new schedule
+																new_pay_schedule_btns.push(vbo_payschedule_btns[0]);
+																// push all active schedules
+																new_pay_schedules.forEach((payschedule) => {
+																	new_pay_schedule_btns.push(
+																		vboBuildPayScheduleBtn(payschedule)
+																	);
+																});
+																// update trigger button class
+																if (new_pay_schedules.length) {
+																	jQuery('.vbo-context-menu-payschedules').removeClass('btn-primary').addClass('btn-success');
+																} else {
+																	jQuery('.vbo-context-menu-payschedules').removeClass('btn-success').addClass('btn-primary');
+																}
+																// set new buttons in context menu
+																jQuery('.vbo-context-menu-payschedules').vboContextMenu('buttons', new_pay_schedule_btns);
+															},
+															(error) => {
+																// display error message
+																alert(error.responseText);
+															}
+														);
+													}
+												} else {
+													// display modal on click with the execution logs
+
+													// build modal buttons
+													let footer_left = jQuery('<button></button>');
+													footer_left.addClass('btn');
+													footer_left.attr('type', 'button');
+													footer_left.text(Joomla.JText._('VBANNULLA'));
+													footer_left.on('click', function() {
+														// dismiss the modal
+														VBOCore.emitEvent('vbo-eorder-payschedule-logs-dismiss');
+													});
+
+													let footer_right = jQuery('<button></button>');
+													footer_right.addClass('btn btn-danger');
+													footer_right.attr('type', 'button');
+													footer_right.text(Joomla.JText._('VBELIMINA'));
+													footer_right.on('click', function() {
+														// confirm record deletion
+														if (confirm(Joomla.JText._('VBDELCONFIRM'))) {
+															// make the request
+															VBOCore.doAjax(
+																"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=payschedules.delete'); ?>",
+																{
+																	bid:         payschedule.idorder,
+																	schedule_id: payschedule.id,
+																},
+																(new_pay_schedules) => {
+																	// dismiss the modal
+																	VBOCore.emitEvent('vbo-eorder-payschedule-logs-dismiss');
+																	// populate the new schedule buttons
+																	let new_pay_schedule_btns = [];
+																	// push the button to add a new schedule
+																	new_pay_schedule_btns.push(vbo_payschedule_btns[0]);
+																	// push all active schedules
+																	new_pay_schedules.forEach((payschedule) => {
+																		new_pay_schedule_btns.push(
+																			vboBuildPayScheduleBtn(payschedule)
+																		);
+																	});
+																	// update trigger button class
+																	if (new_pay_schedules.length) {
+																		jQuery('.vbo-context-menu-payschedules').removeClass('btn-primary').addClass('btn-success');
+																	} else {
+																		jQuery('.vbo-context-menu-payschedules').removeClass('btn-success').addClass('btn-primary');
+																	}
+																	// set new buttons in context menu
+																	jQuery('.vbo-context-menu-payschedules').vboContextMenu('buttons', new_pay_schedule_btns);
+																},
+																(error) => {
+																	// display error message
+																	alert(error.responseText);
+																}
+															);
+														}
+													});
+
+													// display modal
+													let modal_body = VBOCore.displayModal({
+														suffix: 	   'vbo-pay-schedule-logs',
+														extra_class:   'vbo-modal-rounded vbo-modal-dialog',
+														title:         payschedule.fordt,
+														body:          '<pre>' + payschedule.logs + '</pre>',
+														footer_left:   footer_left,
+														footer_right:  footer_right,
+														draggable:     true,
+														dismiss_event: 'vbo-eorder-payschedule-logs-dismiss',
+													});
+												}
+											},
+										};
+									}
+
+									// build context menu
+									jQuery(function() {
+
+										// append active payment schedule buttons
+										let active_payschedules = <?php echo json_encode($active_payschedules); ?>;
+										active_payschedules.forEach((payschedule) => {
+											vbo_payschedule_btns.push(
+												vboBuildPayScheduleBtn(payschedule)
+											);
+										});
+
+										// render context menu
+										jQuery('.vbo-context-menu-payschedules').vboContextMenu({
+											placement: 'bottom-left',
+											buttons:   vbo_payschedule_btns,
+										});
+
+									});
+							</script>
+										<?php
+									}
+									// end automatic payment schedules
 								}
 							}
 						} elseif (empty($row['idorderota']) && !empty($row['paymentlog']) && $row['status'] == 'standby') {
@@ -2719,7 +3440,7 @@ foreach ($vbo_modals_html as $modalhtml) {
 				 */
 				$extra_btns = array();
 				$condtext_tags = VikBooking::getConditionalRulesInstance()->getSpecialTags();
-				if (count($condtext_tags)) {
+				if ($condtext_tags) {
 					$condtext_tags = array_keys($condtext_tags);
 					foreach ($condtext_tags as $tag) {
 						array_push($extra_btns, '<button type="button" class="btn btn-secondary btn-small vbo-condtext-specialtag-btn" onclick="setSpecialTplTag(\'emailcont\', \'' . $tag . '\');">' . $tag . '</button>');
@@ -2775,9 +3496,25 @@ foreach ($vbo_modals_html as $modalhtml) {
 								),
 							);
 							$editor_btns = $special_tags_base;
-							if (count($condtext_tags)) {
+							if ($condtext_tags) {
 								$editor_btns = array_merge($editor_btns, $condtext_tags);
 							}
+
+							/**
+							 * Trigger event to allow third-party plugins to add custom special tags.
+							 * 
+							 * @since 	1.16.10 (J) - 1.6.10 (WP)
+							 */
+							$custom_btns = VBOFactory::getPlatform()->getDispatcher()->filter('onRenderCustomEmailSpecialTags', [$row, $editor_btns]);
+							foreach ($custom_btns as $custom_btn) {
+								// merge custom buttons
+								$editor_btns = array_merge($editor_btns, (array) $custom_btn);
+							}
+
+							// make sure to filter empty buttons
+							$editor_btns = array_filter($editor_btns);
+
+							// render visual editor
 							echo $vbo_app->renderVisualEditor('emailcont', '', $tarea_attr, $editor_opts, $editor_btns);
 							?>
 							<div class="btn-group pull-left vbo-smstpl-bgroup vbo-custmail-bgroup vik-contentbuilder-textmode-sptags">

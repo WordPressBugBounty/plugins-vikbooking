@@ -238,11 +238,19 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 		$messaging_supported = class_exists('VCMChatMessaging');
 		$tot_guest_messages  = 0;
 		$tot_unread_messages = 0;
+		$last_guest_messages = [];
 		if ($messaging_supported) {
 			$messaging_handler  = VCMChatMessaging::getInstance($details);
 			$tot_guest_messages = $messaging_handler->countBookingGuestMessages();
 			if ($tot_guest_messages) {
 				$tot_unread_messages = $messaging_handler->countBookingGuestMessages($unread = true);
+				if (method_exists($messaging_handler, 'loadBookingLatestMessages')) {
+					/**
+					 * At the moment we save a query and we do not display
+					 *  a snapshot of the latest guest messages.
+					 */
+					// $last_guest_messages = $messaging_handler->loadBookingLatestMessages($details['id'], 0, 5);
+				}
 			}
 		}
 
@@ -643,6 +651,163 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 						<?php
 					}
 
+					// check if this booking has got a reminder
+					$reminders_helper = VBORemindersHelper::getInstance();
+					$has_reminders 	  = $reminders_helper->bookingHasReminder($details['id']);
+					$few_reminders 	  = [];
+					if ($has_reminders) {
+						$few_reminders = $reminders_helper->loadReminders([
+							'idorder' 	=> $details['id'],
+							'onlyorder' => 1,
+							'completed' => 1,
+							'expired' 	=> 1,
+						], 0, 5);
+					}
+					?>
+					<div class="vbo-params-fieldset">
+						<div class="vbo-params-fieldset-label"><?php echo JText::translate('VBO_W_REMINDERS_TITLE'); ?></div>
+						<div class="vbo-params-block">
+						<?php
+						foreach ($few_reminders as $reminder) {
+							$diff_data = [];
+							if (!empty($reminder->duedate)) {
+								// calculate distance to expiration date from today
+								$diff_data = $reminders_helper->relativeDatesDiff($reminder->duedate);
+							}
+							?>
+							<div class="vbo-param-container">
+								<div class="vbo-param-setting">
+									<div class="vbo-widget-reminders-record-info">
+										<div class="vbo-widget-reminders-record-txt">
+											<div class="vbo-widget-reminder-title"><?php echo htmlspecialchars($reminder->title); ?></div>
+											<?php
+											if (!empty($reminder->descr)) {
+												?>
+											<div class="vbo-widget-reminder-descr"><?php echo htmlspecialchars($reminder->descr); ?></div>
+												<?php
+											}
+											?>
+										</div>
+										<div class="vbo-widget-reminders-record-due">
+										<?php
+										if (!empty($reminder->duedate)) {
+											?>
+											<div class="vbo-widget-reminders-record-due-datetime">
+												<span class="vbo-widget-reminders-record-due-date">
+													<span title="<?php echo $reminder->duedate; ?>"><?php echo $diff_data['relative']; ?></span>
+												</span>
+											<?php
+											if ($reminder->usetime) {
+												?>
+												<span class="vbo-widget-reminders-record-due-time">
+													<span><?php echo $diff_data['date_a']->format('H:i'); ?></span>
+												</span>
+												<?php
+											}
+											?>
+											</div>
+											<?php
+										}
+										?>
+										</div>
+									</div>
+								</div>
+							</div>
+							<?php
+						}
+						?>
+							<div class="vbo-param-container">
+								<div class="vbo-param-label">&nbsp;</div>
+								<div class="vbo-param-setting">
+								<?php
+								if ($has_reminders) {
+									?>
+									<button type="button" class="btn vbo-config-btn" data-hasreminders="1"><?php VikBookingIcons::e('bell'); ?> <?php echo JText::translate('VBO_SEE_ALL'); ?></button>
+									<?php
+								} else {
+									?>
+									<button type="button" class="btn btn-success" data-hasreminders="0"><?php VikBookingIcons::e('plus-circle'); ?> <?php echo JText::translate('VBO_ADD_NEW'); ?></button>
+									<?php
+								}
+								?>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<?php
+					if ($customer) {
+						/**
+						 * Allow to manage the customer documents and display the registration status.
+						 * 
+						 * @since 	1.16.10 (J) - 1.6.10 (WP)
+						 */
+
+						$checked_status = null;
+						$checked_cls = 'label-info';
+						if (!$details['closure'] && $details['status'] == 'confirmed') {
+							switch ($details['checked']) {
+								case -1:
+									$checked_status = JText::translate('VBOCHECKEDSTATUSNOS');
+									$checked_cls = 'label-danger';
+									break;
+								case 1:
+									$checked_status = JText::translate('VBOCHECKEDSTATUSIN');
+									$checked_cls = 'label-success';
+									break;
+								case 2:
+									$checked_status = JText::translate('VBOCHECKEDSTATUSOUT');
+									$checked_cls = 'label-warning';
+									break;
+								default:
+									if (!empty($customer['pax_data'])) {
+										// pre check-in performed via front-end
+										$checked_status = JText::translate('VBOCHECKEDSTATUSPRECHECKIN');
+									}
+									break;
+							}
+						}
+						?>
+					<div class="vbo-params-fieldset vbo-widget-bookdets-customer-docs">
+						<div class="vbo-params-fieldset-label"><?php echo JText::translate('VBOCUSTOMERDOCUMENTS'); ?></div>
+						<div class="vbo-params-block">
+							<?php
+							if ($checked_status) {
+								// display the registration status
+								?>
+							<div class="vbo-param-container">
+								<div class="vbo-param-label"><?php echo JText::translate('VBOCHECKEDSTATUS'); ?></div>
+								<div class="vbo-param-setting">
+									<span class="label <?php echo $checked_cls; ?>"><?php echo $checked_status; ?></span>
+								</div>
+							</div>
+								<?php
+							}
+							?>
+							<div class="vbo-param-container">
+								<div class="vbo-param-setting">
+								<?php
+								/**
+								 * Render the customer-dropfiles layout to handle the customer documents.
+								 */
+								$layout_data = [
+									'caller' => 'widget',
+									'customer' => $customer,
+								];
+
+								// render the permissions layout
+								echo JLayoutHelper::render('customer.dropfiles', $layout_data, null, [
+									'component' => 'com_vikbooking',
+									'client' 	=> 'administrator',
+								]);
+								?>
+								</div>
+							</div>
+						</div>
+					</div>
+						<?php
+					}
+
 					// booking history
 					$history_obj  = VikBooking::getBookingHistoryInstance($details['id']);
 					$history_list = $history_obj->loadHistory();
@@ -883,90 +1048,7 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 					</div>
 						<?php
 					}
-
-					// check if this booking has got a reminder
-					$reminders_helper = VBORemindersHelper::getInstance();
-					$has_reminders 	  = $reminders_helper->bookingHasReminder($details['id']);
-					$few_reminders 	  = [];
-					if ($has_reminders) {
-						$few_reminders = $reminders_helper->loadReminders([
-							'idorder' 	=> $details['id'],
-							'onlyorder' => 1,
-							'completed' => 1,
-							'expired' 	=> 1,
-						], 0, 5);
-					}
 					?>
-					<div class="vbo-params-fieldset">
-						<div class="vbo-params-fieldset-label"><?php echo JText::translate('VBO_W_REMINDERS_TITLE'); ?></div>
-						<div class="vbo-params-block">
-						<?php
-						foreach ($few_reminders as $reminder) {
-							$diff_data = [];
-							if (!empty($reminder->duedate)) {
-								// calculate distance to expiration date from today
-								$diff_data = $reminders_helper->relativeDatesDiff($reminder->duedate);
-							}
-							?>
-							<div class="vbo-param-container">
-								<div class="vbo-param-setting">
-									<div class="vbo-widget-reminders-record-info">
-										<div class="vbo-widget-reminders-record-txt">
-											<div class="vbo-widget-reminder-title"><?php echo htmlspecialchars($reminder->title); ?></div>
-											<?php
-											if (!empty($reminder->descr)) {
-												?>
-											<div class="vbo-widget-reminder-descr"><?php echo htmlspecialchars($reminder->descr); ?></div>
-												<?php
-											}
-											?>
-										</div>
-										<div class="vbo-widget-reminders-record-due">
-										<?php
-										if (!empty($reminder->duedate)) {
-											?>
-											<div class="vbo-widget-reminders-record-due-datetime">
-												<span class="vbo-widget-reminders-record-due-date">
-													<span title="<?php echo $reminder->duedate; ?>"><?php echo $diff_data['relative']; ?></span>
-												</span>
-											<?php
-											if ($reminder->usetime) {
-												?>
-												<span class="vbo-widget-reminders-record-due-time">
-													<span><?php echo $diff_data['date_a']->format('H:i'); ?></span>
-												</span>
-												<?php
-											}
-											?>
-											</div>
-											<?php
-										}
-										?>
-										</div>
-									</div>
-								</div>
-							</div>
-							<?php
-						}
-						?>
-							<div class="vbo-param-container">
-								<div class="vbo-param-label">&nbsp;</div>
-								<div class="vbo-param-setting">
-								<?php
-								if ($has_reminders) {
-									?>
-									<button type="button" class="btn vbo-config-btn" data-hasreminders="1"><?php VikBookingIcons::e('bell'); ?> <?php echo JText::translate('VBO_SEE_ALL'); ?></button>
-									<?php
-								} else {
-									?>
-									<button type="button" class="btn btn-success" data-hasreminders="0"><?php VikBookingIcons::e('plus-circle'); ?> <?php echo JText::translate('VBO_ADD_NEW'); ?></button>
-									<?php
-								}
-								?>
-								</div>
-							</div>
-						</div>
-					</div>
 
 					<div class="vbo-param-container">
 						<div class="vbo-param-setting">

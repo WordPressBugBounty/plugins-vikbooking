@@ -249,6 +249,12 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 			case 'COM_VIKBOOKING_LAYOUT_LIST':
 				$result = __('List', 'vikbooking');
 				break;
+			case 'COM_VIKBOOKING_TINYURL_VIEW_DEFAULT_TITLE':
+				$result = __('Tiny URL', 'vikbooking');
+				break;
+			case 'COM_VIKBOOKING_TINYURL_VIEW_DEFAULT_DESC':
+				$result = __('Turns long URLs into tiny URLs. Useful to shorten booking details or similar URLs.', 'vikbooking');
+				break;
 
 			/**
 			 * @wponly Definitions for the Views "Gotopro" and "Getpro"

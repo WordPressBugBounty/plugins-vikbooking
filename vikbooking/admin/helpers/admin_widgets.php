@@ -46,6 +46,15 @@ class VikBookingHelperAdminWidgets
 	protected $widgets;
 
 	/**
+	 * The list of widget positions in the multitask panel.
+	 *
+	 * @var array
+	 * 
+	 * @since  1.16.10 (J) - 1.6.10 (WP)
+	 */
+	protected $widgets_pos_list;
+
+	/**
 	 * Class constructor is protected.
 	 *
 	 * @see 	getInstance()
@@ -55,6 +64,7 @@ class VikBookingHelperAdminWidgets
 		static::$helper = [];
 		$this->dbo = JFactory::getDbo();
 		$this->widgets = [];
+		$this->widgets_pos_list = (array) VBOFactory::getConfig()->getArray('multitasking_wpos', []);
 		$this->load();
 	}
 
@@ -144,8 +154,17 @@ class VikBookingHelperAdminWidgets
 					// instantiate widget object
 					$widget = new $classname();
 
-					// push widget object
-					array_push($this->widgets, $widget);
+					/**
+					 * Call the widget's preflight method to see if it's compatible with the current environment.
+					 * 
+					 * @since 	1.16.10 (J) - 1.6.10 (WP)
+					 */
+					if (!$widget->preflight()) {
+						continue;
+					}
+
+					// push the installed widget object
+					$this->widgets[] = $widget;
 				}
 			} catch (Exception $e) {
 				// do nothing
@@ -377,18 +396,42 @@ class VikBookingHelperAdminWidgets
 
 			// build widget info object
 			$wtdata = new stdClass;
-			$wtdata->id 	= $id;
-			$wtdata->name 	= $name;
-			$wtdata->descr 	= $descr;
-			$wtdata->icon 	= $widget->getIcon();
-			$wtdata->style 	= str_replace(array(' ', '_'), '-', $widget->getStyleName());
+			$wtdata->id 	  = $id;
+			$wtdata->name 	  = $name;
+			$wtdata->descr 	  = $descr;
+			$wtdata->icon 	  = $widget->getIcon();
+			$wtdata->style 	  = str_replace(array(' ', '_'), '-', $widget->getStyleName());
+			$wtdata->priority = $widget->getPriority();
 
 			// set object for sorting
-			$names[$name] 	= $wtdata;
+			$names[$name] = $wtdata;
 		}
 
 		// apply sorting by name
 		ksort($names);
+
+		// apply sorting by priority
+		usort($names, function($a, $b) {
+			// the higher the priority is, the higher the position will be
+			return $b->priority - $a->priority;
+		});
+
+		if ($this->widgets_pos_list) {
+			// get the custom positions list
+			$widgets_pos_list = $this->widgets_pos_list;
+			// apply custom sorting
+			usort($names, function($a, $b) use ($widgets_pos_list) {
+				$wa_id = $a->id;
+				$wb_id = $b->id;
+
+				if (($widgets_pos_list[$wa_id] ?? null) && ($widgets_pos_list[$wb_id] ?? null)) {
+					// the higher the custom position is, the lower the sorting position will be
+					return $widgets_pos_list[$wa_id] > $widgets_pos_list[$wb_id] ? 1 : -1;
+				}
+
+				return 0;
+			});
+		}
 
 		// push sorted widgets to pool
 		foreach ($names as $wtdata) {
@@ -399,7 +442,7 @@ class VikBookingHelperAdminWidgets
 		 * In case some widgets were pre-loaded for watching certain
 		 * events, enqueue the watch-data list to the document.
 		 */
-		if (count($watch)) {
+		if ($watch) {
 			// schedule the browser notifications watching data
 			VBONotificationScheduler::getInstance()->registerWatchData($watch);
 		}
@@ -442,7 +485,7 @@ class VikBookingHelperAdminWidgets
 	 */
 	public function updateWidgetsMap($sections)
 	{
-		if (!is_array($sections) || !count($sections)) {
+		if (!is_array($sections) || !$sections) {
 			return false;
 		}
 
@@ -588,7 +631,7 @@ class VikBookingHelperAdminWidgets
 				}
 				$all_rooms_ids[$r['id']] = $r['name'];
 				$all_rooms_units[$r['id']] = $r['units'];
-				$rparams = json_decode($r['params'], true);
+				$rparams = json_decode((string) $r['params'], true);
 				$all_rooms_features[$r['id']] = is_array($rparams) && array_key_exists('features', $rparams) && is_array($rparams['features']) ? $rparams['features'] : [];
 			}
 		}
@@ -614,7 +657,7 @@ class VikBookingHelperAdminWidgets
 			return false;
 		}
 
-		if (!count(static::$helper)) {
+		if (!static::$helper) {
 			$this->loadRoomsData();
 		}
 
@@ -821,6 +864,32 @@ class VikBookingHelperAdminWidgets
 		VBOFactory::getConfig()->set('multitasking_map', json_encode($map));
 
 		return true;
+	}
+
+	/**
+	 * Sets the position for an admin widget in the multitask panel.
+	 * 
+	 * @param 	array 	$pos_list 	Associative list of widget positions.
+	 *
+	 * @return 	array 	The updated widgets position list.
+	 * 
+	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 */
+	public function setMultitaskingWidgetPos($pos_list)
+	{
+		if (!is_array($pos_list)) {
+			return false;
+		}
+
+		// turn all position values into integers
+		$pos_list = array_map(function($pos) {
+			return (int) $pos;
+		}, $pos_list);
+
+		// update configuration record
+		VBOFactory::getConfig()->set('multitasking_wpos', $pos_list);
+
+		return $pos_list;
 	}
 
 	/**

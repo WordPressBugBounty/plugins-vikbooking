@@ -445,7 +445,7 @@ final class VBOMailWrapper
 		if (is_null($this->isHtml))
 		{
 			// auto-detect whether the content supports HTML tags
-			return preg_match("/<\/[a-z0-9_\-]+>/i", (string) $this->content);
+			return preg_match("/<\/?[a-z0-9_\-]+\s*\/?>/i", (string) $this->content);
 		}
 
 		return $this->isHtml;
