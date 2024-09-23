@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="COM_VIKBOOKING_VIKBOOKING_VIEW_DEFAULT_TITLE">
+		<message>COM_VIKBOOKING_VIKBOOKING_VIEW_DEFAULT_DESC</message>
+	</layout>
+	<view title="Search" >
+		<message><![CDATA[VikBooking Search Form]]></message>
+	</view>
+	<state>
+		<name>Search</name>
+		<description>VikBooking Search Form</description>
+	</state>
+	<fields name="request">
+		<fieldset name="request">
+			<field
+				name="category_id"
+				type="sql"
+				label="COM_VIKBOOKING_CATEGORY_FIELD_FORCE_TITLE"
+				description="COM_VIKBOOKING_CATEGORY_FIELD_FORCE_TITLE_DESC"
+				query="SELECT `c`.`id`, `c`.`name` FROM `#__vikbooking_categories` AS `c` ORDER BY `c`.`name` ASC;" 
+				key_field="id"
+				value_field="name"
+				required="false"
+			>
+				<option value="">---</option>
+			</field>
+		</fieldset>
+	</fields>
+</metadata>
