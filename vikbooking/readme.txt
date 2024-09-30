@@ -2,7 +2,7 @@
 Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
-Tested up to: 6.5
+Tested up to: 6.6
 Stable tag: 1.7.0
 Requires PHP: 7.0.0
 License: GPLv2 or later

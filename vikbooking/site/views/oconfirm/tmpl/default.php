@@ -928,6 +928,10 @@ foreach ($cfields as $cf) {
   		function vboReloadStates(country_3_code) {
 			var states_elem = jQuery('select.vbf-stateinp');
 
+			if (!states_elem.length) {
+				return;
+			}
+
 			// get the current state, if any
 			var current_state = states_elem.first().attr('data-stateset');
 
