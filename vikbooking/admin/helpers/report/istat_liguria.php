@@ -786,18 +786,14 @@ class VikBookingReportIstatLiguria extends VikBookingReport
 			"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
 			"LEFT JOIN `#__vikbooking_customers_orders` AS `co` ON `co`.`idorder`=`o`.`id` LEFT JOIN `#__vikbooking_customers` AS `c` ON `c`.`id`=`co`.`idcustomer` LEFT JOIN `#__vikbooking_countries` AS `cy` ON `cy`.`country_3_code`=`c`.`country` ".
 			"WHERE `o`.`status`='confirmed' AND `o`.`closure`=0 AND ((`o`.`checkin`>=".$from_ts." AND `o`.`checkin`<=".$to_ts.") OR (`o`.`checkout`>=".$from_ts." AND `o`.`checkout`<=".$to_ts.") OR (`o`.`checkin`<=".$from_ts." AND `o`.`checkout`>=".$to_ts.")) ".
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC;";
+			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
 		$this->dbo->setQuery($q);
-		$this->dbo->execute();
-		if ($this->dbo->getNumRows() > 0) {
-			$records = $this->dbo->loadAssocList();
-		}
-		if (!count($records)) {
+		$records = $this->dbo->loadAssocList();
+
+		if (!$records) {
 			$this->setError(JText::translate('VBOREPORTSERRNORESERV'));
 			return false;
 		}
-
-
 
 		//nest records with multiple rooms booked inside sub-array
 		$bookings = array();
@@ -1165,9 +1161,9 @@ class VikBookingReportIstatLiguria extends VikBookingReport
 	 * We use customExport() rather than exportCSV() only because we need a
 	 * different download button rather than the classic "Export as CSV".
 	 * 
-	 * @param 	int 	$export_type 	the view will pass this argument to the method to call different types of export.
+	 * @param 	string 	$export_type 	Differentiates the type of export requested.
 	 *
-	 * @return 	mixed 	void on success with script termination, false otherwise.
+	 * @return 	void|bool 				Void in case of script termination, boolean otherwise.
 	 */
 	public function customExport($export_type = 0)
 	{

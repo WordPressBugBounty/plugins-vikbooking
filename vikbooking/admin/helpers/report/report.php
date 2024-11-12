@@ -98,6 +98,27 @@ abstract class VikBookingReport
 	protected $csv_export_fname = '';
 
 	/**
+	 * @var 	array
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected $actionData = [];
+
+	/**
+	 * @var 	array
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected $resourceFiles = [];
+
+	/**
+	 * @var 	?string
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected $scope = null;
+
+	/**
 	 * Class constructor should define the name of
 	 * the report and the filters to be displayed.
 	 */
@@ -1119,13 +1140,13 @@ abstract class VikBookingReport
 	 * Sets an array of custom options for this report. Useful to inject
 	 * params before getting the report data and changing the behavior.
 	 *
-	 * @param 	array 	$arr
+	 * @param 	array 	$options 	The associative options to set.
 	 *
 	 * @return 	self
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP)
 	 */
-	public function setReportOptions($options = [])
+	public function setReportOptions(array $options = [])
 	{
 		$this->options = $options;
 
@@ -1151,6 +1172,248 @@ abstract class VikBookingReport
 		}
 
 		return $this->options;
+	}
+
+	/**
+	 * Defines an associative list of action data.
+	 *
+	 * @param 	array 	$data 	Associative list of action data.
+	 *
+	 * @return 	self
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function setActionData(array $data)
+	{
+		$this->actionData = $data;
+
+		return $this;
+	}
+
+	/**
+	 * Returns the action data, either raw or as a registry.
+	 * 
+	 * @param 	bool 	$registry 	True to get a JObject instance.
+	 *
+	 * @return 	array|JObject
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getActionData($registry = true)
+	{
+		if ($registry) {
+			return new JObject($this->actionData);
+		}
+
+		return $this->actionData;
+	}
+
+	/**
+	 * Sets the global scope for the report.
+	 * 
+	 * @param 	string 	$scope 	The scope to set.
+	 * 
+	 * @return 	self
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function setScope($scope)
+	{
+		$this->scope = $scope;
+
+		return $this;
+	}
+
+	/**
+	 * Returns the global scope of the invoked report.
+	 * 
+	 * @return 	?string
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getScope()
+	{
+		return $this->scope;
+	}
+
+	/**
+	 * Returns the path to the PMS media data directory.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getDataMediaPath()
+	{
+		return implode(DIRECTORY_SEPARATOR, [VBO_ADMIN_PATH, 'resources', 'pmsdata']);
+	}
+
+	/**
+	 * Returns the URL to the PMS media data directory.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getDataMediaUrl()
+	{
+		return VBO_ADMIN_URI . 'resources/pmsdata/';
+	}
+
+	/**
+	 * Returns the optional report custom setting fields.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getSettingFields()
+	{
+		return [];
+	}
+
+	/**
+	 * Returns the report custom settings defined.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function loadSettings()
+	{
+		return (array) VBOFactory::getConfig()->getArray('report_settings_' . $this->getFileName(), []);
+	}
+
+	/**
+	 * Saves the report custom settings defined.
+	 * 
+	 * @param 	array 	$data 	The associative list of settings to save.
+	 * @param 	bool 	$merge 	If true, the previous settings will be merged.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function saveSettings(array $data, $merge = true)
+	{
+		if ($merge) {
+			$data = array_merge($this->loadSettings(), $data);
+		}
+
+		VBOFactory::getConfig()->set('report_settings_' . $this->getFileName(), $data);
+	}
+
+	/**
+	 * Returns a numeric list of scoped extra actions.
+	 * 
+	 * @param 	string 	$scope 		Optional scope identifier (cron, web, etc..).
+	 * @param 	bool 	$visible 	If true, the hidden actions will not be returned.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getScopedActions($scope = null, $visible = true)
+	{
+		return [];
+	}
+
+	/**
+	 * Executes a custom scoped action within the report.
+	 * 
+	 * @param 	string 	$action The custom action to invoke.
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional data for the action to execute.
+	 * 
+	 * @return 	mixed
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function executeAction($action, $scope = null, array $data = [])
+	{
+		if (is_null($scope)) {
+			$scope = $this->getScope();
+		}
+
+		if (!$data) {
+			$data = $this->getActionData($registry = false);
+		}
+
+		$callable = [$this, $action];
+
+		if (!is_callable($callable)) {
+			throw new Exception('Could not call the requested report action.', 500);
+		}
+
+		return call_user_func_array($callable, [$scope, $data]);
+	}
+
+	/**
+	 * Proxy for executing a custom scoped action and returning a property.
+	 * 
+	 * @param 	string 	$action The custom action to invoke.
+	 * @param 	string 	$return The action result property to return.
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional data for the action to execute.
+	 * 
+	 * @return 	mixed
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function _callActionReturn($action, $return, $scope = null, array $data = [])
+	{
+		if (is_null($scope)) {
+			$scope = $this->getScope();
+		}
+
+		if (!$data) {
+			$data = $this->getActionData($registry = false);
+		}
+
+		$result = (array) $this->executeAction($action, $scope, $data);
+
+		if (!isset($result[$return])) {
+			throw new Exception('Could not return the requested action result property.', 500);
+		}
+
+		return $result[$return];
+	}
+
+	/**
+	 * Defines a new resource file generated through a custom action.
+	 * 
+	 * @param 	array 	$data 	Resource file data to bind.
+	 * 
+	 * @return 	self
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function defineResourceFile(array $data)
+	{
+		$element = new VBOReportResourceElement($data);
+
+		if ($element->getUrl()) {
+			// ensure the resource is available
+			$this->resourceFiles[] = $element;
+		}
+
+		return $this;
+	}
+
+	/**
+	 * Returns the resource files generated through custom actions.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getResourceFiles()
+	{
+		return $this->resourceFiles;
 	}
 
 	/**

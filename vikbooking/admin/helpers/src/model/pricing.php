@@ -30,6 +30,9 @@ class VBOModelPricing extends JObject
 	/** @var array */
 	protected $channel_errors = [];
 
+	/** @var array */
+	protected $cached_restrictions = [];
+
 	/**
 	 * Proxy for immediately accessing the object and bind data.
 	 * 
@@ -212,12 +215,14 @@ class VBOModelPricing extends JObject
 	}
 
 	/**
-	 * Applies new rates and/or restrictions (Min LOS) to the given room and rate plan(s).
+	 * Applies new rates and/or restrictions to the given room and rate plan(s).
 	 * Changes are always applied to the website rates, and eventually also on the OTAs.
 	 * 
 	 * @return 	array
 	 * 
 	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP) added support to CTA, CTD and Max LOS restrictions.
 	 */
 	public function modifyRateRestrictions()
 	{
@@ -231,8 +236,12 @@ class VBOModelPricing extends JObject
 		$rplan_name  = $this->get('rplan_name', '');
 		$rate        = (float) $this->get('rate', 0);
 		$min_los     = (int) $this->get('min_los', 0);
+		$max_los     = (int) $this->get('max_los', 0);
+		$cta_wdays   = (array) $this->get('cta_wdays', []);
+		$ctd_wdays   = (array) $this->get('ctd_wdays', []);
 		$upd_otas    = (bool) $this->get('update_otas', true);
 		$close_rplan = (bool) $this->get('close_rate_plan', false);
+		$merge_restr = (bool) $this->get('merge_restrictions', true);
 
 		if (!$from_date || !$to_date) {
 			// must be in Y-m-d format
@@ -512,7 +521,7 @@ class VBOModelPricing extends JObject
 							if ($basetwo['year'] % 4 == 0 && ($basetwo['year'] % 100 != 0 || $basetwo['year'] % 400 == 0)) {
 								$leapts = mktime(0, 0, 0, 2, 29, $basetwo['year']);
 								if ($basetwo[0] > $leapts) {
-									$sto -= 86400;
+									$sto -= date('d-m', $baseone[0]) != '31-12' && date('d-m', $basetwo[0]) == '31-12' ? 1 : 86400;
 								}
 							}
 						}
@@ -543,11 +552,12 @@ class VBOModelPricing extends JObject
 					$dbo->insertObject('#__vikbooking_seasons', $season_record, 'id');
 				}
 			}
-			
-			$start_ts = strtotime($from_date);
-			$end_ts = strtotime($to_date);
+
+			// calculate the involved dates
+			$start_ts  = strtotime($from_date);
+			$end_ts    = strtotime($to_date);
 			$infostart = getdate($start_ts);
-			$infoend = getdate($end_ts);
+			$infoend   = getdate($end_ts);
 
 			/**
 			 * Restrictions can be set only if VCM is enabled because we use the Connector Class.
@@ -555,6 +565,10 @@ class VBOModelPricing extends JObject
 			 * OTAs instead would need a rate to be passed in order to eventually transmit the restrictions.
 			 */
 			$current_minlos = 0;
+			$current_maxlos = 0;
+			$current_cta    = [];
+			$current_ctd    = [];
+			$split_ct_nodes = [];
 			$vboConnector   = null;
 
 			if (method_exists('VikChannelManager', 'getVikBookingConnectorInstance')) {
@@ -567,23 +581,70 @@ class VBOModelPricing extends JObject
 				$upd_otas = false;
 			}
 
+			// minimum length of stay is always necessary for creating a restriction even with other modifiers
 			if ($min_los > 0 && $vboConnector) {
 				// set the end date to the last second
 				$end_ts = mktime(23, 59, 59, $infoend['mon'], $infoend['mday'], $infoend['year']);
 
-				if (!$rplan_info['is_derived']) {
-					// create the restriction in VBO (only for the parent rate since it will be a room-level restriction)
-					$restr_res = $vboConnector->createRestriction(date('Y-m-d H:i:s', $start_ts), date('Y-m-d H:i:s', $end_ts), [$id_room], [$min_los, '']);
+				/**
+				 * Setting just a min los restriction may lift a previously defined CTA/CTD rule for the same dates.
+				 * If merging restrictions is not disabled, and if no other modifiers are set (max los, cta, ctd), the
+				 * system will automatically calculate the current modifiers in order to keep them on the OTAs. Such
+				 * calculated restriction modifiers will not need to be created on VikBooking, but just passed to the OTAs.
+				 * If conflicting restriction modifiers are detected, it is recommended to schedule an auto bulk action.
+				 * 
+				 * @since 	1.17.1 (J) - 1.7.1 (WP)
+				 */
+				if ($merge_restr && !$max_los && !$cta_wdays && !$ctd_wdays) {
+					// calculate the restriction modifiers beside the min los and get additional details
+					list($calc_maxlos, $calc_cta, $calc_ctd, $split_ct_nodes, $conflicts) = $this->calculateRestrictionModifiers($start_ts, $end_ts, $id_room);
 
-					// update value for the ajax response
+					if ($calc_maxlos) {
+						// set calculated max los
+						$max_los = $calc_maxlos;
+					}
+
+					if ($calc_cta) {
+						// set calculated cta week days
+						$cta_wdays = $calc_cta;
+					}
+
+					if ($calc_ctd) {
+						// set calculated ctd week days
+						$ctd_wdays = $calc_ctd;
+					}
+				}
+
+				if (!$rplan_info['is_derived']) {
+					// build the minimum stay restriction string, eventually inclusive of CTA/CTD rules
+					$vbo_min_los_str = $min_los;
+					if ($cta_wdays) {
+						// append cta instructions
+						$vbo_min_los_str .= 'CTA[' . implode(',', $cta_wdays) . ']';
+					}
+					if ($ctd_wdays) {
+						// append ctd instructions
+						$vbo_min_los_str .= 'CTD[' . implode(',', $ctd_wdays) . ']';
+					}
+
+					// create the restriction in VBO (only for the parent rate since it will be a room-level restriction)
+					$restr_res = $vboConnector->createRestriction(date('Y-m-d H:i:s', $start_ts), date('Y-m-d H:i:s', $end_ts), [$id_room], [$vbo_min_los_str, $max_los]);
+
+					// update values for the response and the rest of the operations
 					if ($restr_res) {
 						$current_minlos = $min_los;
+						$current_maxlos = $max_los;
+						$current_cta = $cta_wdays;
+						$current_ctd = $ctd_wdays;
 					} else {
 						$current_minlos = 'e4j.error.' . $vboConnector->getError();
 					}
 				} else {
-					// always update the minimum stay information
+					// always update the min/max stay information
 					$current_minlos = $min_los;
+					$current_maxlos = $max_los;
+					$current_cta = $cta_wdays;
+					$current_ctd = $ctd_wdays;
 				}
 			}
 
@@ -639,7 +700,12 @@ class VBOModelPricing extends JObject
 
 				if (is_int($current_minlos) && $current_minlos > 0) {
 					// push restriction extra data
-					$rflow_record->setRestrictions(['minLOS' => $current_minlos]);
+					$rflow_record->setRestrictions([
+						'minLOS' => $current_minlos,
+						'maxLOS' => $current_maxlos,
+						'cta'    => (bool) $current_cta,
+						'ctd'    => (bool) $current_ctd,
+					]);
 				}
 
 				if (method_exists($rflow_record, 'setBaseFee')) {
@@ -706,12 +772,26 @@ class VBOModelPricing extends JObject
 						$node = $row;
 						$setminlos = '';
 						$setmaxlos = '';
+						$setctawdays = '';
+						$setctdwdays = '';
 
 						// pass the restrictions to the channels if specified
+						if (is_int($current_maxlos) && $current_maxlos > 0) {
+							// set max los first
+							$setmaxlos = $current_maxlos;
+						}
 						if (is_int($current_minlos) && $current_minlos > 0) {
+							// set min los after
 							$setminlos = $current_minlos;
 							// max los must have a length > 0 or min los won't be set
-							$setmaxlos = '0';
+							$setmaxlos = $setmaxlos ?: '0';
+							// eavaluate whether cta/ctd week-days should be added
+							if ($current_cta) {
+								$setctawdays = 'CTA[' . implode(',', $current_cta) . ']';
+							}
+							if ($current_ctd) {
+								$setctdwdays = 'CTD[' . implode(',', $current_ctd) . ']';
+							}
 						}
 
 						// check for follow restriction flag in a derived rate plan
@@ -719,6 +799,8 @@ class VBOModelPricing extends JObject
 							// unset restriction values for only updating the rates
 							$setminlos = '';
 							$setmaxlos = '';
+							$setctawdays = '';
+							$setctdwdays = '';
 						}
 
 						// close rate plan (min or max los do not need to be set)
@@ -753,10 +835,36 @@ class VBOModelPricing extends JObject
 							}
 						}
 
-						$node['ratesinventory'] = [
-							$from_date.'_'.$to_date.'_'.$setminlos.'_'.$setmaxlos.'_1_2_'.$rd['cost'].'_0',
-						];
+						// set rate inventory node(s)
+						if (count($split_ct_nodes) > 1 && $setminlos && ($current_cta || $current_ctd)) {
+							// there will be multiple OTA rate inventory nodes for better accuracy and avoid conflicts with cta/ctd rules
+							$node['ratesinventory'] = [];
 
+							foreach ($split_ct_nodes as $split_ct_node) {
+								// calculate proper cta/ctd strings for this date interval
+								$setctawdays_range = $split_ct_node['cta'] ? 'CTA[' . implode(',', $split_ct_node['cta']) . ']' : '';
+								$setctdwdays_range = $split_ct_node['ctd'] ? 'CTD[' . implode(',', $split_ct_node['ctd']) . ']' : '';
+
+								// set rate inventory node for the properly calculated range of dates, cta and ctd rules
+								$node['ratesinventory'][] = implode('_', [
+									$split_ct_node['from_dt'],
+									$split_ct_node['to_dt'],
+									$setminlos . $setctawdays_range . $setctdwdays_range,
+									$setmaxlos,
+									1,
+									2,
+									$rd['cost'],
+									0,
+								]);
+							}
+						} else {
+							// regular rate inventory node
+							$node['ratesinventory'] = [
+								$from_date . '_' . $to_date . '_' . $setminlos . $setctawdays . $setctdwdays . '_' . $setmaxlos . '_1_2_' . $rd['cost'] . '_0',
+							];
+						}
+
+						// set rate data
 						$node['pushdata'] = [
 							'pricetype'    => $rd['rate_id'],
 							'defrate'      => $roomrates['cost'],
@@ -890,10 +998,24 @@ class VBOModelPricing extends JObject
 												$bkdown .= $bk . ': ' . $bv . "\n";
 											}
 										}
-										// since the Connector does not return breakdown info about the restrictions, we concatenate the response here for the Ajax request
-										if ((int)$setminlos > 0) {
+										// since the Connector does not return breakdown info about the restrictions, we concatenate the response here
+										if ((int) $setminlos > 0) {
 											$bkdown = rtrim($bkdown, "\n");
-											$bkdown .= ' - Min LOS: ' . $setminlos."\n";
+											$bkdown .= ' - Min LOS: ' . $setminlos;
+											if ((int) $setmaxlos > 0) {
+												$bkdown .= ' - Max LOS: ' . $setmaxlos;
+											}
+											$bkdown_ctad_rules = [];
+											if ($setctawdays && $current_cta) {
+												$bkdown_ctad_rules[] = 'CTA: ' . implode(',', $this->weekDaysToShort($current_cta));
+											}
+											if ($setctdwdays && $current_ctd) {
+												$bkdown_ctad_rules[] = 'CTD: ' . implode(',', $this->weekDaysToShort($current_ctd));
+											}
+											if ($bkdown_ctad_rules) {
+												$bkdown .= ' [' . implode(' ', $bkdown_ctad_rules) . ']';
+											}
+											$bkdown .= "\n";
 										}
 										$bkdown = rtrim($bkdown, "\n");
 									}
@@ -978,6 +1100,17 @@ class VBOModelPricing extends JObject
 					foreach ($channels_updated as $idch => $chinfo) {
 						$this->channels_updated_list[$idch] = $chinfo;
 					}
+
+					// check for possible conflicts
+					if (!$rplan_info['is_derived'] && !$split_ct_nodes && ($conflicts ?? false) === true) {
+						// trigger an automatic bulk action for uploading the rates to ensure a full refresh
+						VikChannelManager::autoBulkActions([
+							'from_date'    => $from_date,
+							'to_date'      => $to_date,
+							'forced_rooms' => [$id_room],
+							'update'       => 'rates',
+						]);
+					}
 				}
 			}
 		}
@@ -1032,6 +1165,210 @@ class VBOModelPricing extends JObject
 	public function getChannelErrors()
 	{
 		return $this->channel_errors;
+	}
+
+	/**
+	 * Calculates the restriction modifiers for a specific range of dates and room.
+	 * 
+	 * @param 	int 	$start_ts 	The date range start date timestamp.
+	 * @param 	int 	$end_ts 	The date range end date timestamp.
+	 * @param 	int 	$room_id 	The VikBooking room ID.
+	 * 
+	 * @return 	array 	Numeric list of modifiers (Max LOS, CTA, CTD, split nodes, conflicts).
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function calculateRestrictionModifiers($start_ts, $end_ts, $room_id)
+	{
+		// build cache signature
+		$from_dt = date('Y-m-d', $start_ts);
+		$to_dt = date('Y-m-d', $end_ts);
+		$signature = $from_dt . '_' . $to_dt . '_' . $room_id;
+
+		if (!isset($this->cached_restrictions[$signature])) {
+			// load and cache restrictions
+			$this->cached_restrictions[$signature] = VikBooking::loadRestrictions(true, [$room_id]);
+		}
+
+		// build default return values
+		$calc_maxlos    = 0;
+		$calc_cta       = [];
+		$calc_ctd       = [];
+		$split_ct_nodes = [];
+		$conflicts      = false;
+
+		if (!($this->cached_restrictions[$signature] ?? [])) {
+			// do not proceed as nothing would be found
+			return [
+				$calc_maxlos,
+				$calc_cta,
+				$calc_ctd,
+				$split_ct_nodes,
+				$conflicts,
+			];
+		}
+
+		// list of week days involved
+		$wdays_involved = [];
+
+		// loop through the requested range of dates
+		$infostart = getdate($start_ts);
+		$infofirst = $infostart;
+		while ($infostart[0] > 0 && $infostart[0] <= $end_ts) {
+			// calculate timestamps
+			$tomorrow_ts = mktime(0, 0, 0, $infostart['mon'], ($infostart['mday'] + 1), $infostart['year']);
+			$today_mid_ts = mktime(0, 0, 0, $infostart['mon'], $infostart['mday'], $infostart['year']);
+
+			// set week-day involved
+			$wdays_involved[] = $infostart['wday'];
+
+			// calculate restrictions
+			$restrictions = VikBooking::parseSeasonRestrictions($today_mid_ts, $tomorrow_ts, 1, $this->cached_restrictions[$signature] ?? []);
+
+			// check for max LOS
+			if ($restrictions['maxlos'] ?? null) {
+				if (!$calc_maxlos) {
+					$calc_maxlos = (int) $restrictions['maxlos'];
+				}
+			}
+
+			// check for CTA week-days
+			if ($restrictions['cta'] ?? []) {
+				if (!$calc_cta) {
+					$calc_cta = (array) $restrictions['cta'];
+					$conflicts = $conflicts || !in_array($infostart['wday'], (array) $restrictions['cta']);
+				} else {
+					$conflicts = $conflicts || $calc_cta != (array) $restrictions['cta'];
+				}
+			} elseif ($calc_cta) {
+				$conflicts = true;
+			}
+
+			// check for CTD week-days
+			if ($restrictions['ctd'] ?? []) {
+				if (!$calc_ctd) {
+					$calc_ctd = (array) $restrictions['ctd'];
+					$conflicts = $conflicts || !in_array($infostart['wday'], (array) $restrictions['ctd']);
+				} else {
+					$conflicts = $conflicts || $calc_ctd != (array) $restrictions['ctd'];
+				}
+			} elseif ($calc_ctd) {
+				$conflicts = true;
+			}
+
+			// go to next day
+			$infostart = getdate($tomorrow_ts);
+		}
+
+		if ($calc_cta) {
+			// ensure it's a list of integers representing week-days
+			$calc_cta = array_map(function($w) {
+				return (int) str_replace('-', '', (string) $w);
+			}, $calc_cta);
+
+			if (count($wdays_involved) < 7) {
+				// filter the CTA week days according to the nights involved
+				$calc_cta = array_filter($calc_cta, function($w) use ($wdays_involved) {
+					return in_array($w, $wdays_involved);
+				});
+			}
+		}
+
+		if ($calc_ctd) {
+			// ensure it's a list of integers representing week-days
+			$calc_ctd = array_map(function($w) {
+				return (int) str_replace('-', '', (string) $w);
+			}, $calc_ctd);
+
+			if (count($wdays_involved) < 7) {
+				// filter the CTD week days according to the nights involved
+				$calc_ctd = array_filter($calc_ctd, function($w) use ($wdays_involved) {
+					return in_array($w, $wdays_involved);
+				});
+			}
+		}
+
+		if ($conflicts && count($wdays_involved) < 7 && ($calc_cta || $calc_ctd)) {
+			// conflicting cta/ctd restrictions for a range of dates less than a week may be split into multiple OTA nodes
+			$day_ctad_list = [];
+			for ($w = 0; $w < count($wdays_involved); $w++) {
+				// build day individual cta/ctd restrictions
+				$split_ts = mktime(0, 0, 0, $infofirst['mon'], $infofirst['mday'] + $w, $infofirst['year']);
+				$day_ctad_list[] = [
+					'ts'  => $split_ts,
+					'day' => date('Y-m-d', $split_ts),
+					'cta' => in_array($wdays_involved[$w], $calc_cta) ? $calc_cta : [],
+					'ctd' => in_array($wdays_involved[$w], $calc_ctd) ? $calc_ctd : [],
+				];
+			}
+
+			// attempt to merge the split cta/ctd nodes for consecutive dates with equal rules
+			$split_from_ts = 0;
+			$split_to_ts   = 0;
+			$split_cta     = [];
+			$split_ctd     = [];
+			foreach ($day_ctad_list as $ct_node_restr) {
+				if (!$split_from_ts) {
+					// initialize values
+					$split_from_ts = $ct_node_restr['ts'];
+					$split_to_ts   = $ct_node_restr['ts'];
+					$split_cta     = $ct_node_restr['cta'];
+					$split_ctd     = $ct_node_restr['ctd'];
+					continue;
+				}
+				if ($split_cta != $ct_node_restr['cta'] || $split_ctd != $ct_node_restr['ctd']) {
+					// close previous interval
+					$split_ct_nodes[] = [
+						'from_ts' => $split_from_ts,
+						'to_ts'   => $split_to_ts,
+						'cta'     => $split_cta,
+						'ctd'     => $split_ctd,
+					];
+					// start new values
+					$split_from_ts = $ct_node_restr['ts'];
+					$split_to_ts   = $ct_node_restr['ts'];
+					$split_cta     = $ct_node_restr['cta'];
+					$split_ctd     = $ct_node_restr['ctd'];
+				} else {
+					// increase till day timestamp
+					$split_to_ts = $ct_node_restr['ts'];
+				}
+			}
+			if (!$split_ct_nodes || $split_ct_nodes[count($split_ct_nodes) - 1]['to_ts'] != $split_from_ts) {
+				// close last or only interval
+				$split_ct_nodes[] = [
+					'from_ts' => $split_from_ts,
+					'to_ts'   => $split_to_ts,
+					'cta'     => $split_cta,
+					'ctd'     => $split_ctd,
+				];
+			}
+
+			// normalize timestamps
+			foreach ($split_ct_nodes as &$split_ct_node) {
+				$split_ct_node['from_dt'] = date('Y-m-d', $split_ct_node['from_ts']);
+				$split_ct_node['to_dt'] = date('Y-m-d', $split_ct_node['to_ts']);
+			}
+
+			// unset last reference
+			unset($split_ct_node);
+		}
+
+		// double check for possible conflicts
+		$conflicts = count($wdays_involved) < 7 ? false : $conflicts;
+
+		return [
+			// max LOS
+			$calc_maxlos,
+			// cta week-days
+			$calc_cta,
+			// ctd week-days
+			$calc_ctd,
+			// split cta/ctd nodes (range of dates)
+			$split_ct_nodes,
+			// whether some dates have conflicting modifiers
+			$conflicts,
+		];
 	}
 
 	/**
@@ -1091,5 +1428,32 @@ class VBOModelPricing extends JObject
 
 		// this is probably a secondary rate plan for this OTA
 		return true;
+	}
+
+	/**
+	 * Used for breakdown purposes, converts a list of week-day indexes.
+	 * 
+	 * @param 	array 	$wdays 	List of zero-based week day indexes.
+	 * 
+	 * @return 	array 			List of readable week days.
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function weekDaysToShort(array $wdays)
+	{
+		$map = [
+			'Sun',
+			'Mon',
+			'Tue',
+			'Wed',
+			'Thu',
+			'Fri',
+			'Sat',
+		];
+
+		return array_map(function($wday_index) use ($map) {
+			$wday_index = (int) $wday_index;
+			return $map[$wday_index] ?? $wday_index;
+		}, $wdays);
 	}
 }

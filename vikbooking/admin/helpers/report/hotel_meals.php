@@ -200,7 +200,7 @@ class VikBookingReportHotelMeals extends VikBookingReport
 			"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` LEFT JOIN `#__vikbooking_rooms` AS `r` ON `or`.`idroom`=`r`.`id` ".
 			"LEFT JOIN `#__vikbooking_customers_orders` AS `co` ON `co`.`idorder`=`o`.`id` LEFT JOIN `#__vikbooking_customers` AS `c` ON `c`.`id`=`co`.`idcustomer` ".
 			"WHERE `o`.`status`='confirmed' AND `o`.`closure`=0 AND `o`.`checkout` >= {$from_ts} AND `o`.`checkin` <= {$to_ts} ".
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC;";
+			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
 		$this->dbo->setQuery($q);
 		$records = $this->dbo->loadAssocList();
 		if (!$records) {

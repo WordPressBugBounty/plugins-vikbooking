@@ -263,13 +263,11 @@ class VikBookingReportRplansRevenue extends VikBookingReport
 			"LEFT JOIN `#__vikbooking_dispcost` AS `d` ON `d`.`id`=`or`.`idtar` " .
 			"WHERE (`o`.`status`='confirmed' OR (`o`.`status`='cancelled' AND `o`.`canc_fee` > 0)) AND `o`.`closure`=0 AND `o`.`checkout`>={$from_ts} AND `o`.`checkin`<={$to_ts} ".(!empty($pidroom) ? "AND `or`.`idroom`=".(int)$pidroom." " : "") .
 			(strlen($pchannel) ? "AND `o`.`channel` " . ($pchannel == '-1' ? 'IS NULL' : "LIKE " . $this->dbo->quote("%{$pchannel}%")) . ' ' : '') .
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC;";
+			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
 		$this->dbo->setQuery($q);
-		$this->dbo->execute();
-		if ($this->dbo->getNumRows()) {
-			$records = $this->dbo->loadAssocList();
-		}
-		if (!count($records)) {
+		$records = $this->dbo->loadAssocList();
+
+		if (!$records) {
 			$this->setError(JText::translate('VBOREPORTSERRNORESERV'));
 			return false;
 		}

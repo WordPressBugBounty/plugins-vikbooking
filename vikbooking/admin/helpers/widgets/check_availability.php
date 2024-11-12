@@ -165,7 +165,9 @@ class VikBookingAdminWidgetCheckAvailability extends VikBookingAdminWidget
 		}
 
 		// load available room rates (all records, before pagination that will be applied later)
-		$room_rates = $av_helper->getRates();
+		$room_rates = $av_helper->getRates([
+			'wtax' => 1,
+		]);
 
 		// load rooms and rate plans
 		$all_rooms  = $av_helper->loadRooms();

@@ -90,7 +90,7 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 		$todate   = $app->input->getString('todate', '');
 		$step 	  = $app->input->getString('step', 'quarter');
 		$date_dir = $app->input->getInt('date_dir', 0);
-		$room_ids = (array) $app->input->getInt('room_ids', []);
+		$room_ids = array_filter((array) $app->input->getInt('room_ids', []));
 
 		if (empty($fromdate)) {
 			// default to current quarter (3 full months)

@@ -565,7 +565,7 @@ class TACVBO
 								$taxes = $tax_rates[$rate['idprice']][1];
 							}
 						}
-						if ($req_type == 'hotel_availability' || $req_type == 'booking_availability') {
+						if (!($options['wtax'] ?? null) && ($req_type == 'hotel_availability' || $req_type == 'booking_availability')) {
 							// always set 'cost' to the base rate tax excluded
 							$realcost = $realcost - $taxes;
 						}

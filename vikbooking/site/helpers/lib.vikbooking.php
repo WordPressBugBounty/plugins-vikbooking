@@ -5353,16 +5353,27 @@ class VikBooking
 		// special tokens (tags) replacement
 		$parsed = str_replace("{logo}", $company_logo, $parsed);
 		$parsed = str_replace("{company_name}", $company_name, $parsed);
-		$parsed = str_replace("{order_id}", $order_info['id'], $parsed);
+		$parsed = str_replace(['{order_id}', '{booking_id}'], $order_info['id'], $parsed);
 		$statusclass = $order_info['status'] == 'confirmed' ? "confirmed" : "standby";
 		$statusclass = $order_info['status'] == 'cancelled' ? "cancelled" : $statusclass;
 		$parsed = str_replace("{order_status_class}", $statusclass, $parsed);
 		$parsed = str_replace("{order_status}", $status_str, $parsed);
 		$parsed = str_replace("{order_date}", $create_date, $parsed);
 
+		// customer record
+		$cpin = self::getCPinInstance();
+		$customer_record = $cpin->getCustomerFromBooking($order_info['id']);
+		$customer_name = '';
+		$customer_pin = '';
+		if ($customer_record) {
+			$customer_name = $customer_record['first_name'] . ' ' . $customer_record['last_name'];
+			$customer_pin = $customer_record['pin'];
+		}
+		$parsed = str_replace("{customer_name}", $customer_name, $parsed);
+		$parsed = str_replace("{customer_pin}", $customer_pin, $parsed);
+
 		// PIN Code
 		if ($order_info['status'] == 'confirmed' && self::customersPinEnabled()) {
-			$cpin = self::getCPinInstance();
 			$customer_pin = $cpin->getPinCodeByOrderId($order_info['id']);
 			if (!empty($customer_pin)) {
 				$customer_info .= '<h3>'.JText::translate('VBYOURPIN').': '.$customer_pin.'</h3>';
@@ -5370,8 +5381,9 @@ class VikBooking
 		}
 
 		$parsed = str_replace("{customer_info}", $customer_info, $parsed);
+
 		// Confirmation Number
-		if (strlen($confirmnumber) > 0) {
+		if ($confirmnumber) {
 			$parsed = str_replace("{confirmnumb}", $confirmnumber, $parsed);
 		} else {
 			$parsed = preg_replace('#('.preg_quote('{confirmnumb_delimiter}').')(.*)('.preg_quote('{/confirmnumb_delimiter}').')#si', '$1'.' '.'$3', $parsed);
@@ -5382,13 +5394,23 @@ class VikBooking
 		$roomsnum = count($rooms);
 		$parsed = str_replace("{rooms_count}", $roomsnum, $parsed);
 		$roomstr = "";
+		$tot_adults = 0;
+		$tot_children = 0;
+		$tot_guests = 0;
+
 		// Rooms Distinctive Features
 		preg_match_all('/\{roomfeature ([a-zA-Z0-9 ]+)\}/U', $parsed, $matches);
-		//
+
 		foreach ($rooms as $num => $r) {
+			// guests
+			$tot_adults += (int) $r['adults'];
+			$tot_children += (int) $r['children'];
+			$tot_guests += ((int) $r['adults'] + (int) $r['children']);
+
+			// room info
 			$roomstr .= "<strong>".$r['name']."</strong> ".$r['adults']." ".($r['adults'] > 1 ? JText::translate('VBMAILADULTS') : JText::translate('VBMAILADULT')).($r['children'] > 0 ? ", ".$r['children']." ".($r['children'] > 1 ? JText::translate('VBMAILCHILDREN') : JText::translate('VBMAILCHILD')) : "")."<br/>";
 			// Rooms Distinctive Features
-			if (is_array($matches[1]) && count($matches[1])) {
+			if (is_array($matches[1] ?? []) && $matches[1]) {
 				$distinctive_features = array();
 				$rparams = (array)json_decode($r['params'], true);
 				if (array_key_exists('features', $rparams) && count($rparams['features']) > 0 && array_key_exists('roomindex', $r) && !empty($r['roomindex']) && array_key_exists($r['roomindex'], $rparams['features'])) {
@@ -5414,6 +5436,10 @@ class VikBooking
 				}
 			}
 		}
+
+		$parsed = str_replace("{tot_adults}", $tot_adults, $parsed);
+		$parsed = str_replace("{tot_children}", $tot_children, $parsed);
+		$parsed = str_replace("{tot_guests}", $tot_guests, $parsed);
 
 		// custom fields replace
 		preg_match_all('/\{customfield ([0-9]+)\}/U', $parsed, $cmatches);
@@ -5498,39 +5524,48 @@ class VikBooking
 				$orderdetails .= '<br/>';
 			}
 		}
-		//
+
 		// coupon
 		if (!empty($order_info['coupon'])) {
 			$expcoupon = explode(";", $order_info['coupon']);
 			$orderdetails .= '<br/><div class="discount"><span>'.JText::translate('VBCOUPON').' '.$expcoupon[2].'</span><div class="service-amount" style="float: right;"><span>- '.$currencyname.' '.self::numberFormat($expcoupon[1]).'</span></div></div>';
 		}
-		//
-		// discount payment method
+
+		// discount and payment method
+		$payment_info = [];
+		$payment_name = '';
+		if (!empty($order_info['idpayment'])) {
+			$exppay = explode('=', $order_info['idpayment']);
+			$payment = self::getPayment($exppay[0], $vbo_tn);
+			if ((array) $payment) {
+				$payment_name = $payment['name'];
+			}
+		}
+
+		$parsed = str_replace("{payment_method}", $payment_name, $parsed);
+
 		if ($order_info['status'] != 'cancelled') {
-			$idpayment = $order_info['idpayment'];
-			if (!empty($idpayment)) {
-				$exppay = explode('=', $idpayment);
-				$payment = self::getPayment($exppay[0], $vbo_tn);
-				if (is_array($payment)) {
-					if ($payment['charge'] > 0.00 && $payment['ch_disc'] != 1) {
-						// Discount (not charge)
-						if ($payment['val_pcent'] == 1) {
-							// fixed value
-							$total -= $payment['charge'];
-							$orderdetails .= '<br/><div class="discount"><span>'.$payment['name'].'</span><div class="service-amount" style="float: right;"><span>- '.$currencyname.' '.self::numberFormat($payment['charge']).'</span></div></div>';
-						} else {
-							// percent value
-							$percent_disc = $total * $payment['charge'] / 100;
-							$total -= $percent_disc;
-							$orderdetails .= '<br/><div class="discount"><span>'.$payment['name'].'</span><div class="service-amount" style="float: right;"><span>- '.$currencyname.' '.self::numberFormat($percent_disc).'</span></div></div>';
-						}
+			if ($payment_info) {
+				if ($payment_info['charge'] > 0.00 && $payment_info['ch_disc'] != 1) {
+					// Discount (not charge)
+					if ($payment_info['val_pcent'] == 1) {
+						// fixed value
+						$total -= $payment_info['charge'];
+						$orderdetails .= '<br/><div class="discount"><span>'.$payment_info['name'].'</span><div class="service-amount" style="float: right;"><span>- '.$currencyname.' '.self::numberFormat($payment_info['charge']).'</span></div></div>';
+					} else {
+						// percent value
+						$percent_disc = $total * $payment_info['charge'] / 100;
+						$total -= $percent_disc;
+						$orderdetails .= '<br/><div class="discount"><span>'.$payment_info['name'].'</span><div class="service-amount" style="float: right;"><span>- '.$currencyname.' '.self::numberFormat($percent_disc).'</span></div></div>';
 					}
 				}
 			}
 		}
-		//
+
+		// booking details string
 		$parsed = str_replace("{order_details}", $orderdetails, $parsed);
-		//
+
+		// additional information
 		$parsed = str_replace("{order_total}", $currencyname.' '.self::numberFormat($total), $parsed);
 		$parsed = str_replace("{footer_emailtext}", $footermess, $parsed);
 		$parsed = str_replace("{order_link}", '<a href="'.$link.'">'.$link.'</a>', $parsed);

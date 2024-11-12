@@ -701,6 +701,7 @@ if ($ord['refund'] > 0) {
  * @since 	1.14 (J) - 1.4.0 (WP)
  * 
  * Some OTA bookings using an OTA-Collect business model may look as not entirely paid when they actually are, due to commissions.
+ * However, upselling events are taken into account in case a payable amount is set.
  * 
  * @since 	1.16.5 (J) - 1.6.5 (WP)
  * 
@@ -713,6 +714,10 @@ $ota_will_pay = false;
 if ($payable && !empty($ord['idorderota']) && !empty($ord['channel']) && $ord['cmms'] && ($ord['total'] - $ord['totpaid'] - $ord['cmms']) < 1) {
 	// the difference of the amount paid is equal to the OTA commissions amount
 	$payable = false;
+	if ($ord['payable'] > 0 && $ord['total'] > $ord['totpaid'] && (int) ($ord['total'] - $ord['totpaid']) == (int) $ord['payable']) {
+		// there must have been an upselling event or a payment request
+		$payable = true;
+	}
 }
 if ($payable && $isotabooking && stripos($ord['channel'], 'airbnbapi') === 0 && !((float) $ord['payable'])) {
 	// access OTA payout events

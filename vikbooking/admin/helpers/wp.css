@@ -677,6 +677,9 @@ input[type="number"], #vbo-addnumnight, #vbo-numnights, #vbo-numadults, #vbo-num
 .vbo-ratesoverview-entryinline {
 	margin: 5px;
 }
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+	color: #2c3338;
+}
 
 /*** Bookings List ***/
 .vbcsvexport > i, .vbicsexport > i, .vbo-perms-operators > i {

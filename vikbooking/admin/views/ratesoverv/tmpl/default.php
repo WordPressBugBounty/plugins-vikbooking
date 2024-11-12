@@ -33,6 +33,11 @@ JText::script('VBRATESOVWRATESCALCULATORCALC');
 JText::script('VBRATESOVWRATESCALCULATORCALCING');
 JText::script('VBOVCMRATESRES');
 JText::script('VBO_IS_DERIVED_RATE');
+JText::script('VBO_PLEASE_FILL_FIELDS');
+JText::script('VBO_RATES_AND_RESTR');
+JText::script('VBSAVE');
+JText::script('VBANNULLA');
+JText::script('VBAPPLY');
 
 $document = JFactory::getDocument();
 
@@ -1099,9 +1104,8 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 // overlay modal to change rates, restrictions etc..
 $vcm_enabled = VikBooking::vcmAutoUpdate();
 	?>
-<div class="vbo-info-overlay-block">
-	<a class="vbo-info-overlay-close" href="javascript: void(0);"></a>
-	<div class="vbo-info-overlay-content vbo-info-overlay-content-rovervw">
+<div class="vbo-ratesoverview-newratesrestr-helper" style="display: none;">
+	<div class="vbo-ratesoverview-newratesrestr-wrap">
 		<div class="vbo-roverw-infoblock">
 			<span id="rovervw-roomname"></span>
 			<div class="vbo-roverw-inforates">
@@ -1113,9 +1117,12 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 			<div class="vbo-roverw-alldays-inner"></div>
 		</div>
 		<div class="vbo-roverw-setnewrate">
+			<div class="vbo-roverw-setnewrate-title">
+				<h4><?php VikBookingIcons::e('calculator'); ?> <?php echo JText::translate('VBO_RATES_AND_RESTR'); ?></h4>
+			</div>
 			<div class="vbo-roverw-flexnew">
 				<div class="vbo-roverw-newrwrap">
-					<h4><i class="vboicn-calculator"></i> <?php echo JText::translate('VBRATESOVWSETNEWRATE'); ?></h4>
+					<h4><?php VikBookingIcons::e('edit'); ?> <?php echo JText::translate('VBRATESOVWSETNEWRATE'); ?></h4>
 					<div class="vbo-roverw-newrcont">
 						<label for="roverw-newrate" class="vbo-roverw-setnewrate-currency"><?php echo $currencysymb; ?></label>
 						<input type="number" step="any" min="0" id="roverw-newrate" value="" placeholder="" size="7" />
@@ -1123,7 +1130,7 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 				</div>
 				<div class="vbo-roverw-newrestr-wrap" style="display: none;">
 					<div class="vbo-roverw-newrestrcont">
-						<h4><i class="vboicn-blocked"></i> <?php echo JText::translate('VBOMINIMUMSTAYSET'); ?></h4>
+						<h4><?php VikBookingIcons::e('ban'); ?> <?php echo JText::translate('VBOMINIMUMSTAYSET'); ?></h4>
 						<div class="vbo-roverw-newrestrcont-inner">
 							<label for="roverw-newrestr" class="vbo-roverw-setnewrestr-lbl"><?php echo JText::translate('VBDAYS'); ?></label>
 							<input type="number" step="1" min="0" id="roverw-newrestr" value="" size="7" />
@@ -1135,7 +1142,7 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 				<div class="vbo-roverw-setnewrate-vcm">
 					<div class="vbo-roverw-setnewrate-vcm-head">
 						<span class="<?php echo $vcm_enabled < 0 ? 'vbo-vcm-notinstalled' : 'vbo-vcm-installed'; ?>">
-							<?php echo $vbo_app->createPopover(array('title' => JText::translate('VBOUPDRATESONCHANNELS'), 'content' => ($vcm_enabled < 0 ? JText::translate('VBCONFIGVCMAUTOUPDMISS') : JText::translate('VBOUPDRATESONCHANNELSHELP')), 'icon_class' => VikBookingIcons::i('globe'))); ?>
+							<?php echo $vbo_app->createPopover(array('title' => JText::translate('VBOUPDRATESONCHANNELS'), 'content' => ($vcm_enabled < 0 ? JText::translate('VBCONFIGVCMAUTOUPDMISS') : JText::translate('VBOUPDRATESONCHANNELSHELP')), 'icon_class' => VikBookingIcons::i('rocket'))); ?>
 							<?php echo JText::translate('VBOUPDRATESONCHANNELS'); ?>
 						</span>
 					</div>
@@ -1146,24 +1153,15 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 						</label>
 					</div>
 				</div>
-				<div class="vbo-roverw-setnewrate-btns">
-					<button type="button" class="btn btn-danger" onclick="hideVboDialog();"><?php echo JText::translate('VBANNULLA'); ?></button>
-					<button type="button" class="btn btn-success" onclick="setNewRates();"><i class="vboicn-checkmark"></i><?php echo JText::translate('VBAPPLY'); ?></button>
-				</div>
 			</div>
 		</div>
 		<div class="vbo-roverw-closeopenrp">
-			<h4><i class="vboicn-switch"></i><?php echo JText::translate('VBRATESOVWCLOSEOPENRRP'); ?> <span id="rovervw-closeopen-rplan"></span></h4>
+			<h4><i class="vboicn-switch"></i><?php echo JText::translate('VBRATESOVWCLOSEOPENRRP'); ?> <span id="rovervw-closeopen-rplan"></span> <span class="vbo-roverw-closeopenrp-arrow"><?php VikBookingIcons::e('chevron-down'); ?></span></h4>
 			<div class="vbo-roverw-closeopenrp-btns">
-				<button type="button" class="btn btn-danger" onclick="modRoomRatePlan('close');"><i class="vboicn-exit"></i><?php echo JText::translate('VBRATESOVWCLOSERRP'); ?></button>
-				<button type="button" class="btn btn-success" onclick="modRoomRatePlan('open');"><i class="vboicn-enter"></i><?php echo JText::translate('VBRATESOVWOPENRRP'); ?></button>
-				<br clear="all" /><br />
-				<button type="button" class="btn btn-danger" onclick="hideVboDialog();"><?php echo JText::translate('VBANNULLA'); ?></button>
+				<button type="button" class="btn btn-danger" onclick="modRoomRatePlan('close');"><?php VikBookingIcons::e('lock'); ?> <?php echo JText::translate('VBRATESOVWCLOSERRP'); ?></button>
+				<button type="button" class="btn btn-success" onclick="modRoomRatePlan('open');"><?php VikBookingIcons::e('lock-open'); ?> <?php echo JText::translate('VBRATESOVWOPENRRP'); ?></button>
 			</div>
 		</div>
-	</div>
-	<div class="vbo-info-overlay-loading">
-		<div><?php echo JText::translate('VIKLOADING'); ?></div>
 	</div>
 </div>
 
@@ -1439,8 +1437,6 @@ var vbowdays = <?php echo json_encode($long_days_labels); ?>;
 var vbomonths = <?php echo json_encode($long_months_labels); ?>;
 /* Dates selection - Start */
 var vbolistener = null;
-var vbodialog_on = false;
-var vbodialogfests_on = false;
 
 jQuery(function() {
 	// fests
@@ -1458,14 +1454,42 @@ jQuery(function() {
 			vboRenderFests(ymd, daytitle);
 		} else {
 			// let the admin create a new fest
-			// set day title
-			jQuery('.vbo-info-overlay-content-fests').find('h3').find('span').text(daytitle);
+
+			// define the modal buttons
+			let cancel_btn = jQuery('<button></button>')
+				.attr('type', 'button')
+				.addClass('btn')
+				.text(Joomla.JText._('VBANNULLA'))
+				.on('click', function() {
+					VBOCore.emitEvent('vbo-dismiss-modal-roverv-fests');
+				});
+
+			let save_btn = jQuery('<button></button>')
+				.attr('type', 'button')
+				.addClass('btn btn-success')
+				.text(Joomla.JText._('VBSAVE'))
+				.on('click', function() {
+					vboAddFest();
+				});
+
+			let modal_body = VBOCore.displayModal({
+				suffix: 'ratesoverv-fests',
+				extra_class: 'vbo-modal-rounded vbo-modal-tall',
+				title: '<?php VikBookingIcons::e('star'); ?> ' + daytitle,
+				footer_left: cancel_btn,
+				footer_right: save_btn,
+				dismiss_event: 'vbo-dismiss-modal-roverv-fests',
+				onDismiss: () => {
+					jQuery('.vbo-ratesoverview-fests-wrap').appendTo('.vbo-ratesoverview-fests-helper');
+				},
+			});
+
 			// update ymd key for the selected date, useful for adding new fests
 			jQuery('.vbo-overlay-fests-addnew').attr('data-ymd', ymd);
+
 			// unset content and display modal for just adding a new fest
 			jQuery('.vbo-overlay-fests-list').html('');
-			jQuery('.vbo-secondinfo-overlay-block').fadeIn();
-			vbodialogfests_on = true;
+			jQuery('.vbo-ratesoverview-fests-wrap').appendTo(modal_body);
 		}
 		if (jQuery(this).hasClass('vbo-roverw-roomdaynote-full')) {
 			// display the room-day notes
@@ -1498,45 +1522,31 @@ jQuery(function() {
 			}
 		}
 	);
-	jQuery(document).keydown(function(e) {
-		if (e.keyCode == 27) {
-			hideVboDialog();
-			if (vbodialogfests_on === true) {
-				hideVboDialogFests();
-			}
-		}
-	});
-	jQuery(document).mouseup(function(e) {
-		if (!vbodialog_on && !vbodialogfests_on) {
-			return false;
-		}
-		if (vbodialog_on) {
-			var vbo_overlay_cont = jQuery(".vbo-info-overlay-content");
-			if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {
-				hideVboDialog();
-			}
-		}
-		if (vbodialogfests_on) {
-			var vbo_overlay_cont = jQuery(".vbo-info-overlay-content");
-			if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {
-				hideVboDialogFests();
-			}
-		}
-	});
 	jQuery("body").on("click", ".vbo-roverw-daymod-infospids", function() {
-		var helem = jQuery(this).next('.vbo-roverw-daymod-infospids-outcont');
-		if (helem.length && helem.is(":visible")) {
-			jQuery(this).removeClass("vbo-roverw-daymod-infospids-on");
-			helem.hide();
+		if (jQuery(this).hasClass('vbo-roverw-daymod-infospids-on')) {
+			// dismiss modal
+			VBOCore.emitEvent('vbo-ratesoverview-spids-details-dismiss');
 		} else {
-			jQuery(".vbo-roverw-daymod-infospids-on").removeClass("vbo-roverw-daymod-infospids-on");
-			jQuery(".vbo-roverw-daymod-infospids-outcont").hide();
-			jQuery(this).addClass("vbo-roverw-daymod-infospids-on");
-			helem.show();
+			// show modal
+			let spids_modal = VBOCore.displayModal({
+				suffix: 'vbo-ratesoverview-spids',
+				extra_class: 'vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter',
+				title: jQuery(this).attr('data-dt'),
+				dismiss_event: 'vbo-ratesoverview-spids-details-dismiss',
+			});
+
+			let spids_info = jQuery(this).next('.vbo-roverw-daymod-infospids-outcont').find('.vbo-roverw-daymod-infospids-incont').clone();
+			spids_info.appendTo(spids_modal);
 		}
 	});
 	jQuery('.vbo-roverw-closeopenrp h4').click(function() {
-		jQuery('.vbo-roverw-closeopenrp-btns').fadeToggle();
+		jQuery('.vbo-roverw-closeopenrp-btns').fadeToggle(400, function() {
+			if (jQuery(this).is(':visible')) {
+				jQuery('.vbo-roverw-closeopenrp-arrow').html('<?php VikBookingIcons::e('chevron-up'); ?>');
+			} else {
+				jQuery('.vbo-roverw-closeopenrp-arrow').html('<?php VikBookingIcons::e('chevron-down'); ?>');
+			}
+		});
 	});
 	jQuery(document.body).on('click', '.vbo-ratesoverview-vcmwarn-close', function() {
 		vcm_exists = 0;
@@ -1697,32 +1707,61 @@ function vboRenderRdayNotes(day, rid) {
  * Fests
  */
 function vboRenderFests(day, daytitle) {
-	// set day title
-	if (daytitle) {
-		jQuery('.vbo-info-overlay-content-fests').find('h3').find('span').text(daytitle);
-	}
 	// compose fests information
-	var fests_html = '';
+	let fests_html = '';
 	if (vboFests[day] && vboFests[day]['festinfo'] && vboFests[day]['festinfo'].length) {
 		for (var i = 0; i < vboFests[day]['festinfo'].length; i++) {
-			var fest = vboFests[day]['festinfo'][i];
+			let fest = vboFests[day]['festinfo'][i];
 			fests_html += '<div class="vbo-overlay-fest-details">';
 			fests_html += '	<div class="vbo-fest-info">';
 			fests_html += '		<div class="vbo-fest-name">' + fest['trans_name'] + '</div>';
 			fests_html += '		<div class="vbo-fest-desc">' + fest['descr'].replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + '<br />' + '$2') + '</div>';
 			fests_html += '	</div>';
 			fests_html += '	<div class="vbo-fest-cmds">';
-			fests_html += '		<button type="button" class="btn btn-danger" onclick="vboRemoveFest(\'' + day + '\', \'' + i + '\', \'' + fest['type'] + '\', this);"><?php VikBookingIcons::e('trash-alt'); ?></button>';
+			fests_html += '		<button type="button" class="btn btn-danger" onclick="vboRemoveFest(\'' + day + '\', \'' + i + '\', \'' + fest['type'] + '\', this);"><?php VikBookingIcons::e('trash-alt', 'icn-nomargin'); ?></button>';
 			fests_html += '	</div>';
 			fests_html += '</div>';
 		}
 	}
+
 	// update ymd key for the selected date, useful for adding new fests
 	jQuery('.vbo-overlay-fests-addnew').attr('data-ymd', day);
-	// set content and display modal
+
+	// set content
 	jQuery('.vbo-overlay-fests-list').html(fests_html);
-	jQuery('.vbo-secondinfo-overlay-block').fadeIn();
-	vbodialogfests_on = true;
+
+	if (daytitle) {
+		// define the modal buttons
+		let cancel_btn = jQuery('<button></button>')
+			.attr('type', 'button')
+			.addClass('btn')
+			.text(Joomla.JText._('VBANNULLA'))
+			.on('click', function() {
+				VBOCore.emitEvent('vbo-dismiss-modal-roverv-fests');
+			});
+
+		let save_btn = jQuery('<button></button>')
+			.attr('type', 'button')
+			.addClass('btn btn-success')
+			.text(Joomla.JText._('VBSAVE'))
+			.on('click', function() {
+				vboAddFest();
+			});
+
+		let modal_body = VBOCore.displayModal({
+			suffix: 'ratesoverv-fests',
+			extra_class: 'vbo-modal-rounded vbo-modal-tall',
+			title: '<?php VikBookingIcons::e('star'); ?> ' + daytitle,
+			footer_left: cancel_btn,
+			footer_right: save_btn,
+			dismiss_event: 'vbo-dismiss-modal-roverv-fests',
+			onDismiss: () => {
+				jQuery('.vbo-ratesoverview-fests-wrap').appendTo('.vbo-ratesoverview-fests-helper');
+			},
+		});
+
+		jQuery('.vbo-ratesoverview-fests-wrap').appendTo(modal_body);
+	}
 }
 function vboRemoveFest(day, index, fest_type, that) {
 	if (!confirm('<?php echo addslashes(JText::translate('VBDELCONFIRM')); ?>')) {
@@ -1730,90 +1769,88 @@ function vboRemoveFest(day, index, fest_type, that) {
 	}
 	var elem = jQuery(that);
 	// make the AJAX request to the controller to remove this fest from the DB
-	var jqxhr = jQuery.ajax({
-		type: "POST",
-		url: "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=remove_fest'); ?>",
-		data: {
+	VBOCore.doAjax(
+		"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=remove_fest'); ?>",
+		{
 			tmpl: "component",
 			dt: day,
 			ind: index,
 			type: fest_type
-		}
-	}).done(function(res) {
-		if (res.indexOf('e4j.ok') >= 0) {
-			// delete fest also from the json-decode array of objects
-			if (vboFests[day] && vboFests[day]['festinfo']) {
-				// use splice to remove the desired index from array, or delete would not make the length of the array change
-				vboFests[day]['festinfo'].splice(index, 1);
-				// re-build indexes of delete buttons, fundamental for removing the right index at next click
-				vboRenderFests(day);
-				if (!vboFests[day]['festinfo'].length) {
-					// delete also this date object from fests
-					delete vboFests[day];
-					// no more fests, remove the class for this date from all cells
-					jQuery('td.bluedays[data-ymd="'+day+'"]').removeClass('vbo-roverv-festcell');
+		},
+		(res) => {
+			if (res.indexOf('e4j.ok') >= 0) {
+				// delete fest also from the json-decode array of objects
+				if (vboFests[day] && vboFests[day]['festinfo']) {
+					// use splice to remove the desired index from array, or delete would not make the length of the array change
+					vboFests[day]['festinfo'].splice(index, 1);
+					// re-build indexes of delete buttons, fundamental for removing the right index at next click
+					vboRenderFests(day);
+					if (!vboFests[day]['festinfo'].length) {
+						// delete also this date object from fests
+						delete vboFests[day];
+						// no more fests, remove the class for this date from all cells
+						jQuery('td.bluedays[data-ymd="'+day+'"]').removeClass('vbo-roverv-festcell');
+					}
 				}
+				elem.closest('.vbo-overlay-fest-details').remove();
+			} else {
+				console.log(res);
+				alert('Invalid response');
 			}
-			elem.closest('.vbo-overlay-fest-details').remove();
-		} else {
-			console.log(res);
-			alert('Invalid response');
+		},
+		(err) => {
+			alert('Request failed');
 		}
-	}).fail(function() {
-		alert('Request failed');
-	});
+	);
 }
-function vboAddFest(that) {
-	var elem = jQuery(that);
-	var ymd = elem.closest('.vbo-overlay-fests-addnew').attr('data-ymd');
+function vboAddFest() {
+	var ymd = jQuery('.vbo-overlay-fests-addnew').attr('data-ymd');
 	var fest_name = jQuery('#vbo-newfest-name').val();
 	var fest_descr = jQuery('#vbo-newfest-descr').val();
 	if (!fest_name.length) {
+		alert(Joomla.JText._('VBO_PLEASE_FILL_FIELDS'));
 		return false;
 	}
-	// make the AJAX request to the controller to add this fest to the DB
-	var jqxhr = jQuery.ajax({
-		type: "POST",
-		url: "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=add_fest'); ?>",
-		data: {
+
+	// make the AJAX request to the controller to add the festivity to the DB
+	VBOCore.doAjax(
+		"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=add_fest'); ?>",
+		{
 			tmpl: "component",
 			dt: ymd,
 			type: "custom",
 			name: fest_name,
 			descr: fest_descr
-		}
-	}).done(function(res) {
-		// parse the JSON response that contains the fest object for the passed date
-		try {
-			var stored_fest = JSON.parse(res);
-			if (!vboFests.hasOwnProperty(stored_fest['dt'])) {
-				// we need to add the proper class to all cells to show that there is a fest
-				jQuery('td.bluedays[data-ymd="'+stored_fest['dt']+'"]').addClass('vbo-roverv-festcell');
+		},
+		(res) => {
+			// parse the JSON response that contains the fest object for the passed date
+			try {
+				var stored_fest = JSON.parse(res);
+				if (!vboFests.hasOwnProperty(stored_fest['dt'])) {
+					// we need to add the proper class to all cells to show that there is a fest
+					jQuery('td.bluedays[data-ymd="'+stored_fest['dt']+'"]').addClass('vbo-roverv-festcell');
+				}
+				vboFests[stored_fest['dt']] = stored_fest;
+				hideVboDialogFests();
+				// reset input fields
+				jQuery('#vbo-newfest-name').val('');
+				jQuery('#vbo-newfest-descr').val('');
+			} catch (e) {
+				console.log(res);
+				alert('Invalid response');
+				return false;
 			}
-			vboFests[stored_fest['dt']] = stored_fest;
-			hideVboDialogFests();
-			// reset input fields
-			jQuery('#vbo-newfest-name').val('');
-			jQuery('#vbo-newfest-descr').val('');
-		} catch (e) {
-			console.log(res);
-			alert('Invalid response');
-			return false;
+		},
+		(err) => {
+			alert('Request failed');
 		}
-	}).fail(function() {
-		alert('Request failed');
-	});
+	);
 }
 /**
  * Fests dialog
  */
 function hideVboDialogFests() {
-	if (vbodialogfests_on === true) {
-		jQuery(".vbo-secondinfo-overlay-block").fadeOut(400, function () {
-			jQuery(".vbo-info-overlay-content").show();
-		});
-		vbodialogfests_on = false;
-	}
+	VBOCore.emitEvent('vbo-dismiss-modal-roverv-fests');
 }
 //
 
@@ -1862,7 +1899,7 @@ function vboCheckVcmRestrictions() {
 function showVboDialog() {
 	var format = new Date().format;
 	format = format.replace(new RegExp("/", 'g'), new Date().datesep);
-	jQuery("#rovervw-roomname").html(vbolistener.first.roomName);
+	jQuery("#rovervw-roomname").html('<?php VikBookingIcons::e('building'); ?> ' + vbolistener.first.roomName);
 	jQuery("#rovervw-rplan").html(vbolistener.first.rplanName);
 	jQuery("#rovervw-closeopen-rplan").html('"'+vbolistener.first.rplanName+'"');
 	jQuery("#rovervw-fromdate").html(vbolistener.first.toDate(format));
@@ -1874,17 +1911,18 @@ function showVboDialog() {
 		var highestrate = vbolistener.first.defRate;
 		var allblocksclosed = true;
 		jQuery.each(all_blocks, function(k, v) {
+			let date_read = jQuery(v).attr('data-vbodateread');
 			if (!v.hasClass('vbo-roverw-rplan-off')) {
 				allblocksclosed = false;
 			}
 			var spids = jQuery(v).attr("data-vbospids").split("-");
 			var spids_det = '';
 			if (jQuery(v).attr("data-vbospids").length > 0 && spids.length > 0) {
-				spids_det += "<div class=\"vbo-roverw-daymod-infospids\"><span><i class=\"<?php echo VikBookingIcons::i('info-circle'); ?>\"></i></span></div>";
+				spids_det += "<div class=\"vbo-roverw-daymod-infospids\" data-dt=\"" + date_read + "\"><span><i class=\"<?php echo VikBookingIcons::i('info-circle'); ?>\"></i></span></div>";
 				spids_det += "<div class=\"vbo-roverw-daymod-infospids-outcont\">";
 				spids_det += "<div class=\"vbo-roverw-daymod-infospids-incont\"><ul>";
 				for (var x = 0; x < spids.length; x++) {
-					spids_det += "<li><a target=\"_blank\" href=\"index.php?option=com_vikbooking&task=editseason&cid[]="+spids[x]+"\">"+roverw_messages.openSpLink.replace("%d", spids[x])+"</a></li>";
+					spids_det += "<li><a target=\"_blank\" href=\"<?php echo VBOPlatformDetection::isWordPress() ? 'admin.php' : 'index.php'; ?>?option=com_vikbooking&task=editseason&cid[]="+spids[x]+"\">"+roverw_messages.openSpLink.replace("%d", spids[x])+"</a></li>";
 				}
 				spids_det += "</ul></div></div>";
 			}
@@ -1892,7 +1930,26 @@ function showVboDialog() {
 			if (!isNaN(dayrate) && dayrate > highestrate) {
 				highestrate = dayrate;
 			}
-			newdayscont += "<div class=\"vbo-roverw-daymod\"><div class=\"vbo-roverw-daymod-inner\"><div class=\"vbo-roverw-daymod-innercell\"><span class=\"vbo-roverw-daydate\">"+jQuery(v).attr("data-vbodateread")+"</span><span class=\"vbo-roverw-dayprice\">"+v.html()+"</span>"+spids_det+"</div></div></div>";
+
+			let date_parts = date_read.split(',');
+			let wday = date_parts[0].trim();
+			let mon  = date_parts[1].replace(/[^a-z]/ig, '');
+			let mday = date_parts[1].replace(/[^0-9]/g, '');
+
+			newdayscont += "<div class=\"vbo-roverw-daymod\">";
+			newdayscont += "	<div class=\"vbo-roverw-daymod-inner\">";
+			newdayscont += "		<div class=\"vbo-roverw-daymod-innercell\">";
+			newdayscont += "			<span class=\"vbo-roverw-daydate\">";
+			newdayscont += "				<span class=\"vbo-roverw-daydate-wdaymday\">";
+			newdayscont += "					<span class=\"vbo-roverw-daydate-wday\">" + wday + "</span>";
+			newdayscont += "					<span class=\"vbo-roverw-daydate-mday\">" + mday + "</span>";
+			newdayscont += "				</span>";
+			newdayscont += "				<span class=\"vbo-roverw-daydate-month\">" + mon + "</span>";
+			newdayscont += "			</span>";
+			newdayscont += "			<span class=\"vbo-roverw-dayprice\">" + v.html() + "</span>" + spids_det;
+			newdayscont += "		</div>";
+			newdayscont += "	</div>";
+			newdayscont += "</div>";
 		});
 		jQuery(".vbo-roverw-alldays-inner").html(newdayscont);
 		jQuery("#roverw-newrate").attr("placeholder", vbolistener.first.defRate).val(highestrate);
@@ -1901,17 +1958,63 @@ function showVboDialog() {
 			jQuery("#rovervw-rplan").html('<span style="color: #f00"><i class="<?php echo VikBookingIcons::i('ban'); ?>"></i> '+vbolistener.first.rplanName+'</span>');
 		}
 	}
+
+	// VCM check
 	checkInvokeVcm();
 
-	jQuery(".vbo-info-overlay-block").fadeIn();
-	vbodialog_on = true;
+	// define the modal buttons
+	let cancel_btn = jQuery('<button></button>')
+		.attr('type', 'button')
+		.addClass('btn')
+		.text(Joomla.JText._('VBANNULLA'))
+		.on('click', function() {
+			VBOCore.emitEvent('vbo-dismiss-modal-roverv-newratesrestr');
+		});
+
+	let save_btn = jQuery('<button></button>')
+		.attr('type', 'button')
+		.addClass('btn btn-success')
+		.html('<?php VikBookingIcons::e('check-circle'); ?>' + Joomla.JText._('VBAPPLY'))
+		.on('click', function() {
+			setNewRates();
+		});
+
+	// display modal
+	let modal_body = VBOCore.displayModal({
+		suffix: 'ratesoverv-newratesrestr',
+		extra_class: 'vbo-modal-rounded vbo-modal-tall',
+		title: Joomla.JText._('VBO_RATES_AND_RESTR'),
+		lock_scroll: true,
+		draggable: true,
+		footer_left: cancel_btn,
+		footer_right: save_btn,
+		dismiss_event: 'vbo-dismiss-modal-roverv-newratesrestr',
+		loading_event: 'vbo-loading-modal-roverv-newratesrestr',
+		loading_body:  '<?php VikBookingIcons::e('refresh', 'fa-spin fa-3x fa-fw'); ?>',
+		onDismiss: () => {
+			// cancel dates selection
+			vbolistener.clear();
+			jQuery('.day-block').removeClass('block-picked-start block-picked-middle block-picked-end');
+
+			// reset period selection
+			jQuery('.vbo-ratesoverview-period-from').find('span').text('');
+			jQuery('.vbo-ratesoverview-period-from-icon').show();
+			jQuery('.vbo-ratesoverview-period-to').find('span').text('');
+			jQuery('.vbo-ratesoverview-period-to-icon').show();
+
+			// move the element back to its original position
+			jQuery('.vbo-ratesoverview-newratesrestr-wrap').appendTo('.vbo-ratesoverview-newratesrestr-helper');
+		},
+	});
+
+	jQuery('.vbo-ratesoverview-newratesrestr-wrap').appendTo(modal_body);
 }
 
 function showVboDialogPeriod() {
 	var format = new Date().format;
 	format = format.replace(new RegExp("/", 'g'), new Date().datesep);
 	jQuery('.vbo-ratesoverview-period-box-cals').fadeOut();
-	jQuery("#rovervw-roomname").html(vbolistener.first.roomName);
+	jQuery("#rovervw-roomname").html('<?php VikBookingIcons::e('building'); ?> ' + vbolistener.first.roomName);
 	jQuery("#rovervw-rplan").html(vbolistener.first.rplanName);
 	jQuery("#rovervw-closeopen-rplan").html('"'+vbolistener.first.rplanName+'"');
 	jQuery("#rovervw-fromdate").html(vbolistener.first.toDate(format));
@@ -1933,63 +2036,93 @@ function showVboDialogPeriod() {
 			jQuery("#rovervw-rplan").html('<span style="color: #f00"><i class="<?php echo VikBookingIcons::i('ban'); ?>"></i> '+vbolistener.first.rplanName+'</span>');
 		}
 	}
-	//
+
+	// VCM check
 	checkInvokeVcm();
 
-	jQuery(".vbo-info-overlay-block").fadeIn();
-	vbodialog_on = true;
-}
-
-function hideVboDialog() {
-	vbolistener.clear();
-	jQuery('.day-block').removeClass('block-picked-start block-picked-middle block-picked-end');
-	if (vbodialog_on === true) {
-		jQuery(".vbo-info-overlay-block").fadeOut(400, function () {
-			jQuery(".vbo-info-overlay-content").show();
+	// define the modal buttons
+	let cancel_btn = jQuery('<button></button>')
+		.attr('type', 'button')
+		.addClass('btn')
+		.text(Joomla.JText._('VBANNULLA'))
+		.on('click', function() {
+			VBOCore.emitEvent('vbo-dismiss-modal-roverv-newratesrestr');
 		});
-		//reset period selection
-		jQuery('.vbo-ratesoverview-period-from').find('span').text('');
-		jQuery('.vbo-ratesoverview-period-from-icon').show();
-		jQuery('.vbo-ratesoverview-period-to').find('span').text('');
-		jQuery('.vbo-ratesoverview-period-to-icon').show();
-		//
-		vbodialog_on = false;
-	}
+
+	let save_btn = jQuery('<button></button>')
+		.attr('type', 'button')
+		.addClass('btn btn-success')
+		.html('<?php VikBookingIcons::e('check-circle'); ?>' + Joomla.JText._('VBAPPLY'))
+		.on('click', function() {
+			setNewRates();
+		});
+
+	// display modal
+	let modal_body = VBOCore.displayModal({
+		suffix: 'ratesoverv-newratesrestr',
+		extra_class: 'vbo-modal-rounded vbo-modal-tall',
+		title: Joomla.JText._('VBO_RATES_AND_RESTR'),
+		lock_scroll: true,
+		draggable: true,
+		footer_left: cancel_btn,
+		footer_right: save_btn,
+		dismiss_event: 'vbo-dismiss-modal-roverv-newratesrestr',
+		loading_event: 'vbo-loading-modal-roverv-newratesrestr',
+		loading_body:  '<?php VikBookingIcons::e('refresh', 'fa-spin fa-3x fa-fw'); ?>',
+		onDismiss: () => {
+			// cancel dates selection
+			vbolistener.clear();
+			jQuery('.day-block').removeClass('block-picked-start block-picked-middle block-picked-end');
+
+			// reset period selection
+			jQuery('.vbo-ratesoverview-period-from').find('span').text('');
+			jQuery('.vbo-ratesoverview-period-from-icon').show();
+			jQuery('.vbo-ratesoverview-period-to').find('span').text('');
+			jQuery('.vbo-ratesoverview-period-to-icon').show();
+
+			// move the element back to its original position
+			jQuery('.vbo-ratesoverview-newratesrestr-wrap').appendTo('.vbo-ratesoverview-newratesrestr-helper');
+		},
+	});
+
+	jQuery('.vbo-ratesoverview-newratesrestr-wrap').appendTo(modal_body);
 }
 
 function vboCheckVcmRatesChanges() {
 	if (vcm_exists < 1) {
 		return false;
 	}
-	var jqxhr = jQuery.ajax({
-		type: "POST",
-		url: "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=checkvcmrateschanges'); ?>",
-		data: {
+
+	VBOCore.doAjax(
+		"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=checkvcmrateschanges'); ?>",
+		{
 			tmpl: "component",
 			e4j_debug: debug_mode
-		}
-	}).done(function(res) {
-		if (res.indexOf('e4j.error') >= 0 ) {
-			console.log(res);
-			alert(res.replace("e4j.error.", ""));
-			jQuery('.vbo-ratesoverview-right-inner').hide();
-		} else {
-			//display the VCM link for updating the rates on the OTAs
-			var obj_res = JSON.parse(res);
-			var esitcont = "";
-			if (obj_res.changesCount > 0 && obj_res.hasOwnProperty('changesData') && obj_res.changesData.hasOwnProperty('dfrom')) {
-				esitcont += "<span class=\"vbo-ratesoverview-vcmwarn-close\"> <i class=\"vboicn-cancel-circle\"></i></span>";
-				esitcont += "<span class=\"vbo-ratesoverview-vcmwarn-count\"><i class=\"vboicn-notification\"></i> <span>"+roverw_messages.vcmRatesChanged.replace("%d", obj_res.changesCount)+"</span></span>";
-				esitcont += "<span class=\"vbo-ratesoverview-vcmwarn-open\"><a href=\"index.php?option=com_vikchannelmanager&amp;task=ratespush&amp;vbosess=1\" class=\"btn btn-primary\">"+roverw_messages.vcmRatesChangedOpen+"</a></span>";
-				jQuery('.vbo-ratesoverview-right-inner').html(esitcont).fadeIn();
+		},
+		(res) => {
+			if (res.indexOf('e4j.error') >= 0 ) {
+				console.log(res);
+				alert(res.replace("e4j.error.", ""));
+				jQuery('.vbo-ratesoverview-right-inner').hide();
 			} else {
-				jQuery('.vbo-ratesoverview-right-inner').hide().html('');
+				//display the VCM link for updating the rates on the OTAs
+				var obj_res = JSON.parse(res);
+				var esitcont = "";
+				if (obj_res.changesCount > 0 && obj_res.hasOwnProperty('changesData') && obj_res.changesData.hasOwnProperty('dfrom')) {
+					esitcont += "<span class=\"vbo-ratesoverview-vcmwarn-close\"> <i class=\"vboicn-cancel-circle\"></i></span>";
+					esitcont += "<span class=\"vbo-ratesoverview-vcmwarn-count\"><i class=\"vboicn-notification\"></i> <span>"+roverw_messages.vcmRatesChanged.replace("%d", obj_res.changesCount)+"</span></span>";
+					esitcont += "<span class=\"vbo-ratesoverview-vcmwarn-open\"><a href=\"index.php?option=com_vikchannelmanager&amp;task=ratespush&amp;vbosess=1\" class=\"btn btn-primary\">"+roverw_messages.vcmRatesChangedOpen+"</a></span>";
+					jQuery('.vbo-ratesoverview-right-inner').html(esitcont).fadeIn();
+				} else {
+					jQuery('.vbo-ratesoverview-right-inner').hide().html('');
+				}
 			}
+		},
+		(err) => {
+			console.error(err);
+			jQuery('.vbo-ratesoverview-right-inner').hide();
 		}
-	}).fail(function() {
-		console.log("vboCheckVcmRatesChanges Request Failed");
-		jQuery('.vbo-ratesoverview-right-inner').hide();
-	});
+	);
 }
 
 /* Delay and launch the check VCM rates modification function, when the page loads */
@@ -2130,9 +2263,9 @@ function setNewRates() {
 			}
 		});
 		closerplan = allblocksclosed ? 1 : closerplan;
-		//
-		jQuery(".vbo-info-overlay-content").hide();
-		jQuery(".vbo-info-overlay-loading").prepend('<i class="<?php echo VikBookingIcons::i('refresh', 'fa-spin fa-3x fa-fw'); ?>"></i>').fadeIn();
+
+		// show loading
+		VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
 
 		VBOCore.doAjax(
 			"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=pricing.setnewrates'); ?>",
@@ -2151,8 +2284,8 @@ function setNewRates() {
 			(res) => {
 				if (typeof res === 'string' && res.indexOf('e4j.error') === 0) {
 					alert(res.replace('e4j.error.', ''));
-					jQuery('.vbo-info-overlay-content').show();
-					jQuery('.vbo-info-overlay-loading').hide().find('i').remove();
+					// stop loading
+					VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
 					// abort
 					return;
 				}
@@ -2217,9 +2350,11 @@ function setNewRates() {
 						}
 					});
 
-					// stop loading process
-					jQuery(".vbo-info-overlay-loading").hide().find("i").remove();
-					hideVboDialog();
+					// stop loading
+					VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
+
+					// dismiss modal
+					VBOCore.emitEvent('vbo-dismiss-modal-roverv-newratesrestr');
 
 					if (obj_res.hasOwnProperty('vcm')) {
 						// display CM results
@@ -2242,8 +2377,8 @@ function setNewRates() {
 			},
 			(err) => {
 				alert(err.responseText || 'Request Failed');
-				jQuery('.vbo-info-overlay-content').show();
-				jQuery('.vbo-info-overlay-loading').hide().find('i').remove();
+				// stop loading
+				VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
 			}
 		);
 	} else {
@@ -2255,12 +2390,12 @@ function setNewRates() {
 function modRoomRatePlan(mode) {
 	var all_blocks = getAllBlocksBetween(vbolistener.first, vbolistener.last, true);
 	if (all_blocks !== false && mode.length > 0) {
-		jQuery(".vbo-info-overlay-content").hide();
-		jQuery(".vbo-info-overlay-loading").prepend('<i class="<?php echo VikBookingIcons::i('refresh', 'fa-spin fa-3x fa-fw'); ?>"></i>').fadeIn();
-		var jqxhr = jQuery.ajax({
-			type: "POST",
-			url: "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=modroomrateplans'); ?>",
-			data: {
+		// start loading
+		VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
+
+		VBOCore.doAjax(
+			"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=modroomrateplans'); ?>",
+			{
 				tmpl: "component",
 				e4j_debug: debug_mode,
 				id_room: vbolistener.first.idroom,
@@ -2268,33 +2403,40 @@ function modRoomRatePlan(mode) {
 				type: mode,
 				fromdate: vbolistener.first.toDate("yy-mm-dd"),
 				todate: vbolistener.last.toDate("yy-mm-dd")
+			},
+			(res) => {
+				if (res.indexOf('e4j.error') >= 0 ) {
+					console.log(res);
+					alert(res.replace("e4j.error.", ""));
+					// stop loading
+					VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
+				} else {
+					// apply new classes in all_blocks IDs
+					var obj_res = JSON.parse(res);
+					jQuery.each(obj_res, function(k, v) {
+						var elem = jQuery("#cell-"+k+"-"+vbolistener.first.idroom);
+						if (elem.length) {
+							elem.removeClass(v.oldcls).addClass(v.newcls);
+						}
+					});
+
+					// stop loading
+					VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
+
+					// dismiss modal
+					VBOCore.emitEvent('vbo-dismiss-modal-roverv-newratesrestr');
+
+					setTimeout(function() {
+						vboCheckVcmRatesChanges();
+					}, 500);
+				}
+			},
+			(err) => {
+				alert("Request Failed");
+				// stop loading
+				VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
 			}
-		}).done(function(res) {
-			if (res.indexOf('e4j.error') >= 0 ) {
-				console.log(res);
-				alert(res.replace("e4j.error.", ""));
-				jQuery(".vbo-info-overlay-content").show();
-				jQuery(".vbo-info-overlay-loading").hide().find("i").remove();
-			} else {
-				//apply new classes in all_blocks IDs
-				var obj_res = JSON.parse(res);
-				jQuery.each(obj_res, function(k, v) {
-					var elem = jQuery("#cell-"+k+"-"+vbolistener.first.idroom);
-					if (elem.length) {
-						elem.removeClass(v.oldcls).addClass(v.newcls);
-					}
-				});
-				jQuery(".vbo-info-overlay-loading").hide().find("i").remove();
-				hideVboDialog();
-				setTimeout(function() {
-					vboCheckVcmRatesChanges();
-				}, 500);
-			}
-		}).fail(function() { 
-			alert("Request Failed");
-			jQuery(".vbo-info-overlay-content").show();
-			jQuery(".vbo-info-overlay-loading").hide().find("i").remove();
-		});
+		);
 	} else {
 		alert(roverw_messages.modRplansMissing);
 		return false;
@@ -2654,62 +2796,65 @@ jQuery(function() {
 			// if no rooms responses, empty the whole container
 			jQuery('.vbo-ratesoverview-calculation-response').html('');
 		}
-		var jqxhr = jQuery.ajax({
-			type: "POST",
-			url: "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=calc_rates'); ?>",
-			data: {
+
+		VBOCore.doAjax(
+			"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=calc_rates'); ?>",
+			{
 				tmpl: "component",
 				id_room: idroom,
 				checkin: checkindate,
 				num_nights: nights,
 				num_adults: adults,
 				num_children: children
-			}
-		}).done(function(res) {
-			res = JSON.parse(res);
-			res = res[0];
-			if (res.indexOf('e4j.error') >= 0 ) {
-				jQuery(".vbo-ratesoverview-calculation-response").html("<p class='vbo-warning'>" + res.replace("e4j.error.", "") + "</p>").fadeIn();
-			} else {
-				var titlecont = '<span class="vbo-ratesoverview-calculation-response-room-name">'+jQuery("#roomselcalc option:selected").text() + '</span> ' + checkindate + ' - ' + jQuery("#checkoutdate").val() + ', ' + nights + ' <?php echo addslashes(JText::translate('VBRATESOVWRATESCALCNUMNIGHTS')); ?>, ' + adults + ' <?php echo addslashes(JText::translate('VBRATESOVWRATESCALCNUMADULTS')); ?>';
-				var newcont = '<div class="vbo-ratesoverview-calculation-response-room" id="vbo-ratesoverview-calculation-response-room'+idroom+'"><h4>'+titlecont+'</h4>'+res+'</div>';
-				// check whether the content should be appended
-				if (jQuery(".vbo-ratesoverview-calculation-response").find('.vbo-ratesoverview-calculation-response-room').length) {
-					newcont = jQuery(".vbo-ratesoverview-calculation-response").html() + newcont;
-				}
-				//
-				jQuery(".vbo-ratesoverview-calculation-response").html(newcont).fadeIn();
-				// loop over every room response and pricing to append the book-now button for the page calendar
-				var base_booknow_link_orig = jQuery('#vbo-base-booknow-link').attr('href');
-				jQuery('.vbo-calcrates-rateblock').each(function(k, v) {
-					var elem = jQuery(v);
-					var base_booknow_link = base_booknow_link_orig;
-					// remove existing button
-					elem.find('.vbo-room-booknow-rct').remove();
+			},
+			(res) => {
+				res = JSON.parse(res);
+				res = res[0];
+				if (res.indexOf('e4j.error') >= 0 ) {
+					jQuery(".vbo-ratesoverview-calculation-response").html("<p class='vbo-warning'>" + res.replace("e4j.error.", "") + "</p>").fadeIn();
+				} else {
+					var titlecont = '<span class="vbo-ratesoverview-calculation-response-room-name">'+jQuery("#roomselcalc option:selected").text() + '</span> ' + checkindate + ' - ' + jQuery("#checkoutdate").val() + ', ' + nights + ' <?php echo addslashes(JText::translate('VBRATESOVWRATESCALCNUMNIGHTS')); ?>, ' + adults + ' <?php echo addslashes(JText::translate('VBRATESOVWRATESCALCNUMADULTS')); ?>';
+					var newcont = '<div class="vbo-ratesoverview-calculation-response-room" id="vbo-ratesoverview-calculation-response-room'+idroom+'"><h4>'+titlecont+'</h4>'+res+'</div>';
+					// check whether the content should be appended
+					if (jQuery(".vbo-ratesoverview-calculation-response").find('.vbo-ratesoverview-calculation-response-room').length) {
+						newcont = jQuery(".vbo-ratesoverview-calculation-response").html() + newcont;
+					}
 					//
-					var b_idprice = elem.attr('data-idprice');
-					base_booknow_link = base_booknow_link.replace('idprice=', 'idprice=' + b_idprice);
-					var b_idroom = elem.attr('data-idroom');
-					base_booknow_link = base_booknow_link.replace('cid[]=', 'cid[]=' + b_idroom);
-					var b_checkin = elem.attr('data-checkin');
-					base_booknow_link = base_booknow_link.replace('checkin=', 'checkin=' + b_checkin);
-					var b_checkout = elem.attr('data-checkout');
-					base_booknow_link = base_booknow_link.replace('checkout=', 'checkout=' + b_checkout);
-					var b_adults = elem.attr('data-adults');
-					base_booknow_link = base_booknow_link.replace('adults=', 'adults=' + b_adults);
-					var b_children = elem.attr('data-children');
-					base_booknow_link = base_booknow_link.replace('children=', 'children=' + b_children);
-					var booknow = '<a href="' + base_booknow_link + '" class="btn btn-primary vbo-room-booknow-rct" target="_blank">' + Joomla.JText._('VBO_BOOKNOW') + '</a>';
-					elem.append(booknow);
-				});
-				//
+					jQuery(".vbo-ratesoverview-calculation-response").html(newcont).fadeIn();
+					// loop over every room response and pricing to append the book-now button for the page calendar
+					var base_booknow_link_orig = jQuery('#vbo-base-booknow-link').attr('href');
+					jQuery('.vbo-calcrates-rateblock').each(function(k, v) {
+						var elem = jQuery(v);
+						var base_booknow_link = base_booknow_link_orig;
+						// remove existing button
+						elem.find('.vbo-room-booknow-rct').remove();
+						//
+						var b_idprice = elem.attr('data-idprice');
+						base_booknow_link = base_booknow_link.replace('idprice=', 'idprice=' + b_idprice);
+						var b_idroom = elem.attr('data-idroom');
+						base_booknow_link = base_booknow_link.replace('cid[]=', 'cid[]=' + b_idroom);
+						var b_checkin = elem.attr('data-checkin');
+						base_booknow_link = base_booknow_link.replace('checkin=', 'checkin=' + b_checkin);
+						var b_checkout = elem.attr('data-checkout');
+						base_booknow_link = base_booknow_link.replace('checkout=', 'checkout=' + b_checkout);
+						var b_adults = elem.attr('data-adults');
+						base_booknow_link = base_booknow_link.replace('adults=', 'adults=' + b_adults);
+						var b_children = elem.attr('data-children');
+						base_booknow_link = base_booknow_link.replace('children=', 'children=' + b_children);
+						var booknow = '<a href="' + base_booknow_link + '" class="btn btn-primary vbo-room-booknow-rct" target="_blank">' + Joomla.JText._('VBO_BOOKNOW') + '</a>';
+						elem.append(booknow);
+					});
+					//
+				}
+				jQuery('#vbo-ratesoverview-calculate').text(Joomla.JText._('VBRATESOVWRATESCALCULATORCALC')).prop('disabled', false);
+			},
+			(err) => {
+				console.error(err);
+				jQuery(".vbo-ratesoverview-calculation-response").fadeOut();
+				jQuery('#vbo-ratesoverview-calculate').text(Joomla.JText._('VBRATESOVWRATESCALCULATORCALC')).prop('disabled', false);
+				alert("Error Performing Ajax Request"); 
 			}
-			jQuery('#vbo-ratesoverview-calculate').text(Joomla.JText._('VBRATESOVWRATESCALCULATORCALC')).prop('disabled', false);
-		}).fail(function() { 
-			jQuery(".vbo-ratesoverview-calculation-response").fadeOut();
-			jQuery('#vbo-ratesoverview-calculate').text(Joomla.JText._('VBRATESOVWRATESCALCULATORCALC')).prop('disabled', false);
-			alert("Error Performing Ajax Request"); 
-		});
+		);
 	});
 
 	/* Orphans Calculation */
@@ -2804,10 +2949,8 @@ function vboCheckOrphans() {
 }
 </script>
 
-<div class="vbo-secondinfo-overlay-block">
-	<a class="vbo-info-overlay-close" href="javascript: void(0);"></a>
-	<div class="vbo-info-overlay-content vbo-info-overlay-content-fests">
-		<h3><?php VikBookingIcons::e('star'); ?> <span></span></h3>
+<div class="vbo-ratesoverview-fests-helper" style="display: none;">
+	<div class="vbo-ratesoverview-fests-wrap">
 		<div class="vbo-overlay-fests-list"></div>
 		<div class="vbo-overlay-fests-addnew" data-ymd="">
 			<h4><?php echo JText::translate('VBOADDCUSTOMFESTTODAY'); ?></h4>
@@ -2818,9 +2961,6 @@ function vboCheckOrphans() {
 			<div class="vbo-overlay-fests-addnew-elem">
 				<label for="vbo-newfest-descr"><?php echo JText::translate('VBPLACEDESCR'); ?></label>
 				<textarea id="vbo-newfest-descr"></textarea>
-			</div>
-			<div class="vbo-overlay-fests-addnew-save">
-				<button type="button" class="btn btn-success" onclick="vboAddFest(this);"><?php echo JText::translate('VBSAVE'); ?></button>
 			</div>
 		</div>
 	</div>

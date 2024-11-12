@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_characteristics` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(128) DEFAULT NULL,
   `icon` varchar(128) DEFAULT NULL,
-  `textimg` varchar(256) DEFAULT NULL,
+  `textimg` varchar(1024) DEFAULT NULL,
   `ordering` int(10) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;

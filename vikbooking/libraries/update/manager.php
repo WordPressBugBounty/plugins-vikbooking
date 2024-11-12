@@ -289,6 +289,8 @@ class VikBookingUpdateManager
 				'invoices' 	=> VBO_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'invoices' . DIRECTORY_SEPARATOR . 'generated',
 				// upload dir path for the scans of the ID/Documents of the customers
 				'idscans' 	=> VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'idscans',
+				// dir path for the PMS reports data
+				'pmsdata' 	=> VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'pmsdata',
 				// dir path to extend the reports
 				'report' 	=> VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'report',
 				// dir path to extend the SMS APIs
@@ -318,6 +320,8 @@ class VikBookingUpdateManager
 			'invoices' 	=> $upload_dir['basedir'] . DIRECTORY_SEPARATOR . 'vikbooking' . DIRECTORY_SEPARATOR . 'invoices',
 			// upload dir path for the scans of the ID/Documents of the customers
 			'idscans' 	=> $upload_dir['basedir'] . DIRECTORY_SEPARATOR . 'vikbooking' . DIRECTORY_SEPARATOR . 'idscans',
+			// dir path for the PMS reports data
+			'pmsdata' 	=> $upload_dir['basedir'] . DIRECTORY_SEPARATOR . 'vikbooking' . DIRECTORY_SEPARATOR . 'pmsdata',
 			// dir path to extend the reports
 			'report' 	=> $upload_dir['basedir'] . DIRECTORY_SEPARATOR . 'vikbooking' . DIRECTORY_SEPARATOR . 'report',
 			// dir path to extend the SMS APIs

@@ -3906,7 +3906,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Check-out', 'vikbooking');
 				break;
 			case 'VBOGUESTSDETAILS':
-				$result = __('Guests Details', 'vikbooking');
+				$result = __('Guest Details', 'vikbooking');
 				break;
 			case 'VBOGUESTNUM':
 				$result = __('Guest #%d', 'vikbooking');
@@ -3951,7 +3951,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('The check-out date is in the past.', 'vikbooking');
 				break;
 			case 'VBOCHECKINACTCONFGUESTS':
-				$result = __('Some guests details are missing. Proceed?', 'vikbooking');
+				$result = __('Some guest details are missing. Proceed?', 'vikbooking');
 				break;
 			case 'VBOCHECKINERRNOCUSTOMER':
 				$result = __('No customer assigned to this booking yet. Please create a new customer.', 'vikbooking');
@@ -4134,7 +4134,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Remove Room', 'vikbooking');
 				break;
 			case 'VBCONFIGCLOSINGDATESHELP':
-				$result = __('The Closing Dates of the company are settings defined at Account-Level for the booking engine of the website. The closed dates will not be selectable from the calendars in the front-end. However, these settings will NOT apply to the channels connected through the Channel Manager. You should rather close the rooms from the page Calendar if you wanted the Channel Manager to close the availability on the channels.', 'vikbooking');
+				$result = __('The property closing dates are settings defined at account-level for the booking engine of the website. The closed dates will not be selectable from the calendars in the front-end. However, these settings will NOT apply to the channels connected through the Channel Manager (unless you submit the Bulk Action). You should rather close the rooms from the page Calendar if you wanted the Channel Manager to immediately close the availability on the OTAs as well.', 'vikbooking');
 				break;
 			case 'VBOROOMNORATE':
 				$result = __('- no rate plan assigned', 'vikbooking');
@@ -4476,7 +4476,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('- All Options', 'vikbooking');
 				break;
 			case 'VBOREPORTALLOGGIATIPOLIZIA':
-				$result = __('Italian Police: Guests Details', 'vikbooking');
+				$result = __('Italian Police: Guest Details', 'vikbooking');
 				break;
 			case 'JSEARCH_TOOLS':
 				$result = __('Search Tools', 'vikbooking');
@@ -7346,6 +7346,28 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_UPDATE_PAYMENT':
 				$result = __('Update payment', 'vikbooking');
+				break;
+			case 'VBO_CREATE_LISTING_ON_OTA':
+				// @TRANSLATORS: Create listing on "Booking.com"
+				$result = _x('Create listing on %s', 'Create listing on "Booking.com"', 'vikbooking');
+				break;
+			case 'VBO_OTA_ACCOUNT_ID':
+				$result = __('OTA Account ID', 'vikbooking');
+				break;
+			case 'VBO_OTA_LISTING_ID':
+				$result = __('OTA Listing ID', 'vikbooking');
+				break;
+			case 'VBO_NOTIFS_GROUP_REPORTS':
+				$result = __('Reports', 'vikbooking');
+				break;
+			case 'VBO_EXAMPLES':
+				$result = __('Examples', 'vikbooking');
+				break;
+			case 'VBO_REPORT_EXPORT_FORMAT':
+				$result = __('Choose the export format or the action to execute.', 'vikbooking');
+				break;
+			case 'VBO_REPORT_EXPORT_PAYLOAD_HELP':
+				$result = __('The payload is needed to let the report export dynamic information every day.', 'vikbooking');
 				break;
 		}
 

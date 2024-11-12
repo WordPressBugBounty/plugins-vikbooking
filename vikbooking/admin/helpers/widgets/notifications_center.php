@@ -1563,6 +1563,13 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 			} elseif (!strcasecmp($notif->group, 'operators')) {
 				$group_badge_icon = 'broom';
 				$group_badge_cls  = 'vbo-badge-group-orange';
+			} elseif (!strcasecmp($notif->group, 'reports')) {
+				$group_badge_icon = 'cash-register';
+				if (strpos($notif->type, 'error') !== false) {
+					$group_badge_cls = 'vbo-badge-group-red';
+				} else {
+					$group_badge_cls = 'vbo-badge-group-green';
+				}
 			} elseif (!strcasecmp($notif->group, 'ai')) {
 				$group_badge_cnt = '<img class="vbo-ai-icn" src="' . VBO_ADMIN_URI . 'resources/channels/ai-icn-white.png" />';
 				if (strpos($notif->type, 'error') !== false) {

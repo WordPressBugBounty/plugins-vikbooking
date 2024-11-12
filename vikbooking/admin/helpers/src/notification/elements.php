@@ -34,6 +34,8 @@ final class VBONotificationElements extends JObject
 		'guests',
 		// notifications from Operators
 		'operators',
+		// notifications from (PMS) Reports
+		'reports',
 		// notifications from AI
 		'ai',
 	];

@@ -120,7 +120,7 @@ final class VBOParamsRendering
             }
 
             $nested_style   = (isset($param_config['nested']) && $param_config['nested']);
-            $hidden_wrapper = false;
+            $hidden_wrapper = $param_config['type'] === 'hidden';
             if (isset($param_config['conditional']) && isset($this->params[$param_config['conditional']])) {
                 $check_cond = isset($this->params[$param_config['conditional']]['default']) ? $this->params[$param_config['conditional']]['default'] : null;
                 $check_cond = isset($this->settings[$param_config['conditional']]) ? $this->settings[$param_config['conditional']] : $check_cond;
@@ -131,7 +131,7 @@ final class VBOParamsRendering
             }
 
             $html .= '<div class="vbo-param-container' . (in_array($param_config['type'], ['textarea', 'visual_html']) ? ' vbo-param-container-full' : '') . ($nested_style ? ' vbo-param-nested' : '') . '"' . ($hidden_wrapper ? ' style="display: none;"' : '') . '>';
-            if (strlen($label) > 0 && (!isset($param_config['hidden']) || $param_config['hidden'] != true)) {
+            if (strlen($label) && (!isset($param_config['hidden']) || $param_config['hidden'] != true)) {
                 $html .= '<div class="vbo-param-label">' . $label . '</div>';
             }
             $html .= '<div class="vbo-param-setting">';
@@ -309,7 +309,7 @@ JS
                 $html .= '<button type="button" class="btn btn-primary" onclick="vboParamTogglePwd(this);"><i class="' . VikBookingIcons::i('eye') . '"></i></button>';
                 $html .= '</div>';
                 // set flag for JS helper
-                $$this->scripts[] = $param_config['type'];
+                $this->scripts[] = $param_config['type'];
                 break;
             case 'number':
                 $number_attr = [];
@@ -371,6 +371,11 @@ JS
                 // always display a hidden input value turned off before the actual checkbox to support the "off" (0) status
                 $html .= '<input type="hidden" name="' . $this->inputName . '[' . $param_name . ']" value="0" />';
                 $html .= VikBooking::getVboApplication()->printYesNoButtons($this->inputName . '['.$param_name.']', JText::translate('VBYES'), JText::translate('VBNO'), (isset($this->settings[$param_name]) ? (int)$this->settings[$param_name] : (int)$default_paramv), 1, 0);
+                break;
+            case 'calendar':
+                $e_options = isset($param_config['options']) && is_array($param_config['options']) ? $param_config['options'] : [];
+                $e_id = isset($e_options['id']) ? $e_options['id'] : $this->inputName . '_' . $param_name;
+                $html .= VikBooking::getVboApplication()->getCalendar($this->settings[$param_name] ?? $default_paramv, $this->inputName . '['.$param_name.']', $e_id, $e_options['df'] ?? null, $e_options['attributes'] ?? []);
                 break;
             default:
                 $html .= '<input type="text" name="' . $this->inputName . '[' . $param_name . ']" value="'.(isset($this->settings[$param_name]) ? JHtml::fetch('esc_attr', $this->settings[$param_name]) : JHtml::fetch('esc_attr', $default_paramv)).'" size="20"' . $inp_attr . '/>';

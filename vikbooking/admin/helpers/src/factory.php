@@ -213,9 +213,9 @@ final class VBOFactory
              * The following example explains how to schedule a task that runs every hour.
              * 
              * ```
-             * $crontab->schedule('unique_id', 60 * 60, function($logger) {
+             * $crontab->schedule(new VBOCrontabRunnerAware('unique_id', 60 * 60, function($logger) {
              *   // do stuff
-             * });
+             * }));
              * ```
              * 
              * @param   VBOCrontabSimulator  $crontab  The crontab simulator instance.

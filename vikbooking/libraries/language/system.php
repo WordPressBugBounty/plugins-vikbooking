@@ -372,6 +372,10 @@ class VikBookingLanguageSystem implements JLanguageHandler
 				$result = __('Save failed with the following error: %s', 'vikbooking');
 				break;
 
+			case 'JGLOBAL_SELECT_AN_OPTION':
+				$result = __('- Select an option -', 'vikbooking');
+				break;
+
 			/**
 			 * Media manager.
 			 */

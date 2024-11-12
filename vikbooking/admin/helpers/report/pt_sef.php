@@ -639,7 +639,7 @@ JS
 			"WHERE `o`.`status`='confirmed' AND `o`.`closure`=0 AND (
 				(`o`.`checkin` >= $from_ts AND `o`.`checkin` <= $to_ts) OR (`o`.`checkout` >= $from_ts AND `o`.`checkout` <= $to_ts) OR (`o`.`checkin` < $from_ts AND `o`.`checkout` > $to_ts)
 			) ".
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC;";
+			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
 		$this->dbo->setQuery($q);
 		$records = $this->dbo->loadAssocList();
 
@@ -1070,9 +1070,9 @@ JS
 	 * In case of errors, the process is not terminated (exit)
 	 * to let the View display the error message.
 	 *
-	 * @param 	int 	$export_type 	the view will pass this argument to the method to call different types of export.
+	 * @param 	string 	$export_type 	Differentiates the type of export requested.
 	 *
-	 * @return 	mixed 	void on success with script termination, false otherwise.
+	 * @return 	void|bool 				Void in case of script termination, boolean otherwise.
 	 */
 	public function customExport($export_type = 0)
 	{

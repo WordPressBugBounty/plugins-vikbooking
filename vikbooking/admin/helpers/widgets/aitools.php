@@ -64,6 +64,10 @@ class VikBookingAdminWidgetAitools extends VikBookingAdminWidget
 		JHtml::fetch('script', VCM_ADMIN_URI . 'layouts/ai/assistant/aitools.js', $options);
 		JHtml::fetch('stylesheet', VCM_ADMIN_URI . 'layouts/ai/assistant/aitools.css', $options);
 
+		JHtml::fetch('script', VCM_ADMIN_URI . 'assets/js/katex/katex.min.js', $options);
+		JHtml::fetch('script', VCM_ADMIN_URI . 'assets/js/katex/auto-render.min.js', $options);
+		JHtml::fetch('stylesheet', VCM_ADMIN_URI . 'assets/js/katex/katex.min.css', $options);
+
     	// language definitions
 		JText::script('VBO_AI_ASSISTANT_DISCLAIMER');
 		JText::script('VBO_AI_ASSISTANT_DISCOVER_HINT');

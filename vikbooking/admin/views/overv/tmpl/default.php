@@ -146,6 +146,13 @@ if (array_key_exists('tmplock', $arrbusy)) {
 	unset($arrbusy['tmplock']);
 }
 
+/**
+ * Global closing dates.
+ * 
+ * @since 	1.17.1 (J) - 1.7.1 (WP)
+ */
+$globally_closed = VikBooking::getClosingDates();
+
 ?>
 <script type="text/Javascript">
 function vboUnitsLeftOrBooked() {
@@ -394,6 +401,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 				$room_bids_pool = [];
 				$room_bookings = [];
 				while ($moncurts['mon'] == $mon) {
+					// init cell values
 					$dclass = 'vbo-overv-avcell ' . (!$is_subunit ? "notbusy" : "subnotbusy");
 					$is_checkin = false;
 					$is_sharedcal = false;
@@ -405,6 +413,15 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 					$totfound = 0;
 					$prev_day_key = date('Y-m-d', strtotime('-1 day', $moncurts[0]));
 					$cur_day_key = date('Y-m-d', $moncurts[0]);
+
+					// check for global closing dates
+					foreach ($globally_closed as $glob_closed) {
+						if ($moncurts[0] >= $glob_closed['from'] && $moncurts[0] <= $glob_closed['to']) {
+							$dclass .= ' vbo-overv-globally-closed';
+						}
+					}
+
+					// check availability
 					if (!empty($arrbusy[$room['id']]) && !$is_subunit) {
 						foreach ($arrbusy[$room['id']] as $b) {
 							$tmpone = getdate($b['checkin']);

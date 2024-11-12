@@ -181,7 +181,7 @@ if ($ord && count($all_rooms) > 1 && (!empty($ordersrooms[0]['idtar']) || $is_pa
 	foreach ($occ_rooms as $occ => $rr) {
 		$switcher .= '<optgroup label="'.JText::sprintf('VBSWROOMOCC', $occ).'">'."\n";
 		foreach ($rr as $r) {
-			$switcher .= '<option value="'.$r['id'].'">'.$r['name'].'</option>'."\n";
+			$switcher .= '<option value="'.$r['id'].'">'.str_replace('%', '%%', $r['name']).'</option>'."\n";
 		}
 		$switcher .= '</optgroup>'."\n";
 	}

@@ -4589,7 +4589,7 @@ class VikBookingController extends JControllerVikBooking
 					if ($basetwo['year'] % 4 == 0 && ($basetwo['year'] % 100 != 0 || $basetwo['year'] % 400 == 0)) {
 						$leapts = mktime(0, 0, 0, 2, 29, $basetwo['year']);
 						if ($basetwo[0] > $leapts) {
-							$sto -= 86400;
+							$sto -= date('d-m', $baseone[0]) != '31-12' && date('d-m', $basetwo[0]) == '31-12' ? 1 : 86400;
 						}
 					}
 				}
@@ -4955,7 +4955,7 @@ class VikBookingController extends JControllerVikBooking
 					if ($basetwo['year'] % 4 == 0 && ($basetwo['year'] % 100 != 0 || $basetwo['year'] % 400 == 0)) {
 						$leapts = mktime(0, 0, 0, 2, 29, $basetwo['year']);
 						if ($basetwo[0] > $leapts) {
-							$sto -= 86400;
+							$sto -= date('d-m', $baseone[0]) != '31-12' && date('d-m', $basetwo[0]) == '31-12' ? 1 : 86400;
 						}
 					}
 				}
@@ -5439,18 +5439,22 @@ class VikBookingController extends JControllerVikBooking
 					$oid_clause = '';
 					if ($customer['ischannel'] < 1) {
 						//Was not a sales channel but now it is, so update all his bookings
-						$q = "SELECT `idorder` FROM `#__vikbooking_customers_orders` WHERE `idcustomer`=".$customer['id'].";";
+						$q = "SELECT `o`.`idorderota`, `co`.`idorder` 
+							FROM `#__vikbooking_customers_orders` AS `co` 
+							LEFT JOIN `#__vikbooking_orders` AS `o` ON `co`.`idorder`=`o`.`id` 
+							WHERE `co`.`idcustomer`=".$customer['id'].";";
 						$dbo->setQuery($q);
-						$dbo->execute();
-						if ($dbo->getNumRows() > 0) {
-							$all_bids = $dbo->loadAssocList();
+						$all_bids = $dbo->loadAssocList();
+						if ($all_bids) {
 							$bids = array();
 							foreach ($all_bids as $bid) {
-								if (!in_array($bid['idorder'], $bids)) {
+								if (empty($idorderota) && !in_array($bid['idorder'], $bids)) {
 									$bids[] = $bid['idorder'];
 								}
 							}
-							$oid_clause = " OR `id` IN (".implode(',', $bids).")";
+							if ($bids) {
+								$oid_clause = " OR `id` IN (".implode(',', $bids).")";
+							}
 						}
 					}
 					$q = "UPDATE `#__vikbooking_orders` SET `channel`=".$dbo->quote($source_name)." WHERE `channel` LIKE 'customer".$pwhere."%'".$oid_clause.";";
@@ -6791,7 +6795,7 @@ class VikBookingController extends JControllerVikBooking
 		}
 
 		$pcaratname = VikRequest::getString('caratname', '', 'request');
-		$pcarattextimg = VikRequest::getString('carattextimg', '', 'request', VIKREQUEST_ALLOWHTML);
+		$pcarattextimg = VikRequest::getString('carattextimg', '', 'request', VIKREQUEST_ALLOWRAW);
 		$pautoresize = VikRequest::getString('autoresize', '', 'request');
 		$presizeto = VikRequest::getString('resizeto', '', 'request');
 		$pidrooms = VikRequest::getVar('idrooms', array());
@@ -6934,7 +6938,7 @@ class VikBookingController extends JControllerVikBooking
 		}
 
 		$pcaratname = VikRequest::getString('caratname', '', 'request');
-		$pcarattextimg = VikRequest::getString('carattextimg', '', 'request', VIKREQUEST_ALLOWHTML);
+		$pcarattextimg = VikRequest::getString('carattextimg', '', 'request', VIKREQUEST_ALLOWRAW);
 		$pwhereup = VikRequest::getString('whereup', '', 'request');
 		$pautoresize = VikRequest::getString('autoresize', '', 'request');
 		$presizeto = VikRequest::getString('resizeto', '', 'request');
@@ -11912,36 +11916,40 @@ jQuery(".' . $selector . '").hover(function() {
 		exit;
 	}
 
-	public function modroomrateplans() {
-		$dbo = JFactory::getDBO();
+	public function modroomrateplans()
+	{
+		$dbo = JFactory::getDbo();
 		$session = JFactory::getSession();
+
 		$updforvcm = $session->get('vbVcmRatesUpd', '');
 		$updforvcm = empty($updforvcm) || !is_array($updforvcm) ? array() : $updforvcm;
+
 		$pid_room = VikRequest::getInt('id_room', '', 'request');
 		$pid_price = VikRequest::getInt('id_price', '', 'request');
 		$ptype = VikRequest::getString('type', '', 'request');
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
+
 		if (empty($pid_room) || empty($pid_price) || empty($ptype) || empty($pfromdate) || empty($ptodate) || !(strtotime($pfromdate) > 0)  || !(strtotime($ptodate) > 0)) {
 			echo 'e4j.error.'.addslashes(JText::translate('VBRATESOVWERRMODRPLANS'));
 			exit;
 		}
-		$price_record = array();
+
 		$q = "SELECT * FROM `#__vikbooking_prices` WHERE `id`=".$pid_price.";";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$price_record = $dbo->loadAssoc();
-		}
-		if (!count($price_record) > 0) {
+		$price_record = $dbo->loadAssoc();
+
+		if (!$price_record) {
 			echo 'e4j.error.'.addslashes(JText::translate('VBRATESOVWERRMODRPLANS')).'.';
 			exit;
 		}
+
 		$current_closed = array();
 		if (!empty($price_record['closingd'])) {
 			$current_closed = json_decode($price_record['closingd'], true);
 		}
 		$current_closed = !is_array($current_closed) ? array() : $current_closed;
+
 		$start_ts = strtotime($pfromdate);
 		$end_ts = strtotime($ptodate);
 		$infostart = getdate($start_ts);
@@ -11953,7 +11961,9 @@ jQuery(".' . $selector . '").hover(function() {
 			$output[$indkey] = array();
 			$infostart = getdate(mktime(0, 0, 0, $infostart['mon'], ($infostart['mday'] + 1), $infostart['year']));
 		}
+
 		if ($ptype == 'close') {
+			// close
 			if (!array_key_exists($pid_room, $current_closed)) {
 				$current_closed[$pid_room] = array();
 			}
@@ -11963,7 +11973,7 @@ jQuery(".' . $selector . '").hover(function() {
 				}
 			}
 		} else {
-			//open
+			// open
 			if (array_key_exists($pid_room, $current_closed)) {
 				foreach ($all_days as $daymod) {
 					if (in_array($daymod, $current_closed[$pid_room])) {
@@ -11978,29 +11988,37 @@ jQuery(".' . $selector . '").hover(function() {
 				$current_closed[$pid_room] = array();
 			}
 		}
-		if (!count($current_closed[$pid_room]) > 0) {
+
+		if (!$current_closed[$pid_room]) {
 			unset($current_closed[$pid_room]);
 		}
+
 		$q = "UPDATE `#__vikbooking_prices` SET `closingd`=".(count($current_closed) > 0 ? $dbo->quote(json_encode($current_closed)) : "NULL")." WHERE `id`=".(int)$pid_price.";";
 		$dbo->setQuery($q);
 		$dbo->execute();
+
 		$oldcsscls = $ptype == 'close' ? 'vbo-roverw-rplan-on' : 'vbo-roverw-rplan-off';
 		$newcsscls = $ptype == 'close' ? 'vbo-roverw-rplan-off' : 'vbo-roverw-rplan-on';
+
 		foreach ($output as $ok => $ov) {
 			$output[$ok] = array('oldcls' => $oldcsscls, 'newcls' => $newcsscls);
 		}
-		//update session values
+
+		// build new session values
 		$updforvcm['count'] = array_key_exists('count', $updforvcm) && !empty($updforvcm['count']) ? ($updforvcm['count'] + 1) : 1;
+
 		if (array_key_exists('dfrom', $updforvcm) && !empty($updforvcm['dfrom'])) {
 			$updforvcm['dfrom'] = $updforvcm['dfrom'] > $start_ts ? $start_ts : $updforvcm['dfrom'];
 		} else {
 			$updforvcm['dfrom'] = $start_ts;
 		}
+
 		if (array_key_exists('dto', $updforvcm) && !empty($updforvcm['dto'])) {
 			$updforvcm['dto'] = $updforvcm['dto'] < $end_ts ? $end_ts : $updforvcm['dto'];
 		} else {
 			$updforvcm['dto'] = $end_ts;
 		}
+
 		if (array_key_exists('rooms', $updforvcm) && is_array($updforvcm['rooms'])) {
 			if (!in_array($pid_room, $updforvcm['rooms'])) {
 				$updforvcm['rooms'][] = $pid_room;
@@ -12008,6 +12026,7 @@ jQuery(".' . $selector . '").hover(function() {
 		} else {
 			$updforvcm['rooms'] = array($pid_room);
 		}
+
 		if (array_key_exists('rplans', $updforvcm) && is_array($updforvcm['rplans'])) {
 			if (array_key_exists($pid_room, $updforvcm['rplans'])) {
 				if (!in_array($pid_price, $updforvcm['rplans'][$pid_room])) {
@@ -12019,14 +12038,33 @@ jQuery(".' . $selector . '").hover(function() {
 		} else {
 			$updforvcm['rplans'] = array($pid_room => array($pid_price));
 		}
-		$session->set('vbVcmRatesUpd', $updforvcm);
-		//
-		$pdebug = VikRequest::getInt('e4j_debug', '', 'request');
-		if ($pdebug == 1) {
-			echo "e4j.error.\n".print_r($current_closed, true)."\n";
-			echo print_r($output, true)."\n\n";
-			echo print_r($all_days, true)."\n";
+
+		/**
+		 * Rather than suggesting the administrator to manually invoke VCM to launch a Bulk Action,
+		 * we try to silently trigger an automatic bulk action before updating the session values.
+		 * 
+		 * @since 	1.17.1 (J) - 1.7.1 (WP)
+		 */
+		$rates_aligned = false;
+		try {
+			if (class_exists('VikChannelManager')) {
+				$rates_aligned = VikChannelManager::autoBulkActions([
+					'from_date'    => $pfromdate,
+					'to_date'      => $ptodate,
+					'forced_rooms' => [$pid_room],
+					'update'       => 'rates',
+				]);
+			}
+		} catch (Throwable $e) {
+			// do nothing
+			$rates_aligned = false;
 		}
+
+		if (!$rates_aligned) {
+			// update session values
+			$session->set('vbVcmRatesUpd', $updforvcm);
+		}
+
 		echo json_encode($output);
 		exit;
 	}

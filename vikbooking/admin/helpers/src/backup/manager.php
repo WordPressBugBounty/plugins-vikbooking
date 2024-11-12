@@ -24,6 +24,8 @@ class VBOBackupManager
 	 * something in the database structure is altered.
 	 * 
 	 * @var string
+	 * 
+	 * @see This should MATCH the E4jConnect constants for the Trial.
 	 */
 	const MINIMUM_REQUIRED_VERSION_JOOMLA = '1.17.0';
 
@@ -33,6 +35,8 @@ class VBOBackupManager
 	 * something in the database structure is altered.
 	 * 
 	 * @var string
+	 * 
+	 * @see This should MATCH the E4jConnect constants for the Trial.
 	 */
 	const MINIMUM_REQUIRED_VERSION_WORDPRESS = '1.7.0';
 

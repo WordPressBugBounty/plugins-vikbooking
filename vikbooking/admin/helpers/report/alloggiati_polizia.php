@@ -54,21 +54,67 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	 * 
 	 * @var  array
 	 */
-	protected $comuniProvince = array();
+	protected $comuniProvince = [];
 
 	/**
 	 * List of "nazioni" codes.
 	 * 
 	 * @var  array
 	 */
-	protected $nazioni = array();
+	protected $nazioni = [];
 
 	/**
 	 * List of "documenti" codes.
 	 * 
 	 * @var  array
 	 */
-	protected $documenti = array();
+	protected $documenti = [];
+
+	/**
+	 * List of booking IDs affected by the export.
+	 * 
+	 * @var  	array
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected $export_booking_ids = [];
+
+	/**
+	 * List of exported check-in dates (range).
+	 * 
+	 * @var  	array
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected $exported_checkin_dates = [];
+
+	/**
+	 * The URL to the WSDL for the SOAP operations.
+	 * 
+	 * @var  	string
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected $wsdl_url = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx?wsdl';
+
+	/**
+	 * The location URL to the WS for the SOAP requests.
+	 * 
+	 * @var  	string
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected $ws_location = 'https://alloggiatiweb.poliziadistato.it/service/Service.asmx';
+
+	/**
+	 * String representation of the PHP constant for the SOAP
+	 * protocol version (either SOAP 1.1 or SOAP 1.2).
+	 * 
+	 * @var  	string
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected $soap_version = 'SOAP_1_2';
 
 	/**
 	 * Class constructor should define the name of the report and
@@ -78,11 +124,11 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	{
 		$this->reportFile = basename(__FILE__, '.php');
 		$this->reportName = JText::translate('VBOREPORT'.strtoupper(str_replace('_', '', $this->reportFile)));
-		$this->reportFilters = array();
+		$this->reportFilters = [];
 
-		$this->cols = array();
-		$this->rows = array();
-		$this->footerRow = array();
+		$this->cols = [];
+		$this->rows = [];
+		$this->footerRow = [];
 
 		$this->comuniProvince = $this->loadComuniProvince();
 		$this->nazioni = $this->loadNazioni();
@@ -116,45 +162,229 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	}
 
 	/**
+	 * @inheritDoc
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getSettingFields()
+	{
+		return [
+			'title' => [
+				'type'  => 'custom',
+				'label' => '',
+				'html'  => '<p class="info">Configura le impostazioni per la trasmissione delle schedine verso il sistema della Polizia di Stato - Alloggiati Web.</p>',
+			],
+			'apartments' => [
+				'type'    => 'checkbox',
+				'label'   => 'Gestione Appartamenti',
+				'help'    => 'Se abilitato, la trasmissione delle schede alloggiati verrà eseguita secondo il criterio per le utenze della categoria &quot;Gestione Appartamenti&quot;. In alternativa, verrà utilizzato il criterio Hotel.',
+				'default' => 0,
+			],
+			'user' => [
+				'type'  => 'text',
+				'label' => 'Utente',
+				'help'  => 'Nome utente assegnato all\'account della struttura nel portale alloggiati web.',
+			],
+			'pwd' => [
+				'type'  => 'password',
+				'label' => 'Password',
+				'help'  => 'Password assegnata all\'account della struttura nel portale alloggiati web.',
+			],
+			'wskey' => [
+				'type'  => 'password',
+				'label' => 'WsKey',
+				'help'  => 'Chiave di sicurezza generata ed assegnata all\'account della struttura nel portale alloggiati web.',
+			],
+		];
+	}
+
+	/**
+	 * @inheritDoc
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getScopedActions($scope = null, $visible = true)
+	{
+		// list of custom actions for this report
+		$actions = [
+			[
+				'id' => 'transmitCards',
+				'name' => 'Trasmissione elenco schedine',
+				'help' => 'Consente di effettuare il controllo di correttezza e il contestuale invio di un elenco di schedine. Le sole schedine corrette saranno acquisite dal sistema.',
+				'icon' => VikBookingIcons::i('cloud-upload-alt'),
+				// flag to indicate that it requires the report data (lines)
+				'export_data' => true,
+				'scopes' => [
+					'web',
+					'cron',
+				],
+			],
+			[
+				'id' => 'testTransmitCards',
+				'name' => 'Controllo preliminare schedine',
+				'help' => 'Questo metodo consente di effettuare il solo controllo di correttezza di un elenco di schedine; può essere utilizzato per testare il meccanismo di generazione delle stringhe secondo il tracciato record previsto.',
+				'icon' => VikBookingIcons::i('spell-check'),
+				// flag to indicate that it requires the report data (lines)
+				'export_data' => true,
+				'scopes' => [
+					'web',
+					'cron',
+				],
+			],
+			[
+				'id' => 'listApartments',
+				'name' => 'Lista appartamenti',
+				'help' => 'Ottiene i dati della tabella per la lista degli appartamenti. Da utilizzare soltanto per la categoria "Gestione Appartamenti".',
+				'icon' => VikBookingIcons::i('building'),
+				'scopes' => [
+					'web',
+				],
+			],
+			[
+				'id' => 'receiptsArchive',
+				'name' => 'Archivio ricevute',
+				'help' => 'Archivio delle ricevute precedentemente scaricate per gli invii delle schedine alloggiati.',
+				'icon' => VikBookingIcons::i('folder-open'),
+				'scopes' => [
+					'web',
+				],
+			],
+			[
+				'id' => 'downloadReceipt',
+				'name' => 'Download ricevuta',
+				'help' => 'Consente di effettuare il download della ricevuta relativa agli invii effettuati in una specifica data.',
+				'icon' => VikBookingIcons::i('cloud-download-alt'),
+				'scopes' => [
+					'web',
+					'cron',
+				],
+				'params' => [
+					'receipt_date' => [
+						'type'    => 'calendar',
+						'label'   => 'Data ricevuta',
+						'help'    => 'Seleziona la data per cui scaricare la ricevuta di una trasmissione.',
+						'default' => date('Y-m-d', strtotime('yesterday')),
+					],
+				],
+				'params_submit_lbl' => 'Scarica ricevuta',
+			],
+			[
+				'id' => 'receiptExists',
+				'name' => 'Verifica duplicati ricevuta',
+				'help' => 'Metodo interno per controllare se una ricevuta esiste per una certa data.',
+				// flag to indicate that it's callable internally, but not graphically
+				'hidden' => true,
+				'scopes' => [
+					'web',
+				],
+			],
+			[
+				'id' => 'generateToken',
+				'name' => 'Genera token autenticazione',
+				'help' => 'Questo metodo consente, date le informazioni di sicurezza di autenticazione legate all\'utente, di ottenere un token temporaneo valido da utilizzare per usufruire delle funzionalità dei servizi.',
+				// flag to indicate that it's callable internally, but not graphically
+				'hidden' => true,
+				'scopes' => [
+					'web',
+				],
+			],
+			[
+				'id' => 'authenticationTest',
+				'name' => 'Controllo token autenticazione',
+				'help' => 'Consente di effettuare il controllo di correttezza e validità delle informazioni di autenticazione per l\'utilizzo dei servizi. Utilizzabile per controllare la corretta generazione del token.',
+				'hidden' => true,
+				'scopes' => [
+					'web',
+				],
+			],
+			[
+				'id' => 'saveApartmentRelation',
+				'name' => 'Salva relazione appartamento',
+				'help' => 'Salva la relazione tra un ID appartamento letto dal sistema Alloggiati Web ed un ID camera di VikBooking.',
+				// flag to indicate that it's callable internally, but not graphically
+				'hidden' => true,
+				'scopes' => [
+					'web',
+				],
+			],
+		];
+
+		// filter actions by scope
+		if ($scope && (!strcasecmp($scope, 'cron') || !strcasecmp($scope, 'web'))) {
+			$actions = array_filter($actions, function($action) use ($scope) {
+				if (!($action['scopes'] ?? [])) {
+					return true;
+				}
+
+				return in_array(strtolower($scope), $action['scopes']);
+			});
+		}
+
+		// filter by visibility
+		if ($visible) {
+			$actions = array_filter($actions, function($action) {
+				return !($action['hidden'] ?? false);
+			});
+		}
+
+		return array_values($actions);
+	}
+
+	/**
 	 * Returns the filters of this report.
 	 *
 	 * @return 	array
 	 */
 	public function getFilters()
 	{
-		if (count($this->reportFilters)) {
-			//do not run this method twice, as it could load JS and CSS files.
+		if ($this->reportFilters) {
+			// do not run this method twice, as it could load JS and CSS files.
 			return $this->reportFilters;
 		}
 
-		//get VBO Application Object
+		// get VBO Application Object
 		$vbo_app = VikBooking::getVboApplication();
 
-		//load the jQuery UI Datepicker
+		// load the jQuery UI Datepicker
 		$this->loadDatePicker();
 
-		//custom export button
+		// custom export button
 		$this->customExport = '<a href="JavaScript: void(0);" onclick="vboDownloadSchedaPolizia();" class="vbcsvexport"><i class="'.VikBookingIcons::i('download').'"></i> <span>Download File</span></a>';
 
-		//build the hidden values for the selection of Comuni & Province.
+		// load report settings
+		$settings = $this->loadSettings();
+
+		// build the hidden values for the selection of Comuni & Province and much more.
 		$hidden_vals = '<div id="vbo-report-alloggiati-hidden" style="display: none;">';
-		//Comuni
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-comune" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-comune" onchange="vboReportChosenComune(this);"><option value=""></option>';
+
+		// build params container HTML structure
+		$hidden_vals .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
+		$hidden_vals .= '	<div class="vbo-params-wrap">';
+		$hidden_vals .= '		<div class="vbo-params-container">';
+		$hidden_vals .= '			<div class="vbo-params-block vbo-params-block-noborder">';
+
+		// Comuni
+		$hidden_vals .= '	<div id="vbo-report-alloggiati-comune" class="vbo-report-alloggiati-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Comune</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-comune" onchange="vboReportChosenComune(this);"><option value=""></option>';
 		if (isset($this->comuniProvince['comuni']) && count($this->comuniProvince['comuni'])) {
 			foreach ($this->comuniProvince['comuni'] as $code => $comune) {
 				if (!is_array($comune)) {
 					continue;
 				}
-				$hidden_vals .= '	<option value="'.$code.'">'.$comune['name'].'</option>'."\n";
+				$hidden_vals .= '		<option value="'.$code.'">'.$comune['name'].'</option>'."\n";
 			}
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
 
-		//Province
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-provincia" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-provincia" onchange="vboReportChosenProvincia(this);"><option value=""></option>';
+		// Province
+		$hidden_vals .= '	<div id="vbo-report-alloggiati-provincia" class="vbo-report-alloggiati-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Provincia</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-provincia" onchange="vboReportChosenProvincia(this);"><option value=""></option>';
 		if (isset($this->comuniProvince['province']) && count($this->comuniProvince['province'])) {
 			foreach ($this->comuniProvince['province'] as $code => $provincia) {
 				// sanitize code from line breaks
@@ -162,59 +392,111 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				$code = str_replace("\r", '', $code);
 				$code = str_replace("\n", '', $code);
 				//
-				$hidden_vals .= '	<option value="'.$code.'">'.$provincia.'</option>'."\n";
+				$hidden_vals .= '		<option value="'.$code.'">'.$provincia.'</option>'."\n";
 			}
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
 
-		//Nazioni
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-nazione" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-nazione" onchange="vboReportChosenNazione(this);"><option value=""></option>';
+		// Nazioni
+		$hidden_vals .= '	<div id="vbo-report-alloggiati-nazione" class="vbo-report-alloggiati-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Nazione</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-nazione" onchange="vboReportChosenNazione(this);"><option value=""></option>';
 		if (count($this->nazioni)) {
 			foreach ($this->nazioni as $code => $nazione) {
-				$hidden_vals .= '	<option value="'.$code.'">'.$nazione['name'].'</option>'."\n";
+				$hidden_vals .= '		<option value="'.$code.'">'.$nazione['name'].'</option>'."\n";
 			}
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
 
-		//Documenti
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-doctype" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-documento" onchange="vboReportChosenDocumento(this);"><option value=""></option>';
+		// Documenti
+		$hidden_vals .= '	<div id="vbo-report-alloggiati-doctype" class="vbo-report-alloggiati-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Documento</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-documento" onchange="vboReportChosenDocumento(this);"><option value=""></option>';
 		if (count($this->documenti)) {
 			foreach ($this->documenti as $code => $documento) {
-				$hidden_vals .= '	<option value="'.$code.'">'.$documento.'</option>'."\n";
+				$hidden_vals .= '		<option value="'.$code.'">'.$documento.'</option>'."\n";
 			}
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
 
-		//Sesso
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-sesso" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-sesso" onchange="vboReportChosenSesso(this);"><option value=""></option>';
+		// Sesso
+		$hidden_vals .= '	<div id="vbo-report-alloggiati-sesso" class="vbo-report-alloggiati-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Sesso</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-sesso" onchange="vboReportChosenSesso(this);"><option value=""></option>';
 		$sessos = array(
 			1 => 'M',
 			2 => 'F'
 		);
 		foreach ($sessos as $code => $ses) {
-			$hidden_vals .= '	<option value="'.$code.'">'.$ses.'</option>'."\n";
+			$hidden_vals .= '		<option value="'.$code.'">'.$ses.'</option>'."\n";
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
 
-		//Numero Documento
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-docnum" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<input type="text" size="40" id="choose-docnum" placeholder="Numero Documento..." value="" /><br /><br />';
-		$hidden_vals .= '		<button type="button" class="btn vbo-config-btn" onclick="vboReportChosenDocnum(document.getElementById(\'choose-docnum\').value);">'.JText::translate('VBAPPLY').'</button>';
+		// Numero Documento
+		$hidden_vals .= '	<div id="vbo-report-alloggiati-docnum" class="vbo-report-alloggiati-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Numero Documento</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<input type="text" size="40" id="choose-docnum" value="" />';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
 
-		//Data di Nascita
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-dbirth" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<input type="text" size="40" id="choose-dbirth" placeholder="Data di Nascita" value="" /><br /><br />';
-		$hidden_vals .= '		<button type="button" class="btn vbo-config-btn" onclick="vboReportChosenDbirth(document.getElementById(\'choose-dbirth\').value);">'.JText::translate('VBAPPLY').'</button>';
+		// Data di Nascita
+		$hidden_vals .= '	<div id="vbo-report-alloggiati-dbirth" class="vbo-report-alloggiati-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Data di nascita</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<input type="text" size="40" id="choose-dbirth" value="" />';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
 
+		// ID Appartamento
+		$apartments_data = !empty($settings['apartments_list']) ? $settings['apartments_list'] : [];
+		$hidden_vals .= '	<div id="vbo-report-alloggiati-idapp" class="vbo-report-alloggiati-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">ID Appartamento</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-idapp" onchange="vboReportChosenIdapp(this);"><option value=""></option>';
+		foreach ($apartments_data as $apartment_data) {
+			$id_apt = null;
+			$apt_name = null;
+			foreach ($apartment_data as $apt_key => $apt_data) {
+				if (!$id_apt) {
+					// should be the first key
+					$id_apt = $apt_data;
+					continue;
+				}
+				if (!$apt_name) {
+					// should be the second key
+					$apt_name = $apt_data;
+					continue;
+				}
+				if ($id_apt && $apt_name) {
+					// no more looping
+					break;
+				}
+			}
+			$hidden_vals .= '		<option value="' . $id_apt . '">' . $apt_name . '</option>' . "\n";
+		}
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
+		$hidden_vals .= '	</div>';
+
+		// close params container HTML structure
+		$hidden_vals .= '			</div>';
+		$hidden_vals .= '		</div>';
+		$hidden_vals .= '	</div>';
+		$hidden_vals .= '</div>';
+
+		// close hidden values container
 		$hidden_vals .= '</div>';
 
 		// From Date Filter (with hidden values for the dropdown menus of Comuni, Province, Stati etc..)
@@ -267,6 +549,9 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			jQuery("#choose-nazione").select2({placeholder: "- Seleziona una Nazione -", width: "200px"});
 			jQuery("#choose-documento").select2({placeholder: "- Seleziona un Documento -", width: "200px"});
 			jQuery("#choose-sesso").select2({placeholder: "- Seleziona Sesso -", width: "200px"});
+			if (jQuery("#choose-idapp").length) {
+				jQuery("#choose-idapp").select2({placeholder: "- Seleziona Appartamento -", width: "200px"});
+			}
 			jQuery("#choose-dbirth").datepicker({
 				maxDate: 0,
 				dateFormat: "dd/mm/yy",
@@ -279,51 +564,86 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				reportActiveCell = this;
 				jQuery(".vbo-report-alloggiati-selcont").hide();
 				jQuery("#vbo-report-alloggiati-comune").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
+				});
 			});
 			jQuery(".vbo-report-load-provincia, .vbo-report-load-provincia-stay").click(function() {
 				reportActiveCell = this;
 				jQuery(".vbo-report-alloggiati-selcont").hide();
 				jQuery("#vbo-report-alloggiati-provincia").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
+				});
 			});
 			jQuery(".vbo-report-load-nazione, .vbo-report-load-nazione-stay, .vbo-report-load-cittadinanza").click(function() {
 				reportActiveCell = this;
 				jQuery(".vbo-report-alloggiati-selcont").hide();
 				jQuery("#vbo-report-alloggiati-nazione").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
+				});
 			});
 			jQuery(".vbo-report-load-doctype").click(function() {
 				reportActiveCell = this;
 				jQuery(".vbo-report-alloggiati-selcont").hide();
 				jQuery("#vbo-report-alloggiati-doctype").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
+				});
 			});
 			jQuery(".vbo-report-load-docplace").click(function() {
 				reportActiveCell = this;
 				jQuery(".vbo-report-alloggiati-selcont").hide();
 				jQuery("#vbo-report-alloggiati-comune").show();
 				jQuery("#vbo-report-alloggiati-nazione").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni - Luogo rilascio documento",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
+				});
 			});
 			jQuery(".vbo-report-load-sesso").click(function() {
 				reportActiveCell = this;
 				jQuery(".vbo-report-alloggiati-selcont").hide();
 				jQuery("#vbo-report-alloggiati-sesso").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
+				});
+			});
+			jQuery(".vbo-report-load-idapp").click(function() {
+				reportActiveCell = this;
+				jQuery(".vbo-report-alloggiati-selcont").hide();
+				jQuery("#vbo-report-alloggiati-idapp").show();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
+				});
 			});
 			jQuery(".vbo-report-load-docnum").click(function() {
 				reportActiveCell = this;
 				jQuery(".vbo-report-alloggiati-selcont").hide();
 				jQuery("#vbo-report-alloggiati-docnum").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog",
+					footer_right: "<button type=\"button\" class=\"btn btn-success\" onclick=\"vboReportChosenDocnum(document.getElementById(\'choose-docnum\').value);\">Applica</button>",
+				});
 				setTimeout(function(){jQuery("#choose-docnum").focus();}, 500);
 			});
 			jQuery(".vbo-report-load-dbirth").click(function() {
 				reportActiveCell = this;
 				jQuery(".vbo-report-alloggiati-selcont").hide();
 				jQuery("#vbo-report-alloggiati-dbirth").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog",
+					footer_right: "<button type=\"button\" class=\"btn btn-success\" onclick=\"vboReportChosenDbirth(document.getElementById(\'choose-dbirth\').value);\">Applica</button>",
+				});
 			});
 		});
 		function vboReportCheckDates(selectedDate, inst) {
@@ -480,6 +800,31 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			jQuery("#choose-sesso").val("").select2("data", null, false);
 			jQuery(".vbo-report-alloggiati-manualsave").show();
 		}
+		function vboReportChosenIdapp(idapp) {
+			var c_code = idapp.value;
+			var c_val = idapp.options[idapp.selectedIndex].text;
+			if (reportActiveCell !== null) {
+				var nowindex = jQuery(".vbo-reports-output table tbody tr").index(jQuery(reportActiveCell).closest("tr"));
+				if (isNaN(nowindex) || parseInt(nowindex) < 0) {
+					alert("Error, cannot find element to update.");
+				} else {
+					var rep_act_cell = jQuery(reportActiveCell);
+					rep_act_cell.addClass("vbo-report-load-elem-filled").find("span").text(c_val);
+					var rep_guest_bid = rep_act_cell.closest("tr").find("a[data-bid]").attr("data-bid");
+					if (!reportObj.hasOwnProperty(nowindex)) {
+						reportObj[nowindex] = {
+							bid: rep_guest_bid,
+							bid_index: jQuery(".vbo-reports-output table tbody tr").index(jQuery("a[data-bid=\"" + rep_guest_bid + "\"]").first().closest("tr"))
+						};
+					}
+					reportObj[nowindex]["idapp"] = c_code;
+				}
+			}
+			reportActiveCell = null;
+			vboHideOverlay();
+			jQuery("#choose-idapp").val("").select2("data", null, false);
+			jQuery(".vbo-report-alloggiati-manualsave").show();
+		}
 		function vboReportChosenDocnum(val) {
 			var c_code = val, c_val = val;
 			if (reportActiveCell !== null) {
@@ -529,18 +874,52 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			jQuery(".vbo-report-alloggiati-manualsave").show();
 		}
 		//download function
-		function vboDownloadSchedaPolizia() {
-			if (!confirm("Sei sicuro di aver compilato tutti i dati della Scheda Alloggiati?")) {
+		function vboDownloadSchedaPolizia(type) {
+			if (!confirm("Sei sicuro di aver compilato tutti i dati delle schedine alloggiati?")) {
 				return false;
 			}
-			document.adminForm.target = "_blank";
-			document.adminForm.action += "&tmpl=component";
-			vboSetFilters({exportreport: "1", filler: JSON.stringify(reportObj)}, true);
+
+			let use_blank = true;
+			if (typeof type === "undefined") {
+				type = 1;
+			} else {
+				use_blank = false;
+			}
+
+			if (use_blank) {
+				document.adminForm.target = "_blank";
+				document.adminForm.action += "&tmpl=component";
+			}
+
+			vboSetFilters({exportreport: type, filler: JSON.stringify(reportObj)}, true);
+
 			setTimeout(function() {
 				document.adminForm.target = "";
 				document.adminForm.action = document.adminForm.action.replace("&tmpl=component", "");
 				vboSetFilters({exportreport: "0", filler: ""}, false);
 			}, 1000);
+		}
+		// update apartment-room relation
+		function vboAlloggiatiSetAptRel(id_apt, id_room) {
+			VBOCore.doAjax(
+				"' . VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=report.executeCustomAction') . '",
+				{
+					report_file:   "' . $this->getFileName() . '",
+					report_action: "saveApartmentRelation",
+					report_scope:  "web",
+					report_data: {
+						id_apt: id_apt,
+						id_room: id_room,
+					},
+				},
+				(resp) => {
+					// do nothing on success
+				},
+				(error) => {
+					// display the error
+					alert(error.responseText);
+				}
+			);
 		}
 		// save data function
 		function vboAlloggiatiSaveData() {
@@ -580,12 +959,21 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	 */
 	public function getReportData()
 	{
-		if (strlen($this->getError())) {
-			//Export functions may set errors rather than exiting the process, and the View may continue the execution to attempt to render the report.
+		if ($this->getError()) {
+			// export functions may set errors rather than exiting the process, and
+			// the View may continue the execution to attempt to render the report.
 			return false;
 		}
+
+		if ($this->rows) {
+			// method must have run already
+			return true;
+		}
+
+		// load all countries
 		$all_countries = VikBooking::getCountriesArray();
-		//Input fields and other vars
+
+		// input fields and other vars
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
 		$pkrsort = VikRequest::getString('krsort', $this->defaultKeySort, 'request');
@@ -599,7 +987,8 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 		if (empty($ptodate)) {
 			$ptodate = $pfromdate;
 		}
-		//Get dates timestamps
+
+		// get date timestamps
 		$from_ts = VikBooking::getDateTimestamp($pfromdate, 0, 0);
 		$to_ts = VikBooking::getDateTimestamp($ptodate, 23, 59, 59);
 		if (empty($pfromdate) || empty($from_ts) || empty($to_ts)) {
@@ -607,31 +996,34 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			return false;
 		}
 
-		//Query to obtain the records (all check-ins within the dates filter)
-		$records = array();
+		// set the dates being exported
+		$this->exported_checkin_dates = [
+			date('Y-m-d', $from_ts),
+			date('Y-m-d', $to_ts),
+		];
+
+		// query to obtain the records (all check-ins within the dates filter)
 		$q = "SELECT `o`.`id`,`o`.`custdata`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`country`,".
 			"`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`t_first_name`,`or`.`t_last_name`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,".
 			"`co`.`idcustomer`,`co`.`pax_data`,`c`.`first_name`,`c`.`last_name`,`c`.`country` AS `customer_country`,`c`.`address`,`c`.`doctype`,`c`.`docnum`,`c`.`gender`,`c`.`bdate`,`c`.`pbirth` ".
 			"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
 			"LEFT JOIN `#__vikbooking_customers_orders` AS `co` ON `co`.`idorder`=`o`.`id` LEFT JOIN `#__vikbooking_customers` AS `c` ON `c`.`id`=`co`.`idcustomer` ".
 			"WHERE `o`.`status`='confirmed' AND `o`.`closure`=0 AND `o`.`checkin`>=".$from_ts." AND `o`.`checkin`<=".$to_ts." ".
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC;";
+			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
 		$this->dbo->setQuery($q);
-		$this->dbo->execute();
-		if ($this->dbo->getNumRows() > 0) {
-			$records = $this->dbo->loadAssocList();
-		}
-		if (!count($records)) {
+		$records = $this->dbo->loadAssocList();
+
+		if (!$records) {
 			$this->setError(JText::translate('VBOREPORTSERRNORESERV'));
 			$this->setError('Nessun check-in nelle date selezionate.');
 			return false;
 		}
 
-		//nest records with multiple rooms booked inside sub-array
-		$bookings = array();
+		// nest records with multiple rooms booked inside sub-array
+		$bookings = [];
 		foreach ($records as $v) {
 			if (!isset($bookings[$v['id']])) {
-				$bookings[$v['id']] = array();
+				$bookings[$v['id']] = [];
 			}
 			array_push($bookings[$v['id']], $v);
 		}
@@ -797,6 +1189,32 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			),
 		);
 
+		/**
+		 * Thanks to the WSDL functionalities, we now also support the "Gestione Appartamenti" category.
+		 * Those PMs who belong to this category, rather than hotels, must use a column "ID Appartamento".
+		 * 
+		 * @since 	1.17.1 (J) - 1.7.1 (WP)
+		 */
+		$settings = $this->loadSettings();
+		if (!empty($settings['apartments']) && !empty($settings['apartments_list'])) {
+			// get and unset last column
+			$last_col = $this->cols[count($this->cols) - 1];
+			unset($this->cols[count($this->cols) - 1]);
+
+			// push the "ID Appartamento" column
+			$this->cols[] = [
+				'key' => 'idapp',
+				'attr' => array(
+					'class="center"'
+				),
+				'label' => 'ID App',
+				'tip' => 'Necessario per la categoria Gestione Appartamenti. Assicurati di scaricare la lista appartamenti dalle apposite funzioni per salvare gli ID.',
+			];
+
+			// restore the last column by repushing it
+			$this->cols[] = $last_col;
+		}
+
 		// line number (to facilitate identifying a specific guest in case of errors with the file submission)
 		$line_number = 0;
 
@@ -805,7 +1223,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 		foreach ($bookings as $gbook) {
 			// count the total number of guests for all rooms of this booking
 			$tot_booking_guests = 0;
-			$room_guests = array();
+			$room_guests = [];
 			foreach ($gbook as $rbook) {
 				$tot_booking_guests += ($rbook['adults'] + $rbook['children']);
 				$room_guests[] = ($rbook['adults'] + $rbook['children']);
@@ -813,12 +1231,11 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 
 			// make sure to decode the current pax data
 			if (!empty($gbook[0]['pax_data'])) {
-				$gbook[0]['pax_data'] = json_decode($gbook[0]['pax_data'], true);
-				$gbook[0]['pax_data'] = !is_array($gbook[0]['pax_data']) ? array() : $gbook[0]['pax_data'];
+				$gbook[0]['pax_data'] = (array) json_decode($gbook[0]['pax_data'], true);
 			}
 
 			// push a copy of the booking for each guest
-			$guests_rows = array();
+			$guests_rows = [];
 			for ($i = 1; $i <= $tot_booking_guests; $i++) {
 				array_push($guests_rows, $gbook[0]);
 			}
@@ -839,7 +1256,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			$guest_ind = 1;
 			foreach ($guests_rows as $ind => $guests) {
 				// prepare row record for this room-guest
-				$insert_row = array();
+				$insert_row = [];
 
 				// find the actual guest-room-index
 				$guest_room_ind = $this->calcGuestRoomIndex($room_guests, $guest_ind);
@@ -865,7 +1282,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				// Tipo Alloggiato
 				array_push($insert_row, array(
 					'key' => 'tipo',
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						switch ($val) {
 							case 16:
 								return 'Ospite Singolo';
@@ -890,7 +1307,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'attr' => array(
 						'class="center"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						return date('d/m/Y', $val);
 					},
 					'value' => $guests['checkin']
@@ -945,7 +1362,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'attr' => array(
 						'class="center'.(empty($gender) ? ' vbo-report-load-sesso' : '').'"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						return $val == 2 ? 'F' : ($val === 1 ? 'M' : '?');
 					},
 					'no_export_callback' => 1,
@@ -962,7 +1379,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'attr' => array(
 						'class="center'.(empty($dbirth) ? ' vbo-report-load-dbirth' : '').'"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						if (!empty($val) && strpos($val, '/') === false && strpos($val, VikBooking::getDateSeparator()) === false) {
 							return is_numeric($val) ? date('d/m/Y', $val) : $val;
 						}
@@ -989,7 +1406,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				// assign the default value found from pax_data registration
 				$comval = $pax_comval;
 
-				$result = array();
+				$result = [];
 				if (empty($pax_comval)) {
 					$result = $this->sanitizeComune($combirth);
 					if (!empty($combirth) && $guest_ind < 2 && (!$is_foreign && !empty($staval)) ) {
@@ -1086,7 +1503,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'attr' => array(
 						'class="center'.(empty($stabirth) ? ' vbo-report-load-nazione' : '').'"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						return (!empty($val) ? $this->nazioni[$val]['name'] : '?');
 					},
 					'no_export_callback' => 1,
@@ -1117,7 +1534,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'attr' => array(
 						'class="center'.(empty($citizen) ? ' vbo-report-load-cittadinanza' : '').'"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						return !empty($val) ? $this->nazioni[$val]['name'] : '?';
 					},
 					'no_export_callback' => 1,
@@ -1247,27 +1664,37 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				));
 				*/
 
+				//Tipo documento
+
 				/**
-				 * Tipo documento.
 				 * Check compatibility with pax_data field of driver for "Italy".
 				 */
 				$pax_doctype = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'doctype');
 
-				$doctype = '---';
-				$doctype_cur_val = '';
-				if ($guest_room_ind < 2 && !empty($pax_doctype)) {
-					$doctype = $pax_doctype;
-					$doctype_cur_val = $pax_doctype;
+				$doctype = $pax_doctype ?: '';
+
+				$doctype_elem_class = '';
+				if ($guest_room_ind < 2 && empty($doctype)) {
+					// mandatory selection style
+					$doctype_elem_class = ' vbo-report-load-doctype';
+				} elseif (empty($doctype)) {
+					// optional selection style
+					$doctype_elem_class = ' vbo-report-load-doctype vbo-report-load-field-optional';
+				} elseif (!empty($doctype)) {
+					// rectify selection style
+					$doctype_elem_class = ' vbo-report-load-doctype vbo-report-load-elem-filled';
 				}
 
 				array_push($insert_row, array(
 					'key' => 'doctype',
 					'attr' => array(
-						// we always allow to rectify this field, but if guessed, we style it with the class "vbo-report-load-elem-filled"
-						'class="center'.($guest_room_ind < 2 ? ' vbo-report-load-doctype' : '').(!empty($doctype_cur_val) ? ' vbo-report-load-elem-filled' : '').'"'
+						'class="center' . $doctype_elem_class . '"'
 					),
-					'callback' => function ($val) use ($doctype_cur_val) {
-						return !empty($doctype_cur_val) ? $doctype_cur_val : $val;
+					'callback' => function($val) use ($guest_room_ind) {
+						if ($guest_room_ind > 1 && empty($val)) {
+							return '---';
+						}
+						return empty($val) ? '?' : $val;
 					},
 					'no_export_callback' => 1,
 					'value' => $doctype
@@ -1280,7 +1707,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				 */
 				$pax_docnum = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'docnum');
 
-				$docnum = !empty($pax_docnum) ? $pax_docnum : '---';
+				$docnum = $pax_docnum ?: '';
 
 				if (empty($pax_docnum) && $guest_room_ind < 2) {
 					if (is_array($guests['pax_data']) && !empty($guests['pax_data'][0][1]['docnum'])) {
@@ -1290,12 +1717,27 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					}
 				}
 
+				$docnum_elem_class = '';
+				if ($guest_room_ind < 2 && empty($docnum)) {
+					// mandatory selection style
+					$docnum_elem_class = ' vbo-report-load-docnum';
+				} elseif (empty($docnum)) {
+					// optional selection style
+					$docnum_elem_class = ' vbo-report-load-docnum vbo-report-load-field-optional';
+				} elseif (!empty($docnum)) {
+					// rectify selection style
+					$docnum_elem_class = ' vbo-report-load-docnum vbo-report-load-elem-filled';
+				}
+
 				array_push($insert_row, array(
 					'key' => 'docnum',
 					'attr' => array(
-						'class="center'.($guest_room_ind < 2 && empty($docnum) ? ' vbo-report-load-docnum' : '').'"'
+						'class="center' . $docnum_elem_class . '"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) use ($guest_room_ind) {
+						if ($guest_room_ind > 1 && empty($val)) {
+							return '---';
+						}
 						return empty($val) ? '?' : $val;
 					},
 					'value' => $docnum
@@ -1308,17 +1750,24 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				 */
 				$pax_docplace = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'docplace');
 
-				$docplace = '';
-				if ($guest_room_ind < 2 && !empty($pax_docplace)) {
-					$docplace = $pax_docplace;
+				$docplace = $pax_docplace ?: '';
+
+				$docplace_elem_class = '';
+				if ($guest_room_ind < 2 && empty($docplace)) {
+					// mandatory selection style
+					$docplace_elem_class = ' vbo-report-load-docplace';
+				} elseif (empty($docplace)) {
+					// optional selection style
+					$docplace_elem_class = ' vbo-report-load-docplace vbo-report-load-field-optional';
 				}
+
 				array_push($insert_row, array(
 					'key' => 'docplace',
 					'attr' => array(
-						'class="center'.($guest_room_ind < 2 && empty($docplace) ? ' vbo-report-load-docplace' : '').'"'
+						'class="center' . $docplace_elem_class . '"'
 					),
-					'callback' => function ($val) use ($guest_room_ind) {
-						if ($guest_room_ind > 1) {
+					'callback' => function($val) use ($guest_room_ind) {
+						if ($guest_room_ind > 1 && empty($val)) {
 							return '---';
 						}
 						return !empty($val) && isset($this->nazioni[$val]) ? $this->nazioni[$val]['name'] : '?';
@@ -1327,13 +1776,46 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'value' => $docplace
 				));
 
+				/**
+				 * Thanks to the WSDL functionalities, we now also support the "Gestione Appartamenti" category.
+				 * Those PMs who belong to this category, rather than hotels, must use a column "ID Appartamento".
+				 * 
+				 * @since 	1.17.1 (J) - 1.7.1 (WP)
+				 */
+				if (!empty($settings['apartments']) && !empty($settings['apartments_list'])) {
+					// current pax value for apartment ID
+					$pax_idapp = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'idapp');
+
+					if (empty($pax_idapp) && !empty($settings['apartment_relations'])) {
+						// set apartment ID from the saved relations
+						$pax_idapp = isset($settings['apartment_relations'][$guests['idroom']]) ? $settings['apartment_relations'][$guests['idroom']]['id'] : $pax_idapp;
+					}
+
+					if (empty($pax_idapp)) {
+						// mandatory selection style
+						$id_apt_elem_class = ' vbo-report-load-field vbo-report-load-idapp';
+					} else {
+						// rectify selection style
+						$id_apt_elem_class = ' vbo-report-load-idapp vbo-report-load-elem-filled';
+					}
+
+					// id appartamento
+					array_push($insert_row, array(
+						'key' => 'idapp',
+						'attr' => array(
+							'class="center' . $id_apt_elem_class . '"'
+						),
+						'value' => (int) $pax_idapp,
+					));
+				}
+
 				//id booking
 				array_push($insert_row, array(
 					'key' => 'idbooking',
 					'attr' => array(
 						'class="center"'
 					),
-					'callback' => function ($val) use ($line_number) {
+					'callback' => function($val) use ($line_number) {
 						// make sure to keep the data-bid attribute as it's used by JS to identify the booking ID
 						return '<a data-bid="' . $val . '" href="index.php?option=com_vikbooking&task=editorder&cid[]=' . $val . '" target="_blank"><i class="' . VikBookingIcons::i('external-link') . '"></i> ' . $val . '</a> / <span>#' . $line_number . '</span>';
 					},
@@ -1382,29 +1864,25 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	}
 
 	/**
-	 * Generates the text file for the Italian Police, 
-	 * then it sends it to output for download.
-	 * In case of errors, the process is not terminated (exit)
-	 * to let the View display the error message.
-	 *
-	 * @param 	int 	$export_type 	the view will pass this argument to the method to call different types of export.
-	 *
-	 * @return 	mixed 	void on success with script termination, false otherwise.
+	 * Builds the report (card) lines for export or transmission.
+	 * Updates the list of booking IDs affected.
+	 * 
+	 * @return 	array 	Empty array in case of errors, or list of rows.
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
 	 */
-	public function customExport($export_type = 0)
+	protected function buildCardLines()
 	{
 		if (!$this->getReportData()) {
-			return false;
+			return [];
 		}
 
-		$pfromdate = VikRequest::getString('fromdate', '', 'request');
-		$ptodate = VikRequest::getString('todate', '', 'request');
 		$pfiller = VikRequest::getString('filler', '', 'request', VIKREQUEST_ALLOWRAW);
-		$pfiller = !empty($pfiller) ? json_decode($pfiller, true) : array();
-		$pfiller = !is_array($pfiller) ? array() : $pfiller;
+		$pfiller = !empty($pfiller) ? json_decode($pfiller, true) : [];
+		$pfiller = !is_array($pfiller) ? [] : $pfiller;
 
-		//map of the rows keys with their related length
-		$keys_length_map = array(
+		// map of the rows keys with their related length
+		$keys_length_map = [
 			'tipo' 		 => 2,
 			'checkin' 	 => 10,
 			'nights' 	 => 2,
@@ -1425,25 +1903,26 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			'doctype' 	 => 5,
 			'docnum' 	 => 20,
 			'docplace' 	 => 9,
-		);
+			'idapp' 	 => 6,
+		];
 
-		//pool of booking IDs to update their history
-		$booking_ids = array();
+		// pool of booking IDs to update their history
+		$this->export_booking_ids = [];
 
-		//array of lines (one line for each guest)
-		$lines = array();
+		// array of lines (one line for each guest)
+		$lines = [];
 
-		//Push the lines of the Text file
+		// push the lines of the Text file
 		foreach ($this->rows as $ind => $row) {
 			$line_cont = '';
 			foreach ($row as $field) {
-				if ($field['key'] == 'idbooking' && !in_array($field['value'], $booking_ids)) {
-					array_push($booking_ids, $field['value']);
+				if ($field['key'] == 'idbooking' && !in_array($field['value'], $this->export_booking_ids)) {
+					array_push($this->export_booking_ids, $field['value']);
 				}
 				if (isset($field['ignore_export'])) {
 					continue;
 				}
-				//report value
+				// report value
 				if (is_array($pfiller) && isset($pfiller[$ind]) && isset($pfiller[$ind][$field['key']])) {
 					if (strlen($pfiller[$ind][$field['key']])) {
 						$field['value'] = $pfiller[$ind][$field['key']];
@@ -1452,9 +1931,14 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				
 				// values set to -1 are usually empty and should have been filled in manually
 				if ($field['value'] === -1) {
-					// we raise an error in this case without stopping the process
+					// we raise a warning in this case without stopping the process
 					$field['value'] = 0;
-					VikError::raiseWarning('', 'La riga #'.$ind.' ha un valore vuoto che doveva essere riempito manualmente cliccando sul blocco in rosso. Il file potrebbe contenere valori invalidi per questa riga.');
+					$warn_message = 'La riga #' . $ind . ' ha un valore vuoto che doveva essere riempito manualmente cliccando sul blocco in rosso. Il file potrebbe contenere valori invalidi per questa riga.';
+					if ($this->getScope() === 'web') {
+						VikError::raiseWarning('', $warn_message);
+					} else {
+						$this->setWarning($warn_message);
+					}
 				}
 
 				if (isset($field['callback_export'])) {
@@ -1467,13 +1951,101 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				$line_cont .= $this->valueFiller($value, $keys_length_map[$field['key']]);
 			}
 
-			//push the line in the array of lines
+			// push the line in the array of lines
 			array_push($lines, $line_cont);
 		}
 
-		// update the history for all bookings affected
-		foreach ($booking_ids as $bid) {
-			VikBooking::getBookingHistoryInstance()->setBid($bid)->store('RP', $this->reportName);
+		return $lines;
+	}
+
+	/**
+	 * Generates the text file for the Italian Police, then sends it to output for download.
+	 * In case of errors, the process is not terminated (exit) to let the View display the
+	 * error message(s). The export type argument can eventually determine an action to run.
+	 *
+	 * @param 	string 	$export_type 	Differentiates the type of export requested.
+	 *
+	 * @return 	void|bool 				Void in case of script termination, boolean otherwise.
+	 */
+	public function customExport($export_type = null)
+	{
+		// build the card lines
+		$lines = $this->buildCardLines();
+
+		// build report action data, if needed
+		$action_data = array_merge($this->getActionData($registry = false), ['cards' => $lines]);
+
+		/**
+		 * Custom export method can run a custom action.
+		 * 
+		 * @since 	1.17.1 (J) - 1.7.1 (WP)
+		 */
+		if ($export_type && !is_numeric($export_type)) {
+			try {
+				// ensure the type of export is a callable scoped action, hidden or visible
+				$actions = $this->getScopedActions($this->getScope(), $visible = false);
+				$action_ids = array_column($actions, 'id');
+				$action_names = array_column($actions, 'name');
+				if (!in_array($export_type, $action_ids)) {
+					throw new Exception(sprintf('Cannot invoke the requested type of export [%s].', $export_type), 403);
+				}
+
+				// get the requested action readable name
+				$action_name = $action_names[array_search($export_type, $action_ids)];
+
+				if ($this->getScope() === 'web') {
+					// run the action and output the HTML response string
+					$html_result = $this->_callActionReturn($export_type, 'html', $this->getScope(), $action_data);
+
+					// build the action result data object
+					$js_result = json_encode([
+						'actionName' => $action_name,
+						'actionHtml' => $html_result,
+					]);
+
+					// render modal script with the action result
+					JFactory::getDocument()->addScriptDeclaration(
+<<<JS
+;(function($) {
+	$(function() {
+		let result = $js_result;
+		VBOCore.displayModal({
+			suffix:      'report-custom-scopedaction-result',
+			extra_class: 'vbo-modal-rounded vbo-modal-tall vbo-modal-nofooter',
+			title:       result.actionName,
+			body:        result.actionHtml,
+		});
+	});
+})(jQuery);
+JS
+					);
+
+					// abort and let the View render the result within a modal
+					return;
+				}
+
+				// let the report custom action run and return a boolean value if invoked by a cron
+				return (bool) $this->_callActionReturn($export_type, 'success', $this->getScope(), $action_data);
+
+			} catch (Exception $e) {
+				// silently catch the error and set it
+				$this->setError($e->getMessage());
+
+				// abort
+				return false;
+			}
+		}
+
+		// proceed with the regular export function (write on file through cron or download file through web)
+
+		if (!$lines) {
+			// abort
+			return false;
+		}
+
+		// update history for all bookings affected before exporting
+		foreach ($this->export_booking_ids as $bid) {
+			VikBooking::getBookingHistoryInstance($bid)->store('RP', $this->reportName . ' - Export');
 		}
 
 		/**
@@ -1487,10 +2059,11 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			fwrite($fp, implode("\r\n", $lines));
 			fclose($fp);
 
+			// return true as data was written
 			return true;
 		}
 
-		// force text file download
+		// force text file download in case of regular export
 		header("Content-type: text/plain");
 		header("Cache-Control: no-store, no-cache");
 		header('Content-Disposition: attachment; filename="' . $this->getExportCSVFileName() . '"');
@@ -1507,14 +2080,14 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	 * 
 	 * @return 	array 					one boolean value array with the operation result.
 	 */
-	public function updatePaxData($manual_data = array())
+	public function updatePaxData($manual_data = [])
 	{
 		if (!is_array($manual_data) || !$manual_data) {
 			VBOHttpDocument::getInstance()->close(400, 'Nothing to save!');
 		}
 
 		// re-build manual entries object representation
-		$bids_guests = array();
+		$bids_guests = [];
 		foreach ($manual_data as $guest_ind => $guest_data) {
 			if (!is_numeric($guest_ind) || !is_array($guest_data) || empty($guest_data['bid']) || !isset($guest_data['bid_index']) || count($guest_data) < 2) {
 				// empty or invalid manual entries array
@@ -1523,7 +2096,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			// the guest index in the reportObj starts from 0
 			$use_guest_ind = ($guest_ind + 1 - (int)$guest_data['bid_index']);
 			if (!isset($bids_guests[$guest_data['bid']])) {
-				$bids_guests[$guest_data['bid']] = array();
+				$bids_guests[$guest_data['bid']] = [];
 			}
 			// set manual entries for this guest number
 			$bids_guests[$guest_data['bid']][$use_guest_ind] = $guest_data;
@@ -1531,7 +2104,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			unset($bids_guests[$guest_data['bid']][$use_guest_ind]['bid'], $bids_guests[$guest_data['bid']][$use_guest_ind]['bid_index']);
 		}
 
-		if (!count($bids_guests)) {
+		if (!$bids_guests) {
 			VBOHttpDocument::getInstance()->close(400, 'No manual entries to save found');
 		}
 
@@ -1543,13 +2116,13 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				continue;
 			}
 			// count guests per room
-			$room_guests = array();
+			$room_guests = [];
 			foreach ($b_rooms as $b_room) {
 				$room_guests[] = $b_room['adults'] + $b_room['children'];
 			}
 			// get current booking pax data
 			$pax_data = VBOCheckinPax::getBookingPaxData($bid);
-			$pax_data = empty($pax_data) ? array() : $pax_data;
+			$pax_data = empty($pax_data) ? [] : $pax_data;
 			foreach ($entries as $guest_ind => $guest_data) {
 				// find room index for this guest
 				$room_num = 0;
@@ -1567,7 +2140,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				}
 				// push new pax data for this room and guest
 				if (!isset($pax_data[$room_num])) {
-					$pax_data[$room_num] = array();
+					$pax_data[$room_num] = [];
 				}
 				if (!isset($pax_data[$room_num][$use_guest_ind])) {
 					$pax_data[$room_num][$use_guest_ind] = $guest_data;
@@ -1582,6 +2155,1139 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 		}
 
 		return $bids_updated ? [true] : [false];
+	}
+
+	/**
+	 * Custom scoped action to transmit the guest cards.
+	 * Accepted scopes are "web" and "cron", so the "success" property must be returned.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function transmitCards($scope = null, array $data = [])
+	{
+		if (!($data['cards'] ?? []) && $scope === 'web') {
+			// start the process through the interface by submitting the current data
+			return [
+				'html' => '<script type="text/javascript">vboDownloadSchedaPolizia(\'transmitCards\');</script>',
+			];
+		}
+
+		if (!($data['cards'] ?? [])) {
+			// attempt to build the card lines if not set
+			$data['cards'] = $this->buildCardLines();
+		}
+
+		if (!$data['cards']) {
+			throw new Exception('Nessun dato presente per la trasmissione delle schedine alloggiati.', 500);
+		}
+
+		$settings = $this->loadSettings();
+
+		if (!$settings || empty($settings['user']) || empty($settings['pwd']) || empty($settings['wskey'])) {
+			throw new Exception(sprintf('[%s] error: missing settings.', __METHOD__), 500);
+		}
+
+		// get the token to perform the request
+		$token = $settings['token'] ?: '';
+
+		if (empty($token) || !$this->_callActionReturn('authenticationTest', 'valid', $scope, $data)) {
+			// generate a new token
+			$token = $this->_callActionReturn('generateToken', 'token', $scope, $data);
+		}
+
+		// build card string XML nodes
+		$card_string_nodes = [];
+		foreach ($data['cards'] as $card_string) {
+			$card_string_nodes[] = '<string>' . htmlspecialchars($card_string) . '</string>';
+		}
+
+		// detect the type of request to use (Gestione Appartamenti or Hotel)
+		$rqType = 'Send';
+		$responseNode = 'SendResponse';
+		$resultNode = 'SendResult';
+		if (!empty($settings['apartments']) && !empty($settings['apartments_list'])) {
+			$rqType = 'GestioneAppartamenti_FileUnico_Send';
+			$responseNode = 'GestioneAppartamenti_FileUnico_SendResponse';
+			$resultNode = 'GestioneAppartamenti_FileUnico_SendResult';
+		}
+
+		// build the Soap request message
+		$request = '<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <' . $rqType . ' xmlns="AlloggiatiService">
+      <Utente>' . $settings['user'] . '</Utente>
+      <token>' . $token . '</token>
+      <ElencoSchedine>
+      	' . implode("\n", $card_string_nodes) . '
+      </ElencoSchedine>
+    </' . $rqType . '>
+  </soap12:Body>
+</soap12:Envelope>';
+
+		try {
+			// get the SoapClient object from WSDL
+			$ws_client = $this->getWebServiceClient();
+
+			// do the request and get the Soap XML response message
+			$response = $ws_client->__doRequest($request, $this->ws_location, $rqType, SOAP_1_2);
+
+			// parse the response message and get the body
+			$xmlBody = $this->loadXmlSoap($response)->getSoapBody();
+
+			if (!isset($xmlBody->{$responseNode}->{$resultNode}->esito)) {
+				// unexpected response
+				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
+			}
+
+			// validate the response
+			$is_error = !strcasecmp((string) $xmlBody->{$responseNode}->{$resultNode}->esito, 'false');
+
+			if ($is_error || !($xmlBody->{$responseNode}->result ?? '')) {
+				$error_code = (string) ($xmlBody->{$responseNode}->{$resultNode}->ErroreCod ?? '0');
+				$error_desc = (string) ($xmlBody->{$responseNode}->{$resultNode}->ErroreDes ?? 'ERR');
+				$error_dets = (string) ($xmlBody->{$responseNode}->{$resultNode}->ErroreDettaglio ?? 'Generico');
+				// terminate the execution in case of errors or empty result
+				throw new Exception(sprintf("[%s] Errore trasmissione schedine (%s):\n%s", $error_code, $error_desc, $error_dets), 500);
+			}
+
+			// get the number of valid cards
+			$tot_submitted_cards = count($card_string_nodes);
+			$tot_valid_cards = (int) ($xmlBody->{$responseNode}->result->SchedineValide ?? 0);
+
+			// get the cards with errors
+			$error_cards = [];
+			$index = 0;
+			foreach ($xmlBody->{$responseNode}->result->Dettaglio->EsitoOperazioneServizio ?? [] as $cardResult) {
+				if (!strcasecmp((string) $cardResult->esito, 'false')) {
+					// error found
+					$error_code = (string) ($cardResult->ErroreCod ?? '0');
+					$error_desc = (string) ($cardResult->ErroreDes ?? 'ERR');
+					$error_dets = (string) ($cardResult->ErroreDettaglio ?? 'Generico');
+					// push error details
+					$error_cards[] = [
+						'code'    => $error_code,
+						'index'   => $index,
+						'desc'    => $error_desc,
+						'dets'    => $error_dets,
+						'message' => sprintf('[%s] Errore trasmissione schedina #%s (%s): %s', $error_code, $index, $error_desc, $error_dets),
+					];
+				}
+				$index++;
+			}
+
+			// build HTML response string
+			$html = '';
+			$html .= '<p class="' . ($tot_submitted_cards == $tot_valid_cards ? 'successmade' : ($tot_valid_cards > 0 ? 'warn' : 'err')) . '">Totale schedine valide: ' . $tot_valid_cards . '/' . $tot_submitted_cards . '</p>';
+
+			if ($error_cards) {
+				$html .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
+				$html .= '	<div class="vbo-params-wrap">';
+				$html .= '		<div class="vbo-params-container">';
+				$html .= '			<div class="vbo-params-block">';
+
+				foreach ($error_cards as $error_card) {
+					$html .= '			<div class="vbo-param-container">';
+					$html .= '				<div class="vbo-param-label"><i class="' . VikBookingIcons::i('times-circle') . '"></i> Errore</div>';
+					$html .= '				<div class="vbo-param-setting"><span>' . $error_card['message'] . '</span></div>';
+					$html .= '			</div>';
+				}
+
+				$html .= '			</div>';
+				$html .= '		</div>';
+				$html .= '	</div>';
+				$html .= '</div>';
+			}
+		} catch (Exception $e) {
+			// propagate the error caught
+			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
+		}
+
+		// update history for all bookings affected
+		foreach ($this->export_booking_ids as $bid) {
+			// build extra data payload for the history event
+			$data = [
+				'transmitted' => 1,
+				'method'      => 'transmitCards',
+				'report'      => $this->getFileName(),
+			];
+			// store booking history event
+			VikBooking::getBookingHistoryInstance($bid)
+				->setExtraData($data)
+				->store('RP', $this->reportName . ' - Trasmissione schedine');
+		}
+
+		// when executed through a cron, store an event in the Notifications Center
+		if ($scope === 'cron') {
+			// build the notification record
+			$notification = [
+				'sender'  => 'reports',
+				'type'    => 'pmsreport.transmit.' . ($error_cards ? 'error' : 'ok'),
+				'title'   => $this->reportName . ' - Trasmissione schedine',
+				'summary' => sprintf(
+					'Sono stati trasmessi i dati degli ospiti con check-in dal %s al %s.',
+					$this->exported_checkin_dates[0] ?? '',
+					$this->exported_checkin_dates[1] ?? ''
+				),
+			];
+
+			if ($error_cards) {
+				// append errors to summary text
+				$notification['summary'] .= "\n" . implode("\n", array_column($error_cards, 'message'));
+			}
+
+			try {
+				// store the notification record
+				VBOFactory::getNotificationCenter()->store([$notification]);
+			} catch (Exception $e) {
+				// silently catch the error without doing anything
+			}
+		}
+
+		return [
+			'html'            => $html,
+			'success'         => ($tot_valid_cards > 0),
+			'valid_cards'     => $tot_valid_cards,
+			'submitted_cards' => $tot_submitted_cards,
+			'error_cards'     => $error_cards,
+		];
+	}
+
+	/**
+	 * Custom scoped action to test the transmission of the guest cards.
+	 * Accepted scopes are "web" and "cron", so the "success" property must be returned.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function testTransmitCards($scope = null, array $data = [])
+	{
+		if (!($data['cards'] ?? []) && $scope === 'web') {
+			// start the process through the interface by submitting the current data
+			return [
+				'html' => '<script type="text/javascript">vboDownloadSchedaPolizia(\'testTransmitCards\');</script>',
+			];
+		}
+
+		if (!($data['cards'] ?? [])) {
+			// attempt to build the card lines if not set
+			$data['cards'] = $this->buildCardLines();
+		}
+
+		if (!$data['cards']) {
+			throw new Exception('Nessun dato presente per il controllo preliminare delle schedine alloggiati.', 500);
+		}
+
+		$settings = $this->loadSettings();
+
+		if (!$settings || empty($settings['user']) || empty($settings['pwd']) || empty($settings['wskey'])) {
+			throw new Exception(sprintf('[%s] error: missing settings.', __METHOD__), 500);
+		}
+
+		// get the token to perform the request
+		$token = $settings['token'] ?: '';
+
+		if (empty($token) || !$this->_callActionReturn('authenticationTest', 'valid', $scope, $data)) {
+			// generate a new token
+			$token = $this->_callActionReturn('generateToken', 'token', $scope, $data);
+		}
+
+		// build card string XML nodes
+		$card_string_nodes = [];
+		foreach ($data['cards'] as $card_string) {
+			$card_string_nodes[] = '<string>' . htmlspecialchars($card_string) . '</string>';
+		}
+
+		// detect the type of request to use (Gestione Appartamenti or Hotel)
+		$rqType = 'Test';
+		$responseNode = 'TestResponse';
+		$resultNode = 'TestResult';
+		if (!empty($settings['apartments']) && !empty($settings['apartments_list'])) {
+			$rqType = 'GestioneAppartamenti_FileUnico_Test';
+			$responseNode = 'GestioneAppartamenti_FileUnico_TestResponse';
+			$resultNode = 'GestioneAppartamenti_FileUnico_TestResult';
+		}
+
+		// build the Soap request message
+		$request = '<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <' . $rqType . ' xmlns="AlloggiatiService">
+      <Utente>' . $settings['user'] . '</Utente>
+      <token>' . $token . '</token>
+      <ElencoSchedine>
+      	' . implode("\n", $card_string_nodes) . '
+      </ElencoSchedine>
+    </' . $rqType . '>
+  </soap12:Body>
+</soap12:Envelope>';
+
+		try {
+			// get the SoapClient object from WSDL
+			$ws_client = $this->getWebServiceClient();
+
+			// do the request and get the Soap XML response message
+			$response = $ws_client->__doRequest($request, $this->ws_location, $rqType, SOAP_1_2);
+
+			// parse the response message and get the body
+			$xmlBody = $this->loadXmlSoap($response)->getSoapBody();
+
+			if (!isset($xmlBody->{$responseNode}->{$resultNode}->esito)) {
+				// unexpected response
+				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
+			}
+
+			// validate the response
+			$is_error = !strcasecmp((string) $xmlBody->{$responseNode}->{$resultNode}->esito, 'false');
+
+			if ($is_error || !($xmlBody->{$responseNode}->result ?? '')) {
+				$error_code = (string) ($xmlBody->{$responseNode}->{$resultNode}->ErroreCod ?? '0');
+				$error_desc = (string) ($xmlBody->{$responseNode}->{$resultNode}->ErroreDes ?? 'ERR');
+				$error_dets = (string) ($xmlBody->{$responseNode}->{$resultNode}->ErroreDettaglio ?? 'Generico');
+				// terminate the execution in case of errors or empty result
+				throw new Exception(sprintf("[%s] Errore validazione schedine (%s):\n%s", $error_code, $error_desc, $error_dets), 500);
+			}
+
+			// get the number of valid cards
+			$tot_submitted_cards = count($card_string_nodes);
+			$tot_valid_cards = (int) ($xmlBody->{$responseNode}->result->SchedineValide ?? 0);
+
+			// get the cards with errors
+			$error_cards = [];
+			$index = 0;
+			foreach ($xmlBody->{$responseNode}->result->Dettaglio->EsitoOperazioneServizio ?? [] as $cardResult) {
+				if (!strcasecmp((string) $cardResult->esito, 'false')) {
+					// error found
+					$error_code = (string) ($cardResult->ErroreCod ?? '0');
+					$error_desc = (string) ($cardResult->ErroreDes ?? 'ERR');
+					$error_dets = (string) ($cardResult->ErroreDettaglio ?? 'Generico');
+					// push error details
+					$error_cards[] = [
+						'code'    => $error_code,
+						'index'   => $index,
+						'desc'    => $error_desc,
+						'dets'    => $error_dets,
+						'message' => sprintf('[%s] Errore validazione schedina #%s (%s): %s', $error_code, $index, $error_desc, $error_dets),
+					];
+				}
+				$index++;
+			}
+
+			// build HTML response string
+			$html = '';
+			$html .= '<p class="' . ($tot_submitted_cards == $tot_valid_cards ? 'successmade' : ($tot_valid_cards > 0 ? 'warn' : 'err')) . '">Totale schedine valide: ' . $tot_valid_cards . '/' . $tot_submitted_cards . '</p>';
+
+			if ($error_cards) {
+				$html .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
+				$html .= '	<div class="vbo-params-wrap">';
+				$html .= '		<div class="vbo-params-container">';
+				$html .= '			<div class="vbo-params-block">';
+
+				foreach ($error_cards as $error_card) {
+					$html .= '			<div class="vbo-param-container">';
+					$html .= '				<div class="vbo-param-label"><i class="' . VikBookingIcons::i('times-circle') . '"></i> Errore</div>';
+					$html .= '				<div class="vbo-param-setting"><span>' . $error_card['message'] . '</span></div>';
+					$html .= '			</div>';
+				}
+
+				$html .= '			</div>';
+				$html .= '		</div>';
+				$html .= '	</div>';
+				$html .= '</div>';
+			}
+		} catch (Exception $e) {
+			// propagate the error caught
+			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
+		}
+
+		// when executed through a cron, store an event in the Notifications Center
+		if ($scope === 'cron') {
+			// build the notification record
+			$notification = [
+				'sender'  => 'reports',
+				'type'    => 'pmsreport.testtransmit.' . ($error_cards ? 'error' : 'ok'),
+				'title'   => $this->reportName . ' - Controllo schedine',
+				'summary' => sprintf(
+					'Sono stati verificati i dati degli ospiti con check-in dal %s al %s.',
+					$this->exported_checkin_dates[0] ?? '',
+					$this->exported_checkin_dates[1] ?? ''
+				),
+			];
+
+			if ($error_cards) {
+				// append errors to summary text
+				$notification['summary'] .= "\n" . implode("\n", array_column($error_cards, 'message'));
+			}
+
+			try {
+				// store the notification record
+				VBOFactory::getNotificationCenter()->store([$notification]);
+			} catch (Exception $e) {
+				// silently catch the error without doing anything
+			}
+		}
+
+		return [
+			'html'            => $html,
+			'success'         => ($tot_valid_cards > 0),
+			'valid_cards'     => $tot_valid_cards,
+			'submitted_cards' => $tot_submitted_cards,
+			'error_cards'     => $error_cards,
+		];
+	}
+
+	/**
+	 * Custom scoped action to obtain the list of apartments.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function listApartments($scope = null, array $data = [])
+	{
+		$settings = $this->loadSettings();
+
+		if (!$settings || empty($settings['user']) || empty($settings['pwd']) || empty($settings['wskey'])) {
+			throw new Exception(sprintf('[%s] error: missing settings.', __METHOD__), 500);
+		}
+
+		// response properties
+		$html 		= '';
+		$apartments = [];
+
+		// get the token to perform the request
+		$token = $settings['token'] ?: '';
+
+		if (empty($token) || !$this->_callActionReturn('authenticationTest', 'valid', $scope, $data)) {
+			// generate a new token
+			$token = $this->_callActionReturn('generateToken', 'token', $scope, $data);
+		}
+
+		// build the Soap request message
+		$request = '<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <Tabella xmlns="AlloggiatiService">
+      <Utente>' . $settings['user'] . '</Utente>
+      <token>' . $token . '</token>
+      <tipo>ListaAppartamenti</tipo>
+    </Tabella>
+  </soap12:Body>
+</soap12:Envelope>';
+
+		try {
+			// get the SoapClient object from WSDL
+			$ws_client = $this->getWebServiceClient();
+
+			// do the request and get the Soap XML response message
+			$response = $ws_client->__doRequest($request, $this->ws_location, 'Tabella', SOAP_1_2);
+
+			// parse the response message and get the body
+			$xmlBody = $this->loadXmlSoap($response)->getSoapBody();
+
+			if (!isset($xmlBody->TabellaResponse->TabellaResult->esito)) {
+				// unexpected response
+				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
+			}
+
+			// validate the response
+			$is_error = !strcasecmp((string) $xmlBody->TabellaResponse->TabellaResult->esito, 'false');
+
+			if ($is_error || !($xmlBody->TabellaResponse->CSV ?? '')) {
+				$error_code = (string) ($xmlBody->TabellaResponse->TabellaResult->ErroreCod ?? '0');
+				$error_desc = (string) ($xmlBody->TabellaResponse->TabellaResult->ErroreDes ?? 'ERR');
+				$error_dets = (string) ($xmlBody->TabellaResponse->TabellaResult->ErroreDettaglio ?? 'Generico');
+				// terminate the execution in case of errors or empty CSV
+				throw new Exception(sprintf("[%s] Errore lettura tabella appartamenti (%s):\n%s", $error_code, $error_desc, $error_dets), 500);
+			}
+
+			// parse the CSV string into a list of data
+			$csv_list = array_map(function($csv_line) {
+				return str_getcsv($csv_line, $separator = ';');
+			}, array_values(
+				array_filter(
+					preg_split("/[\r\n]/", (string) $xmlBody->TabellaResponse->CSV)
+				)
+			));
+
+			if (!$csv_list) {
+				throw new Exception(sprintf("Impossibile leggere la lista degli appartamenti in formato CSV:\n%s", (string) $xmlBody->TabellaResponse->CSV), 500);
+			}
+
+			// get the table head columns and remove it from the list
+			$table_head_cols = array_shift($csv_list);
+
+			if (!$csv_list) {
+				throw new Exception('Nessun appartamento presente.', 500);
+			}
+
+			// load the rooms from VikBooking
+			$vbo_rooms = VikBooking::getAvailabilityInstance(true)->loadRooms();
+
+			// build the option tags for every VBO room
+			$vbo_room_options = [];
+			foreach ($vbo_rooms as $vbo_room) {
+				$vbo_room_options[] = '<option value="' . $vbo_room['id'] . '" data-selected="' . $vbo_room['id'] . '">' . $vbo_room['name'] . '</option>';
+			}
+
+			// build HTML response string
+			$html .= '<div class="table-responsive">';
+			$html .= '	<table class="table">';
+			$html .= '		<thead>';
+			$html .= '			<tr>';
+
+			foreach ($table_head_cols as $col_k => $table_head_col) {
+				$html .= '			<td>' . $table_head_col . '</td>';
+				if ($col_k === 1) {
+					// add static cell for the VBO room relation
+					$html .= '		<td>Relazione</td>';
+				}
+			}
+
+			$html .= '			</tr>';
+			$html .= '		</thead>';
+			$html .= '		<tbody>';
+
+			foreach ($csv_list as $csv_row) {
+				// push new apartment
+				if (count($table_head_cols) === count($csv_row)) {
+					// set an associative list of apartment details
+					$apartments[] = array_combine($table_head_cols, $csv_row);
+				} else {
+					// fallback onto a numeric array of apartment details
+					$apartments[] = $csv_row;
+				}
+
+				// display apartment details
+				$html .= '		<tr>';
+
+				// gather remote apartment details
+				$id_apt = $csv_row[0] ?? null;
+				$apt_name = $csv_row[1] ?? null;
+
+				// find the VBO matching room ID
+				$vbo_matching_rid = $this->findVboMatchingRoomId($id_apt, $apt_name, $vbo_rooms, $settings['apartment_relations'] ?? []);
+
+				foreach ($csv_row as $col_k => $csv_col) {
+					$html .= '		<td>' . $csv_col . '</td>';
+					if ($col_k === 1) {
+						// add static cell for the room relation
+						$relation_opts = implode("\n", $vbo_room_options);
+
+						if ($vbo_matching_rid) {
+							$relation_opts = str_replace('data-selected="' . $vbo_matching_rid . '"', 'selected="selected"', $relation_opts);
+						}
+
+						// set HTML string
+						$html .= '		<td><select onchange="vboAlloggiatiSetAptRel(\'' . $id_apt . '\', this.value);"><option value="">---</option>' . $relation_opts . '</select></td>';
+					}
+				}
+
+				$html .= '		</tr>';
+			}
+
+			$html .= '		</tbody>';
+			$html .= '	</table>';
+			$html .= '</div>';
+		} catch (Exception $e) {
+			// propagate the error caught
+			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
+		}
+
+		// update settings with the apartment details obtained
+		$settings['apartments_list'] = $apartments;
+
+		$this->saveSettings($settings);
+
+		return [
+			'html'       => $html,
+			'apartments' => $apartments,
+		];
+	}
+
+	/**
+	 * Custom scoped action to list all the previously downloaded PDF receipts.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function receiptsArchive($scope = null, array $data = [])
+	{
+		// response properties
+		$html = '';
+
+		$pdf_name = implode('_', [$this->getFileName(), 'receipt', $receipt_date, time(), rand(100, 999)]) . '.pdf';
+		$pdf_dest = $this->getDataMediaPath() . DIRECTORY_SEPARATOR . $pdf_name;
+
+		// read all the downloaded receipts
+		$match_name = $this->getFileName() . '_receipt';
+		$receipts = JFolder::files($this->getDataMediaPath(), "^{$match_name}.+\.pdf$", $recurse = false, $full = false);
+
+		if (!$receipts) {
+			$html .= '<p class="warn">Nessuna ricevuta scaricata.</p>';
+		} else {
+			$html .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
+			$html .= '	<div class="vbo-params-wrap">';
+			$html .= '		<div class="vbo-params-container">';
+			$html .= '			<div class="vbo-params-block">';
+
+			foreach ($receipts as $receipt) {
+				$name_parts = explode('_', preg_replace("/^{$match_name}_/", '', $receipt));
+				$receipt_date = preg_replace("/T[0-9]{2}:[0-9]{2}:[0-9]{2}$/", '', $name_parts[0]);
+
+				$html .= '			<div class="vbo-param-container">';
+				$html .= '				<div class="vbo-param-label">Ricevuta del ' . ($receipt_date ?: $receipt) . '</div>';
+				$html .= '				<div class="vbo-param-setting">';
+				$html .= '					<a href="' . $this->getDataMediaUrl() . $receipt . '" target="_blank">Scarica PDF</a>';
+				$html .= '					<span class="vbo-param-setting-comment">Scaricata in data ' . date('Y-m-d H:i:s', $name_parts[1]) . '</span>';
+				$html .= '				</div>';
+				$html .= '			</div>';
+			}
+
+			$html .= '			</div>';
+			$html .= '		</div>';
+			$html .= '	</div>';
+			$html .= '</div>';
+		}
+
+		return [
+			'html'  => $html,
+			'total' => count($receipts),
+		];
+	}
+
+	/**
+	 * Custom scoped action to check if a receipt exists for a given date.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function receiptExists($scope = null, array $data = [])
+	{
+		// response properties
+		$html = '';
+		$pdf_url = '';
+		$pdf_path = '';
+		$exists = false;
+
+		// receipt date to check
+		$receipt_date = $data['receipt_date'] ?? date('Y-m-d');
+
+		if (strlen($receipt_date) > 10) {
+			// get only the date with no time
+			$receipt_date = substr($receipt_date, 0, 10);
+		}
+
+		if ($receipt_date && preg_match("/^[0-9]+/", $receipt_date)) {
+			// ensure the date received is in military format
+			$receipt_date = date('Y-m-d', VikBooking::getDateTimestamp($receipt_date));
+		}
+
+		// find the downloaded receipt, if any
+		$match_name = $this->getFileName() . '_receipt_' . $receipt_date;
+		$receipts = JFolder::files($this->getDataMediaPath(), "^{$match_name}.+\.pdf$", $recurse = false, $full = false);
+
+		if (!$receipts) {
+			$html .= '<p class="warn">Nessuna ricevuta scaricata per la data ' . $receipt_date . '.</p>';
+		} else {
+			$html .= '<p class="successmade">Ricevuta scaricata per la data ' . $receipt_date . '.</p>';
+
+			// turn flag on
+			$exists = true;
+
+			// set receipt URL
+			$pdf_url = $this->getDataMediaUrl() . $receipts[0];
+
+			// set receipt path
+			$pdf_path = $this->getDataMediaPath() . DIRECTORY_SEPARATOR . $receipts[0];
+		}
+
+		return [
+			'html'     => $html,
+			'pdf_url'  => $pdf_url,
+			'pdf_path' => $pdf_path,
+			'pdf_date' => $receipt_date,
+			'success'  => $exists,
+		];
+	}
+
+	/**
+	 * Custom scoped action to download the PDF receipt of a previous transmission.
+	 * A date is required for downloading a receipt, and the following formats are
+	 * accepted: {today}, today, {now}, now, Y-m-d, Y-m-d\TH:i:s, alternatively any
+	 * valid Date and Time Format modifier, either with or without curly brackets,
+	 * such as {-1 day}, {-14 days}, -1 day, -14 days.
+	 * Accepted scopes are "web" and "cron", so the "success" property must be returned.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function downloadReceipt($scope = null, array $data = [])
+	{
+		$settings = $this->loadSettings();
+
+		if (!$settings || empty($settings['user']) || empty($settings['pwd']) || empty($settings['wskey'])) {
+			throw new Exception(sprintf('[%s] error: missing settings.', __METHOD__), 500);
+		}
+
+		// response properties
+		$html 		  = '';
+		$pdf_dest     = '';
+		$pdf_url      = '';
+		$receipt_date = '';
+
+		// get the token to perform the request
+		$token = $settings['token'] ?: '';
+
+		if (empty($token) || !$this->_callActionReturn('authenticationTest', 'valid', $scope, $data)) {
+			// generate a new token
+			$token = $this->_callActionReturn('generateToken', 'token', $scope, $data);
+		}
+
+		// build the date for fetching the receipt
+		$receipt_date = $data['receipt_date'] ?? '';
+		if ($receipt_date && preg_match("/^[0-9]+/", $receipt_date)) {
+			// ensure the date received is in military format
+			$receipt_date = date('Y-m-d', VikBooking::getDateTimestamp($receipt_date));
+		}
+		if (!$receipt_date || stripos((string) $receipt_date, 'now') !== false || stripos((string) $receipt_date, 'today') !== false) {
+			// default to today's date
+			$receipt_date = date('Y-m-d\TH:i:s');
+		} elseif (stripos((string) $receipt_date, 'yesterday') !== false || preg_match("/[+-][0-9]+\s?days?/i", (string) $receipt_date)) {
+			// calculate the requested date
+			$receipt_date = trim(str_replace(['{', '}'], '', $receipt_date));
+			$receipt_date = date('Y-m-d\TH:i:s', strtotime($receipt_date));
+		}
+
+		if (!preg_match("/T[0-9]{2}:[0-9]{2}:[0-9]{2}$/", $receipt_date)) {
+			// append the time to an expected Y-m-d date string format
+			$receipt_date .= 'T00:00:00';
+		}
+
+		// build the Soap request message
+		$request = '<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <Ricevuta xmlns="AlloggiatiService">
+      <Utente>' . $settings['user'] . '</Utente>
+      <token>' . $token . '</token>
+      <Data>' . $receipt_date . '</Data>
+    </Ricevuta>
+  </soap12:Body>
+</soap12:Envelope>';
+
+		try {
+			// get the SoapClient object from WSDL
+			$ws_client = $this->getWebServiceClient();
+
+			// do the request and get the Soap XML response message
+			$response = $ws_client->__doRequest($request, $this->ws_location, 'Ricevuta', SOAP_1_2);
+
+			// parse the response message and get the body
+			$xmlBody = $this->loadXmlSoap($response)->getSoapBody();
+
+			if (!isset($xmlBody->RicevutaResponse->RicevutaResult->esito)) {
+				// unexpected response
+				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
+			}
+
+			// validate the response
+			$is_error = !strcasecmp((string) $xmlBody->RicevutaResponse->RicevutaResult->esito, 'false');
+
+			if ($is_error || !($xmlBody->RicevutaResponse->PDF ?? '')) {
+				$error_code = (string) ($xmlBody->RicevutaResponse->RicevutaResult->ErroreCod ?? '0');
+				$error_desc = (string) ($xmlBody->RicevutaResponse->RicevutaResult->ErroreDes ?? 'ERR');
+				$error_dets = (string) ($xmlBody->RicevutaResponse->RicevutaResult->ErroreDettaglio ?? 'Generico');
+				// terminate the execution in case of errors or empty PDF
+				throw new Exception(sprintf("[%s] Errore lettura ricevuta (%s):\n%s", $error_code, $error_desc, $error_dets), 500);
+			}
+
+			// prepare the PDF file information
+			$pdf_name = implode('_', [$this->getFileName(), 'receipt', $receipt_date, time(), rand(100, 999)]) . '.pdf';
+			$pdf_dest = $this->getDataMediaPath() . DIRECTORY_SEPARATOR . $pdf_name;
+			$pdf_url  = $this->getDataMediaUrl() . $pdf_name;
+
+			// check whether a receipt for the same day exists
+			$old_pdf_path = $this->_callActionReturn('receiptExists', 'pdf_path', $scope, $data);
+
+			// store the PDF bytes into a local file on disk
+			$stored = JFile::write($pdf_dest, base64_decode((string) $xmlBody->RicevutaResponse->PDF));
+
+			if (!$stored) {
+				// terminate the process
+				throw new Exception(sprintf('Impossibile scrivere il file PDF della ricevuta su disco: %s', $pdf_dest), 500);
+			}
+
+			if ($old_pdf_path) {
+				// get rid of the previously downloaded receipt for the same dates
+				unlink($old_pdf_path);
+			}
+
+			if (VBOPlatformDetection::isWordPress()) {
+				/**
+				 * Trigger files mirroring operation
+				 */
+				VikBookingLoader::import('update.manager');
+				VikBookingUpdateManager::triggerUploadBackup($pdf_dest);
+			}
+
+			// build HTML response string
+			$html .= '<p class="successmade">Successo!</p>';
+			$html .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
+			$html .= '	<div class="vbo-params-wrap">';
+			$html .= '		<div class="vbo-params-container">';
+			$html .= '			<div class="vbo-params-block">';
+			$html .= '				<div class="vbo-param-container">';
+			$html .= '					<div class="vbo-param-label">PDF ricevuta</div>';
+			$html .= '					<div class="vbo-param-setting"><a href="' . $pdf_url . '" target="_blank">' . basename($pdf_url) . '</a></div>';
+			$html .= '				</div>';
+			$html .= '			</div>';
+			$html .= '		</div>';
+			$html .= '	</div>';
+			$html .= '</div>';
+		} catch (Exception $e) {
+			// propagate the error caught
+			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
+		}
+
+		// define a new report resource for the downloaded file
+		$this->defineResourceFile([
+			'summary' => sprintf('Ricevuta scaricata per la trasmissione con data %s.', $receipt_date),
+			'url'  => $pdf_url,
+			'path' => $pdf_dest,
+		]);
+
+		// when executed through a cron, store an event in the Notifications Center
+		if ($scope === 'cron') {
+			// build the notification record
+			$notification = [
+				'sender'  => 'reports',
+				'type'    => 'pmsreport.dwnreceipt.' . ($error_cards ? 'error' : 'ok'),
+				'title'   => $this->reportName . ' - Download ricevuta',
+				'summary' => sprintf(
+					'È stata scaricata la ricevuta per la trasmissione delle schedine in data %s.',
+					date('Y-m-d', strtotime($receipt_date))
+				),
+				'label'   => 'Scarica PDF',
+				'url'     => $pdf_url,
+			];
+
+			try {
+				// store the notification record
+				VBOFactory::getNotificationCenter()->store([$notification]);
+			} catch (Exception $e) {
+				// silently catch the error without doing anything
+			}
+		}
+
+		return [
+			'html'         => $html,
+			'success'      => true,
+			'receipt_path' => $pdf_dest,
+			'receipt_url'  => $pdf_url,
+			'receipt_date' => $receipt_date,
+		];
+	}
+
+	/**
+	 * Custom scoped action to generate a token for executing the requests.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function generateToken($scope = null, array $data = [])
+	{
+		$settings = $this->loadSettings();
+
+		if (!$settings || empty($settings['user']) || empty($settings['pwd']) || empty($settings['wskey'])) {
+			throw new Exception(sprintf('[%s] error: missing settings.', __METHOD__), 500);
+		}
+
+		// prepare the response properties
+		$html   = '';
+		$token  = '';
+		$issued = '';
+		$expiry = '';
+
+		// build the Soap request message
+		$request = '<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <GenerateToken xmlns="AlloggiatiService">
+      <Utente>' . $settings['user'] . '</Utente>
+      <Password>' . $settings['pwd'] . '</Password>
+      <WsKey>' . $settings['wskey'] . '</WsKey>
+    </GenerateToken>
+  </soap12:Body>
+</soap12:Envelope>';
+
+		try {
+			// get the SoapClient object from WSDL
+			$ws_client = $this->getWebServiceClient();
+
+			// do the request and get the Soap XML response message
+			$response = $ws_client->__doRequest($request, $this->ws_location, 'GenerateToken', SOAP_1_2);
+
+			// parse the response message and get the body
+			$xmlBody = $this->loadXmlSoap($response)->getSoapBody();
+
+			if (!isset($xmlBody->GenerateTokenResponse->result->esito)) {
+				// unexpected response
+				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
+			}
+
+			// validate the response
+			$is_error = !strcasecmp((string) $xmlBody->GenerateTokenResponse->result->esito, 'false');
+
+			if ($is_error || !($xmlBody->GenerateTokenResponse->GenerateTokenResult->token ?? '')) {
+				$error_code = (string) ($xmlBody->GenerateTokenResponse->result->ErroreCod ?? '0');
+				$error_desc = (string) ($xmlBody->GenerateTokenResponse->result->ErroreDes ?? 'ERR');
+				$error_dets = (string) ($xmlBody->GenerateTokenResponse->result->ErroreDettaglio ?? 'Generico');
+				// terminate the execution in case of errors or empty token
+				throw new Exception(sprintf("[%s] Errore generazione token (%s):\n%s", $error_code, $error_desc, $error_dets), 500);
+			}
+
+			// set token and expiration date
+			$token  = (string) $xmlBody->GenerateTokenResponse->GenerateTokenResult->token;
+			$issued = (string) $xmlBody->GenerateTokenResponse->GenerateTokenResult->issued ?? '';
+			$expiry = (string) $xmlBody->GenerateTokenResponse->GenerateTokenResult->expires ?? '';
+
+			// build HTML response string
+			$html .= '<p class="successmade">Successo!</p>';
+			$html .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
+			$html .= '	<div class="vbo-params-wrap">';
+			$html .= '		<div class="vbo-params-container">';
+			$html .= '			<div class="vbo-params-block">';
+
+			foreach ($xmlBody->GenerateTokenResponse->GenerateTokenResult->children() as $node_name => $element) {
+				$html .= '<div class="vbo-param-container">';
+				$html .= '	<div class="vbo-param-label">' . $node_name . '</div>';
+				$html .= '	<div class="vbo-param-setting">' . (string) $element . '</div>';
+				$html .= '</div>';
+			}
+
+			$html .= '			</div>';
+			$html .= '		</div>';
+			$html .= '	</div>';
+			$html .= '</div>';
+		} catch (Exception $e) {
+			// propagate the error caught
+			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
+		}
+
+		// update settings with the token details obtained
+		$settings['token'] = $token;
+		$settings['token_issue_dt'] = $issued;
+		$settings['token_expiry_dt'] = $expiry;
+
+		$this->saveSettings($settings);
+
+		return [
+			'html'   => $html,
+			'token'  => $token,
+			'issued' => $issued,
+			'expiry' => $expiry,
+		];
+	}
+
+	/**
+	 * Custom scoped action (hidden) to test if the authentication data is valid.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function authenticationTest($scope = null, array $data = [])
+	{
+		$settings = $this->loadSettings();
+
+		if (!$settings || empty($settings['user']) || empty($settings['pwd']) || empty($settings['wskey'])) {
+			throw new Exception(sprintf('[%s] error: missing settings.', __METHOD__), 500);
+		}
+
+		// prepare the response properties
+		$html = '';
+		$valid_token = false;
+
+		// build the Soap request message
+		$request = '<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <Authentication_Test xmlns="AlloggiatiService">
+      <Utente>' . $settings['user'] . '</Utente>
+      <token>' . ($settings['token'] ?? '') . '</token>
+    </Authentication_Test>
+  </soap12:Body>
+</soap12:Envelope>';
+
+		try {
+			// get the SoapClient object from WSDL
+			$ws_client = $this->getWebServiceClient();
+
+			// do the request and get the Soap XML response message
+			$response = $ws_client->__doRequest($request, $this->ws_location, 'Authentication_Test', SOAP_1_2);
+
+			// parse the response message and get the body
+			$xmlBody = $this->loadXmlSoap($response)->getSoapBody();
+
+			if (!isset($xmlBody->Authentication_TestResponse->Authentication_TestResult->esito)) {
+				// unexpected response
+				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
+			}
+
+			// validate the response
+			$is_error = !strcasecmp((string) $xmlBody->Authentication_TestResponse->Authentication_TestResult->esito, 'false');
+			$valid_token = (bool) (!strcasecmp((string) $xmlBody->Authentication_TestResponse->Authentication_TestResult->esito, 'true'));
+
+			if ($valid_token) {
+				// build response string
+				$html .= '<p class="successmade">Il token è valido.</p>';
+			} else {
+				// build response string values
+				$html .= '<p class="' . ($is_error ? 'err' : 'warn') . '">';
+				foreach ($xmlBody->Authentication_TestResponse->Authentication_TestResult->children() as $node_name => $element) {
+					$html .= $node_name . ': ' . (string) $element . '<br/>';
+				}
+				$html .= '</p>';
+			}
+		} catch (Exception $e) {
+			// propagate the error caught
+			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
+		}
+
+		return [
+			'html'  => $html,
+			'valid' => $valid_token,
+		];
+	}
+
+	/**
+	 * Custom scoped action (hidden) to save a relation between an apartment and a room.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function saveApartmentRelation($scope = null, array $data = [])
+	{
+		$settings = $this->loadSettings();
+
+		if (empty($data['id_apt']) || empty($data['id_room'])) {
+			throw new InvalidArgumentException('Missing apartment and room ID.', 400);
+		}
+
+		// update current relations, if any
+		$relations = $settings['apartment_relations'] ?? [];
+
+		// set apartment-room relation
+		$relations[$data['id_room']] = [
+			'id'   => $data['id_apt'],
+			'name' => $data['apt_name'] ?? null,
+		];
+
+		// update settings
+		$settings['apartment_relations'] = $relations;
+		$this->saveSettings($settings);
+
+		// return the current relations
+		return ['relations' => $relations];
+	}
+
+	/**
+	 * Establishes a SOAP connection with the remote WSDL and returns the client.
+	 * 
+	 * @return 	SoapClient
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function getWebServiceClient()
+	{
+		try {
+			return new SoapClient($this->wsdl_url, [
+				'soap_version' => constant($this->soap_version),
+			]);
+		} catch (Throwable $e) {
+			// prevent PHP fatal errors by catching and propagating them as Exceptions
+			throw new Exception(sprintf('PHP Fatal Error: %s', $e->getMessage()), $e->getCode() ?: 500);
+		}
+	}
+
+	/**
+	 * Parses a SOAP XML message into a VBOXmlSoap object.
+	 * 
+	 * @param 	string 	$xmlMessage 	The SOAP XML message to load.
+	 * 
+	 * @return 	VBOXmlSoap
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	protected function loadXmlSoap($xmlMessage)
+	{
+		if (empty($xmlMessage)) {
+			throw new Exception('Empty Soap XML message.', 500);
+		}
+
+		// suppress warning messages
+		libxml_use_internal_errors(true);
+
+		// parse the Soap XML message
+		return simplexml_load_string($xmlMessage, VBOXmlSoap::class);
 	}
 
 	/**
@@ -1662,7 +3368,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			$v[2] = trim($v[2]);
 
 			if (!isset($comprov_codes['comuni'][$v[0]])) {
-				$comprov_codes['comuni'][$v[0]] = array();
+				$comprov_codes['comuni'][$v[0]] = [];
 			}
 
 			$comprov_codes['comuni'][$v[0]]['name'] = $v[1];
@@ -1682,7 +3388,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	 */
 	protected function loadNazioni()
 	{
-		$nazioni = array();
+		$nazioni = [];
 
 		$csv = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'Nazioni.csv';
 		$rows = file($csv);
@@ -1712,7 +3418,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	 */
 	protected function loadDocumenti()
 	{
-		$documenti = array();
+		$documenti = [];
 
 		$csv = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'Documenti.csv';
 		$rows = file($csv);
@@ -1746,7 +3452,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	 */
 	protected function checkComune($combirth, $checked, $province)
 	{
-		$result = array();
+		$result = [];
 		$first_found = '';
 
 		if (empty($combirth)) {
@@ -1831,10 +3537,10 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	protected function sanitizeComune($combirth)
 	{
 		if (empty($combirth)) {
-			return array();
+			return [];
 		}
 
-		$result = array();
+		$result = [];
 
 		if (strlen($combirth) > 2) {
 			if (strpos($combirth, "(") !== false) {
@@ -1865,7 +3571,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	 */
 	protected function getGuestPaxDataValue($pax_data, $guests, $guest_ind, $key)
 	{
-		if (!is_array($pax_data) || !count($pax_data) || empty($key)) {
+		if (!is_array($pax_data) || !$pax_data || empty($key)) {
 			return null;
 		}
 
@@ -1924,5 +3630,47 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 		}
 
 		return $use_guest_ind;
+	}
+
+	/**
+	 * Given a remote apartment ID and name, attempts to find a match among the
+	 * VikBooking rooms or within the currently saved room relations.
+	 * 
+	 * @param 	?string 	$id_apt 	The remote apartment ID.
+	 * @param 	?string 	$apt_name 	The remote apartment name.
+	 * @param 	array 		$vbo_rooms 	The VikBooking rooms list.
+	 * @param 	array 		$relations 	The currently saved apartment-room relations.
+	 * 
+	 * @return 	int
+	 * 
+	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 */
+	private function findVboMatchingRoomId($id_apt, $apt_name, array $vbo_rooms, array $relations)
+	{
+		if (!$id_apt) {
+			return 0;
+		}
+
+		if ($relations) {
+			// current relations get a higher priority
+			foreach ($relations as $vbo_rid => $relation) {
+				if ($relation && ($relation['id'] ?? 0) == $id_apt) {
+					// relation found
+					return $vbo_rid;
+				}
+			}
+		}
+
+		if ($apt_name && $vbo_rooms) {
+			// attempt to find a matching name with no similarity
+			foreach ($vbo_rooms as $vbo_room) {
+				if (stripos($vbo_room['name'], $apt_name) !== false || stripos($apt_name, $vbo_room['name']) !== false) {
+					// match found
+					return $vbo_room['id'];
+				}
+			}
+		}
+
+		return 0;
 	}
 }

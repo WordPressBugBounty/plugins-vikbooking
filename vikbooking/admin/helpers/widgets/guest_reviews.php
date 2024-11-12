@@ -534,6 +534,9 @@ class VikBookingAdminWidgetGuestReviews extends VikBookingAdminWidget
 							// merge review data objects (caching is not really needed as we always perform an AJAX request)
 							vbo_wgr_review_objects = Object.assign(vbo_wgr_review_objects, obj_res[call_method]['review_data']);
 
+							// the review language
+							let review_lang = obj_res[call_method]['review_record']['lang'];
+
 							// set and show top details
 							let top_details = widget_instance.parent();
 							let review_bid  = (obj_res[call_method]['review_record']['idorder'] || '0');
@@ -614,6 +617,7 @@ class VikBookingAdminWidgetGuestReviews extends VikBookingAdminWidget
 												{
 													customer: customer,
 													review: content.join("\n"),
+													language: review_lang,
 												},
 												(response) => {
 													resolve(response);

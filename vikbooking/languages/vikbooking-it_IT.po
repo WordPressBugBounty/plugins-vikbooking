@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2024-09-18 15:27+0200\n"
-"PO-Revision-Date: 2024-09-18 15:27+0200\n"
+"POT-Creation-Date: 2024-11-12 16:31+0100\n"
+"PO-Revision-Date: 2024-11-12 16:33+0100\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: it_IT\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.5\n"
 "X-Poedit-Basepath: ..\n"
-"X-Poedit-KeywordsList: __;_e;_x\n"
+"X-Poedit-KeywordsList: __;_e;_x:1,2c\n"
 "X-Poedit-SearchPath-0: libraries/language\n"
 "X-Poedit-SearchPath-1: modules/mod_vikbooking_channelrates/language/handler."
 "php\n"
@@ -635,7 +635,7 @@ msgstr "Vik Booking - Modifica metodo pagamento"
 msgid "Vik Booking - Availability Overview"
 msgstr "Vik Booking - Panoramica disponibilità"
 
-#: libraries/language/admin.php:246 libraries/language/system.php:448
+#: libraries/language/admin.php:246 libraries/language/system.php:452
 msgid "Main Settings"
 msgstr "Impostazioni principali"
 
@@ -3959,7 +3959,7 @@ msgstr "Aggiungi"
 msgid "Commissions"
 msgstr "Commissioni"
 
-#: libraries/language/admin.php:2994 libraries/language/admin.php:6156
+#: libraries/language/admin.php:2994
 msgid "Management"
 msgstr "Gestione"
 
@@ -5155,7 +5155,7 @@ msgid "Registration"
 msgstr "Registrazione"
 
 #: libraries/language/admin.php:3909
-msgid "Guests Details"
+msgid "Guest Details"
 msgstr "Dettagli ospiti"
 
 #: libraries/language/admin.php:3912 libraries/language/site.php:1686
@@ -5200,7 +5200,7 @@ msgid "The check-out date is in the past."
 msgstr "La data di check-out è nel passato."
 
 #: libraries/language/admin.php:3954
-msgid "Some guests details are missing. Proceed?"
+msgid "Some guest details are missing. Proceed?"
 msgstr "Alcuni dettagli degli ospiti sono vuoti. Procedere?"
 
 #: libraries/language/admin.php:3957
@@ -5504,20 +5504,22 @@ msgstr "Rimuovi camera"
 
 #: libraries/language/admin.php:4137
 msgid ""
-"The Closing Dates of the company are settings defined at Account-Level for "
-"the booking engine of the website. The closed dates will not be selectable "
-"from the calendars in the front-end. However, these settings will NOT apply "
-"to the channels connected through the Channel Manager. You should rather "
-"close the rooms from the page Calendar if you wanted the Channel Manager to "
-"close the availability on the channels."
+"The property closing dates are settings defined at account-level for the "
+"booking engine of the website. The closed dates will not be selectable from "
+"the calendars in the front-end. However, these settings will NOT apply to "
+"the channels connected through the Channel Manager (unless you submit the "
+"Bulk Action). You should rather close the rooms from the page Calendar if "
+"you wanted the Channel Manager to immediately close the availability on the "
+"OTAs as well."
 msgstr ""
-"Le date di chiusura della struttura sono impostazioni definite al livello "
+"Le date di chiusura della struttura sono impostazioni definite al livello di "
 "account per il booking engine del proprio sito web. Infatti, le date di "
 "chiusura non saranno selezionabili dal front-end per le prenotazioni. "
 "Tuttavia, queste impostazioni NON saranno applicate ai canali connessi "
-"attraverso il Channel Manager. In questo caso è necessario chiudere le "
-"camere dalla pagina ‘Calendario’, per far sì che il Channel Manager chiuda "
-"la disponibilità su tutti i canali."
+"attraverso il Channel Manager (a meno che non venga inviata un’azione di "
+"massa). È consigliato piuttosto di chiudere le camere dalla pagina "
+"Calendario, per far sì che il Channel Manager chiuda immediatamente la "
+"disponibilità anche su tutti i canali OTA."
 
 #: libraries/language/admin.php:4140
 msgid "- no rate plan assigned"
@@ -5881,7 +5883,7 @@ msgstr "Vik Booking - PMS Reports"
 msgid "PMS"
 msgstr "PMS"
 
-#: libraries/language/admin.php:4383
+#: libraries/language/admin.php:4383 libraries/language/admin.php:7361
 msgid "Reports"
 msgstr "Reports"
 
@@ -5992,7 +5994,7 @@ msgid "- All Options"
 msgstr "- Tutte le opzioni"
 
 #: libraries/language/admin.php:4479
-msgid "Italian Police: Guests Details"
+msgid "Italian Police: Guest Details"
 msgstr "Polizia di stato: alloggiati"
 
 #: libraries/language/admin.php:4482
@@ -8777,7 +8779,7 @@ msgid "Book Now"
 msgstr "Prenota ora"
 
 #: libraries/language/admin.php:6081 libraries/language/site.php:669
-#: libraries/language/system.php:392
+#: libraries/language/system.php:396
 msgid "Select"
 msgstr "Seleziona"
 
@@ -8884,13 +8886,18 @@ msgstr ""
 "nuovo."
 
 #: libraries/language/admin.php:6150
-#: modules/mod_vikbooking_horizontalsearch/language/handler.php:107
+msgctxt "Backup type: \"FULL\""
 msgid "Full"
-msgstr "Intero"
+msgstr "Completo"
 
 #: libraries/language/admin.php:6153
 msgid "The backup will export all the contents created through VikBooking."
 msgstr "Il backup andrà ad esportare tutti i contenuti creati con VikBooking."
+
+#: libraries/language/admin.php:6156
+msgctxt "Backup export type: \"MANAGEMENT\""
+msgid "Management"
+msgstr "Gestione"
 
 #: libraries/language/admin.php:6159
 msgid ""
@@ -9038,8 +9045,7 @@ msgstr "Includi solo prenotazioni OTA"
 msgid "Excluded"
 msgstr "Escluse"
 
-#. TRANSLATORS: Section "discover the AI capabilities"
-#: libraries/language/admin.php:6234 libraries/language/admin.php:7156
+#: libraries/language/admin.php:6234
 msgid "Reminders"
 msgstr "Promemoria"
 
@@ -9070,11 +9076,13 @@ msgstr "Mostra scaduti"
 
 #: libraries/language/admin.php:6255
 #, php-format
+msgctxt "Future reminder due date, like \"in 1 month\""
 msgid "in %s"
 msgstr "tra %s"
 
 #: libraries/language/admin.php:6258
 #, php-format
+msgctxt "Past reminder due date, like \"1 month ago\""
 msgid "%s ago"
 msgstr "%s fa"
 
@@ -9751,28 +9759,33 @@ msgstr "Pasti"
 
 #. TRANSLATORS: Short for Breakfast
 #: libraries/language/admin.php:6643
+msgctxt "Short for Breakfast"
 msgid "B"
 msgstr "B"
 
 #. TRANSLATORS: Short for Lunch
 #: libraries/language/admin.php:6647
+msgctxt "Short for Lunch"
 msgid "L"
 msgstr "L"
 
 #. TRANSLATORS: Short for Dinner
 #: libraries/language/admin.php:6651
+msgctxt "Short for Dinner"
 msgid "D"
 msgstr "D"
 
 #. TRANSLATORS: Confirmation for swapping a room number with another
 #: libraries/language/admin.php:6655
 #, php-format
+msgctxt "Confirmation for swapping a room number with another"
 msgid "Do you really want to swap the room number %s with the number %s?"
 msgstr "Vuoi davvero scambiare la camera numero %s con la numero %s?"
 
 #. TRANSLATORS: Room-name: unit number N was swapped with unit number N
 #: libraries/language/admin.php:6659
 #, php-format
+msgctxt "Room-name: unit number N was swapped with unit number N"
 msgid "%s: unit number %s was swapped with unit number %s"
 msgstr "%s: l'unità numero %s è stata scambiata con l'unità numero %s"
 
@@ -9805,6 +9818,9 @@ msgstr "Tariffa animali domestici"
 #. TRANSLATORS: Confirm the will to assign the reservation to the selected Channel/OTA by knowing that their policies or commissions may apply
 #: libraries/language/admin.php:6678
 #, php-format
+msgctxt ""
+"Confirm the will to assign the reservation to the selected Channel/OTA by "
+"knowing that their policies or commissions may apply"
 msgid ""
 "Do you want to assign the reservation to the selected channel %s? The OTA "
 "will be notified and their policies will be applied."
@@ -9815,6 +9831,7 @@ msgstr ""
 #. TRANSLATORS: The name of the Channel/OTA assigned to the reservation
 #: libraries/language/admin.php:6682
 #, php-format
+msgctxt "The name of the Channel/OTA assigned to the reservation"
 msgid "Channel assigned: %s"
 msgstr "Canale assegnato: %s"
 
@@ -9995,16 +10012,19 @@ msgstr "Mostra una lista di notifiche."
 
 #. TRANSLATORS: 1 second (singular)
 #: libraries/language/admin.php:6788
+msgctxt "1 second (singular)"
 msgid "second"
 msgstr "secondo"
 
 #. TRANSLATORS: 1 minute (singular)
 #: libraries/language/admin.php:6792
+msgctxt "1 minute (singular)"
 msgid "minute"
 msgstr "minuto"
 
 #. TRANSLATORS: 1 hour (singular)
 #: libraries/language/admin.php:6796
+msgctxt "1 hour (singular)"
 msgid "hour"
 msgstr "ora"
 
@@ -10022,11 +10042,13 @@ msgstr "Segna tutte come lette"
 
 #. TRANSLATORS: Click the button to visit the URL and take action
 #: libraries/language/admin.php:6809
+msgctxt "Click the button to visit the URL and take action"
 msgid "Take action"
 msgstr "Intervieni"
 
 #. TRANSLATORS: OTAs stands for channels, like Booking.com, Airbnb, Expedia
 #: libraries/language/admin.php:6816
+msgctxt "OTAs stands for channels, like Booking.com, Airbnb, Expedia"
 msgid "OTAs"
 msgstr "OTA"
 
@@ -10037,18 +10059,23 @@ msgstr "Saldo carta di credito virtuale"
 #. TRANSLATORS: Summary of what was changed with a booking modification, singular version
 #: libraries/language/admin.php:6832
 #, php-format
+msgctxt ""
+"Summary of what was changed with a booking modification, singular version"
 msgid "%s was modified"
 msgstr "%s è stato modificato"
 
 #. TRANSLATORS: Summary of what was changed with a booking modification, plural version
 #: libraries/language/admin.php:6836
 #, php-format
+msgctxt ""
+"Summary of what was changed with a booking modification, plural version"
 msgid "%s were modified"
 msgstr "%s sono stati modificati"
 
 #. TRANSLATORS: Message from John
 #: libraries/language/admin.php:6840
 #, php-format
+msgctxt "Message from John"
 msgid "Message from %s"
 msgstr "Messaggio da %s"
 
@@ -10163,6 +10190,7 @@ msgstr "Filtra per data massima."
 #. TRANSLATORS: Page 2
 #: libraries/language/admin.php:6907
 #, php-format
+msgctxt "Page 2"
 msgid "Page %d"
 msgstr "Pagina %d"
 
@@ -10200,14 +10228,14 @@ msgstr "IA"
 
 #: libraries/language/admin.php:6931
 msgid "Average Booking Window"
-msgstr "Media finestra prenotazioni"
+msgstr "Finestra media di prenotazione"
 
 #: libraries/language/admin.php:6934
 msgid ""
 "The booking window indicates the difference in days between the booking date "
 "and the check-in date."
 msgstr ""
-"La finestra prenotazioni indica la differenza in giorni tra la data di "
+"La finestra di prenotazione indica la differenza in giorni tra la data di "
 "prenotazione e la data di arrivo."
 
 #: libraries/language/admin.php:6937
@@ -10280,16 +10308,19 @@ msgstr "Tariffe e restrizioni"
 
 #. TRANSLATORS: Short for "Minimum Length of Stay"
 #: libraries/language/admin.php:6977
+msgctxt "Short for \"Minimum Length of Stay\""
 msgid "Min. LOS"
 msgstr "LOS Min."
 
 #. TRANSLATORS: Short for "Closed to Arrival"
 #: libraries/language/admin.php:6981
+msgctxt "Short for \"Closed to Arrival\""
 msgid "CTA"
 msgstr "CTA"
 
 #. TRANSLATORS: Short for "Closed to Departure"
 #: libraries/language/admin.php:6985
+msgctxt "Short for \"Closed to Departure\""
 msgid "CTD"
 msgstr "CTD"
 
@@ -10321,10 +10352,11 @@ msgstr "Assistente IA - Capacità"
 
 #: libraries/language/admin.php:7003
 msgid "No messages yet"
-msgstr "Nessun messaggio ancora"
+msgstr "Ancora nessun messaggio"
 
 #. TRANSLATORS: The HTML entity "&#9166;" stands for the keyboard Enter symbol
 #: libraries/language/admin.php:7007
+msgctxt "The HTML entity \"&#9166;\" stands for the keyboard Enter symbol"
 msgid "Type something and hit &#9166; (Enter) to submit a message"
 msgstr "Scrivi qualcosa e premi &#9166; (Invio) per inviare un messaggio"
 
@@ -10341,14 +10373,11 @@ msgstr "Inventario"
 msgid "Rates"
 msgstr "Tariffe"
 
-#. TRANSLATORS: Section "discover the AI capabilities"
-#: libraries/language/admin.php:7019 libraries/language/admin.php:7132
-#: libraries/language/site.php:954
+#: libraries/language/admin.php:7019 libraries/language/site.php:954
 msgid "Search Bookings"
 msgstr "Ricerca prenotazioni"
 
-#. TRANSLATORS: Section "discover the AI capabilities"
-#: libraries/language/admin.php:7022 libraries/language/admin.php:7100
+#: libraries/language/admin.php:7022
 msgid "Statistics"
 msgstr "Statistiche"
 
@@ -10390,7 +10419,7 @@ msgstr "Prenotazione cancellata"
 
 #: libraries/language/admin.php:7055
 msgid "See Rates"
-msgstr "Vedi Tariffe"
+msgstr "Vedi tariffe"
 
 #: libraries/language/admin.php:7058
 msgid "Try"
@@ -10425,12 +10454,16 @@ msgstr "Notifica"
 #. TRANSLATORS: The wildcard %s will be replaced with the customer email address
 #: libraries/language/admin.php:7080
 #, php-format
+msgctxt "The wildcard %s will be replaced with the customer email address"
 msgid "The customer was notified via email at %s."
 msgstr "Il cliente è stato notificato via email a %s."
 
 #. TRANSLATORS: The wildcard %s will be replaced with the OTA messaging service, like "Booking.com Messaging"
 #: libraries/language/admin.php:7084
 #, php-format
+msgctxt ""
+"The wildcard %s will be replaced with the OTA messaging service, like "
+"\"Booking.com Messaging\""
 msgid "The customer was notified through %s."
 msgstr "Il cliente è stato informato tramite %s."
 
@@ -10451,7 +10484,14 @@ msgid "Enable for automatic review"
 msgstr "Abilita per recensione automatica"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
+#: libraries/language/admin.php:7100
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Statistics"
+msgstr "Statistiche"
+
+#. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7104
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Access, calculate and compare financial statistics and various business "
 "metrics."
@@ -10461,27 +10501,32 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7108
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Number of active bookings in a range of dates."
 msgstr "Numero di prenotazioni attive in un intervallo di date."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7112
+msgctxt "Section \"discover the AI capabilities\""
 msgid "How many reservations have we collected this year so far?"
 msgstr "Quante prenotazioni abbiamo raccolto quest'anno fino ad ora?"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7116
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Total revenue for specific dates and listings."
 msgstr "Ricavi totali per date e annunci specifici."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7120
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid "What's the revenue generated last month by %s?"
 msgstr "Qual è il fatturato generato il mese scorso da %s?"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7124
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Calculate and compare the average length of stay on specific date intervals."
 msgstr ""
@@ -10490,6 +10535,7 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7128
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "How's the average length of stay this month? Is it higher or lower than last "
 "month?"
@@ -10498,7 +10544,14 @@ msgstr ""
 "rispetto al mese scorso?"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
+#: libraries/language/admin.php:7132
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Search Bookings"
+msgstr "Ricerca prenotazioni"
+
+#. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7136
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Find reservations and related details through various criteria and filters."
 msgstr ""
@@ -10506,26 +10559,37 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7140
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Find who is arriving, departing or staying on specific dates."
 msgstr "Trova chi sta arrivando, partendo o soggiornando in date specifiche."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7144
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Who's arriving today? Is anybody checking out?"
 msgstr "Chi sta arrivando oggi? Qualcuno sta facendo il check-out?"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7148
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Search bookings by customer name, email and phone number."
 msgstr "Cerca prenotazioni per nome del cliente, email e numero di telefono."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7152
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Is there any confirmed reservation for John Smith?"
 msgstr "C'è qualche prenotazione confermata per Mario Rossi?"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
+#: libraries/language/admin.php:7156
+msgctxt "Section \"discover the AI capabilities\""
+msgid "Reminders"
+msgstr "Promemoria"
+
+#. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7160
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Quickly schedule reminders and notifications for specific dates and "
 "reservations."
@@ -10535,12 +10599,14 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7164
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Set a reminder for a date."
 msgstr "Imposta un promemoria per una data."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7168
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "We need to change the beds of the room %s before the guests arrive tomorrow. "
 "Please set a reminder for early in the morning."
@@ -10550,11 +10616,13 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7172
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Set a reminder for a booking."
 msgstr "Imposta un promemoria per una prenotazione."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7176
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Set a reminder for the reservation of John Smith because we need to collect "
 "the outstanding balance upon their arrival."
@@ -10564,11 +10632,13 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7180
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Room Rates"
 msgstr "Tariffe camere"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7184
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Calculate the total cost for a stay. Apply new rates and restrictions to "
 "your website and OTA rooms."
@@ -10578,27 +10648,32 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7188
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Get quotes for dates, guests and listings."
 msgstr "Ottieni preventivi per date, ospiti e appartamenti."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7192
+msgctxt "Section \"discover the AI capabilities\""
 msgid "How much does a room for 2 guests cost for next weekend?"
 msgstr "Quanto costa una camera per 2 ospiti per il prossimo fine settimana?"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7196
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Calculate and apply the desired cost for your listings."
 msgstr "Calcola e applica il costo desiderato per i tuoi appartamenti."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7200
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Get the cost for %s for next Saturday and double it."
 msgstr "Ottieni il costo per %s per il prossimo sabato e raddoppialo."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7204
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Modify room rates and restrictions on website and OTAs."
 msgstr ""
 "Modifica le tariffe delle camere e le restrizioni sul sito web e sulle OTA."
@@ -10606,6 +10681,7 @@ msgstr ""
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7208
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Set the cost of %s to %s 190 for next Friday, and set a minimum stay of 2 "
 "nights."
@@ -10615,6 +10691,7 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7212
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Change room rates just for your website by excluding OTAs."
 msgstr ""
 "Cambia le tariffe delle camere solo per il tuo sito web escludendo le OTA."
@@ -10622,6 +10699,7 @@ msgstr ""
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7216
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Change the cost per night of %s to %s 200 only for my website direct "
 "bookings for the whole Christmas week."
@@ -10631,11 +10709,13 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7220
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Availability Inventory"
 msgstr "Inventario disponibilità"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7224
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Obtain and analyze information related to availability and restrictions for "
 "various listings and dates."
@@ -10645,16 +10725,19 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7228
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Check the availability for specific dates."
 msgstr "Controlla la disponibilità per date specifiche."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7232
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Are there any rooms left for next Saturday?"
 msgstr "Ci sono camere disponibili per sabato prossimo?"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7236
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Check if a precise room/listing is available for booking."
 msgstr ""
 "Controlla se una camera/appartamento è disponibile per la prenotazione."
@@ -10662,16 +10745,19 @@ msgstr ""
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7240
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Is the %s available next weekend for 3 nights?"
 msgstr "È disponibile la %s il prossimo fine settimana per 3 notti?"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7244
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Room Bookings"
 msgstr "Prenotazioni camere"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7248
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Create new bookings for a specific customer, room and dates. Close and "
 "occupy your rooms on specific dates."
@@ -10681,12 +10767,14 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7252
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Make a reservation for a guest."
 msgstr "Fai una prenotazione per un ospite."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7256
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Mario Rossi would like to book the room %s for 3 nights and 2 guests this "
 "Thursday. Please make a reservation for %s 200 per night. They need parking."
@@ -10697,6 +10785,7 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7260
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Make a room occupied on specific dates to stop the reservations."
 msgstr ""
 "Rendi una camera occupata in date specifiche per interrompere le "
@@ -10705,17 +10794,20 @@ msgstr ""
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7264
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Please close the room %s from Monday to Friday of next week."
 msgstr ""
 "Per favore, chiudi la camera %s da lunedì a venerdì della prossima settimana."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7268
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Booking Modification"
 msgstr "Modifica prenotazioni"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7272
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Quickly alter reservations by changing the stay dates, extra services and "
 "the total booking amount."
@@ -10725,12 +10817,14 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7276
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Change the stay dates for a reservation."
 msgstr "Cambia le date di soggiorno per una prenotazione."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7280
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Postpone the check-out by one night for the booking ID %d for an extra %s "
 "150."
@@ -10740,12 +10834,14 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7284
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Add extras to existing bookings."
 msgstr "Aggiungi extra alle prenotazioni esistenti."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7288
 #, php-format
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "John Smith ordered a bottle of wine that costs %s 50. Can you update their "
 "bill?"
@@ -10755,21 +10851,25 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7292
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Booking Deletion"
 msgstr "Cancella prenotazioni"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7296
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Let the assistant find and cancel reservations for you."
 msgstr "Lascia che l'assistente trovi e cancelli le prenotazioni per te."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7300
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Search specific reservations and ask to cancel them."
 msgstr "Cerca prenotazioni specifiche e chiedi di annullarle."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7304
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Please cancel the booking made by John Smith for tomorrow because they lost "
 "the flight."
@@ -10779,17 +10879,20 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7308
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Customer Notifications"
 msgstr "Notifiche ai clienti"
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7312
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Ask the assistant to generate messages and to send them to your guests."
 msgstr ""
 "Chiedi all'assistente di generare messaggi e di inviarli ai tuoi ospiti."
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7316
+msgctxt "Section \"discover the AI capabilities\""
 msgid "Search for a specific guest reservation and ask to send a notification."
 msgstr ""
 "Cerca una prenotazione specifica per un ospite e chiedi di inviare una "
@@ -10797,6 +10900,7 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7320
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Find the reservation from John Smith and notify him that the Wi-Fi access "
 "was changed to ABCD12345."
@@ -10806,6 +10910,7 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7324
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Identify an OTA reservation and send a message to the guest through their "
 "messaging API."
@@ -10815,6 +10920,7 @@ msgstr ""
 
 #. TRANSLATORS: Section "discover the AI capabilities"
 #: libraries/language/admin.php:7328
+msgctxt "Section \"discover the AI capabilities\""
 msgid ""
 "Find the Airbnb reservation of John Smith and send them a message to make "
 "sure they will arrive before 9PM."
@@ -10833,6 +10939,7 @@ msgstr "Nuova recensione dell'ospite"
 #. TRANSLATORS: John Smith left a review with a score of 10/10
 #: libraries/language/admin.php:7338
 #, php-format
+msgctxt "John Smith left a review with a score of 10/10"
 msgid "%s left a review with a score of %s."
 msgstr "%s ha lasciato una recensione con un punteggio di %s."
 
@@ -10843,12 +10950,43 @@ msgstr "Registra nuovo pagamento"
 #. TRANSLATORS: Modified on "2024-09-17 12:00:00"
 #: libraries/language/admin.php:7345
 #, php-format
+msgctxt "Modified on \"2024-09-17 12:00:00\""
 msgid "Modified on %s"
 msgstr "Modificato il %s"
 
 #: libraries/language/admin.php:7348
 msgid "Update payment"
 msgstr "Aggiorna pagamento"
+
+#. TRANSLATORS: Create listing on "Booking.com"
+#: libraries/language/admin.php:7352
+#, php-format
+msgctxt "Create listing on \"Booking.com\""
+msgid "Create listing on %s"
+msgstr "Crea annuncio su %s"
+
+#: libraries/language/admin.php:7355
+msgid "OTA Account ID"
+msgstr "ID account OTA"
+
+#: libraries/language/admin.php:7358
+msgid "OTA Listing ID"
+msgstr "ID annuncio OTA"
+
+#: libraries/language/admin.php:7364
+msgid "Examples"
+msgstr "Esempi"
+
+#: libraries/language/admin.php:7367
+msgid "Choose the export format or the action to execute."
+msgstr "Scegli il formato da esportare o l’azione da eseguire."
+
+#: libraries/language/admin.php:7370
+msgid ""
+"The payload is needed to let the report export dynamic information every day."
+msgstr ""
+"Il payload è necessario per far sì che il report esporti informazioni "
+"dinamiche ogni giorno."
 
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
@@ -13637,6 +13775,7 @@ msgstr "%d oggetti"
 #. TRANSLATORS: e.g. 1 of 12
 #: libraries/language/system.php:262
 #, php-format
+msgctxt "e.g. 1 of 12"
 msgid "%d of %s"
 msgstr "%d di %s"
 
@@ -13706,80 +13845,84 @@ msgstr "Oggetto salvato."
 msgid "Save failed with the following error: %s"
 msgstr "Salvataggio fallito con il seguente errore: %s"
 
-#: libraries/language/system.php:380
+#: libraries/language/system.php:376
+msgid "- Select an option -"
+msgstr "- Seleziona un’opzione -"
+
+#: libraries/language/system.php:384
 msgid "Image preview"
 msgstr "Anteprima immagine"
 
-#: libraries/language/system.php:384
+#: libraries/language/system.php:388
 msgid "Choose an image"
 msgstr "Seleziona un'immagine"
 
-#: libraries/language/system.php:388
+#: libraries/language/system.php:392
 msgid "Choose one or more images"
 msgstr "Seleziona una o più immagini"
 
-#: libraries/language/system.php:396
+#: libraries/language/system.php:400
 msgid "Pick or upload an image"
 msgstr "Scegli o carica un'immagine"
 
-#: libraries/language/system.php:400
+#: libraries/language/system.php:404
 msgid "Clear selection"
 msgstr "Cancella selezione"
 
-#: libraries/language/system.php:408
+#: libraries/language/system.php:412
 msgid "Less than a minute ago."
 msgstr "Meno di un minuto fa."
 
-#: libraries/language/system.php:412
+#: libraries/language/system.php:416
 #, php-format
 msgid "%d minutes ago."
 msgstr "%d minuti fa."
 
-#: libraries/language/system.php:416
+#: libraries/language/system.php:420
 msgid "a minute ago."
 msgstr "un minuto fa."
 
-#: libraries/language/system.php:420
+#: libraries/language/system.php:424
 #, php-format
 msgid "%d hours ago."
 msgstr "%d ore fa."
 
-#: libraries/language/system.php:424
+#: libraries/language/system.php:428
 msgid "an hour ago."
 msgstr "un'ora fa."
 
-#: libraries/language/system.php:428
+#: libraries/language/system.php:432
 #, php-format
 msgid "%d days ago."
 msgstr "%d giorni fa."
 
-#: libraries/language/system.php:432
+#: libraries/language/system.php:436
 msgid "a day ago."
 msgstr "un giorno fa."
 
-#: libraries/language/system.php:436
+#: libraries/language/system.php:440
 #, php-format
 msgid "%d weeks ago."
 msgstr "%d settimane fa."
 
-#: libraries/language/system.php:440
+#: libraries/language/system.php:444
 msgid "a week ago."
 msgstr "una settimana fa."
 
-#: libraries/language/system.php:452
+#: libraries/language/system.php:456
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:44
 msgid "Title"
 msgstr "Titolo"
 
-#: libraries/language/system.php:456
+#: libraries/language/system.php:460
 msgid "Optional widget title to display."
 msgstr "Titolo opzionale da mostrare per il widget."
 
-#: libraries/language/system.php:460
+#: libraries/language/system.php:464
 msgid "Preview is not available"
 msgstr "Anteprima non disponibile"
 
-#: libraries/language/system.php:468
+#: libraries/language/system.php:472
 msgid ""
 "The Pro license for VikBooking has expired. Do not install any updates or "
 "you will downgrade the plugin to the Free version."
@@ -14189,6 +14332,10 @@ msgstr ""
 "Scegli se visualizzare il nome intero dei mesi e dei giorni della settimana, "
 "o se mostrare la loro versione in 3 caratteri. Per esempio Dicembre o Dic, e "
 "Lunedì o Lun. Questo è valido solo per lo stile date in formato leggibile."
+
+#: modules/mod_vikbooking_horizontalsearch/language/handler.php:107
+msgid "Full"
+msgstr "Intero"
 
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:110
 msgid "3-char"

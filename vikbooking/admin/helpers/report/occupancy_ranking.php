@@ -339,7 +339,7 @@ class VikBookingReportOccupancyRanking extends VikBookingReport
 			"WHERE ".(!empty($pmaxdate) ? "`o`.`ts`<={$pmaxdate} AND " : "")."`r`.`name` IS NOT NULL AND `o`.`status`='confirmed' AND `o`.`closure`=0 AND `o`.`checkout`>={$from_ts} AND `o`.`checkin`<={$to_ts} " .
 			(!empty($pidroom) && !is_array($pidroom) ? "AND `or`.`idroom`=" . (int)$pidroom . " " : (is_array($pidroom) && count($pidroom) ? "AND `or`.`idroom` IN (" . implode(', ', $pidroom) . ") " : '')) .
 			(strlen($pchannel) ? "AND `o`.`channel` " . ($pchannel == '-1' ? 'IS NULL' : "LIKE " . $this->dbo->quote("%{$pchannel}%")) . ' ' : '') .
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC;";
+			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
 		$this->dbo->setQuery($q);
 		$records = $this->dbo->loadAssocList();
 

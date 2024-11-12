@@ -58,7 +58,7 @@ class VikBookingViewRooms extends JViewVikBooking
 		$session = JFactory::getSession();
 		$pvborderby = VikRequest::getString('vborderby', '', 'request');
 		$pvbordersort = VikRequest::getString('vbordersort', '', 'request');
-		$validorderby = array('name', 'toadult', 'tochild', 'totpeople', 'units');
+		$validorderby = array('name', 'toadult', 'tochild', 'totpeople', 'units', 'avail');
 		$orderby = $session->get('vbViewRoomsOrderby', 'name');
 		$ordersort = $session->get('vbViewRoomsOrdersort', 'ASC');
 		if (!empty($pvborderby) && in_array($pvborderby, $validorderby)) {

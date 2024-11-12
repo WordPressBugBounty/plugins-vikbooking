@@ -120,25 +120,25 @@ legend.adminlegend {
 .badge {
 	border-radius: 20px;
 }
-.label-success, .badge-success {
+.label.label-success, .badge.badge-success {
 	background-color: var(--vbo-success-bg);
 	color: var(--vbo-success-txt);
 }
-a.label-success:hover, a.badge-success:hover {
+a.label.label-success:hover, a.badge.badge-success:hover {
 	background-color: var(--vbo-green-color-hover);
 }
-.label-warning, .badge-warning {
+.label.label-warning, .badge.badge-warning {
 	background-color: var(--vbo-warning-bg);
 	color: var(--vbo-warning-txt);
 }
-a.label-warning:hover, a.badge-warning:hover {
+a.label.label-warning:hover, a.badge.badge-warning:hover {
 	background-color: var(--vbo-orange-color-hover);
 }
 .label.label-info, .badge.badge-info {
 	background-color: var(--vbo-info-bg);
 	color: var(--vbo-info-txt);
 }
-a.label-info:hover, a.badge-info:hover {
+a.label.label-info:hover, a.badge.badge-info:hover {
 	background-color: var(--vbo-blue-color-hover);
 }
 a.label, a.badge, a.label:hover, a.badge:hover {
@@ -399,9 +399,6 @@ body #content .btn-warning:hover, body #wpcontent .btn-warning:hover, .vbo-modal
 }
 .select2-container.select2-container--default .select2-selection--single .select2-selection__arrow {
     height: 40px;
-}
-.select2-container.select2-container--default .select2-selection--single .select2-selection__rendered {
-	color: var(--vbo-config-titles-color-light);
 }
 /*** Chrome Hack for the select ***/
 .selector:not(*:root), select {
@@ -823,6 +820,9 @@ body.admin #content .container-main .btn.btn-success:hover, body.admin #content 
 .notbusy.vbo-overv-todaycell, .subnotbusy.vbo-overv-todaycell {
 	background: #b0c0d1;
 }
+.notbusy.vbo-overv-todaycell:hover, .subnotbusy.vbo-overv-todaycell:hover {
+	background: #7791ac;
+}
 .bluedays.vbo-overv-todaycell {
 	background: #074666;
 }
@@ -839,6 +839,9 @@ body.admin #content .container-main .btn.btn-success:hover, body.admin #content 
 .vbo-overview-redday, .vbo-overview-subredday {
 	color: #fff;
 }
+.vbo-overview-redday:hover, .vbo-overview-subredday:hover {
+	color: #fff;
+}
 .vboverviewtablerow .busy:not(.vbo-checkinday) {
 	cursor: pointer;
 }
@@ -852,11 +855,17 @@ body.admin #content .container-main .btn.btn-success:hover, body.admin #content 
 .busy:hover {
 	background: var(--vbo-config-title-color) !important;
 }
-.busy.vbo-overv-todaycell.busy-closure:not(.vbo-hascolortag):hover, .subroom-busy.busy-closure.vbo-overv-todaycell:not(.vbo-hascolortag):hover {
+.busy.vbo-overv-todaycell:not(.vbo-hascolortag):hover, .subroom-busy.vbo-overv-todaycell:not(.vbo-hascolortag):hover {
+	background: var(--vbo-red-color-hover) !important;
+}
+.busy.busy-closure.vbo-overv-todaycell:not(.vbo-hascolortag):hover {
 	background: var(--vbo-config-titles-color-light) !important;
 }
 .busy:hover {
-	background: var(--vbo-body-text-color) !important;
+	background: var(--vbo-red-color-hover) !important;
+}
+.busy.busy-closure:hover {
+	background: var(--vbo-config-titles-color-light) !important;
 }
 .busy.vbo-hascolortag.vbo-overv-todaycell, .subroom-busy.vbo-hascolortag.vbo-overv-todaycell {
 	box-shadow: inset 0 0 5px rgba(0,0,0,.5);
@@ -2420,15 +2429,17 @@ a.vbo-bookingslist-viewdet-link {
 a.vbo-bookingslist-viewdet-link:hover {
 	text-decoration: none;
 }
+.vbo-room-channels-mapped-wrap > div {
+	display: inline-block;
+	vertical-align: middle;
+}
 .vbo-room-channels-mapped-wrap .vbo-room-channels-mapped-ch {
 	border-radius: 50%;
 	object-fit: cover;
 	border: 1px solid var(--vbo-config-border-color);
-	display: inline-block;
-	vertical-align: top;
 	width: 32px;
 	height: 32px;
-	line-height: 30px;
+	line-height: 28px;
 	font-weight: bold;
 	margin: 2px 0;
 }
@@ -2439,11 +2450,15 @@ a.vbo-bookingslist-viewdet-link:hover {
 .vbo-room-channels-mapped-wrap .vbo-room-channels-mapped-ch-lbl img {
 	width: 20px;
 	height: 20px;
+	border-radius: 4px;
 	vertical-align: middle;
 	object-fit: cover;
 }
 .vbo-room-channels-mapped-wrap .vbo-room-channels-mapped-ch-lbl span {
 	line-height: 34px;
+}
+.vbo-room-channels-mapped-wrap .vbo-room-channels-mapped-ch[data-ota-idroom] {
+	cursor: pointer;
 }
 .vbo-promo-channels-involved-wrap .vbo-room-channels-mapped-ch {
 	border-radius: 50%;
@@ -2457,6 +2472,59 @@ a.vbo-bookingslist-viewdet-link:hover {
 	height: 20px;
 	object-fit: cover;
 }
+.vbo-modal-ota-listing-details-wrap .vbo-room-ota-listing-details {
+	height: 35px;
+	border-radius: 6px;
+	object-fit: cover;
+	display: inline-block;
+	vertical-align: middle;
+}
+.vbo-room-channels-onboard-ch-lbl {
+	border-radius: 20px;
+	border: 1px solid var(--vbo-green-color-focus);
+	padding: 0 8px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	height: 32px;
+	cursor: pointer;
+	overflow: hidden;
+	transition: ease .3s;
+}
+.vbo-room-channels-onboard-ch-lbl:hover {
+	border-color: var(--vbo-green-color-focus);
+	background-color: var(--vbo-green-color-focus);
+}
+.vbo-room-channels-onboard-ch-lbl i {
+	color: var(--vbo-green-color);
+	font-size: 16px;
+}
+.vbo-room-channels-onboard-ch-lbl:hover i {
+	color: #fff;
+	animation: ease-rotate-icon 0.5s ease;
+}
+.vbo-room-channels-onboard-ch-lbl img {
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	object-fit: cover;
+	filter: grayscale(.7);
+	opacity: .6;
+}
+.vbo-room-channels-onboard-ch-lbl:hover img {
+	opacity: 1;
+	filter: none;
+}
+
+@keyframes ease-rotate-icon {
+	from {
+		transform: translateX(-200%) rotate(0);
+	}
+	to {
+		transform: translateX(0%) rotate(180deg);
+	}
+}
+
 .vbo-room-sharedcalendar {
 	border: 1px solid var(--vbo-config-border-color);
 	padding: 3px 6px;
@@ -3470,9 +3538,8 @@ tr.vbo-seasons-calendar-seasonrow td:nth-child(n+2) {
 .vbo-roverw-infoblock {
 	display: block;
 	padding-bottom: 8px;
-	margin-bottom: 8px;
+	margin-bottom: 0px;
 	text-align: center;
-	border-bottom: 1px solid var(--vbo-config-border-color);
 }
 .vbo-roverw-infoblock span {
 	display: inline-block;
@@ -3486,30 +3553,39 @@ tr.vbo-seasons-calendar-seasonrow td:nth-child(n+2) {
 	font-size: 18px;
 	margin-bottom: 7px;
 }
-.vbo-roverw-alldays {
-	display: table;
-	width: 100%;
+.vbo-roverw-infoblock span#rovervw-roomname i {
+	font-size: 14px;
+	margin-right: 5px;
+	color: var(--vbo-config-titles-color-light);
 }
 .vbo-roverw-alldays-inner {
-	display: table-cell;
+	display: flex;
 	text-align: center;
 	vertical-align: middle;
+	overflow-y: hidden;
+	overflow-x: scroll;
 }
 .vbo-roverw-daymod {
 	display: inline-block;
 	vertical-align: top;
-	margin: 4px 6px;
+	margin: 4px 4px;
 	padding: 12px 10px;
 	background:	var(--vbo-blue-color) none repeat scroll 0 0;
 	border-radius: 4px;
 	text-align: center;
-	width: 19%;
+	flex: 0 0 80px;
+}
+.vbo-roverw-daymod:first-child {
+	margin-left: 0;
+}
+.vbo-roverw-daymod:last-child {
+	margin-right: 0;
 }
 .vbo-roverw-daymod-innercell {
 	position: relative;
 }
 .vbo-roverw-daymod-infospids {
-	bottom: -10px;
+	bottom: 21px;
 	color: #d6e2ff;
 	cursor: pointer;
 	font-size: 15px;
@@ -3565,6 +3641,9 @@ tr.vbo-seasons-calendar-seasonrow td:nth-child(n+2) {
 	padding-bottom: 5px;
 	margin-bottom: 0;
 }
+.vbo-roverw-daydate-wdaymday {
+	display: block;
+}
 .vbo-roverw-dayprice {
 	display: inline-block;
 	text-align: center;
@@ -3576,26 +3655,40 @@ tr.vbo-seasons-calendar-seasonrow td:nth-child(n+2) {
 	width: 100%;
 	box-sizing: border-box;
 	font-size: 15px;
+	white-space: nowrap;
 }
 .vbo-roverw-setnewrate {
 	display: block;
-	margin-top: 20px;
+	margin-top: 13px;
 	width: 100%;
-	border-top: 1px solid var(--vbo-config-border-color);
-	padding: 10px 0;
+	border: 1px solid var(--vbo-config-border-color);
+	background: var(--vbo-config-child-bg-color);
+	padding: 15px;
+	box-sizing: border-box;
+	border-radius: 15px;
 }
 .vbo-roverw-setnewrate .vbo-roverw-flexnew {
 	display: flex;
 	margin-bottom: 10px;
+	gap: 10px;
+}
+.vbo-roverw-setnewrate-title h4 {
+	margin: 0 0 10px;
+	font-size: 16px;
+}
+.vbo-roverw-setnewrate-title h4 i {
+	font-size: 12px;
+	margin-right: 5px;
+	color: var(--vbo-config-titles-color-light);
 }
 .vbo-roverw-setnewrate .vbo-roverw-flexnew > div {
 	flex: 1;
 	text-align: center;
-	border: 1px solid var(--vbo-config-border-color);
-	border-radius: 4px;
-	margin: 5px 10px;
 	padding: 12px;
-	box-shadow: 0 0 10px rgba(0,0,0,.1);
+	background: var(--vbo-config-bg-color);
+	border: 1px solid var(--vbo-basic-btn);
+	border-bottom: 3px solid var(--vbo-basic-btn);
+	border-radius: 16px;
 }
 .vbo-roverw-setnewrate .vbo-roverw-flexnew input {
 	background: var(--vbo-config-bg-color);
@@ -3610,12 +3703,15 @@ label.vbo-roverw-setnewrate-currency, label.vbo-roverw-setnewrestr-lbl {
 	width: 100px !important;
 }
 .vbo-roverw-closeopenrp {
-	display: table;
-	margin: 0 auto 20px;
-	margin-top: 30px;
-	padding: 0;
+	margin: 12px auto 20px;
+	border: 1px solid var(--vbo-config-border-color);
 	background: var(--vbo-config-child-bg-color);
-	border-radius: 5px;
+	padding: 15px;
+	box-sizing: border-box;
+	border-radius: 15px;
+}
+.vbo-roverw-closeopenrp:hover {
+	border-color: var(--vbo-base-color);
 }
 .vbo-roverw-newrwrap h4, .vbo-roverw-newrestrcont h4 {
 	padding: 4px 0;
@@ -3631,16 +3727,24 @@ label.vbo-roverw-setnewrate-currency, label.vbo-roverw-setnewrestr-lbl {
 
 .vbo-roverw-closeopenrp h4 {
 	cursor: pointer;
-	background: var(--vbo-middle-color-btn);
 	border-radius: 5px;
-	padding: 15px 20px; 
+	padding: 0;
 	margin: 0;
-	color: #fff;
-	font-weight: normal;
+	font-size: 16px;
+}
+.vbo-roverw-closeopenrp h4 i {
+	font-size: 12px;
+	margin-right: 5px;
+	color: var(--vbo-config-titles-color-light);
+}
+.vbo-roverw-closeopenrp h4 .vbo-roverw-closeopenrp-arrow {
+	float: right;
+}
+.vbo-roverw-closeopenrp:hover h4 .vbo-roverw-closeopenrp-arrow i {
+	color: var(--vbo-base-color);
 }
 .vbo-roverw-closeopenrp-btns {
 	display: none;
-	text-align: center;
 	margin-top: 30px;
 	margin-bottom: 20px;
 }
@@ -3870,6 +3974,11 @@ td.vbo-roverw-daybusy:hover {
 }
 .vbo-vcm-installed {
 	color: var(--vbo-config-title-color);
+}
+.vbo-vcm-installed i, .vbo-vcm-installed i.wp-quest-popover {
+	font-size: 14px;
+	margin-right: 5px;
+	color: var(--vbo-config-titles-color-light);
 }
 /* Rates, Restrictions and Seasons Calendar - End */
 /* Toggle Switch - Start */
@@ -4953,12 +5062,14 @@ label.vbo-timeline-label {
 .vbo-tooltip::before {
 	content: attr(data-tooltiptext);
 	z-index: 10001;
-	width: calc(100% + 40px);
+	/* We are disabling the width because the text is exceeding the background.
+	 * width: calc(100% + 40px); 
+	 */
 	color: var(--vbo-body-text-color);
 	background: var(--vbo-body-bg-color);
 	border-radius: 15px;
 	border: 1px solid var(--vbo-config-border-color);
-	padding: 5px;
+	padding: 5px 10px;
 	font-size: 12px;
 	line-height: 1.2;
 	text-align: center;
@@ -5186,8 +5297,13 @@ body #content .btn.vbo-context-menu-btn, body #wpcontent .btn.vbo-context-menu-b
 	text-align: left;
 	height: 40px;
 }
+body #content .btn.btn-rounded.vbo-context-menu-btn:hover .vbo-context-menu-ico, body #wpcontent .btn.btn-rounded.vbo-context-menu-btn:hover .vbo-context-menu-ico, body.wp-admin .btn.btn-rounded.vbo-context-menu-btn .vbo-context-menu-ico, .btn.btn-rounded.vbo-context-menu-btn .vbo-context-menu-ico {
+	border-top-right-radius: 18px;
+	border-bottom-right-radius: 18px;
+}
 body #content .btn.vbo-context-menu-btn:not(.vbo-context-menu-searchtype), body #wpcontent .btn.vbo-context-menu-btn:not(.vbo-context-menu-searchtype), body.wp-admin .btn.vbo-context-menu-btn:not(.vbo-context-menu-searchtype), .btn.vbo-context-menu-btn:not(.vbo-context-menu-searchtype) {
 	display: flex;
+	align-items: center;
 }
 body #content .btn-small.vbo-context-menu-btn, body #wpcontent .btn-small.vbo-context-menu-btn, body.wp-admin .btn-small.vbo-context-menu-btn, .btn-small.vbo-context-menu-btn {
 	padding: 0 !important;
@@ -5243,14 +5359,20 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	border-color: var(--vbo-green-color-focus);
 }
 .vbo-context-menu-btn .vbo-context-menu-ico {
-	padding: 12px 8px;
+	padding: 13px 8px;
 	line-height: 12px;
 	text-align: center;
-	border-top-right-radius: 3px;
-	border-bottom-right-radius: 3px;
+	border-top-right-radius: 2px;
+	border-bottom-right-radius: 2px;
 }
 .vbo-context-menu-btn.btn-small .vbo-context-menu-ico {
-	padding: 5px 8px 3px;
+	padding: 5px 8px 6px;
+}
+.vbo-context-menu-btn .vbo-context-menu-ico-left {
+	padding-left: 12px;
+}
+.vbo-context-menu-btn .vbo-context-menu-ico-left + .vbo-context-menu-lbl {
+	padding-left: 5px;
 }
 .btn.vbo-context-menu-btn .vbo-context-menu-ico i {
 	margin-right: 0;
@@ -5282,7 +5404,7 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	background: var(--vbo-base-color);
 	cursor: pointer;
 }
-.vik-context-menu.vbo-dropdown-cxmenu li, .vik-context-menu.vbo-dropdown-cxmenu li:last-child, .vik-context-menu.vbo-dropdown-cxmenu li:first-child {
+.vik-context-menu.vbo-dropdown-cxmenu li, .vik-context-menu.vbo-dropdown-cxmenu li:last-child, .vik-context-menu.vbo-dropdown-cxmenu li:first-child, .vik-context-menu.vbo-dropdown-cxmenu li.separator:not(:only-child) {
 	padding: 0;
 	margin: 0;
 }
@@ -5422,6 +5544,12 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 
 .vbo-modal-overlay-wguestmessages-chat .vbo-modal-overlay-content-head > span {
 	display: flex;
+}
+.chat-input-footer .textarea-input #chat-ask-ai-btn {
+	color: var(--vbo-base-color) !important;
+}
+.chat-input-footer .textarea-input #chat-ask-ai-btn:hover {
+	color: var(--vbo-base-color-hover) !important;
 }
 .vbo-w-guestmessages-message-staydates {
 	font-size: 12px;
@@ -6935,8 +7063,10 @@ textarea.vbo-textarea-copyable {
 .vbo-params-block > .vbo-param-container:first-child .vbo-param-label {
 	align-self: center;
 }
-.vbo-params-block .vbo-param-container {
+.vbo-params-block:not(.vbo-params-block-noborder) .vbo-param-container {
 	border-top: 1px solid var(--vbo-main-bg-color);
+}
+.vbo-params-block .vbo-param-container {
 	padding: 10px 0px;
 }
 .vbo-admin-container .vbo-params-block-nested .vbo-param-nested-nested:first-child, .vbo-params-block > .vbo-param-container:first-child {
@@ -8613,6 +8743,13 @@ table.vboverviewtable td:last-child {
     transform: translate(-50%, -50%);
     overflow: auto;
     text-align: center;
+}
+.vbo-overv-avcell.notbusy.vbo-overv-globally-closed, .vbo-overv-avcell.subnotbusy.vbo-overv-globally-closed, .vbo-overv-avcell.notbusy.vbo-overv-globally-closed.vbo-overv-todaycell {
+	background: repeating-linear-gradient( -45deg, var(--vbo-body-bg-color), var(--vbo-body-bg-color) 10px, var(--vbo-basic-btn) 10px, var(--vbo-basic-btn) 20px) !important;
+}
+.vbo-overv-avcell.notbusy.vbo-overv-globally-closed:hover, .vbo-overv-avcell.subnotbusy.vbo-overv-globally-closed:hover, .vbo-overv-avcell.notbusy.vbo-overv-globally-closed.vbo-overv-todaycell:hover {
+	background: repeating-linear-gradient( -45deg, var(--vbo-body-bg-color), var(--vbo-body-bg-color) 10px, var(--vbo-basic-btn) 10px, var(--vbo-basic-btn) 20px) !important;
+	cursor: not-allowed;
 }
 .vbo-overv-row-snake td {
 	padding-bottom: 16px;
@@ -10448,20 +10585,23 @@ div.modal.in .modal-header + div.modal-body-wrapper {
 	border-radius: 50%;
 	object-fit: cover;
 	padding: 5px;
-	width: 13px;
-	height: 13px;
-	line-height: 12px;
+	width: 10px;
+	height: 10px;
+	line-height: 8px;
 	text-align: center;
-	vertical-align: top;
+	vertical-align: middle;
 }
 .vbo-vcm-rates-res-channel-esit i {
-	font-size: 14px;
+	font-size: 10px;
 }
 .vbo-vcm-rates-res-channel-logo {
 	display: inline-block;
+	vertical-align: middle;
+  	line-height: 11px;
 }
 .vbo-vcm-rates-res-channel-logo img {
 	max-width: 120px;
+	height: 20px;
 }
 .vbo-vcm-rates-res-success .vbo-vcm-rates-res-channel-esit {
 	color: #fff;
@@ -10471,6 +10611,7 @@ div.modal.in .modal-header + div.modal-body-wrapper {
 	margin: 5px;
 	border: 1px solid var(--vbo-green-color);
 	padding: 10px;
+	white-space: break-spaces;
 }
 .vbo-vcm-rates-res-error .vbo-vcm-rates-res-channel {
 	border: 1px solid var(--vbo-red-color);
@@ -10743,7 +10884,7 @@ div.modal.in .modal-header + div.modal-body-wrapper {
 .vbo-ratesoverview-orphans-list {
 	max-height: 179px;
 	overflow: hidden;
-	overflow-y: scroll;
+	overflow-y: auto;
 }
 .vbo-ratesoverview-orphans-list > div {
 	margin: 3px 0;	
@@ -11908,6 +12049,9 @@ table.adminform div.input-append {
 	display: inline-block;
 	margin: 2px 0;
 }
+.vbo-reports-filters-outer > .vbo-reports-filters-export {
+	margin: 2px;
+}
 .vbo-reports-filters-export {
 	float: right;
 }
@@ -12191,6 +12335,10 @@ table.adminform div.input-append {
 	cursor: pointer;
 	color: var(--vbo-red-color);
 	padding: 0px 7px;
+}
+.vbo-report-load-field-optional span {
+	border: 0;
+	color: var(--vbo-blue-color);
 }
 .vbo-report-load-elem-filled span {
 	border: 0;
@@ -13406,6 +13554,10 @@ table.adminform div.input-append {
 	width: 65%;
 	height: 85%;
 }
+.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-overlay-content-large, .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-large {
+	width: 65%;
+	height: 85%;
+}
 .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-overlay-content-tall, .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-tall {
 	height: 80%;
 }
@@ -13441,7 +13593,7 @@ table.adminform div.input-append {
 	transform: translate(-50%, -50%);
 }
 .vbo-modal-overlay-content-backdrop .vbo-modal-overlay-content-backdrop-body i {
-	font-size: 40px;
+	font-size: 100px;
 	color: #fff;
 	text-shadow: 1px 0px 8px rgba(0, 0, 0, .1);
 }
@@ -13528,15 +13680,21 @@ table.adminform div.input-append {
 .vbo-modal-overlay-content-servsearch .vbo-modal-overlay-content-body-scroll {
 	height: calc(100% - 100px);
 }
-.vbo-modal-overlay-content {
-	-webkit-animation-name: VikfadeInUp;
-  	animation-name: VikfadeInUp;
 
-	-webkit-animation-duration: .5s;
-	animation-duration: .5s;
-	-webkit-animation-fill-mode: both;
-	animation-fill-mode: both;
+/* Visible just on large screen to avoid blurred effect with lowest heights */
+@media screen and (min-height: 560px) 
+{ 
+	.vbo-modal-overlay-content {
+		-webkit-animation-name: VikfadeInUp;
+		  animation-name: VikfadeInUp;
+	
+		-webkit-animation-duration: .5s;
+		animation-duration: .5s;
+		-webkit-animation-fill-mode: both;
+		animation-fill-mode: both;
+	}
 }
+
 .vbo-optionals-dmgdepbcom-trigger {
 	white-space: nowrap;
 }
@@ -15559,7 +15717,7 @@ table.adminform div.input-append {
 	color: inherit;
 }
 .vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar-table td[data-cta="1"][data-ctd="1"] {
-	background: repeating-linear-gradient( -45deg, var(--vbo-body-bg-color), var(--vbo-body-bg-color) 10px, var(--vbo-config-child-bg-color) 10px, var(--vbo-config-child-bg-color) 20px );
+	background: repeating-linear-gradient( -45deg, var(--vbo-body-bg-color), var(--vbo-body-bg-color) 10px, var(--vbo-basic-btn) 10px, var(--vbo-basic-btn) 20px );
 }
 .vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar-table td[data-cta="1"][data-ctd="1"].busy {
 	background: var(--vbo-red-color);
@@ -15571,10 +15729,11 @@ table.adminform div.input-append {
 	background: var(--vbo-orange-color-hover) !important;
 }
 .vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar-table td[data-cta="1"][data-ctd="1"].busy.busy-closure {
-	background: var(--vbo-config-title-color);
+	/* background: var(--vbo-config-title-color); */
+	background: repeating-linear-gradient( -45deg, #1d2327, #1d2327 10px, #3a3f42 10px, #3a3f42 20px ) !important;
 }
 .vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar-table td[data-cta="1"][data-ctd="1"].busy.busy-closure:hover {
-	background: var(--vbo-config-titles-color-light);
+	background: var(--vbo-config-titles-color-light) !important;
 }
 .vbo-sidepanel-wrapper.vbo-sidepanel-large .vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar-table td {
 	height: 40px;
@@ -15740,16 +15899,17 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 .vbo-widget-reminders-list .vbo-widget-reminders-record .vbo-widget-reminders-record-edit {
 	background: var(--vbo-blue-color);
 	position: absolute;
-	right: 0;
-	top: 0;
-	height: 100%;
+	right: 4px;
+	top: 4px;
+	height: calc(100% - 8px);
 	width: 35px;
-	transition: 0.3s ease-in all;
-	-moz-transition: 0.3s ease-in all;
-	-webkit-transition: 0.3s ease-in all;
-	transform: translateX(100%);
+	transition: 0.2s ease-in all;
+	-moz-transition: 0.2s ease-in all;
+	-webkit-transition: 0.2s ease-in all;
+	transform: translateX(calc(100% + 4px));
 	display: flex;
 	cursor: pointer;
+	border-radius: 6px;
 }
 .vbo-widget-reminders-list .vbo-widget-reminders-record .vbo-widget-reminders-record-edit:hover {
 	background: var(--vbo-blue-color-hover);
@@ -15769,7 +15929,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	margin-right: 0;
 }
 .vbo-widget-reminders-list .vbo-widget-reminders-record .vbo-widget-reminders-record-info {
-	margin-right: 10px;
+	margin-right: 20px;
 }
 .vbo-widget-reminder-title {
 	font-weight: bold;
@@ -17131,6 +17291,22 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 }
 .vbo-widget-guestreviews-content .vbo-widget-guest-reviews-reply-wrap button:hover {
 	font-weight: bold;
+}
+
+#vbo-vcm-onboard-account {
+	display: inline-block;
+	vertical-align: middle;
+}
+.vbo-vcm-onboard-ota-logo-wrap {
+	display: inline-block;
+	vertical-align: middle;
+}
+.vbo-vcm-onboard-ota-logo-wrap img {
+	height: 30px;
+	border-radius: 6px;
+	object-fit: cover;
+	display: inline-block;
+	vertical-align: middle;	
 }
 
 /* @end styles */
@@ -19230,6 +19406,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.vbo-notifications-center-wrap:before {
 		right: 123px;
+	}
+	.vbcalsblock {
+		display: block;
 	}
 }
 @media screen and (max-width : 550px) {

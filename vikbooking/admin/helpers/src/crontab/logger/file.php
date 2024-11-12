@@ -63,8 +63,10 @@ class VBOCrontabLoggerFile implements VBOCrontabLogger
         $this->filename = $options['filename'] ?? 'crons.log.php';
         $this->maxSize = abs($options['maxsize'] ?? (1024 * 1024));
 
-        // in case the folder is empty, use the default one
-        $this->folder = JFactory::getApplication()->get('tmp_path', dirname(__FILE__));
+        if (!$this->folder) {
+            // in case the folder is empty, use the default one
+            $this->folder = JFactory::getApplication()->get('tmp_path', dirname(__FILE__));
+        }
     }
 
     /**

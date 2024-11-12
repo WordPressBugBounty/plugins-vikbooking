@@ -673,6 +673,7 @@ class VikBookingAvailability
 			'adults' 	 => [$this->getPartyGuests('adults', 0)],
 			'children' 	 => [$this->getPartyGuests('children', 0)],
 			'only_rates' => 1,
+			'wtax'       => $params['wtax'] ?? null,
 		];
 
 		if ($tot_rooms > 1 && count($this->room_parties) == $tot_rooms) {

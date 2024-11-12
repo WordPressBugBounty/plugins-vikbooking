@@ -873,7 +873,7 @@ class VikBookingReportRatesFlow extends VikBookingReport
 			return 0;
 		}
 
-		$q = "SELECT DISTINCT `channel_id` FROM `#__vikchannelmanager_rates_flow`;";
+		$q = "SELECT `channel_id` FROM `#__vikchannelmanager_rates_flow` WHERE 1 GROUP BY `channel_id`;";
 		$this->dbo->setQuery($q);
 		$this->dbo->execute();
 

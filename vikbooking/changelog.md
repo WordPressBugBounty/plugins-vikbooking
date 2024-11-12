@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.1
+
+*Release date - 12 November 2024*
+
+- New OTA listing onboarding functions (Airbnb and Booking.com).
+- Refactoring of PMS Reports framework.
+- AI framework improvements required by Vik Channel Manager and E4jConnect.
+- Minor back-end design improvements.
+- Minor fixes.
+
 ## 1.7.0
 
 *Release date - 23 September 2024*

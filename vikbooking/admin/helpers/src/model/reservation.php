@@ -26,6 +26,13 @@ class VBOModelReservation extends JObject
 	private static $instance = null;
 
 	/**
+	 * The total number of bookings found through the last search.
+	 * 
+	 * @var int
+	 */
+	protected $totalBookings = 0;
+
+	/**
 	 * Proxy for immediately getting the object and bind data.
 	 * 
 	 * @param 	array|object  $data  optional data to bind.
@@ -459,6 +466,8 @@ class VBOModelReservation extends JObject
 	{
 		$dbo = JFactory::getDbo();
 
+		$this->totalBookings = 0;
+
 		$filters = $this->getFilters();
 
 		if (!$filters) {
@@ -475,8 +484,7 @@ class VBOModelReservation extends JObject
 			->from($dbo->qn('#__vikbooking_orders', 'o'))
 			->leftJoin($dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $dbo->qn('co.idorder') . ' = ' . $dbo->qn('o.id'))
 			->leftJoin($dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $dbo->qn('c.id') . ' = ' . $dbo->qn('co.idcustomer'))
-			->where(1)
-			->order($dbo->qn('o.id') . ' DESC');
+			->where(1);
 
 		if (($filters['booking_id'] ?? null)) {
 			$q->andWhere([
@@ -603,9 +611,49 @@ class VBOModelReservation extends JObject
 			}
 		}
 
-		$dbo->setQuery($q, 0, ($filters['max_bookings'] ?? 0));
+		/**
+		 * It is now possible to use a custom ordering.
+		 * 
+		 * @since 1.17.1 (J) - 1.7.1 (WP)
+		 */
+		switch ($filters['ordering'] ?? 'id') {
+			case 'creation': $ordering = 'o.ts'; break;
+			case 'checkin': $ordering = 'o.checkin'; break;
+			case 'checkout': $ordering = 'o.checkout'; break;
+			default: $ordering = 'o.id';
+		}
 
-		return $dbo->loadAssocList();
+		$q->order($dbo->qn($ordering) . ' ' . (strcasecmp($filters['direction'] ?? 'desc', 'desc') ? 'ASC' : 'DESC'));
+
+		$dbo->setQuery($q, 0, ($filters['max_bookings'] ?? 0));
+		$rows = $dbo->loadAssocList();
+
+		$this->totalBookings = count($rows);
+
+		/**
+		 * Calculate the total number of matching records.
+		 * 
+		 * @since 1.17.1 (J) - 1.7.1 (WP)
+		 */
+		if ($this->totalBookings && $this->totalBookings == ($filters['max_bookings'] ?? 0)) {
+			// set up the query used to count the matching records
+			$dbo->setQuery($q->clear('select')->clear('offset')->clear('limit')->select('COUNT(1)'));
+			$this->totalBookings = (int) $dbo->loadResult();
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * Returns the total number of bookings matching the last search query made.
+	 * 
+	 * @return  int
+	 * 
+	 * @since   1.17.1 (J) - 1.7.1 (WP)
+	 */
+	public function getTotBookingsFound()
+	{
+		return $this->totalBookings;
 	}
 
 	/**

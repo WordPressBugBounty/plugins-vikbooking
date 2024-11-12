@@ -88,6 +88,7 @@
 	body {
 		background: var(--vbo-body-bg-color) !important;
 		color: var(--vbo-body-text-color) !important;
+		height: auto;
 	}
 	h2, h3 {
 		color: var(--vbo-config-text-color-light);
@@ -289,6 +290,9 @@
 		border-right: 1px solid var(--vbo-light-color-btn);
 		border-bottom: 1px solid var(--vbo-light-color-btn);
 	}
+	.select2-container.select2-container--default .select2-selection--single .select2-selection__rendered {
+		color: var(--vbo-config-titles-color-light);
+	}
 	body a {
 		color: var(--vbo-link-text-color);
 	}
@@ -448,6 +452,9 @@
 	}
 	.notbusy.vbo-overv-todaycell, .subnotbusy.vbo-overv-todaycell, .bluedays.vbo-overv-todaycell, .vbo-tableaux-table .vbo-tableaux-todaycell {
 		background-color: #6889ab !important;
+	}
+	.notbusy.vbo-overv-todaycell:hover, .subnotbusy.vbo-overv-todaycell:hover, .bluedays.vbo-overv-todaycell:hover, .vbo-tableaux-table .vbo-tableaux-todaycell:hover {
+		background-color: #5d8fc4 !important;
 	}
 	.vboverviewtablerow .vbo-partially, .vbo-overview-legend-yellow .vbo-overview-legend-box {
 		background: none repeat scroll 0 0 #c2770d !important;
