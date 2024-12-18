@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  com_vikbooking
  * @author      Alessio Gaggii - E4J srl
- * @copyright   Copyright (C) 2022 E4J srl. All rights reserved.
+ * @copyright   Copyright (C) 2024 E4J srl. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com
  */
@@ -11,7 +11,7 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 /**
- * ISTAT ROSS 1000 è valido per diverse regioni. Sicuramente per la Romagna e per il Piemonte.
+ * ISTAT ROSS 1000 è valido per diverse regioni. Sicuramente per la Romagna, Veneto e Piemonte.
  * Sviluppato e mantenuto da GIES (Repubblica di San Marino). Simile a SITRA. Il sistema
  * supporta diversi URL regionali/cittadini per l'eventuale trasmissione a mezzo WSDL.
  * 
@@ -27,7 +27,10 @@ defined('ABSPATH') or die('No script kiddies please!');
  * @link 	Calabria https://sirdat.regione.calabria.it/ws/checkinV2?wsdl
  * @link 	Sardegna https://sardegnaturismo.ross1000.it/ws/checkinV2?wsdl
  * 
- * @since 	1.15.4 (J) - 1.5.10 (WP)
+ * @see 	Tracciato_XML-WEBSERVICE-2.4-_-2.pdf
+ * 
+ * @since 	1.15.4 (J) - 1.5.10 (WP) report introduced.
+ * @since 	1.17.2 (J) - 1.7.2 (WP)  report refactoring with settings and custom scoped actions.
  */
 class VikBookingReportIstatRoss1000 extends VikBookingReport
 {
@@ -35,27 +38,89 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	 * Property 'defaultKeySort' is used by the View that renders the report.
 	 */
 	public $defaultKeySort = 'idbooking';
+
 	/**
 	 * Property 'defaultKeyOrder' is used by the View that renders the report.
 	 */
 	public $defaultKeyOrder = 'ASC';
+
 	/**
 	 * Property 'customExport' is used by the View to display custom export buttons.
 	 */
 	public $customExport = '';
-	/**
-	 * Debug mode is activated by passing the value 'e4j_debug' > 0
-	 */
-	private $debug;
 
 	/**
-	 * Other private vars of this sub-class.
+	 * List of municipality and provinces.
+	 * 
+	 * @var  	array
 	 */
-	private $comuniProvince;
-	private $nazioni;
-	private $documenti;
-	public $tipoTurismo;
-	public $mezzoDiTrasporto;
+	protected $comuniProvince = [];
+
+	/**
+	 * List of country codes.
+	 * 
+	 * @var  	array
+	 */
+	protected $nazioni = [];
+
+	/**
+	 * List of tourism type codes.
+	 * 
+	 * @var  	array
+	 */
+	protected $tourismTypes = [
+		'CULTURALE' => 'Culturale',
+		'BALNEARE' => 'Balneare',
+		'CONGRESSUALE/AFFARI' => 'Congressuale/Affari',
+		'FIERISTICO' => 'Fieristico',
+		'SPORTIVO/FITNESS' => 'Sportivo/Fitness',
+		'SCOLASTICO' => 'Scolastico',
+		'RELIGIOSO' => 'Religioso',
+		'SOCIALE' => 'Sociale',
+		'PARCHI TEMATICI' => 'Parchi Tematici',
+		'TERMALE/TRATTAMENTI SALUTE' => 'Termale/Trattamenti salute',
+		'ENOGASTRONOMICO' => 'Enogastronomico',
+		'CICLOTURISMO' => 'Cicloturismo',
+		'ESCURSIONISTICO/NATURALISTICO' => 'Escursionistico/Naturalistico',
+		'ALTRO MOTIVO' => 'Altro motivo',
+		'NON SPECIFICATO' => 'Non specificato',
+	];
+
+	/**
+	 * List of meanings of transport codes.
+	 * 
+	 * @var  	array
+	 */
+	protected $meaningsOfTransport = [
+		'AUTO' => 'Auto',
+		'AEREO' => 'Aereo',
+		'AEREO+PULLMAN' => 'Aereo+Pullman',
+		'AEREO+NAVETTA/TAXI/AUTO' => 'Aereo+Navetta/Taxi/Auto',
+		'AEREO+TRENO' => 'Aereo+Treno',
+		'TRENO' => 'Treno',
+		'PULLMAN' => 'Pullman',
+		'CARAVAN/AUTOCARAVAN' => 'Caravan/Autocaravan',
+		'BARCA/NAVE/TRAGHETTO' => 'Barca/Nave/Traghetto',
+		'MOTO' => 'Moto',
+		'BICICLETTA' => 'Bicicletta',
+		'A PIEDI' => 'A piedi',
+		'ALTRO MOTIVO' => 'Altro motivo',
+		'NON SPECIFICATO' => 'Non specificato',
+	];
+
+	/**
+	 * List of booking IDs affected by the export.
+	 * 
+	 * @var  	array
+	 */
+	protected $export_booking_ids = [];
+
+	/**
+	 * List of exported check-in dates (range).
+	 * 
+	 * @var  	array
+	 */
+	protected $exported_checkin_dates = [];
 
 	/**
 	 * Class constructor should define the name of the report and
@@ -65,49 +130,11 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	{
 		$this->reportFile = basename(__FILE__, '.php');
 		$this->reportName = JText::translate('ISTAT Ross 1000');
-		$this->reportFilters = array();
+		$this->reportFilters = [];
 
-		$this->cols = array();
-		$this->rows = array();
-		$this->footerRow = array();
-
-		$this->debug = (VikRequest::getInt('e4j_debug', 0, 'request') > 0);
-
-		$this->comuniProvince = array();
-		$this->nazioni = array();
-		$this->mezzoDiTrasporto = array(
-			'0' => 'Auto',
-			'1' => 'Aereo', 
-			'2' => 'Aereo+Pullman',
-			'3' => 'Aereo+Navetta/Taxi/Auto',
-			'4' => 'Aereo+Treno',
-			'5' => 'Treno',
-			'6' => 'Pullman',
-			'7' => 'Caravan/Autocaravan',
-			'8' => 'Barca/Nave/Traghetto',
-			'9' => 'Moto',
-			'10' => 'Bicicletta',
-			'11' => 'A piedi',
-			'12' => 'Altro motivo',
-			'13' => 'Non specificato'
-		);
-		$this->tipoTurismo = array(
-			'0' => 'Culturale',
-			'1' => 'Balneare', 
-			'2' => 'Congressuale/Affari',
-			'3' => 'Fieristico',
-			'4' => 'Sportivo/Fitness',
-			'5' => 'Scolastico',
-			'6' => 'Religioso',
-			'7' => 'Sociale',
-			'8' => 'Parchi Tematici',
-			'9' => 'Termale/Trattamenti salute',
-			'10' => 'Enogastronomico',
-			'11' => 'Cicloturismo',
-			'12' => 'Escursionistico/Naturalistico',
-			'13' => 'Altro motivo',
-			'14' => 'Non specificato'
-		);
+		$this->cols = [];
+		$this->rows = [];
+		$this->footerRow = [];
 
 		$this->registerExportFileName();
 
@@ -135,26 +162,175 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	}
 
 	/**
+	 * @inheritDoc
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	public function getSettingFields()
+	{
+		$example_urls = [
+			[
+				'name' => 'Piemonte',
+				'url' => 'https://piemontedatiturismo.regione.piemonte.it/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Città Metropolitana di Firenze',
+				'url' => 'https://turismo5firenze.regione.toscana.it/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Provincia di Pistoia',
+				'url' => 'https://turismo5pistoia.regione.toscana.it/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Provincia di Prato',
+				'url' => 'https://turismo5prato.regione.toscana.it/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Abruzzo',
+				'url' => 'https://app.regione.abruzzo.it/Turismo5/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Veneto',
+				'url' => 'https://flussituristici.regione.veneto.it/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Emilia-Romagna',
+				'url' => 'https://datiturismo.regione.emilia-romagna.it/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Marche',
+				'url' => 'https://istrice-ross1000.turismo.marche.it/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Lombardia',
+				'url' => 'https://www.flussituristici.servizirl.it/Turismo5/app/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Calabria',
+				'url' => 'https://sirdat.regione.calabria.it/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Sardegna',
+				'url' => 'https://sardegnaturismo.ross1000.it/ws/checkinV2?wsdl',
+			],
+			[
+				'name' => 'Liguria',
+				'url' => 'https://turismows.regione.liguria.it/ws/checkinV2?wsdl',
+			],
+		];
+
+		$example_urls_str = '';
+		foreach ($example_urls as $example_url) {
+			$example_urls_str .= '<li><strong>' . $example_url['name'] . '</strong>: ' . $example_url['url'] . '</li>' . "\n";
+		}
+
+		// count room units
+		$tot_room_units = $this->countRooms();
+
+		return [
+			'title' => [
+				'type'  => 'custom',
+				'label' => '',
+				'html'  => '<p class="info">Configura le impostazioni per la generazione dei tracciati record XML e per la trasmissione delle informazioni verso il WebService della tua regione o procinvia.</p>',
+			],
+			'codstru' => [
+				'type'  => 'text',
+				'label' => 'Codice Struttura',
+				'help'  => 'Codice univoco di identificazione della tua struttura assegnato dall\'Amministrazione competente.',
+			],
+			'numcamere' => [
+				'type'    => 'number',
+				'label'   => 'Numero camere disponibili',
+				'help'    => 'Numero totale di camere disponibili.',
+				'min'     => 1,
+				'default' => $tot_room_units,
+			],
+			'numletti' => [
+				'type'    => 'number',
+				'label'   => 'Numero letti disponibili',
+				'help'    => 'Numero totale di letti disponibili.',
+				'min'     => 0,
+				'default' => $tot_room_units,
+			],
+			'user' => [
+				'type'  => 'text',
+				'label' => 'Utente',
+				'help'  => 'Nome utente assegnato dall\'Ufficio Turismo di competenza.',
+			],
+			'pwd' => [
+				'type'  => 'password',
+				'label' => 'Password',
+				'help'  => 'Password assegnata dall\'Ufficio Turismo di competenza.',
+			],
+			'endpoint' => [
+				'type'  => 'text',
+				'label' => 'WS Endpoint URL',
+				'help'  => 'Indirizzo URL web-service del sito web dell\'ente al quale trasmettere i dati.',
+			],
+			'exampleurls' => [
+				'type'  => 'custom',
+				'label' => '',
+				'html'  => '<p class="info">Lista Endpoint web-service:<br/><ul>' . $example_urls_str . '</ul></p>',
+			],
+		];
+	}
+
+	/**
+	 * @inheritDoc
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	public function getScopedActions($scope = null, $visible = true)
+	{
+		// list of custom actions for this report
+		$actions = [
+			[
+				'id' => 'transmitRecords',
+				'name' => 'Trasmetti flussi turistici',
+				'help' => 'Trasmette i dati riguardanti i flussi turistici.',
+				'icon' => VikBookingIcons::i('cloud-upload-alt'),
+				// flag to indicate that it requires the report data
+				'export_data' => true,
+				'scopes' => [
+					'web',
+					'cron',
+				],
+			],
+		];
+
+		// filter actions by scope
+		if ($scope && (!strcasecmp($scope, 'cron') || !strcasecmp($scope, 'web'))) {
+			$actions = array_filter($actions, function($action) use ($scope) {
+				if (!($action['scopes'] ?? [])) {
+					return true;
+				}
+
+				return in_array(strtolower($scope), $action['scopes']);
+			});
+		}
+
+		// filter by visibility
+		if ($visible) {
+			$actions = array_filter($actions, function($action) {
+				return !($action['hidden'] ?? false);
+			});
+		}
+
+		return array_values($actions);
+	}
+
+	/**
 	 * Returns the filters of this report.
 	 *
 	 * @return 	array
 	 */
 	public function getFilters()
 	{
-		if (count($this->reportFilters)) {
+		if ($this->reportFilters) {
 			//do not run this method twice, as it could load JS and CSS files.
 			return $this->reportFilters;
 		}
-		$doc = JFactory::getDocument();
-		$css = '.vbo-report-load-trasporto span,
-			    .vbo-report-load-turismo span {
-			  	 	display: inline-block;
-					border: 1px solid #dd0000;
-					cursor: pointer;
-					color: #dd0000;
-					padding: 0px 7px;
-				}';
-	 	$doc->addStyleDeclaration($css);
+
 		//get VBO Application Object
 		$vbo_app = VikBooking::getVboApplication();
 
@@ -164,86 +340,115 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 		//custom export button
 		$this->customExport = '<a href="JavaScript: void(0);" onclick="vboDownloadSchedaIstat();" class="vbcsvexport"><i class="'.VikBookingIcons::i('download').'"></i> <span>Download File</span></a>';
 
-		//build the hidden values for the selection of Comuni & Province.
+		// build the hidden values for the selection of Comuni & Province and much more.
 		$this->comuniProvince = $this->loadComuniProvince();
 		$this->nazioni = $this->loadNazioni();
-		$hidden_vals = '<div id="vbo-report-alloggiati-hidden" style="display: none;">';
-		//Comuni
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-comune" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-comune" onchange="vboReportChosenComune(this);"><option value=""></option>';
-		if (isset($this->comuniProvince['comuni']) && count($this->comuniProvince['comuni'])) {
-			foreach ($this->comuniProvince['comuni'] as $code => $comune) {
-				$hidden_vals .= '	<option value="' . $code . '">' . (is_array($comune) ? $comune['name'] : '') . '</option>'."\n";
+
+		// open hidden fields
+		$hidden_vals = '<div id="vbo-report-ross1000-hidden" style="display: none;">';
+
+		// build params container HTML structure
+		$hidden_vals .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
+		$hidden_vals .= '	<div class="vbo-params-wrap">';
+		$hidden_vals .= '		<div class="vbo-params-container">';
+		$hidden_vals .= '			<div class="vbo-params-block vbo-params-block-noborder">';
+
+		// comuni
+		$hidden_vals .= '	<div id="vbo-report-ross1000-comune" class="vbo-report-ross1000-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Comune</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-comune" onchange="vboReportChosenComune(this);">';
+		$hidden_vals .= '				<option value=""></option>'."\n";
+		$hidden_vals .= '				<option value="ES">- Estero -</option>'."\n";
+		foreach ($this->comuniProvince['comuni'] ?? [] as $code => $comune) {
+			if (empty($code)) {
+				continue;
 			}
+			$hidden_vals .= '			<option value="' . $code . '">' . (is_array($comune) ? $comune['name'] : '') . '</option>'."\n";
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
-		//
-		//Mezzi di Trasporto 
-		$hidden_vals .= '	<div id="vbo-report-trasporto" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-trasporto" onchange="vboReportChosenTrasporto(this);"><option value=""></option>';
-		foreach ($this->mezzoDiTrasporto as $key => $value) {
-			$hidden_vals .= '	<option value="'.$value.'">'.$value.'</option>'."\n";
+
+		// mezzi di trasporto 
+		$hidden_vals .= '	<div id="vbo-report-trasporto" class="vbo-report-ross1000-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Mezzo di trasporto</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-trasporto" onchange="vboReportChosenTrasporto(this);"><option value=""></option>';
+		foreach ($this->meaningsOfTransport as $key => $value) {
+			$hidden_vals .= '		<option value="' . $value . '">' . $value . '</option>'."\n";
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
-		//
-		//Tipo di turismo
-		$hidden_vals .= '	<div id="vbo-report-turismo" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-turismo" onchange="vboReportChosenTurismo(this);"><option value=""></option>';
-		foreach ($this->tipoTurismo as $key => $value) {
-			$hidden_vals .= '	<option value="'.$value.'">'.$value.'</option>'."\n";
+
+		// tipo di turismo
+		$hidden_vals .= '	<div id="vbo-report-turismo" class="vbo-report-ross1000-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Tipo di turismo</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-turismo" onchange="vboReportChosenTurismo(this);"><option value=""></option>';
+		foreach ($this->tourismTypes as $key => $value) {
+			$hidden_vals .= '		<option value="' . $value . '">' . $value . '</option>'."\n";
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
-		//
-		//Province
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-provincia" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-provincia" onchange="vboReportChosenProvincia(this);"><option value=""></option>';
-		if (isset($this->comuniProvince['province']) && count($this->comuniProvince['province'])) {
-			foreach ($this->comuniProvince['province'] as $code => $provincia) {
-				$hidden_vals .= '	<option value="'.$code.'">'.$provincia.'</option>'."\n";
-			}
+
+		// province
+		$hidden_vals .= '	<div id="vbo-report-ross1000-provincia" class="vbo-report-ross1000-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Provincia</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-provincia" onchange="vboReportChosenProvincia(this);"><option value=""></option>';
+		foreach ($this->comuniProvince['province'] ?? [] as $code => $provincia) {
+			$hidden_vals .= '		<option value="' . $code . '">' . $provincia . '</option>'."\n";
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
-		//
-		//Nazioni
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-nazione" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-nazione" onchange="vboReportChosenNazione(this);"><option value=""></option>';
-		if (count($this->nazioni)) {
-			foreach ($this->nazioni as $code => $nazione) {
-				$hidden_vals .= '		<option value="'.$code.'">'.$nazione['name'].'</option>';
-			}
+
+		// nazioni
+		$hidden_vals .= '	<div id="vbo-report-ross1000-nazione" class="vbo-report-ross1000-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Paese</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-nazione" onchange="vboReportChosenNazione(this);"><option value=""></option>';
+		foreach ($this->nazioni as $code => $nazione) {
+			$hidden_vals .= '			<option value="' . $code . '">' . $nazione['name'] . '</option>';
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
-		//
-		//Sesso
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-sesso" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<select id="choose-sesso" onchange="vboReportChosenSesso(this);"><option value=""></option>';
-		$sessos = array(
+
+		// sesso
+		$hidden_vals .= '	<div id="vbo-report-ross1000-sesso" class="vbo-report-ross1000-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Sesso</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<select id="choose-sesso" onchange="vboReportChosenSesso(this);"><option value=""></option>';
+		$sessos = [
 			1 => 'M',
 			2 => 'F'
-		);
+		];
 		foreach ($sessos as $code => $ses) {
-			$hidden_vals .= '	<option value="'.$code.'">'.$ses.'</option>'."\n";
+			$hidden_vals .= '		<option value="'.$code.'">'.$ses.'</option>'."\n";
 		}
-		$hidden_vals .= '		</select>';
+		$hidden_vals .= '			</select>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
-		//
-		//Numero Documento
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-docnum" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<input type="text" size="40" id="choose-docnum" placeholder="Numero Documento..." value="" /><br/>';
-		$hidden_vals .= '		<button type="button" class="btn" onclick="vboReportChosenDocnum(document.getElementById(\'choose-docnum\').value);">'.JText::translate('VBAPPLY').'</button>';
+
+		// data di nascita
+		$hidden_vals .= '	<div id="vbo-report-ross1000-dbirth" class="vbo-report-ross1000-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '		<div class="vbo-param-label">Data di nascita</div>';
+		$hidden_vals .= '		<div class="vbo-param-setting">';
+		$hidden_vals .= '			<input type="text" size="40" id="choose-dbirth" value="" />';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
-		//
-		//Data di Nascita
-		$hidden_vals .= '	<div id="vbo-report-alloggiati-dbirth" class="vbo-report-alloggiati-selcont" style="display: none;">';
-		$hidden_vals .= '		<input type="text" size="40" id="choose-dbirth" placeholder="Data di Nascita" value="" /><br/>';
-		$hidden_vals .= '		<button type="button" class="btn" onclick="vboReportChosenDbirth(document.getElementById(\'choose-dbirth\').value);">'.JText::translate('VBAPPLY').'</button>';
+
+		// close params container HTML structure
+		$hidden_vals .= '			</div>';
+		$hidden_vals .= '		</div>';
 		$hidden_vals .= '	</div>';
-		//
+		$hidden_vals .= '</div>';
+
+		// close hidden fields
 		$hidden_vals .= '</div>';
 
 		//From Date Filter (with hidden values for the dropdown menus of Comuni, Province, Stati etc..)
@@ -261,36 +466,6 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 			'html' => '<input type="text" id="todate" name="todate" value="" class="vbo-report-datepicker vbo-report-datepicker-to" />',
 			'type' => 'calendar',
 			'name' => 'todate'
-		);
-		array_push($this->reportFilters, $filter_opt);
-
-		// apertura struttura
-		$papertura = VikRequest::getString('apertura', '', 'request');
-		$filter_opt = array(
-			'label' => '<label for="apertura">Apertura Struttura</label>',
-			'html' => '<select id="choose-apertura" name="apertura"> <option value="" '.((empty($papertura) || ($papertura != 'SI' && $papertura != 'NO')) ? 'selected="selected"' : '' ).'></option><option value="SI" ' .((!empty($papertura) && $papertura == 'SI') ? 'selected="selected"' : '') .'> La struttura è aperta in questa data. </option> <option value="NO"' .((!empty($papertura) && $papertura == 'NO') ? 'selected="selected"' : '') .'> La struttura non è aperta in questa data. </option> </select>',
-			'type' => 'text',
-			'name' => 'apertura'
-		);
-		array_push($this->reportFilters, $filter_opt);
-
-		// Filtro Numero Letti
-		$pletti = VikRequest::getInt('numletti', 0, 'request');
-		$filter_opt = array(
-			'label' => '<label for="numletti">Numero Letti Disponibili</label>',
-			'html' => '<input type="number" id="numletti" name="numletti" value="'.$pletti.'" size="10" />',
-			'type' => 'text',
-			'name' => 'numletti'
-		);
-		array_push($this->reportFilters, $filter_opt);
-
-		// Filtro Codice Struttura
-		$pcodstru = VikRequest::getString('codstru', '', 'request');
-		$filter_opt = array(
-			'label' => '<label for="codstru">Codice Struttura</label>',
-			'html' => '<input type="text" id="codstru" name="codstru" value="'.$pcodstru.'" size="10" />',
-			'type' => 'text',
-			'name' => 'codstru'
 		);
 		array_push($this->reportFilters, $filter_opt);
 
@@ -325,7 +500,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 			'.(!empty($pfromdate) ? 'jQuery(".vbo-report-datepicker-from").datepicker("setDate", "'.$pfromdate.'");' : '').'
 			'.(!empty($ptodate) ? 'jQuery(".vbo-report-datepicker-to").datepicker("setDate", "'.$ptodate.'");' : '').'
 			// prepare filler helpers
-			jQuery("#vbo-report-alloggiati-hidden").children().detach().appendTo(".vbo-info-overlay-report");
+			jQuery("#vbo-report-ross1000-hidden").children().detach().appendTo(".vbo-info-overlay-report");
 			jQuery("#choose-comune").select2({placeholder: "- Seleziona un Comune -", width: "200px"});
 			jQuery("#choose-provincia").select2({placeholder: "- Seleziona una Provincia -", width: "200px"});
 			jQuery("#choose-nazione").select2({placeholder: "- Seleziona una Nazione -", width: "200px"});
@@ -343,45 +518,64 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 			// click events
 			jQuery(".vbo-report-load-comune").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-alloggiati-selcont").hide();
-				jQuery("#vbo-report-alloggiati-comune").show();
-				vboShowOverlay();
+				jQuery(".vbo-report-ross1000-selcont").hide();
+				jQuery("#vbo-report-ross1000-comune").show();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog",
+				});
 			});
 			jQuery(".vbo-report-load-provincia").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-alloggiati-selcont").hide();
-				jQuery("#vbo-report-alloggiati-provincia").show();
-				vboShowOverlay();
+				jQuery(".vbo-report-ross1000-selcont").hide();
+				jQuery("#vbo-report-ross1000-provincia").show();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog",
+				});
 			});
 			jQuery(".vbo-report-load-nazione, .vbo-report-load-cittadinanza").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-alloggiati-selcont").hide();
-				jQuery("#vbo-report-alloggiati-nazione").show();
+				jQuery(".vbo-report-ross1000-selcont").hide();
+				jQuery("#vbo-report-ross1000-nazione").show();
 				vboShowOverlay();
 			});
 			jQuery(".vbo-report-load-sesso").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-alloggiati-selcont").hide();
-				jQuery("#vbo-report-alloggiati-sesso").show();
-				vboShowOverlay();
+				jQuery(".vbo-report-ross1000-selcont").hide();
+				jQuery("#vbo-report-ross1000-sesso").show();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
+				});
 			});
 			jQuery(".vbo-report-load-turismo").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-alloggiati-selcont").hide();
+				jQuery(".vbo-report-ross1000-selcont").hide();
 				jQuery("#vbo-report-turismo").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog",
+				});
 			});
 			jQuery(".vbo-report-load-trasporto").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-alloggiati-selcont").hide();
+				jQuery(".vbo-report-ross1000-selcont").hide();
 				jQuery("#vbo-report-trasporto").show();
-				vboShowOverlay();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog",
+				});
 			});
 			jQuery(".vbo-report-load-dbirth").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-alloggiati-selcont").hide();
-				jQuery("#vbo-report-alloggiati-dbirth").show();
-				vboShowOverlay();
+				jQuery(".vbo-report-ross1000-selcont").hide();
+				jQuery("#vbo-report-ross1000-dbirth").show();
+				vboShowOverlay({
+					title: "Compila informazioni",
+					extra_class: "vbo-modal-rounded vbo-modal-dialog",
+					footer_right: "<button type=\"button\" class=\"btn btn-success\" onclick=\"vboReportChosenDbirth(document.getElementById(\'choose-dbirth\').value);\">Applica</button>",
+				});
 			});
 		});
 
@@ -589,13 +783,25 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 		}
 
 		// download function
-		function vboDownloadSchedaIstat() {
+		function vboDownloadSchedaIstat(type) {
 			if (!confirm("Sei sicuro di aver compilato tutti i dati?")) {
 				return false;
 			}
-			document.adminForm.target = "_blank";
-			document.adminForm.action += "&tmpl=component";
-			vboSetFilters({exportreport: "1", filler: JSON.stringify(reportObj)}, true);
+
+			let use_blank = true;
+			if (typeof type === "undefined") {
+				type = 1;
+			} else {
+				use_blank = false;
+			}
+
+			if (use_blank) {
+				document.adminForm.target = "_blank";
+				document.adminForm.action += "&tmpl=component";
+			}
+
+			vboSetFilters({exportreport: type, filler: JSON.stringify(reportObj)}, true);
+
 			setTimeout(function() {
 				document.adminForm.target = "";
 				document.adminForm.action = document.adminForm.action.replace("&tmpl=component", "");
@@ -640,117 +846,185 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	 */
 	public function getReportData()
 	{
-		if (strlen($this->getError())) {
-			//Export functions may set errors rather than exiting the process, and the View may continue the execution to attempt to render the report.
+		if ($this->getError()) {
+			// export functions may set errors rather than exiting the process, and
+			// the View may continue the execution to attempt to render the report.
 			return false;
 		}
-		//Input fields and other vars
-		$pfromdate = VikRequest::getString('fromdate', '', 'request');
-		$ptodate = VikRequest::getString('todate', '', 'request');
+
+		if ($this->rows) {
+			// method must have run already
+			return true;
+		}
+
+		// get the possibly injected report options
+		$options = $this->getReportOptions();
+
+		// injected options will replace request variables, if any
+		$opt_fromdate = $options->get('fromdate', '');
+		$opt_todate   = $options->get('todate', '');
+
+		// input fields and other vars
+		$pfromdate = $opt_fromdate ?: VikRequest::getString('fromdate', '', 'request');
+		$ptodate = $opt_todate ?: VikRequest::getString('todate', '', 'request');
+
 		$pkrsort = VikRequest::getString('krsort', $this->defaultKeySort, 'request');
 		$pkrsort = empty($pkrsort) ? $this->defaultKeySort : $pkrsort;
 		$pkrorder = VikRequest::getString('krorder', $this->defaultKeyOrder, 'request');
 		$pkrorder = empty($pkrorder) ? $this->defaultKeyOrder : $pkrorder;
 		$pkrorder = $pkrorder == 'DESC' ? 'DESC' : 'ASC';
-		$pcodstru = VikRequest::getString('codstru', '', 'request');
-		$papertura = VikRequest::getString('apertura', '', 'request');
 
-		$q = "SELECT SUM(`units`) AS `sommaunita`, SUM(`totpeople`) AS `numeropersone`, COUNT(*) AS `numerocamere`  FROM `#__vikbooking_rooms` WHERE `avail`= '1';";
-		$this->dbo->setQuery($q);
-		$records = $this->dbo->loadAssocList();
-		if (!$records) {
-			return false;
-		}
-
-		$totalBeds = (int)($records[0]['sommaunita'] * ($records[0]['numeropersone'] / $records[0]['numerocamere']));
-		$pletti = VikRequest::getString('numletti', $totalBeds, 'request');
 		$currency_symb = VikBooking::getCurrencySymb();
 		$df = $this->getDateFormat();
 		$datesep = VikBooking::getDateSeparator();
 		if (empty($ptodate)) {
 			$ptodate = $pfromdate;
 		}
-		//Get dates timestamps
+
+		// get date timestamps
 		$from_ts = VikBooking::getDateTimestamp($pfromdate, 0, 0);
 		$to_ts = VikBooking::getDateTimestamp($ptodate, 23, 59, 59);
-		if (empty($pfromdate) || empty($from_ts) || empty($to_ts)) {
+		if (empty($pfromdate) || empty($from_ts) || empty($to_ts) || $from_ts > $to_ts) {
 			$this->setError(JText::translate('VBOREPORTSERRNODATES'));
 			return false;
 		}
-		if (empty($pcodstru)) {
-			$this->setError('Inserisci il codice della tua Struttura.<br/>Si tratta di un codice univoco di identificazione che ti viene assegnato dall\'Amministrazione competente.');
+
+		// set the dates being exported
+		$this->exported_checkin_dates = [
+			date('Y-m-d', $from_ts),
+			date('Y-m-d', $to_ts),
+		];
+
+		// load settings
+		$settings = $this->loadSettings();
+
+		if (empty($settings['codstru'])) {
+			$this->setError('Inserisci il codice della tua Struttura dalle impostazioni.<br/>Si tratta di un codice univoco di identificazione che ti viene assegnato dall\'Amministrazione competente.');
 			return false;
 		}
-		if (empty($papertura)) {
-			$this->setError('Devi specificare se la tua struttura è aperta o meno attraverso il menù a tendina qui sopra.');
-			return false;
-		}
-		//Query to obtain the records (all check-ins within the dates filter)
-		$q = "SELECT `o`.`id`,`o`.`custdata`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`country`,".
-			"`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`t_first_name`,`or`.`t_last_name`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,".
-			"`co`.`idcustomer`,`co`.`pax_data`,`c`.`first_name`,`c`.`last_name`,`c`.`country` AS `customer_country`,`c`.`doctype`,`c`.`docnum`,`c`.`gender`,`c`.`bdate`,`c`.`pbirth` ".
-			"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
-			"LEFT JOIN `#__vikbooking_customers_orders` AS `co` ON `co`.`idorder`=`o`.`id` LEFT JOIN `#__vikbooking_customers` AS `c` ON `c`.`id`=`co`.`idcustomer` ".
-			"WHERE `o`.`status`='confirmed' AND `o`.`closure`=0 AND ((`o`.`checkin`>=".$from_ts." AND `o`.`checkin`<=".$to_ts.") OR (`o`.`checkout`>=".$from_ts." AND `o`.`checkout`<=".$to_ts.")) ".
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
+
+		// query to obtain the records (all check-ins, check-outs and reservations created within the dates filter)
+		$q = $this->dbo->getQuery(true)
+			->select([
+				$this->dbo->qn('o.id'),
+				$this->dbo->qn('o.custdata'),
+				$this->dbo->qn('o.ts'),
+				$this->dbo->qn('o.days'),
+				$this->dbo->qn('o.checkin'),
+				$this->dbo->qn('o.checkout'),
+				$this->dbo->qn('o.totpaid'),
+				$this->dbo->qn('o.roomsnum'),
+				$this->dbo->qn('o.total'),
+				$this->dbo->qn('o.idorderota'),
+				$this->dbo->qn('o.channel'),
+				$this->dbo->qn('o.country'),
+				$this->dbo->qn('o.custmail'),
+				$this->dbo->qn('o.phone'),
+				$this->dbo->qn('or.idorder'),
+				$this->dbo->qn('or.idroom'),
+				$this->dbo->qn('or.adults'),
+				$this->dbo->qn('or.children'),
+				$this->dbo->qn('or.t_first_name'),
+				$this->dbo->qn('or.t_last_name'),
+				$this->dbo->qn('or.cust_cost'),
+				$this->dbo->qn('or.cust_idiva'),
+				$this->dbo->qn('or.extracosts'),
+				$this->dbo->qn('or.room_cost'),
+				$this->dbo->qn('co.idcustomer'),
+				$this->dbo->qn('co.pax_data'),
+				$this->dbo->qn('c.first_name'),
+				$this->dbo->qn('c.last_name'),
+				$this->dbo->qn('c.country', 'customer_country'),
+				$this->dbo->qn('c.address'),
+				$this->dbo->qn('c.doctype'),
+				$this->dbo->qn('c.docnum'),
+				$this->dbo->qn('c.gender'),
+				$this->dbo->qn('c.bdate'),
+				$this->dbo->qn('c.pbirth'),
+			])
+			->from($this->dbo->qn('#__vikbooking_orders', 'o'))
+			->leftJoin($this->dbo->qn('#__vikbooking_ordersrooms', 'or') . ' ON ' . $this->dbo->qn('or.idorder') . ' = ' . $this->dbo->qn('o.id'))
+			->leftJoin($this->dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $this->dbo->qn('co.idorder') . ' = ' . $this->dbo->qn('o.id'))
+			->leftJoin($this->dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $this->dbo->qn('c.id') . ' = ' . $this->dbo->qn('co.idcustomer'))
+			->where($this->dbo->qn('o.status') . ' = ' . $this->dbo->q('confirmed'))
+			->where($this->dbo->qn('o.closure') . ' = 0')
+			// fetch all bookings with check-in, check-out or reservation date within date filters
+			->andWhere([
+				'(' . $this->dbo->qn('o.checkin') . ' BETWEEN ' . $from_ts . ' AND ' . $to_ts . ')',
+				'(' . $this->dbo->qn('o.checkout') . ' BETWEEN ' . $from_ts . ' AND ' . $to_ts . ')',
+				'(' . $this->dbo->qn('o.ts') . ' BETWEEN ' . $from_ts . ' AND ' . $to_ts . ')',
+			], 'OR')
+			->order($this->dbo->qn('o.checkin') . ' ASC')
+			->order($this->dbo->qn('o.id') . ' ASC')
+			->order($this->dbo->qn('or.id') . ' ASC');
+
 		$this->dbo->setQuery($q);
 		$records = $this->dbo->loadAssocList();
 		if (!$records) {
 			$this->setError(JText::translate('VBOREPORTSERRNORESERV'));
-			$this->setError('Nessun check-in nelle date selezionate.');
+			$this->setError('Nessun check-in, check-out o prenotazione nelle date selezionate.');
 			return false;
 		}
 
-		//nest records with multiple rooms booked inside sub-array
-		$bookings = array();
+		// nest records with multiple rooms booked inside sub-array
+		$bookings = [];
 		foreach ($records as $v) {
 			if (!isset($bookings[$v['id']])) {
-				$bookings[$v['id']] = array();
+				$bookings[$v['id']] = [];
 			}
 			array_push($bookings[$v['id']], $v);
 		}
-		//define the columns of the report
+
+		// define the columns of the report
 		$this->cols = array(
-			//id booking
+			// booking code idswh for the PMS software
 			array(
-				'key' => 'idbooking',
+				'key' => 'idswh',
+				'label' => 'IDSWH',
+				'tip' => 'Codice identificativo del movimento. Generato automaticamente dal sistema.',
+			),
+			// booking id (this is not a duplicate value of "idbooking", it should go before "resdate", "checkin" and "checkout")
+			array(
+				'key' => 'booking_id',
+				'label' => 'ID',
+				// hide this field in the View
+				'ignore_view' => 1,
+			),
+			// reservation date
+			array(
+				'key' => 'resdate',
 				'attr' => array(
 					'class="center"'
 				),
-				'label' => 'ID',
-				'sortable' => 1,
+				'label' => JText::translate('VBPCHOOSEBUSYORDATE'),
 			),
-			//check-in
+			// check-in
 			array(
 				'key' => 'checkin',
 				'attr' => array(
 					'class="center"'
 				),
-				'sortable' => 1,
-				'label' => JText::translate('VBPICKUPAT')
+				'label' => JText::translate('VBPICKUPAT'),
 			),
-			//checkout
+			// checkout
 			array(
 				'key' => 'checkout',
 				'attr' => array(
 					'class="center"'
 				),
-				'sortable' => 1,
-				'label' => 'Partenza'
+				'label' => JText::translate('VBRELEASEAT'),
 			),
-				//cognome
-			array(
-				'key' => 'cognome',
-				'label' => JText::translate('VBTRAVELERLNAME'),
-				'sortable' => 1,
-			),
-			//nome
+			// nome
 			array(
 				'key' => 'nome',
 				'label' => JText::translate('VBTRAVELERNAME'),
-				'sortable' => 1,
 			),
-			//sesso
+			// cognome
+			array(
+				'key' => 'cognome',
+				'label' => JText::translate('VBTRAVELERLNAME'),
+			),
+			// sesso
 			array(
 				'key' => 'gender',
 				'attr' => array(
@@ -758,7 +1032,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 				),
 				'label' => JText::translate('VBCUSTOMERGENDER')
 			),
-			//data di nascita
+			// data di nascita
 			array(
 				'key' => 'dbirth',
 				'attr' => array(
@@ -766,85 +1040,92 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 				),
 				'label' => JText::translate('VBCUSTOMERBDATE')
 			),
-			//cittadinanza
+			// cittadinanza
 			array(
 				'key' => 'citizen',
 				'attr' => array(
 					'class="center"'
 				),
-				'sortable' => 1,
 				'label' => 'Cittadinanza'
 			),
-			//cittadinanza
+			// residenza
 			array(
 				'key' => 'stares',
 				'attr' => array(
 					'class="center"'
 				),
-				'sortable' => 1,
 				'label' => 'Stato di Residenza'
 			),
-			//comune di residenza
+			// comune di residenza
 			array(
 				'key' => 'comres',
 				'attr' => array(
 					'class="center"'
 				),
-				'sortable' => 1,
 				'label' => 'Comune Residenza',
 				'tip' => 'Inserire il comune di residenza solo se il cittadino è di nazionalità italiana.'
 			),
-			//tipo
+			// tipo
 			array(
 				'key' => 'tipo',
 				'attr' => array(
-					'class="vbo-report-longlbl"'
+					'class="vbo-report-longlbl"',
 				),
-				'label' => 'Tipo Alloggiato'
-			),
-			// tipo di trasporto 
-			array(
-				'key' => 'mezzo',
-				'attr' => array(
-					'class="center"'
-				),
-				'label' => 'Mezzo di Trasporto'
+				'label' => 'Tipo Alloggiato',
 			),
 			// tipo di turismo 
 			array(
 				'key' => 'turismo',
 				'attr' => array(
-					'class="center"'
+					'class="center"',
 				),
-				'label' => 'Tipo di Turismo'
+				'label' => 'Tipo di Turismo',
 			),
-			//quantità (numero di ospiti)
+			// mezzo di trasporto 
+			array(
+				'key' => 'mezzo',
+				'attr' => array(
+					'class="center"',
+				),
+				'label' => 'Mezzo di Trasporto',
+			),
+			// numero di ospiti
 			array(
 				'key' => 'guestsnum',
 				'attr' => array(
 					'class="center"'
 				),
-				'sortable' => 1,
 				'label' => 'Numero Ospiti',
-				'tip' => 'Il numero di ospiti totali (adulti + bambini) per ogni prenotazione è un dato che verrà comunicato all\'ISTAT.',
+				'ignore_view' => 1,
 			),
+			// occupazione
 			array(
 				'key' => 'roomsbooked',
 				'attr' => array(
 					'class="center"'
 				),
-				'sortable' => 1,
-				'label' => 'Occupazione',
-				'tip' => 'Questo valore indica il numero di camere occupate da ogni prenotazione, ed è un dato che verrà comunicato all\'ISTAT.',
+				'label' => 'Camere',
+				'ignore_view' => 1,
+			),
+			// id booking
+			array(
+				'key' => 'idbooking',
+				'attr' => array(
+					'class="center"'
+				),
+				'label' => 'ID / #',
 			),
 		);
+
+		// line number (to facilitate identifying a specific guest in case of errors with the file submission)
+		$line_number = 0;
 
 		// loop over the bookings to build the rows of the report
 		$from_info = getdate($from_ts);
 		foreach ($bookings as $gbook) {
 			$guestsnum = 0;
-			$guests_rows = array($gbook[0]);
-			$room_guests = array();
+			$guests_rows = [$gbook[0]];
+			$room_guests = [];
 			$tot_guests_rows = 1;
 			
 			$tipo = 16;
@@ -875,29 +1156,41 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 				}
 			}
 
-			//create one row for each guest
+			// create one row for each guest
 			$guest_ind = 1;
 			foreach ($guests_rows as $ind => $guests) {
 				// prepare row record
-				$insert_row = array();
+				$insert_row = [];
 
 				// find the actual guest-room-index
 				$guest_room_ind = $this->calcGuestRoomIndex($room_guests, $guest_ind);
 
-				// booking ID
+				// booking code idswh for the PMS software
 				array_push($insert_row, array(
-					'key' => 'idbooking',
+					'key' => 'idswh',
+					'value' => $guests['id'] . '-' . $guest_ind,
+				));
+
+				// booking id
+				array_push($insert_row, array(
+					'key' => 'booking_id',
+					'value' => $guests['id'],
+					'ignore_view' => 1,
+				));
+
+				// reservation date
+				array_push($insert_row, array(
+					'key' => 'resdate',
 					'attr' => array(
 						'class="center"'
 					),
-					'callback' => function ($val) {
-						// make sure to keep the data-bid attribute as it's used by JS to identify the booking ID
-						return '<a data-bid="' . $val . '" href="index.php?option=com_vikbooking&task=editorder&cid[]=' . $val . '" target="_blank"><i class="' . VikBookingIcons::i('external-link') . '"></i> ' . $val . '</a>';
+					'callback' => function($val) {
+						return date('d/m/Y', $val);
 					},
-					'callback_export' => function ($val) {
-						return $val;
+					'callback_export' => function($val) {
+						return date('Ymd', $val);
 					},
-					'value' => $guests['id']
+					'value' => $guests['ts'],
 				));
 
 				// checkin date
@@ -906,10 +1199,13 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 					'attr' => array(
 						'class="center"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						return date('d/m/Y', $val);
 					},
-					'value' => $guests['checkin']
+					'callback_export' => function($val) {
+						return date('Ymd', $val);
+					},
+					'value' => $guests['checkin'],
 				));
 
 				// checkout date
@@ -918,19 +1214,13 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 					'attr' => array(
 						'class="center"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						return date('d/m/Y', $val);
 					},
-					'value' => $gbook[0]['checkout']
-				));
-
-				// cognome
-				$cognome = !empty($guests['t_last_name']) ? $guests['t_last_name'] : $guests['last_name'];
-				$pax_cognome = $this->getGuestPaxDataValue($pax_data, $room_guests, $guest_ind, 'last_name');
-				$cognome = !empty($pax_cognome) ? $pax_cognome : $cognome;
-				array_push($insert_row, array(
-					'key' => 'cognome',
-					'value' => $cognome
+					'callback_export' => function($val) {
+						return date('Ymd', $val);
+					},
+					'value' => $guests['checkout'],
 				));
 
 				// nome
@@ -940,6 +1230,15 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 				array_push($insert_row, array(
 					'key' => 'nome',
 					'value' => $nome
+				));
+
+				// cognome
+				$cognome = !empty($guests['t_last_name']) ? $guests['t_last_name'] : $guests['last_name'];
+				$pax_cognome = $this->getGuestPaxDataValue($pax_data, $room_guests, $guest_ind, 'last_name');
+				$cognome = !empty($pax_cognome) ? $pax_cognome : $cognome;
+				array_push($insert_row, array(
+					'key' => 'cognome',
+					'value' => $cognome
 				));
 
 				// sesso
@@ -959,10 +1258,10 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 					'attr' => array(
 						'class="center'.(empty($gender) ? ' vbo-report-load-sesso' : '').'"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						return $val == 2 ? 'F' : ($val == 1 ? 'M' : '?');
 					},
-					'callback_export' => function ($val) {
+					'callback_export' => function($val) {
 						return $val == 2 ? 'F' : ($val == 1 ? 'M' : '?');
 					},
 					'value' => $gender
@@ -978,7 +1277,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 					'attr' => array(
 						'class="center'.(empty($dbirth) ? ' vbo-report-load-dbirth' : '').'"'
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						if (!empty($val) && strpos($val, '/') === false && strpos($val, VikBooking::getDateSeparator()) === false) {
 							return date('d/m/Y', $val);
 						}
@@ -1007,13 +1306,13 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 				array_push($insert_row, array(
 					'key' => 'citizen',
 					'attr' => array(
-						'class="center'.(empty($citizen) ? ' vbo-report-load-cittadinanza' : '').'"'
+						'class="center'.(empty($citizen) ? ' vbo-report-load-cittadinanza' : '').'"',
 					),
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						return !empty($val) && isset($this->nazioni[$val]) ? $this->nazioni[$val]['name'] : '?';
 					},
 					'no_export_callback' => 1,
-					'value' => !empty($citizenval) ? $citizenval : ''
+					'value' => !empty($citizenval) ? $citizenval : '',
 				));
 
 				// stato di residenza
@@ -1023,7 +1322,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 				array_push($insert_row, array(
 					'key' => 'stares',
 					'attr' => array(
-						'class="center'.(empty($provstay) ? ' vbo-report-load-nazione' : '').'"'
+						'class="center'.(empty($provstay) ? ' vbo-report-load-nazione' : '').'"',
 					),
 					'callback' => function($val) {
 						if (!empty($val) && isset($this->nazioni[$val])) {
@@ -1033,27 +1332,35 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 						return '?';
 					},
 					'no_export_callback' => 1,
-					'value' => $provstay
+					'value' => $provstay,
 				));
 
 				// comune di residenza
 				$comstay = '';
-				$pax_comstay = $this->getGuestPaxDataValue($pax_data, $room_guests, $guest_ind, 'comune_s');
+				$pax_comstay = $this->getGuestPaxDataValue($pax_data, $room_guests, $guest_ind, ($guest_ind < 2 ? 'comune_s' : 'comune_b'));
+				$pax_comstay = $pax_comstay ?: $this->getGuestPaxDataValue($pax_data, $room_guests, $guest_ind, ($guest_ind < 2 ? 'province_s' : 'province_b'));
 				$comstay = !empty($pax_comstay) ? $pax_comstay : $comstay;
+				if (empty($comstay) && !empty($provstay) && $provstay != '100000100' && strtoupper(substr((string) $provstay, 0, 2)) != 'IT') {
+					// we assume the guest is not Italian
+					$comstay = 'ES';
+				}
 				array_push($insert_row, array(
 					'key' => 'comres',
 					'attr' => array(
-						'class="center'.(empty($comstay) ? ' vbo-report-load-comune' : '').'"'
+						'class="center'.(empty($comstay) ? ' vbo-report-load-comune' : ' vbo-report-load-comune vbo-report-load-elem-filled').'"'
 					),
 					'callback' => function($val) {
 						if (!empty($val) && isset($this->comuniProvince['comuni'][$val])) {
 							return $this->comuniProvince['comuni'][$val]['name'];
 						}
+						if ($val === 'ES') {
+							return 'Estero';
+						}
 						// information is missing and should be provided
-						return '?';
+						return $val ?: '?';
 					},
 					'no_export_callback' => 1,
-					'value' => $comstay
+					'value' => $comstay,
 				));
 
 				// tipo alloggiato
@@ -1062,7 +1369,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 				$use_tipo = !empty($pax_guest_type) ? $pax_guest_type : $use_tipo;
 				array_push($insert_row, array(
 					'key' => 'tipo',
-					'callback' => function ($val) {
+					'callback' => function($val) {
 						switch ($val) {
 							case 16:
 								return 'Ospite Singolo';
@@ -1081,42 +1388,66 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 					'value' => $use_tipo
 				));
 
-				// mezzo di trasporto
-				$pax_mezzo = $this->getGuestPaxDataValue($pax_data, $room_guests, $guest_ind, 'mezzo');
-				array_push($insert_row, array(
-					'key' => 'mezzo',
-					'attr' => array(
-						'class="center' . (empty($pax_mezzo) ? ' vbo-report-load-trasporto' : '') . '"'
-					),
-					'value' => ($pax_mezzo ? $pax_mezzo : '?')
-				));
-
 				// tipo di turismo
 				$pax_turismo = $this->getGuestPaxDataValue($pax_data, $room_guests, $guest_ind, 'turismo');
 				array_push($insert_row, array(
 					'key' => 'turismo',
 					'attr' => array(
-						'class="center' . (empty($pax_turismo) ? ' vbo-report-load-turismo' : '') . '"'
+						'class="center' . (empty($pax_turismo) ? ' vbo-report-load-turismo vbo-report-load-elem-filled' : ' vbo-report-load-field-optional') . '"',
 					),
-					'value' => ($pax_turismo ? $pax_turismo : '?')
+					'callback' => function($val) {
+						return $this->tourismTypes[$val] ?? $val;
+					},
+					'no_export_callback' => 1,
+					'value' => ($pax_turismo ?: 'NON SPECIFICATO'),
 				));
 
-				// numero persone in prenotazione
+				// mezzo di trasporto
+				$pax_mezzo = $this->getGuestPaxDataValue($pax_data, $room_guests, $guest_ind, 'mezzo');
+				array_push($insert_row, array(
+					'key' => 'mezzo',
+					'attr' => array(
+						'class="center' . (empty($pax_mezzo) ? ' vbo-report-load-trasporto vbo-report-load-elem-filled' : ' vbo-report-load-field-optional') . '"',
+					),
+					'callback' => function($val) {
+						return $this->meaningsOfTransport[$val] ?? $val;
+					},
+					'no_export_callback' => 1,
+					'value' => ($pax_mezzo ?: 'NON SPECIFICATO'),
+				));
+
+				// numero di ospiti
 				array_push($insert_row, array(
 					'key' => 'guestsnum',
 					'attr' => array(
-						'class="center"'
+						'class="center"',
 					),
-					'value' => $guestsnum
+					'value' => $guestsnum,
+					'ignore_view' => 1,
 				));
 
 				// camere prenotate 
 				array_push($insert_row, array(
 					'key' => 'roomsbooked',
 					'attr' => array(
-						'class="center"'
+						'class="center"',
 					),
-					'value' => count($gbook)
+					'value' => count($gbook),
+					'ignore_view' => 1,
+				));
+
+				// id booking
+				array_push($insert_row, array(
+					'key' => 'idbooking',
+					'attr' => array(
+						'class="center"',
+					),
+					'callback' => function($val) use ($line_number) {
+						// make sure to keep the data-bid attribute as it's used by JS to identify the booking ID
+						return '<a data-bid="' . $val . '" href="index.php?option=com_vikbooking&task=editorder&cid[]=' . $val . '" target="_blank"><i class="' . VikBookingIcons::i('external-link') . '"></i> ' . $val . '</a> / <span>#' . $line_number . '</span>';
+					},
+					'ignore_export' => 1,
+					'value' => $guests['id'],
 				));
 
 				// push fields in the rows array as a new row
@@ -1124,6 +1455,9 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 
 				// increment guest index
 				$guest_ind++;
+
+				// increment line number
+				$line_number++;
 			}
 		}
 
@@ -1134,29 +1468,22 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 		array_push($this->footerRow, array(
 			array(
 				'attr' => array(
-					'class="vbo-report-total"'
+					'class="vbo-report-total"',
 				),
-				'value' => '<h3>'.JText::translate('VBOREPORTSTOTALROW').'</h3>'
+				'value' => '<h3>' . JText::translate('VBOREPORTSTOTALROW') . '</h3>',
 			),
 			array(
 				'attr' => array(
-					'colspan="'.(count($this->cols) - 1).'"'
+					'colspan="' . (count($this->cols) - 1) . '"',
 				),
-				'value' => count($this->rows)
+				'value' => count($this->rows),
 			)
 		));
-
-		// Debug
-		if ($this->debug) {
-			$this->setWarning('path to report file = '.urlencode(dirname(__FILE__)).'<br/>');
-			$this->setWarning('$total_rooms_units = '.$total_rooms_units.'<br/>');
-			$this->setWarning('$bookings:<pre>'.print_r($bookings, true).'</pre><br/>');
-		}
 
 		return true;
 	}
 
-	public function formatXML(&$xml)
+	public function formatXML($xml)
 	{
 		if (!class_exists('DOMDocument')) {
 			// we cannot format the XML because DOMDocument is missing
@@ -1173,372 +1500,94 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	}
 
 	/**
-	 * Generates the report columns and rows, then it outputs a CSV file
-	 * for download. In case of errors, the process is not terminated (exit)
-	 * to let the View display the error message.
-	 * We use customExport() rather than exportCSV() only because we need a
-	 * different download button rather than the classic "Export as CSV".
-	 * 
+	 * Generates the authority file, then sends it to output for download.
+	 * In case of errors, the process is not terminated (exit) to let the View display the
+	 * error message(s). The export type argument can eventually determine an action to run.
+	 *
 	 * @param 	string 	$export_type 	Differentiates the type of export requested.
 	 *
 	 * @return 	void|bool 				Void in case of script termination, boolean otherwise.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP) method's logic refactoring.
 	 */
-	public function customExport($export_type = 0)
+	public function customExport($export_type = null)
 	{
-		if (!$this->getReportData()) {
+		// build the XML file
+		$xml = $this->buildXMLFile();
+
+		// build report action data, if needed
+		$action_data = array_merge($this->getActionData($registry = false), ['xml' => $xml]);
+
+		/**
+		 * Custom export method can run a custom action.
+		 */
+		if ($export_type && !is_numeric($export_type)) {
+			try {
+				// ensure the type of export is a callable scoped action, hidden or visible
+				$actions = $this->getScopedActions($this->getScope(), $visible = false);
+				$action_ids = array_column($actions, 'id');
+				$action_names = array_column($actions, 'name');
+				if (!in_array($export_type, $action_ids)) {
+					throw new Exception(sprintf('Cannot invoke the requested type of export [%s].', $export_type), 403);
+				}
+
+				// get the requested action readable name
+				$action_name = $action_names[array_search($export_type, $action_ids)];
+
+				if ($this->getScope() === 'web') {
+					// run the action and output the HTML response string
+					$html_result = $this->_callActionReturn($export_type, 'html', $this->getScope(), $action_data);
+
+					// build the action result data object
+					$js_result = json_encode([
+						'actionName' => $action_name,
+						'actionHtml' => $html_result,
+					]);
+
+					// render modal script with the action result
+					JFactory::getDocument()->addScriptDeclaration(
+<<<JS
+;(function($) {
+	$(function() {
+		let result = $js_result;
+		VBOCore.displayModal({
+			suffix:      'report-custom-scopedaction-result',
+			extra_class: 'vbo-modal-rounded vbo-modal-tall vbo-modal-nofooter',
+			title:       result.actionName,
+			body:        result.actionHtml,
+		});
+	});
+})(jQuery);
+JS
+					);
+
+					// abort and let the View render the result within a modal
+					return;
+				}
+
+				// let the report custom action run and return a boolean value if invoked by a cron
+				return (bool) $this->_callActionReturn($export_type, 'success', $this->getScope(), $action_data);
+
+			} catch (Exception $e) {
+				// silently catch the error and set it
+				$this->setError(sprintf('(%s) %s', $e->getCode(), $e->getMessage()));
+
+				// abort
+				return false;
+			}
+		}
+
+		// proceed with the regular export function (write on file through cron or download file through web)
+
+		if (!$xml) {
+			// abort
 			return false;
 		}
 
-		$pfromdate = VikRequest::getString('fromdate', '', 'request');
-		$ptodate = VikRequest::getString('todate', '', 'request');
-		$pcodstru = VikRequest::getString('codstru', '', 'request');
-		$papertura = VikRequest::getString('apertura', '', 'request');
-
-		$q = "SELECT SUM(`units`) AS `sommaunita`, SUM(`totpeople`) AS `numeropersone`, COUNT(*) AS `numerocamere`  FROM `#__vikbooking_rooms` WHERE `avail`= '1';";
-		$this->dbo->setQuery($q);
-		$records = $this->dbo->loadAssocList();
-
-		$totalBeds = (int)($records[0]['sommaunita'] * ($records[0]['numeropersone']/$records[0]['numerocamere']));
-		// filtro numero letti
-		$pletti = VikRequest::getString('numletti', $totalBeds, 'request');
-
-		// manual values in filler
-		$pfiller = VikRequest::getString('filler', '', 'request', VIKREQUEST_ALLOWRAW);
-		$pfiller = !empty($pfiller) ? json_decode($pfiller, true) : array();
-		$pfiller = !is_array($pfiller) ? array() : $pfiller;
-
-		// Debug
-		if ($this->debug) {
-			$this->setError('<pre>'.print_r($pfiller, true).'</pre><br/>');
-			return false;
+		// update history for all bookings affected before exporting
+		foreach ($this->export_booking_ids as $bid) {
+			VikBooking::getBookingHistoryInstance($bid)->store('RP', $this->reportName);
 		}
-
-		$q = "SELECT SUM(`units`) FROM `#__vikbooking_rooms` WHERE `avail`= '1';";
-		$this->dbo->setQuery($q);
-		$this->dbo->execute();
-		$totalRooms = $this->dbo->loadResult();
-
-		// pool of booking IDs to update their history
-		$booking_ids = [];
-		// update the history for all bookings affected
-		foreach ($booking_ids as $bid) {
-			VikBooking::getBookingHistoryInstance()->setBid($bid)->store('RP', $this->reportName);
-		}
-		$date = str_replace('/', '-', $pfromdate);
-		$dataMovim = date('Ymd', strtotime($date));
-		
-		$xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<movimenti>'."\n".'<codice>'.$pcodstru.'</codice>'."\n".'<prodotto>VikBooking</prodotto>'."\n".'<movimento>'."\n".'<data>'.$dataMovim.'</data>'."\n";
-		$numOccupiedrooms = 0;
-
-		$from_ts = VikBooking::getDateTimestamp($pfromdate, 0, 0);
-		$to_ts = VikBooking::getDateTimestamp($pfromdate, 23, 59, 59);
-
-		$clienti = [
-			'arrivi' => [],
-			'partenze' => [],
-			'prenotazioni' => [],
-		];
-
-		$q = "SELECT COUNT(`o`.`id`) AS `occ_rooms`,".
-			"(SELECT `h`.`dt` FROM `#__vikbooking_orderhistory` AS `h` WHERE `h`.`idorder`=`o`.`id` AND `h`.`type`='RP' AND `h`.`descr`=".$this->dbo->quote($this->reportName)." ORDER BY `h`.`dt` DESC LIMIT 1) AS `history_last` ".
-			"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
-			"LEFT JOIN `#__vikbooking_customers_orders` AS `co` ON `co`.`idorder`=`o`.`id` LEFT JOIN `#__vikbooking_customers` AS `c` ON `c`.`id`=`co`.`idcustomer` LEFT JOIN `#__vikbooking_countries` AS `cy` ON `cy`.`country_3_code`=`c`.`country` ".
-			"WHERE `o`.`status`='confirmed' AND `o`.`closure`=0 AND ((`o`.`checkin`>=".$from_ts." AND `o`.`checkin`<=".$to_ts.") OR (`o`.`checkout`>=".$from_ts." AND `o`.`checkout`<=".$to_ts.") OR (`o`.`checkin`<=".$from_ts." AND `o`.`checkout`>=".$to_ts.")) ".
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
-
-		$this->dbo->setQuery($q);
-		$data = $this->dbo->loadAssoc();
-
-		$arrivi = 0;
-		$partenze = 0;
-		$prenotazioni = 0;
-
-		if ($papertura == 'SI') {
-			$xml .= '<struttura>' . "\n";
-			$xml .= '<apertura>' . $papertura . '</apertura>' . "\n";
-			$xml .= '<camereoccupate>' . $data['occ_rooms'] . '</camereoccupate>' . "\n";
-			$xml .= '<cameredisponibili>' . $totalRooms . '</cameredisponibili>' . "\n";
-			$xml .= '<lettidisponibili>' . $pletti . '</lettidisponibili>' . "\n";
-			$xml .= '</struttura>' . "\n";
-
-			// counter for booking IDs
-			$idswh_map = [];
-
-			foreach ($this->rows as $ind => $row) {
-				$timestamp_in = -1;
-				$timestamp_out = -1;
-				$control = -1;
-				// se il cliente è in arrivo il tipo è 1, se è in partenza 2, se è una nuova prenotazione 3
-				$type = -1;
-				$guest_lastname  = '';
-				$guest_firstname = '';
-
-				$fields_checkin = '';
-
-				foreach ($row as $fk => $field) {
-					if (isset($field['ignore_export'])) {
-						continue;
-					}
-					// check if a value for this field was filled in manually
-					if (is_array($pfiller) && isset($pfiller[$ind]) && isset($pfiller[$ind][$field['key']])) {
-						if (strlen($pfiller[$ind][$field['key']])) {
-							$field['value'] = $pfiller[$ind][$field['key']];
-						}
-					}
-					// values set to -1 are usually empty and should have been filled in manually
-					if ($field['value'] === -1) {
-						// we raise an error in this case without stopping the process
-						$field['value'] = 0;
-						VikError::raiseWarning('', 'La riga #'.$ind.' ha un valore vuoto che doveva essere riempito manualmente cliccando sul blocco in rosso. Il file potrebbe contenere valori invalidi per questa riga.');
-					}
-					if (isset($field['callback_export'])) {
-						$field['callback'] = $field['callback_export'];
-					}
-					$export_value = !isset($field['no_export_callback']) && isset($field['callback']) && is_callable($field['callback']) ? $field['callback']($field['value']) : $field['value'];
-
-					if ($field['key'] == 'idbooking') { 
-						$idswh = $export_value;
-
-						if (!isset($idswh_map[$idswh])) {
-							$idswh_map[$idswh] = 0;
-						}
-
-						$idswh_map[$idswh]++;
-					}
-
-					if ($field['key'] == 'checkin') {
-						$fields_checkin = $export_value;
-						$timestamp_in = VikBooking::getDateTimestamp($export_value);
-					}
-
-					if ($field['key'] == 'checkout') {
-						$timestamp_out = VikBooking::getDateTimestamp($export_value);
-					}
-
-					if ($field['key'] == 'cognome') {
-						$guest_lastname = $export_value;
-					} elseif ($field['key'] == 'nome') {
-						$guest_firstname = $export_value;
-					}
-
-					if ($control == -1 && $timestamp_in != -1 && $timestamp_out != -1) {
-						if (date('Y-m-d', $timestamp_in) == date('Y-m-d', $from_ts) && date('Y-m-d', $timestamp_in) <= date('Y-m-d', $to_ts)) {
-							$type = 1;
-						} elseif (date('Y-m-d', $timestamp_out) == date('Y-m-d', $from_ts) && date('Y-m-d', $timestamp_out) == date('Y-m-d', $to_ts)) {
-							$type = 2;
-						} else {
-							$type = 3;
-						}
-						$control = 0;
-					}
-
-					if ($type == 1) {
-						$clienti['arrivi'][$arrivi]['idswh'] = $idswh;
-						if ($field['key'] == 'tipo') {
-							$clienti['arrivi'][$arrivi]['tipoalloggiato'] = (string)$export_value;
-							if (in_array($clienti['arrivi'][$arrivi]['tipoalloggiato'], ['19', '20'])) {
-								// obbligatorio fornire "idcapo"
-								$clienti['arrivi'][$arrivi]['idcapo'] = $clienti['arrivi'][$arrivi]['idswh'];
-							} else {
-								// "idcapo" deve essere un valore vuoto
-								$clienti['arrivi'][$arrivi]['idcapo'] = '';
-							}
-						}
-
-						$clienti['arrivi'][$arrivi]['cognome'] = $guest_firstname;
-						$clienti['arrivi'][$arrivi]['nome'] = $guest_lastname;
-
-						if ($field['key'] == 'gender') {
-							$clienti['arrivi'][$arrivi]['sesso'] = $export_value;
-						}
-						if ($field['key'] == 'turismo') {
-							$clienti['arrivi'][$arrivi]['tipoturismo'] = !empty($export_value) && $export_value != '?' ? strtoupper($export_value) : 'Non specificato';
-						}
-						if ($field['key'] == 'mezzo') {
-							$clienti['arrivi'][$arrivi]['mezzotrasporto'] = !empty($export_value) && $export_value != '?' ? strtoupper($export_value) : 'Non specificato';
-						}
-						if ($field['key'] == 'citizen') {
-							$clienti['arrivi'][$arrivi]['cittadinanza'] = (string)$export_value;
-						}
-						if ($field['key'] == 'stares') {
-							$clienti['arrivi'][$arrivi]['statoresidenza'] = (string)$export_value;
-							if (empty($clienti['arrivi'][$arrivi]['statoresidenza']) && !empty($clienti['arrivi'][$arrivi]['cittadinanza'])) {
-								// make sure the value is filled
-								$clienti['arrivi'][$arrivi]['statoresidenza'] = $clienti['arrivi'][$arrivi]['cittadinanza'];
-							}
-						}
-						if ($field['key'] == 'dbirth') {
-							$datanascita = date('Ymd', (is_numeric($export_value) ? $export_value : VikBooking::getDateTimestamp($export_value)));
-							$clienti['arrivi'][$arrivi]['datanascita'] = $datanascita;
-						}
-						if (isset($clienti['arrivi'][$arrivi]['statoresidenza']) && $clienti['arrivi'][$arrivi]['statoresidenza'] == '100000100' && $field['key'] == 'comres') {
-							$clienti['arrivi'][$arrivi]['luogoresidenza'] = (string)$export_value;
-						} elseif (isset($clienti['arrivi'][$arrivi]['statoresidenza']) && $field['key'] == 'comres') {
-							// cliente estero, valore vuoto per luogo residenza
-							$clienti['arrivi'][$arrivi]['luogoresidenza'] = !empty($export_value) ? $export_value : 'NUTS';
-						}
-					} elseif ($type == 2) {
-						$clienti['partenze'][$partenze]['idswh'] = $idswh;
-						if ($field['key'] == 'tipo') {
-							$clienti['partenze'][$partenze]['tipoalloggiato'] = (string)$export_value;
-						}
-						if ($field['key'] == 'checkin' || $fields_checkin) {
-							$arrivo = date('Ymd', VikBooking::getDateTimestamp(($fields_checkin ? $fields_checkin : $export_value)));
-							$clienti['partenze'][$partenze]['arrivo'] = $arrivo;
-						}
-					} elseif ($type == 3) {
-						$clienti['prenotazioni'][$prenotazioni]['idswh'] = $idswh;
-						if ($field['key'] == 'checkin' || $fields_checkin) {
-							$prenotazione = date('Ymd', VikBooking::getDateTimestamp(($fields_checkin ? $fields_checkin : $export_value)));
-							$clienti['prenotazioni'][$prenotazioni]['arrivo'] = $prenotazione;
-						}
-						if ($field['key'] == 'checkout') {
-							$partenza = date('Ymd', VikBooking::getDateTimestamp($export_value));
-							$clienti['prenotazioni'][$prenotazioni]['partenza'] = $partenza;
-						}
-						if ($field['key'] == 'guestsnum') {
-							$clienti['prenotazioni'][$prenotazioni]['ospiti'] = (string)$export_value;
-						}
-						if ($field['key'] == 'roomsbooked') {
-							$clienti['prenotazioni'][$prenotazioni]['camere'] = (string)$export_value;
-						}
-					}
-				}
-
-				if ($type == 1) {
-					$arrivi++;
-				} elseif ($type == 2) {
-					$partenze++;
-				} elseif ($type == 3){
-					$prenotazioni++;
-				}
-			}
-
-			if (count($clienti['arrivi'])) {
-				// sort fields accordingly
-				$arrivals_sort = [
-					'idswh',
-					'tipoalloggiato',
-					'idcapo',
-					'cognome',
-					'nome',
-					'sesso',
-					'cittadinanza',
-					'statoresidenza',
-					'luogoresidenza',
-					'datanascita',
-					'statonascita',
-					'comunenascita',
-					'tipoturismo',
-					'mezzotrasporto',
-					'canaleprenotazione',
-					'titolostudio',
-					'professione',
-					'esenzioneimposta',
-				];
-				$arrivals_sorted = [];
-				foreach ($clienti['arrivi'] as $k => $arrivals) {
-					$arrivals_sorted[$k] = [];
-					foreach ($arrivals_sort as $arrive_key) {
-						if (isset($arrivals[$arrive_key])) {
-							$arrivals_sorted[$k][$arrive_key] = $arrivals[$arrive_key];
-						}
-					}
-				}
-				$clienti['arrivi'] = $arrivals_sorted;
-			}
-
-			if (count($clienti['partenze'])) {
-				// sort fields accordingly
-				$departures_sort = [
-					'idswh',
-					'tipoalloggiato',
-					'arrivo',
-				];
-				$departures_sorted = [];
-				foreach ($clienti['partenze'] as $k => $departures) {
-					$departures_sorted[$k] = [];
-					foreach ($departures_sort as $depart_key) {
-						if (isset($departures[$depart_key])) {
-							$departures_sorted[$k][$depart_key] = $departures[$depart_key];
-						}
-					}
-				}
-				$clienti['partenze'] = $departures_sorted;
-			}
-
-			$used_idswh = [];
-			$xml .= '<arrivi>'."\n";
-			for ($i = 0; $i < count($clienti['arrivi']); $i++) {
-				$xml .= '<arrivo>'."\n";
-				foreach ($clienti['arrivi'][$i] as $key => $value) {
-					$use_value = $value;
-					if ($key == 'idswh') {
-						if (!isset($used_idswh[$value])) {
-							$used_idswh[$value] = 0;
-						}
-						$used_idswh[$value]++;
-						$guest_idswh_num = $used_idswh[$value];
-						$use_value .= "-{$guest_idswh_num}";
-					}
-					$xml .= "<{$key}>{$use_value}</{$key}>\n";
-				}
-				$xml .= '</arrivo>'."\n";
-			}
-			$xml .= '</arrivi>'."\n";
-
-			$xml .= '<partenze>'."\n";
-			for ($i = 0; $i < count($clienti['partenze']); $i++) {
-				$xml .= '<partenza>'."\n";
-				foreach ($clienti['partenze'][$i] as $key => $value) {
-					$use_value = $value;
-					if ($key == 'idswh') {
-						if (!isset($used_idswh[$value])) {
-							$used_idswh[$value] = 0;
-						}
-						$used_idswh[$value]++;
-						$guest_idswh_num = $used_idswh[$value];
-						$use_value .= "-{$guest_idswh_num}";
-					}
-					$xml .= "<{$key}>{$use_value}</{$key}>\n";
-				}
-				$xml .= '</partenza>'."\n";
-			}
-			$xml .= '</partenze>'."\n";
-
-			if ($clienti['prenotazioni']) {
-				$xml .= '<prenotazioni>'."\n";
-				for ($i = 0; $i < count($clienti['prenotazioni']); $i++) {
-					$xml .= '<prenotazione>'."\n";
-					foreach ($clienti['prenotazioni'][$i] as $key => $value) {
-						$use_value = $value;
-						if ($key == 'idswh') {
-							if (!isset($used_idswh[$value])) {
-								$used_idswh[$value] = 0;
-							}
-							$used_idswh[$value]++;
-							$guest_idswh_num = $used_idswh[$value];
-							$use_value .= "-{$guest_idswh_num}";
-						}
-						$xml .= "<{$key}>{$use_value}</{$key}>\n";
-					}
-					$xml .= '</prenotazione>'."\n";
-				}
-				$xml .= '</prenotazioni>'."\n";
-			}
-		} else {
-			$xml .= '<struttura>'."\n";
-			$xml .= '<apertura>'.$papertura.'</apertura>'."\n";
-			$xml .= '<camereoccupate>0</camereoccupate>'."\n";
-			$xml .= '<cameredisponibili>0</cameredisponibili>'."\n";
-			$xml .= '<lettidisponibili>0</lettidisponibili>'."\n";
-			$xml .= '</struttura>'."\n";
-		}
-		$xml .= '</movimento> '."\n";
-		$xml .= '</movimenti>';
-
-		// format XML document
-		$this->formatXML($xml);
 
 		/**
 		 * Custom export method supports a custom export handler, if previously set.
@@ -1551,14 +1600,468 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 			fwrite($fp, $xml);
 			fclose($fp);
 
+			// return true as data was written
 			return true;
 		}
 
-		header('Content-Disposition: attachment; filename=' . $this->getExportCSVFileName());
-		header('Content-type: text/xml');
+		// force file download in case of regular export
+		header("Content-type: text/xml");
+		header("Cache-Control: no-store, no-cache");
+		header('Content-Disposition: attachment; filename="' . $this->getExportCSVFileName() . '"');
 		echo $xml;
 
 		exit;
+	}
+
+	/**
+	 * Builds the XML file for export or transmission.
+	 * 
+	 * @return 	string 	Empty string in case of errors, XML otherwise.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP) implemented dedicated method to file generation.
+	 */
+	protected function buildXMLFile()
+	{
+		if (!$this->getReportData()) {
+			return '';
+		}
+
+		// load report settings
+		$settings = $this->loadSettings();
+
+		// get the possibly injected report options
+		$options = $this->getReportOptions();
+
+		// injected options will replace request variables, if any
+		$pfromdate = $options->get('fromdate', VikRequest::getString('fromdate', '', 'request'));
+		$ptodate = $options->get('todate', VikRequest::getString('todate', '', 'request'));
+
+		// access manually filled values, if any
+		$pfiller = VikRequest::getString('filler', '', 'request', VIKREQUEST_ALLOWRAW);
+		$pfiller = !empty($pfiller) ? (array) json_decode($pfiller, true) : [];
+
+		// numero letti
+		$total_beds = (int) ($settings['numletti'] ?? 1);
+
+		// count total number of room units
+		$total_rooms = (int) ($settings['numcamere'] ?? $this->countRooms());
+
+		// date timestamps
+		$from_ts = VikBooking::getDateTimestamp($pfromdate, 0, 0);
+		$to_ts = VikBooking::getDateTimestamp($ptodate, 23, 59, 59);
+
+		// suppress warning messages
+		libxml_use_internal_errors(true);
+
+		// get the SimpleXMLElement object
+		$xml = simplexml_load_string('<movimenti></movimenti>');
+
+		// add property code and PMS name
+		$xml->addChild('codice', htmlspecialchars($settings['codstru']));
+		$xml->addChild('prodotto', htmlspecialchars('E4jConnect/VikBooking'));
+
+		// scan all given dates
+		$date_info = getdate($from_ts);
+		while ($date_info[0] <= $to_ts) {
+			// get today's date in Y-m-d format
+			$today_ymd = date('Y-m-d', $date_info[0]);
+
+			// open movimento node for this day
+			$movement = $xml->addChild('movimento');
+
+			// populate movimento date
+			$movement->addChild('data', date('Ymd', $date_info[0]));
+
+			// populate movimento property data
+			$property = $movement->addChild('struttura');
+
+			// whether the property is open today
+			$is_open = (bool) (!VikBooking::validateClosingDates($date_info[0], $date_info[0]));
+			$property->addChild('apertura', ($is_open ? 'SI' : 'NO'));
+
+			// number of occupied rooms today, rooms and beds available
+			if (!$is_open) {
+				// property is closed today, so all values should be set as 0
+				$property->addChild('camereoccupate', 0);
+				$property->addChild('cameredisponibili', 0);
+				$property->addChild('lettidisponibili', 0);
+
+				// go to next day without even checking the bookings or report rows
+				$date_info = getdate(mktime(0, 0, 0, $date_info['mon'], $date_info['mday'] + 1, $date_info['year']));
+
+				// do not proceed for today
+				continue;
+			}
+
+			// property is open today
+			$property->addChild('camereoccupate', $this->countDayRoomsOccupied($date_info[0]));
+			$property->addChild('cameredisponibili', $total_rooms);
+			$property->addChild('lettidisponibili', $total_beds);
+
+			// check for arrivals, departures or reservations dated today
+			$today_arrivals = [];
+			$today_departures = [];
+			$today_reservations = [];
+
+			// scan all report rows to gather the needed record types
+			foreach ($this->rows as $ind => $row) {
+				// booking ID flags
+				$current_bid = 0;
+				$current_idswh = '';
+
+				// scan row column values
+				foreach ($row as $field) {
+					if ($field['key'] == 'idswh') {
+						// set booking (software) ID
+						$current_idswh = (string) $field['value'];
+						continue;
+					}
+
+					if ($field['key'] == 'booking_id') {
+						// set booking ID
+						$current_bid = (int) $field['value'];
+						continue;
+					}
+
+					// check where this whole booking row should be allocated
+					if ($current_bid && $current_idswh) {
+						if ($field['key'] == 'resdate' && date('Y-m-d', $field['value']) == $today_ymd && !($today_reservations[$current_bid] ?? null)) {
+							// this is a reservation made today (one per booking ID, not one per guest)
+							$today_reservations[$current_bid] = $row;
+						}
+
+						if ($field['key'] == 'checkin' && date('Y-m-d', $field['value']) == $today_ymd && !($today_arrivals[$current_idswh] ?? null)) {
+							// this is a guest arriving today (one row per guest, not per booking)
+							$today_arrivals[$current_idswh] = $row;
+						}
+
+						if ($field['key'] == 'checkout' && date('Y-m-d', $field['value']) == $today_ymd && !($today_departures[$current_idswh] ?? null)) {
+							// this is a guest departing today (one row per guest, not per booking)
+							$today_departures[$current_idswh] = $row;
+						}
+					}
+				}
+
+				// push booking ID involved for the export
+				if ($current_bid && !in_array($current_bid, $this->export_booking_ids)) {
+					$this->export_booking_ids[] = $current_bid;
+				}
+			}
+
+			// check for arrivals first
+			if ($today_arrivals) {
+				// open "arrivals" node
+				$arrivals = $movement->addChild('arrivi');
+
+				// map of booking guest heads
+				$booking_guest_heads = [];
+
+				// scan all arrivals for today
+				foreach ($today_arrivals as $today_arrival_row) {
+					// open "arrival" node
+					$arrival = $arrivals->addChild('arrivo');
+
+					// booking ID flags
+					$current_bid = 0;
+					$current_idswh = '';
+
+					// guest registration values
+					$guest_reg_vals = [];
+
+					// scan row column values
+					foreach ($today_arrival_row as $field) {
+						// store guest registration value
+						$guest_reg_vals[$field['key']] = $this->getExportFieldValue($field);
+
+						if ($field['key'] == 'idswh') {
+							// set booking (software) ID
+							$current_idswh = (string) $field['value'];
+							continue;
+						}
+
+						if ($field['key'] == 'booking_id') {
+							// set booking ID
+							$current_bid = (int) $field['value'];
+							continue;
+						}
+
+						if ($current_idswh && $current_bid && $field['key'] == 'tipo' && in_array((int) $field['value'], [17, 18])) {
+							// this is either a "Capofamiglia" or "Capogruppo", add relation
+							$booking_guest_heads[$current_bid] = $current_idswh;
+						}
+					}
+
+					// add elements
+					$arrival->addChild('idswh', htmlspecialchars($guest_reg_vals['idswh']));
+					$arrival->addChild('tipoalloggiato', htmlspecialchars($guest_reg_vals['tipo'] ?? ''));
+					if (($booking_guest_heads[$current_bid] ?? null) && $booking_guest_heads[$current_bid] != $guest_reg_vals['idswh']) {
+						$arrival->addChild('idcapo', htmlspecialchars($booking_guest_heads[$current_bid]));
+					}
+					$arrival->addChild('cognome', htmlspecialchars($guest_reg_vals['cognome'] ?? ''));
+					$arrival->addChild('nome', htmlspecialchars($guest_reg_vals['nome'] ?? ''));
+					$arrival->addChild('sesso', htmlspecialchars($guest_reg_vals['sesso'] ?? 'M'));
+					$arrival->addChild('cittadinanza', htmlspecialchars($guest_reg_vals['citizen'] ?? ''));
+					$arrival->addChild('statoresidenza', htmlspecialchars($guest_reg_vals['stares'] ?? ''));
+					$arrival->addChild('luogoresidenza', htmlspecialchars($guest_reg_vals['comres'] ?? ''));
+					$arrival->addChild('datanascita', htmlspecialchars($guest_reg_vals['dbirth'] ?? ''));
+					$arrival->addChild('tipoturismo', htmlspecialchars($guest_reg_vals['turismo'] ?? ''));
+					$arrival->addChild('mezzotrasporto', htmlspecialchars($guest_reg_vals['mezzo'] ?? ''));
+				}
+			}
+
+			// then check for departures
+			if ($today_departures) {
+				// open "departures" node
+				$departures = $movement->addChild('partenze');
+
+				// scan all departures for today
+				foreach ($today_departures as $today_departure_row) {
+					// open "departure" node
+					$departure = $departures->addChild('partenza');
+
+					// guest registration values
+					$guest_reg_vals = $this->getAssocRowData($today_departure_row);
+
+					// add elements
+					$departure->addChild('idswh', htmlspecialchars($guest_reg_vals['idswh'] ?? ''));
+					$departure->addChild('tipoalloggiato', htmlspecialchars($guest_reg_vals['tipo'] ?? ''));
+					$departure->addChild('arrivo', htmlspecialchars($guest_reg_vals['checkin'] ?? ''));
+				}
+			}
+
+			// finally, check for reservations
+			if ($today_reservations) {
+				// open "reservations" node
+				$reservations = $movement->addChild('prenotazioni');
+
+				// scan all reservations for today
+				foreach ($today_reservations as $today_reservation_row) {
+					// open "reservation" node
+					$reservation = $reservations->addChild('prenotazione');
+
+					// guest registration values
+					$guest_reg_vals = $this->getAssocRowData($today_reservation_row);
+
+					// add elements
+					$reservation->addChild('idswh', htmlspecialchars($guest_reg_vals['idswh'] ?? ''));
+					$reservation->addChild('arrivo', htmlspecialchars($guest_reg_vals['checkin'] ?? ''));
+					$reservation->addChild('partenza', htmlspecialchars($guest_reg_vals['checkout'] ?? ''));
+					$reservation->addChild('ospiti', intval($guest_reg_vals['guestsnum'] ?? 1));
+					$reservation->addChild('camere', intval($guest_reg_vals['roomsbooked'] ?? 1));
+				}
+			}
+
+			// go to next day
+			$date_info = getdate(mktime(0, 0, 0, $date_info['mon'], $date_info['mday'] + 1, $date_info['year']));
+		}
+
+		// format XML document and return it
+		return $this->formatXML($xml->asXML());
+	}
+
+	/**
+	 * Given a field (row-column) associative list of data, performs
+	 * the necessary callback operations to get the value to export.
+	 * 
+	 * @param 	array 	$field 	The row-column exporting data.
+	 * 
+	 * @return 	mixed 			The field value to export.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	protected function getExportFieldValue(array $field)
+	{
+		$field_val = $field['value'];
+
+		if ($field['callback_export'] ?? null) {
+			$field['callback'] = $field['callback_export'];
+		}
+
+		if (!($field['no_export_callback'] ?? 0) && is_callable($field['callback'] ?? null)) {
+			$field_val = $field['callback']($field_val);
+		}
+
+		return $field_val;
+	}
+
+	/**
+	 * Parses a report row into an associative list of key-value pairs.
+	 * 
+	 * @param 	array 	$row 	The report row to parse.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	protected function getAssocRowData(array $row)
+	{
+		$row_data = [];
+
+		foreach ($row as $field) {
+			$field_val = $field['value'];
+
+			if ($field['callback_export'] ?? null) {
+				$field['callback'] = $field['callback_export'];
+			}
+
+			if (!($field['no_export_callback'] ?? 0) && is_callable($field['callback'] ?? null)) {
+				$field_val = $field['callback']($field_val);
+			}
+
+			$row_data[$field['key']] = $field_val;
+		}
+
+		return $row_data;
+	}
+
+	/**
+	 * Counts the number of occupied rooms on the given day.
+	 * 
+	 * @param 	int 	$day_ts 	The day timestamp.
+	 * 
+	 * @return 	int 	Number of occupied rooms found.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	protected function countDayRoomsOccupied($day_ts)
+	{
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('SUM(' . $dbo->qn('roomsnum') . ')')
+				->from($dbo->qn('#__vikbooking_orders'))
+				->where($dbo->qn('status') . ' = ' . $dbo->q('confirmed'))
+				->where($dbo->qn('closure') . ' = 0')
+				->where($dbo->qn('checkin') . ' < ' . (int) $day_ts)
+				->where($dbo->qn('checkout') . ' > ' . strtotime('+1 day', (int) $day_ts))
+		);
+
+		return (int) $dbo->loadResult();
+	}
+
+	/**
+	 * Custom scoped action to transmit the XML ISTAT file to the local authority.
+	 * Accepted scopes are "web" and "cron", so the "success" property must be returned.
+	 * 
+	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
+	 * @param 	array 	$data 	Optional associative list of data to process.
+	 * 
+	 * @return 	array 			The execution result properties.
+	 * 
+	 * @throws 	Exception
+	 */
+	protected function transmitRecords($scope = null, array $data = [])
+	{
+		if (!($data['xml'] ?? '') && $scope === 'web') {
+			// start the process through the interface by submitting the current data
+			return [
+				'html' => '<script type="text/javascript">vboDownloadSchedaIstat(\'transmitRecords\');</script>',
+			];
+		}
+
+		if (!($data['xml'] ?? '')) {
+			// attempt to build the XML file if not set
+			$data['xml'] = $this->buildXMLFile();
+		}
+
+		if (!$data['xml']) {
+			throw new Exception('Missing XML request message.', 500);
+		}
+
+		// load report settings
+		$settings = $this->loadSettings();
+
+		if (!$settings || empty($settings['codstru']) || empty($settings['user']) || empty($settings['pwd']) || empty($settings['endpoint'])) {
+			throw new Exception(sprintf('[%s] error: impostazioni report mancanti.', __METHOD__), 500);
+		}
+
+		// build the SOAP XML string for the request body
+		$soap_xml = '';
+		$soap_xml .= '<?xml version="1.0"?>
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+<S:Body>
+<ns2:inviaMovimentazione xmlns:ns2="http://checkin.ws.service.turismo5.gies.it/">' . "\n";
+
+		// adjust regular XML to SOAP format
+		$soap_body_xml = $data['xml'];
+		$soap_body_xml = preg_replace("/^<\?xml version=\"([0-9\.]+)\"\s?\?>(\r\n|\r|\n)?/", '', $soap_body_xml);
+		$soap_body_xml = str_replace(['<movimenti>', '</movimenti>'], ['<movimentazione>', '</movimentazione>'], $soap_body_xml);
+
+		// append SOAP XML body
+		$soap_xml .= trim($soap_body_xml);
+
+		// close SOAP XML string
+		$soap_xml .= "\n" . '</ns2:inviaMovimentazione>
+</S:Body>
+</S:Envelope>';
+
+		// start the HTTP transporter
+		$http = new JHttp();
+
+		/**
+		 * POST requests should be made to the endpoint meant as "location", not to the endpoint
+		 * representing the Web-Service (WSDL). In this case we should strip out the ending "?wsdl".
+		 */
+		$settings['endpoint'] = preg_replace("/\?wsdl$/", '', $settings['endpoint']);
+
+		try {
+			// make a POST request to the specified endpoint URL
+			$response = $http->post($settings['endpoint'], $soap_xml, [
+				'Accept'         => 'text/xml, multipart/related',
+				'Authorization'  => 'Basic ' . base64_encode(sprintf('%s:%s', $settings['user'], $settings['pwd'])),
+				'Content-Type'   => 'text/xml; charset=utf-8',
+				'SOAPAction'     => '',
+				// 'User-Agent'     => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:133.0) Gecko/20100101 Firefox/133.0',
+				'Connection'     => 'keep-alive',
+				'Content-Length' => strlen($soap_xml),
+			]);
+
+			// response text
+			$response_txt = strip_tags((string) $response->body);
+
+			if ($response->code != 200) {
+				// invalid response, throw an exception
+				throw new Exception($response_txt, $response->code);
+			}
+
+			// build HTML response string
+			$html = '';
+			$html .= '<p class="successmade">Flusso dati turistici inviati con successo.</p>';
+			$html .= 'Responso:<br/><pre><code>' . htmlentities($response->body) . '</code></pre>';
+
+		} catch (Exception $e) {
+			// propagate the error caught
+			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
+		}
+
+		// when executed through a cron, store an event in the Notifications Center
+		if ($scope === 'cron') {
+			// build the notification record
+			$notification = [
+				'sender'  => 'reports',
+				'type'    => 'pmsreport.sendxml.ok',
+				'title'   => 'Ross1000 - Trasmissione flussi turistici',
+				'summary' => sprintf(
+					'I flussi turistici sono stati trasmessi con successo per le date dal %s al %s.',
+					$this->exported_checkin_dates[0] ?? '',
+					$this->exported_checkin_dates[1] ?? ''
+				),
+			];
+
+			try {
+				// store the notification record
+				VBOFactory::getNotificationCenter()->store([$notification]);
+			} catch (Exception $e) {
+				// silently catch the error without doing anything
+			}
+		}
+
+		return [
+			'html'     => $html,
+			'success'  => true,
+			'response' => $response->body,
+		];
 	}
 
 	/**
@@ -1604,7 +2107,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 			if (empty($b_rooms)) {
 				continue;
 			}
-			// count guests per room
+			// count guests per room (adults + children)
 			$room_guests = [];
 			foreach ($b_rooms as $b_room) {
 				$room_guests[] = $b_room['adults'] + $b_room['children'];
@@ -1658,7 +2161,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
 
-		$this->setExportCSVFileName(str_replace(' ', '_', $this->reportName) . '-' . str_replace('/', '_', $pfromdate) . '.xml');
+		$this->setExportCSVFileName(str_replace(' ', '_', $this->reportName) . '-' . str_replace('/', '_', $pfromdate) . '-' . str_replace('/', '_', $ptodate) . '.xml');
 	}
 
 	/**
@@ -1668,16 +2171,16 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	 *
 	 * @return 	array
 	 */
-	private function loadComuniProvince()
+	protected function loadComuniProvince()
 	{
-		$vals = array(
-			'comuni' => array(
-				0 => '-- Estero --'
-			),
-			'province' => array(
-				0 => '-- Estero --'
-			)
-		);
+		$vals = [
+			'comuni' => [
+				'-- Estero --',
+			],
+			'province' => [
+				'-- Estero --',
+			]
+		];
 
 		$csv = dirname(__FILE__).DIRECTORY_SEPARATOR.'Comuni.csv';
 		$rows = file($csv);
@@ -1685,10 +2188,17 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 			if (empty($row)) {
 				continue;
 			}
+
 			$v = explode(';', $row);
 			if (count($v) != 3) {
 				continue;
 			}
+
+			// trim values
+			$v[0] = trim($v[0]);
+			$v[1] = trim($v[1]);
+			$v[2] = trim($v[2]);
+
 			$vals['comuni'][$v[0]]['name'] = $v[1];
 			$vals['comuni'][$v[0]]['province'] = $v[2];
 			$vals['province'][$v[2]] = $v[2];
@@ -1704,9 +2214,9 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	 *
 	 * @return 	array
 	 */
-	private function loadNazioni()
+	protected function loadNazioni()
 	{
-		$nazioni = array();
+		$nazioni = [];
 
 		$csv = dirname(__FILE__).DIRECTORY_SEPARATOR.'Nazioni.csv';
 		$rows = file($csv);
@@ -1718,6 +2228,11 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 			if (count($v) != 3) {
 				continue;
 			}
+
+			// trim values
+			$v[0] = trim($v[0]);
+			$v[1] = trim($v[1]);
+			$v[2] = trim($v[2]);
 			
 			$nazioni[$v[0]]['name'] = $v[1];
 			$nazioni[$v[0]]['three_code'] = $v[2];		
@@ -1728,68 +2243,13 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	}
 
 	/**
+	 * Returns the key of the state selected by the user, if any.
 	 * 
-	 * Returns an array that contains both name and key of the comune selected, plus the associated province.
+	 * @param 	string 	$country 	The selected country code.
 	 *
-	 * @return array
+ 	 * @return 	string
 	 */
-	private function checkComune($combirth, $checked, $province)
-	{
-		$result = array();
-		$first_found = '';
-		if (!count($this->comuniProvince)) {
-			$this->comuniProvince = $this->loadComuniProvince();
-		}
-		if (empty($combirth)) {
-			return $result;
-		}
-		foreach ($this->comuniProvince['comuni'] as $key => $value) {
-			if (!isset($value['name'])) {
-				continue;
-			}
-			if ($value['name'] == $combirth) {
-				$result['found'] = true;
-				$result['combirth'] = $value['name'];
-				$result['province'] = $value['province'];
-				$result['comval'] = $key;
-				$result['similar'] = false;
-				break;
-			} else if (strpos($value['name'], trim($combirth)) !== false && empty($first_found)) {
-				$result['found'] = true;
-				$result['combirth'] = $value['name'];
-				$first_found = $key;
-				$result['similar'] = true;
-				$result['province'] = $value['province'];
-			}
-		}
-		if (!$result['found']) {
-			$result['combirth'] = '';
-		} 
-
-		if ($checked === true && strlen($province) > 0  && $result['found']) {
-			$result['province'] = $province;
-			if($province == $value['province']) {
-				$result['provinceok'] = true;
-				$result['province'] = $province;
-			} else {
-				$result['provinceok'] = false;
-			}
-		}
-		if ($result['similar'] && $result['found']) {
-			$result['comval'] = $first_found;
-		}
-
-		return $result;
-	}
-
-	/**
-	 *
-	 * Returns the key of the state selected by the user.
-	 *
- 	 * @return string
- 	 *
-	 */
-	private function checkCountry($country)
+	protected function checkCountry($country)
 	{
 		$found = false;
 		$staval = '';
@@ -1818,31 +2278,6 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	}
 
 	/**
-	 * Sanitizes the "Comune": if comune contains also the province, example PRATO (PO), 
-	 * then I set both Comune and Province and I check both of them with the checkComune() function. 
-	 *
-	 * @return array
-	 */
-	private function sanitizeComune($combirth)
-	{
-		$result = array();
-
-		if (strlen($combirth) > 2) {
-			if (strpos($combirth, "(") !== false) {
-				$comnas = explode("(", $combirth);
-				$result['combirth'] = trim($comnas[0]);
-				$result['province'] = $comnas[1];
-				$result['province'] = str_replace(")", "", $result['province']);
-				$result['checked'] = true;
-			}
-		} else if(strlen($combirth) > 0){
-			$result['province'] = trim($combirth);
-			$result['similar'] = true;
-		}
-		return $result;
-	}
-
-	/**
 	 * Helper method to quickly get a pax_data property for the guest.
 	 * 
 	 * @param 	array 	$pax_data 	the current pax_data stored.
@@ -1852,7 +2287,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	 * 
 	 * @return 	mixed 				null on failure or value fetched.
 	 */
-	private function getGuestPaxDataValue($pax_data, $guests, $guest_ind, $key)
+	protected function getGuestPaxDataValue($pax_data, $guests, $guest_ind, $key)
 	{
 		if (!is_array($pax_data) || !count($pax_data) || empty($key)) {
 			return null;
@@ -1893,7 +2328,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	 * 
 	 * @return 	int 				the actual guest room index starting from 1.
 	 */
-	private function calcGuestRoomIndex($guests, $guest_ind)
+	protected function calcGuestRoomIndex($guests, $guest_ind)
 	{
 		// find room index for this guest number
 		$room_num = 0;

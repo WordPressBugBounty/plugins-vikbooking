@@ -1392,10 +1392,11 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				));
 
 				/**
-				 * Comune di nascita.
+				 * Comune & provincia di nascita.
 				 * Check compatibility with pax_data field of driver for "Italy".
 				 */
 				$pax_comval = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'comune_b');
+				$pax_province = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'province_b');
 
 				//if the country has been set and it's not "Italy", then don't let the user select Comune and Provincia.
 				$is_foreign = (empty($staval) || !isset($this->nazioni[$staval]) || strcasecmp($this->nazioni[$staval]['name'], 'ITALIA'));
@@ -1443,13 +1444,13 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 						$addclass = true;
 					} elseif (!$is_foreign && !empty($staval)) {
 						//se lo stato esiste, ed è italiano, allora è selezionabile. Se è straniero, non farlo scegliere in quanto non necessario.
-						$addclass = true;	
+						$addclass = true;
 					}
 				}
 				array_push($insert_row, array(
 					'key' => 'comune_b',
 					'attr' => array(
-						'class="center'.($addclass ? ' vbo-report-load-comune' : '').'"'
+						'class="center' . ($addclass ? ' vbo-report-load-comune' : '') . ($pax_province === 'ES' ? ' vbo-report-load-elem-filled' : '') . '"'
 					),
 					'callback' => function($val) use ($addclass) {
 						return !empty($val) && isset($this->comuniProvince['comuni'][$val]) ? $this->comuniProvince['comuni'][$val]['name'] : ($addclass ? '?' : "---");
@@ -1462,8 +1463,6 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				 * Provincia di nascita.
 				 * Check compatibility with pax_data field of driver for "Italy".
 				 */
-				$pax_province = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'province_b');
-
 				$comune = empty($combirth);
 				$comguessed = (isset($result['similar']) && $result['similar']);
 				$province = (isset($result['provinceok']) && !$result['provinceok']);
@@ -1535,7 +1534,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 						'class="center'.(empty($citizen) ? ' vbo-report-load-cittadinanza' : '').'"'
 					),
 					'callback' => function($val) {
-						return !empty($val) ? $this->nazioni[$val]['name'] : '?';
+						return !empty($val) ? ($this->nazioni[$val]['name'] ?? '?') : '?';
 					},
 					'no_export_callback' => 1,
 					'value' => !empty($citizenval) ? $citizenval : ''
@@ -1865,7 +1864,6 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 
 	/**
 	 * Builds the report (card) lines for export or transmission.
-	 * Updates the list of booking IDs affected.
 	 * 
 	 * @return 	array 	Empty array in case of errors, or list of rows.
 	 * 

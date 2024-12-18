@@ -2337,26 +2337,32 @@ class VikBooking
 		return $allcd;
 	}
 
-	public static function parseJsClosingDates() {
+	public static function parseJsClosingDates()
+	{
 		$cd = self::getClosingDates();
-		if (count($cd) > 0) {
-			$cdjs = array();
-			foreach ($cd as $k => $v) {
-				$cdjs[] = array(date('Y-m-d', $v['from']), date('Y-m-d', $v['to']));
-			}
-			return $cdjs;
+		if (!$cd) {
+			return [];
 		}
-		return array();
+
+		$cdjs = [];
+		foreach ($cd as $k => $v) {
+			$cdjs[] = [date('Y-m-d', $v['from']), date('Y-m-d', $v['to'])];
+		}
+
+		return $cdjs;
 	}
 
 	public static function validateClosingDates($checkints, $checkoutts, $df = null)
 	{
 		$cd = self::getClosingDates();
-		if (!count($cd)) {
+
+		if (!$cd) {
 			return '';
 		}
+
 		$df = empty($df) ? 'Y-m-d' : $df;
 		$margin_seconds = 22 * 60 * 60;
+
 		foreach ($cd as $k => $v) {
 			$inner_closed = ($checkints >= $v['from'] && $checkints <= ($v['to'] + $margin_seconds));
 			$outer_closed = ($checkoutts >= $v['from'] && $checkoutts <= ($v['to'] + $margin_seconds));
@@ -2365,6 +2371,7 @@ class VikBooking
 				return date($df, $v['from']) . ' - ' . date($df, $v['to']);
 			}
 		}
+
 		return '';
 	}
 
@@ -4174,18 +4181,18 @@ class VikBooking
 					//tooltip icon text is not empty
 					if (!empty($a['icon'])) {
 						//an icon has been uploaded: display the image
-						$carat .= "<span class=\"vbo-room-carat\"><span class=\"vbo-expl\" data-vbo-expl=\"".$a['textimg']."\"><img src=\"".VBO_SITE_URI."resources/uploads/".$a['icon']."\" alt=\"" . $a['name'] . "\" /></span></span>\n";
+						$carat .= "<span class=\"vbo-room-carat\"><span class=\"vbo-expl\" data-vbo-expl=\"" . htmlspecialchars((string) $a['textimg'], ENT_QUOTES, 'UTF-8') . "\"><img src=\"".VBO_SITE_URI."resources/uploads/" . $a['icon'] . "\" alt=\"" . htmlspecialchars((string) $a['name'], ENT_QUOTES, 'UTF-8') . "\" /></span></span>\n";
 					} else {
-						if (strpos($a['textimg'], '</i>') !== false) {
-							//the tooltip icon text is a font-icon, we can use the name as tooltip
-							$carat .= "<span class=\"vbo-room-carat\"><span class=\"vbo-expl\" data-vbo-expl=\"".$a['name']."\">".$a['textimg']."</span></span>\n";
+						if (strpos($a['textimg'], '</i>') !== false || strpos($a['textimg'], '<svg') !== false) {
+							//the tooltip icon text is a font-icon or an SVG field, we can use the name as tooltip
+							$carat .= "<span class=\"vbo-room-carat\"><span class=\"vbo-expl\" data-vbo-expl=\"" . htmlspecialchars((string) $a['name'], ENT_QUOTES, 'UTF-8') . "\">" . $a['textimg'] . "</span></span>\n";
 						} else {
 							//display just the text
 							$carat .= "<span class=\"vbo-room-carat\">".$a['textimg']."</span>\n";
 						}
 					}
 				} else {
-					$carat .= (!empty($a['icon']) ? "<span class=\"vbo-room-carat\"><img src=\"".VBO_SITE_URI."resources/uploads/" . $a['icon'] . "\" alt=\"" . $a['name'] . "\" title=\"" . $a['name'] . "\"/></span>\n" : "<span class=\"vbo-room-carat\">".$a['name']."</span>\n");
+					$carat .= (!empty($a['icon']) ? "<span class=\"vbo-room-carat\"><img src=\"".VBO_SITE_URI."resources/uploads/" . $a['icon'] . "\" alt=\"" . htmlspecialchars((string) $a['name'], ENT_QUOTES, 'UTF-8') . "\" title=\"" . htmlspecialchars((string) $a['name'], ENT_QUOTES, 'UTF-8') . "\"/></span>\n" : "<span class=\"vbo-room-carat\">" . $a['name'] . "</span>\n");
 				}
 			}
 			$carat .= "</div>\n";
@@ -6636,6 +6643,49 @@ class VikBooking
 	}
 
 	/**
+	 * Allows to preload and cache seasonal records for a list of rooms and dates.
+	 * Any subsequent preloading of season records for the same room(s) will return
+	 * the cached list. Should be used to preload a large window of data so that
+	 * subsequent calls will always return cached value.
+	 * 
+	 * @param 	array 		$rooms 	List of involved room IDs.
+	 * @param 	int|bool 	$from 	Unix timestamp for start date or false to unset cache.
+	 * @param 	int 		$to 	Unix timestamp for end date.
+	 * 
+	 * @return 	?array
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	public static function preloadSeasonRecords(array $rooms, $from = null, $to = null)
+	{
+		static $preloaded_records = [];
+
+		if (!$rooms) {
+			// no cached signature
+			return [];
+		}
+
+		$signature = md5(implode(',', $rooms));
+
+		if ($from === false) {
+			// unset cached records
+			unset($preloaded_records[$signature]);
+
+			return;
+		}
+
+		if ($from !== null && $to !== null) {
+			// setter args signature for preloading records
+			$preloaded_records[$signature] = self::getDateSeasonRecords($from, $to, $rooms);
+
+			return;
+		}
+
+		// getter args signature for getting the preloaded and cached records
+		return $preloaded_records[$signature] ?? [];
+	}
+
+	/**
 	 * Fetches all season records affecting a range of date timestamps.
 	 * Useful to pre-cache season records in case of hundreds of thousands
 	 * of records, but it can use up several MBs of server's memory.
@@ -6650,6 +6700,25 @@ class VikBooking
 	 */
 	public static function getDateSeasonRecords($from, $to, array $rooms = [])
 	{
+		/**
+		 * We allow external systems to preload season records and cache them.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		if ($preloaded_records = self::preloadSeasonRecords($rooms)) {
+			return $preloaded_records;
+		}
+
+		/**
+		 * For a more accurate records caching, ensure we have a range of two dates at least.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		if (date('Y-m-d', $from) === date('Y-m-d', $to)) {
+			// add one day to the end timestamp
+			$to = strtotime('+1 day', $to);
+		}
+
 		$dbo = JFactory::getDbo();
 
 		$one = getdate($from);
@@ -6978,7 +7047,7 @@ class VikBooking
 				
 				// promotions
 				$promotion = [];
-				if ($s['promo'] == 1) {
+				if (($s['promo'] ?? 0) == 1) {
 					$daysadv = (($inits - time()) / 86400);
 					$daysadv = $daysadv > 0 ? (int)ceil($daysadv) : 0;
 					if (!empty($s['promodaysadv']) && $s['promodaysadv'] > $daysadv) {
@@ -7163,7 +7232,7 @@ class VikBooking
 					}
 					
 					// apply rounding
-					$factor->roundmode = $s['roundmode'];
+					$factor->roundmode = $s['roundmode'] ?? null;
 					if (!empty($s['roundmode'])) {
 						$newprice = round($newprice, 0, constant($s['roundmode']));
 					} else {
@@ -7171,7 +7240,7 @@ class VikBooking
 					}
 					
 					// define the promotion (only if no value overrides set the amount to 0)
-					if ($promotion && ((isset($absval) && $absval > 0) || $pctval > 0)) {
+					if ($promotion && (($absval ?? 0) > 0 || ($pctval ?? 0) > 0)) {
 						/**
 						 * Include the discount information (if any). The cost re-calculated may not be
 						 * precise if multiple special prices were applied over the same dates.
@@ -7180,7 +7249,7 @@ class VikBooking
 						 */
 						if ($s['type'] == 2 && $s['diffcost'] > 0) {
 							$promotion['discount'] = [
-								'amount' => $s['diffcost'],
+								'amount' => (($pctval ?? 0) > 0 ? $pctval : $s['diffcost']),
 								'pcent'	 => (int)($s['val_pcent'] == 2),
 							];
 						}
@@ -7194,7 +7263,7 @@ class VikBooking
 					}
 
 					// push difference generated only if to be applied progressively
-					if (!$s['promo'] || ($s['promo'] && !$s['promofinalprice'])) {
+					if (!($s['promo'] ?? 0) || ($s['promo'] && !$s['promofinalprice'])) {
 						/**
 						 * Push the difference generated by this special price for later transliteration of final price,
 						 * only if the special price is calculated progressively and not on the final price.
@@ -7796,7 +7865,7 @@ class VikBooking
 
 				// promotions
 				$promotion = [];
-				if ($s['promo'] == 1) {
+				if (($s['promo'] ?? 0) == 1) {
 					$daysadv = (($inits - time()) / 86400);
 					$daysadv = $daysadv > 0 ? (int)ceil($daysadv) : 0;
 					if (!empty($s['promodaysadv']) && $s['promodaysadv'] > $daysadv) {
@@ -8002,7 +8071,7 @@ class VikBooking
 					}
 					
 					// apply rounding
-					$factor->roundmode = $s['roundmode'];
+					$factor->roundmode = $s['roundmode'] ?? null;
 					if (!empty($s['roundmode'])) {
 						$newprice = round($newprice, 0, constant($s['roundmode']));
 					} else {
@@ -8010,7 +8079,7 @@ class VikBooking
 					}
 
 					// define the promotion (only if no value overrides set the amount to 0)
-					if ($promotion && ((isset($absval) && $absval > 0) || $pctval > 0)) {
+					if ($promotion && (($absval ?? 0) > 0 || ($pctval ?? 0) > 0)) {
 						/**
 						 * Include the discount information (if any). The cost re-calculated may not be
 						 * precise if multiple special prices were applied over the same dates.
@@ -8019,7 +8088,7 @@ class VikBooking
 						 */
 						if ($s['type'] == 2 && $s['diffcost'] > 0) {
 							$promotion['discount'] = [
-								'amount' => $s['diffcost'],
+								'amount' => (($pctval ?? 0) > 0 ? $pctval : $s['diffcost']),
 								'pcent'	 => (int)($s['val_pcent'] == 2),
 							];
 						}
@@ -8047,7 +8116,7 @@ class VikBooking
 					}
 
 					// push difference generated only if to be applied progressively
-					if (!$s['promo'] || ($s['promo'] && !$s['promofinalprice'])) {
+					if (!($s['promo'] ?? 0) || ($s['promo'] && !$s['promofinalprice'])) {
 						/**
 						 * Push the difference generated by this special price for later transliteration of final price,
 						 * only if the special price is calculated progressively and not on the final price.
@@ -9408,7 +9477,7 @@ class VikBooking
 					$admin_phones[] = $admin_phone;
 				}
 				foreach ($admin_phones as $admphone) {
-					$response_obj = $sms_obj->sendMessage($admphone, $sms_text);
+					$response_obj = $sms_obj->sendMessage($admphone, strip_tags($sms_text));
 					if ( !$sms_obj->validateResponse($response_obj) ) {
 						//notify the administrator via email with the error of the SMS sending
 						$vbo_app->sendMail($admin_sendermail, $admin_sendermail, $admin_email, $admin_sendermail, JText::translate('VBOSENDSMSERRMAILSUBJ'), JText::translate('VBOSENDADMINSMSERRMAILTXT')."<br />".$sms_obj->getLog(), true);
@@ -9425,7 +9494,7 @@ class VikBooking
 			$sms_text = self::parseCustomerSMSTemplate($booking, $booking_rooms, $vbo_tn, $force_text);
 			if (!empty($sms_text)) {
 				$sms_obj = new VikSmsApi($booking, $sms_api_params);
-				$response_obj = $sms_obj->sendMessage($booking['phone'], $sms_text);
+				$response_obj = $sms_obj->sendMessage($booking['phone'], strip_tags($sms_text));
 				if ( !$sms_obj->validateResponse($response_obj) ) {
 					//notify the administrator via email with the error of the SMS sending
 					$vbo_app->sendMail($admin_sendermail, $admin_sendermail, $admin_email, $admin_sendermail, JText::translate('VBOSENDSMSERRMAILSUBJ'), JText::translate('VBOSENDCUSTOMERSMSERRMAILTXT')."<br />".$sms_obj->getLog(), true);
@@ -10775,19 +10844,20 @@ class VikBooking
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP) introduced custom pax data collection type.
 	 * @since 	1.16.3 (J) - 1.6.3 (WP) implemented hook to override the pre-checkin custom fields.
+	 * @since 	1.17.2 (J) - 1.7.2 (WP) added support to pre-checkin pax fields in data collection drivers.
 	 */
 	public static function getPaxFields($precheckin = false, $type = null)
 	{
+		// check the type of pax fields collection data
+		$collection_type = $type ?: VBOFactory::getConfig()->getString('checkindata', 'basic');
+
 		if (!$precheckin) {
 			// back-end check-in ("registration") key-value pairs
-
-			// check the type of pax fields collection data
-			$collection_type = !empty($type) ? $type : VBOFactory::getConfig()->getString('checkindata', 'basic');
 
 			// return the requested pax fields collection list
 			$custom_pax_fields = VBOCheckinPax::getFields($collection_type);
 
-			if (is_array($custom_pax_fields) && count($custom_pax_fields)) {
+			if ($custom_pax_fields && ($custom_pax_fields[0] ?? []) && ($custom_pax_fields[1] ?? [])) {
 				// requested driver returned a list of fields
 				return $custom_pax_fields;
 			}
@@ -10796,7 +10866,7 @@ class VikBooking
 			return VBOCheckinPax::getFields('basic');
 		}
 
-		// front-end key-value pairs for pre check-in
+		// default front-end key-value pairs for pre check-in
 		$precheckin_pax_fields = [
 			[
 				'first_name'  => JText::translate('VBCCFIRSTNAME'),
@@ -10831,8 +10901,16 @@ class VikBooking
 			],
 		];
 
+		// access the pre-checkin pax fields collection list from the current collector
+		$custom_pax_fields = VBOCheckinPax::getPrecheckinFields($collection_type, $precheckin_pax_fields);
+
+		if ($custom_pax_fields && ($custom_pax_fields[0] ?? []) && ($custom_pax_fields[1] ?? [])) {
+			// set the pax fields for pre-checkin from the given data collection driver
+			$precheckin_pax_fields = $custom_pax_fields;
+		}
+
 		// make a safe copy of the default precheckin fields
-		$def_precheckin_pax_fields = $precheckin_pax_fields;
+		$use_precheckin_pax_fields = $precheckin_pax_fields;
 
 		/**
 		 * Trigger event to allow third party plugins to override the default pre-checkin pax fields.
@@ -10843,11 +10921,11 @@ class VikBooking
 
 		if (is_array($precheckin_pax_fields) && count($precheckin_pax_fields) > 1 && !empty($precheckin_pax_fields[0]) && !empty($precheckin_pax_fields[1])) {
 			// use the filtered pax fields
-			$def_precheckin_pax_fields = $precheckin_pax_fields;
+			$use_precheckin_pax_fields = $precheckin_pax_fields;
 		}
 
 		// return the front-end key-value pairs for pre check-in
-		return $def_precheckin_pax_fields;
+		return $use_precheckin_pax_fields;
 	}
 
 	/**
@@ -10868,11 +10946,10 @@ class VikBooking
 
 		$q = "SELECT " . ($no_id ? '`id`, `country_name`, `country_3_code`' : '*') . " FROM `#__vikbooking_countries` ORDER BY `country_name` ASC;";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$countries = $dbo->loadAssocList();
+		if (!$countries) {
 			return [];
 		}
-		$countries = $dbo->loadAssocList();
 
 		if ($tn === true) {
 			$vbo_tn = self::getTranslator();

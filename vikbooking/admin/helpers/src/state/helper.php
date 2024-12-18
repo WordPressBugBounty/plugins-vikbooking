@@ -43,7 +43,11 @@ class VBOStateHelper
 		}
 
 		// make sure this province exists
-		$q = "SELECT * FROM `#__vikbooking_states` WHERE `id_country`=" . $id_country . " AND `state_2_code`=" . $dbo->quote($state_2_code);
+		$q = $dbo->getQuery(true)
+			->select('*')
+			->from($dbo->qn('#__vikbooking_states'))
+			->where($dbo->qn('id_country') . ' = ' . (int) $id_country)
+			->where($dbo->qn('state_2_code') . ' = ' . $dbo->q($state_2_code));
 		$dbo->setQuery($q, 0, 1);
 		$dbo->execute();
 		if (!$dbo->getNumRows()) {
@@ -59,7 +63,7 @@ class VBOStateHelper
 	/**
 	 * Attempts to find the country ID from the given identifier.
 	 * 
-	 * @param 	string 	$country 	country identifier (name or 2/3-char code).
+	 * @param 	string 	$country 	country identifier (id, name or 2/3-char code).
 	 * 
 	 * @return 	int 				country ID found or null.
 	 */
@@ -68,15 +72,18 @@ class VBOStateHelper
 		$dbo = JFactory::getDbo();
 
 		if (is_numeric($country)) {
-			$q = "SELECT `id` FROM `#__vikbooking_countries` WHERE `id`=" . (int)$country;
+			$q = $dbo->getQuery(true)
+				->select($dbo->qn('id'))
+				->from($dbo->qn('#__vikbooking_countries'))
+				->where($dbo->qn('id') . ' = ' . (int) $country);
+
 			$dbo->setQuery($q, 0, 1);
-			$dbo->execute();
-			if (!$dbo->getNumRows()) {
-				// no records found for this country
-				return null;
-			}
+
 			return $dbo->loadResult();
 		}
+
+		// no null values accepted
+		$country = (string) $country;
 
 		// find country ID by name or code
 		$field_value = $country;
@@ -87,13 +94,12 @@ class VBOStateHelper
 			$field_name = $dbo->qn('country_2_code');
 		}
 
-		$q = "SELECT `id` FROM `#__vikbooking_countries` WHERE {$field_name}=" . $dbo->quote($field_value);
+		$q = $dbo->getQuery(true)
+			->select($dbo->qn('id'))
+			->from($dbo->qn('#__vikbooking_countries'))
+			->where($field_name . ' = ' . $dbo->q($field_value));
+
 		$dbo->setQuery($q, 0, 1);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			// country not found
-			return null;
-		}
 
 		return $dbo->loadResult();
 	}
@@ -109,14 +115,36 @@ class VBOStateHelper
 	{
 		$dbo = JFactory::getDbo();
 
-		$q = "SELECT * FROM `#__vikbooking_states` WHERE `id_country`=" . (int)$id_country;
+		$q = $dbo->getQuery(true)
+			->select('*')
+			->from($dbo->qn('#__vikbooking_states'))
+			->where($dbo->qn('id_country') . ' = ' . (int) $id_country);
+
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			// no records found for this country
-			return [];
-		}
 
 		return $dbo->loadAssocList();
+	}
+
+	/**
+	 * Returns the country record from the given ID.
+	 * 
+	 * @param 	int 	$id_country 	The country record ID.
+	 * 
+	 * @return 	?array 					Associative record or null.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	public static function getCountryData($id_country)
+	{
+		$dbo = JFactory::getDbo();
+
+		$q = $dbo->getQuery(true)
+			->select('*')
+			->from($dbo->qn('#__vikbooking_countries'))
+			->where($dbo->qn('id') . ' = ' . (int) $id_country);
+
+		$dbo->setQuery($q);
+
+		return $dbo->loadAssoc();
 	}
 }

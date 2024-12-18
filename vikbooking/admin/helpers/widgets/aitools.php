@@ -47,8 +47,8 @@ class VikBookingAdminWidgetAitools extends VikBookingAdminWidget
 	 */
 	public function preflight()
 	{
-		// can be used only if VCM is installed and the account has the AI channel
-		return class_exists('VikChannelManager') && defined('VikChannelManagerConfig::AI') && VikChannelManager::getChannel(VikChannelManagerConfig::AI);
+		// can be used only if VCM is installed and the AI channel is supported (not necessarily active)
+		return class_exists('VikChannelManager') && defined('VikChannelManagerConfig::AI');
 	}
 
 	/**
@@ -57,7 +57,7 @@ class VikBookingAdminWidgetAitools extends VikBookingAdminWidget
 	public function preload()
 	{
 		$options = [
-			'version' => VIKCHANNELMANAGER_SOFTWARE_VERSION ?? VIKBOOKING_SOFTWARE_VERSION,
+			'version' => defined('VIKCHANNELMANAGER_SOFTWARE_VERSION') ? VIKCHANNELMANAGER_SOFTWARE_VERSION : VIKBOOKING_SOFTWARE_VERSION,
 		];
 
 		// manually load required dependencies
@@ -119,6 +119,12 @@ class VikBookingAdminWidgetAitools extends VikBookingAdminWidget
 				'auto_focus' => $auto_focus,
 				// default prompt
 				'prompt' => $prompt,
+				// show widget title (VBO dashboard only)
+				'widget_title' => is_null($data),
+				// widget icon
+				'widget_icon' => $this->widgetIcon,
+				// widget name
+				'widget_name' => $this->widgetName,
 			],
 			null,
 			[

@@ -59,6 +59,35 @@ final class VBOCheckinPax
 	}
 
 	/**
+	 * Retrieves the list of pre-checkin pax fields for an extended collection type.
+	 * 
+	 * @param 	string 	$type 			the pax data type representing the class.
+	 * @param 	array 	$def_fields 	list of default pre-checkin labels and attributes.
+	 * 
+	 * @return 	array 	the list of pax fields to collect in the front-end during pre-checkin.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	public static function getPrecheckinFields($type = '', array $def_fields = [])
+	{
+		// default empty containers
+		$labels = [];
+		$attributes = [];
+
+		if (empty($type)) {
+			return [$labels, $attributes];
+		}
+
+		// invoke custom pax fields object
+		$paxf_obj = self::getInstance($type);
+		if (!$paxf_obj) {
+			return [$labels, $attributes];
+		}
+
+		return $paxf_obj->listPrecheckinFields($def_fields);
+	}
+
+	/**
 	 * Returns the instance of the custom pax data collection type object.
 	 * 
 	 * @param 	string 	$type 	the pax data type representing the class.
@@ -231,21 +260,19 @@ final class VBOCheckinPax
 
 		$q = "SELECT `idcustomer` FROM `#__vikbooking_customers_orders` WHERE `idorder`=" . (int)$bid;
 		$dbo->setQuery($q, 0, 1);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$id_customer = $dbo->loadResult();
+		if (!$id_customer) {
 			return [];
 		}
-		$id_customer = $dbo->loadResult();
 
 		$q = "SELECT `co`.`idorder`, `co`.`pax_data`, `o`.`ts`, `o`.`checkin`, `o`.`checkout` FROM `#__vikbooking_customers_orders` AS `co` 
 			LEFT JOIN `#__vikbooking_orders` AS `o` ON `co`.`idorder`=`o`.`id` 
 			WHERE `co`.`idcustomer`=" . (int)$id_customer . " AND `co`.`idorder` != " . (int)$bid . " AND `co`.`pax_data` IS NOT NULL ORDER BY `co`.`idorder` DESC";
 		$dbo->setQuery($q, 0, $lim);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$prev_records = $dbo->loadAssocList();
+		if (!$prev_records) {
 			return [];
 		}
-		$prev_records = $dbo->loadAssocList();
 
 		foreach ($prev_records as $k => $v) {
 			// attempt to decode checkin data

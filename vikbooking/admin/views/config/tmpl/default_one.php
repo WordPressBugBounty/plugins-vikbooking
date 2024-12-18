@@ -452,6 +452,14 @@ jQuery(document).ready(function() {
 					</div>
 				</div>
 				<div class="vbo-param-container">
+					<div class="vbo-param-label"><?php echo JText::translate('VBO_SEARCH_SHOW_BUSY_LISTINGS'); ?></div>
+					<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('search_show_busy_listings', JText::translate('VBYES'), JText::translate('VBNO'), ($config->getBool('search_show_busy_listings', false) ? 1 : 0), 1, 0); ?></div>
+				</div>
+				<div class="vbo-param-container">
+					<div class="vbo-param-label"><?php echo JText::translate('VBO_SEARCH_LINK_ROOMDETAILS'); ?></div>
+					<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('search_link_roomdetails', JText::translate('VBYES'), JText::translate('VBNO'), ($config->getBool('search_link_roomdetails', false) ? 1 : 0), 1, 0); ?></div>
+				</div>
+				<div class="vbo-param-container">
 					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGONETENFOUR'); ?></div>
 					<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('showcategories', JText::translate('VBYES'), JText::translate('VBNO'), (VikBooking::showCategoriesFront(true) ? 'yes' : 0), 'yes', 0); ?></div>
 				</div>

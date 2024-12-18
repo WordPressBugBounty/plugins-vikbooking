@@ -135,6 +135,25 @@ abstract class VBOCheckinAdapter implements VBOCheckinPaxfields
 	}
 
 	/**
+	 * Builds the list of front-end (pre-checkin) pax fields for the extended collection type.
+	 * Check-in pax fields data collector implementations may override this method, if needed.
+	 * 
+	 * @param 	array 	$def_fields 	list of default pre-checkin field labels and attributes.
+	 * 
+	 * @return 	array 	the list of pax fields to collect in the front-end during pre-checkin.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	public function listPrecheckinFields(array $def_fields)
+	{
+		// return no labels, nor attributes by default
+		return [
+			[],
+			[],
+		];
+	}
+
+	/**
 	 * Composes the field type class name given its type-string.
 	 * 
 	 * @param 	string 	$field_type 	the field type-string identifier.

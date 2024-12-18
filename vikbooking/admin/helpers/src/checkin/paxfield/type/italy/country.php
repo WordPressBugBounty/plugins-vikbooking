@@ -137,6 +137,9 @@ HTML;
 		$set_value  = (!empty($value) ? 1 : 0);
 		$json_value = json_encode(($set_value ? [$value] : []));
 
+		// build select2 placeholder label
+		$plch_lbl = addslashes(JText::translate('VBO_SELECT_COUNTRY'));
+
 		// append select2 JS script for rendering the field
 		$field_html .= <<<HTML
 <script>
@@ -145,7 +148,7 @@ HTML;
 		jQuery("#$field_id").select2({
 			data: vbo_nazioni_json,
 			width: "100%",
-			placeholder: "Seleziona stato",
+			placeholder: "$plch_lbl",
 			allowClear: true
 		});
 
@@ -173,7 +176,7 @@ HTML;
 		// call the same method on the collector instance
 		$nazioni = $this->callCollector(__FUNCTION__);
 
-		return is_array($nazioni) ? $nazioni : array();
+		return is_array($nazioni) ? $nazioni : [];
 	}
 
 	/**

@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2024-11-12 16:31+0100\n"
-"PO-Revision-Date: 2024-11-12 16:33+0100\n"
+"POT-Creation-Date: 2024-12-18 18:04+0100\n"
+"PO-Revision-Date: 2024-12-18 18:07+0100\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: it_IT\n"
@@ -99,7 +99,7 @@ msgstr ""
 "rilanciare la pagina appendendo <code>&feedback=0</code> all'URL. Altrimenti "
 "fai clic <a href=\"%s\">QUI</a>."
 
-#: libraries/html/feedback/thickbox.php:92
+#: libraries/html/feedback/thickbox.php:92 libraries/language/admin.php:7398
 msgid "Other"
 msgstr "Altro"
 
@@ -1275,7 +1275,7 @@ msgid "Update Rates"
 msgstr "Aggiorna tariffe"
 
 #: libraries/language/admin.php:717
-msgid "Check-out Time"
+msgid "Check-out time"
 msgstr "Ora check-out"
 
 #: libraries/language/admin.php:720
@@ -1287,7 +1287,7 @@ msgid "Booking Disabled Message"
 msgstr "Messaggio prenotazione disabilitata"
 
 #: libraries/language/admin.php:726
-msgid "Check-In Time"
+msgid "Check-in time"
 msgstr "Ora check-in"
 
 #: libraries/language/admin.php:729
@@ -5163,8 +5163,8 @@ msgstr "Dettagli ospiti"
 msgid "Guest #%d"
 msgstr "Ospite #%d"
 
-#: libraries/language/admin.php:3915
-msgid "Extra Notes"
+#: libraries/language/admin.php:3915 libraries/language/site.php:1999
+msgid "Extra notes"
 msgstr "Note extra"
 
 #: libraries/language/admin.php:3921
@@ -5877,7 +5877,7 @@ msgstr "SMS per cliente"
 
 #: libraries/language/admin.php:4377
 msgid "Vik Booking - PMS Reports"
-msgstr "Vik Booking - PMS Reports"
+msgstr "Vik Booking - PMS Report"
 
 #: libraries/language/admin.php:4380
 msgid "PMS"
@@ -5885,7 +5885,7 @@ msgstr "PMS"
 
 #: libraries/language/admin.php:4383 libraries/language/admin.php:7361
 msgid "Reports"
-msgstr "Reports"
+msgstr "Report"
 
 #: libraries/language/admin.php:4386
 msgid "- Select Report Type -"
@@ -8779,7 +8779,7 @@ msgid "Book Now"
 msgstr "Prenota ora"
 
 #: libraries/language/admin.php:6081 libraries/language/site.php:669
-#: libraries/language/system.php:396
+#: libraries/language/site.php:2009 libraries/language/system.php:396
 msgid "Select"
 msgstr "Seleziona"
 
@@ -10987,6 +10987,195 @@ msgid ""
 msgstr ""
 "Il payload è necessario per far sì che il report esporti informazioni "
 "dinamiche ogni giorno."
+
+#: libraries/language/admin.php:7373
+msgid "Mandatory fee"
+msgstr "Costo obbligatorio"
+
+#. TRANSLATORS: Default booking check-in and check-out times should be kept in mind.
+#: libraries/language/admin.php:7377
+#, php-format
+msgctxt "Default booking check-in and check-out times should be kept in mind."
+msgid ""
+"By booking this option it is possible to modify the default check-in and/or "
+"check-out time of the reservation. Make sure the new check-out time to set "
+"will be before the default check-in time (%s). Same goes for the new check-"
+"in time to set, it should be after the default check-out time (%s), or "
+"issues will occur with the availability calculation (turnover day)."
+msgstr ""
+"Prenotando questa opzione, è possibile modificare gli orari predefiniti di "
+"check-in e/o check-out della prenotazione stessa. Assicurati che il nuovo "
+"orario di check-out da impostare sia precedente all’orario di check-in "
+"predefinito (%s). Lo stesso vale per il nuovo orario di check-in da "
+"impostare, dovrebbe essere successivo all’orario predefinito di check-out "
+"(%s), altrimenti potrebbero verificarsi problemi con il calcolo delle "
+"disponibilità (giorno di cambio)."
+
+#: libraries/language/admin.php:7380
+msgid "Late check-out"
+msgstr "Check-out posticipato"
+
+#: libraries/language/admin.php:7383
+msgid "Early check-in"
+msgstr "Check-in anticipato"
+
+#: libraries/language/admin.php:7386
+msgid "Late check-in"
+msgstr "Check-in posticipato"
+
+#: libraries/language/admin.php:7389
+msgctxt "Spanish city code for \"Código de municipio\""
+msgid "Spain City Code"
+msgstr "Codice città Spagna"
+
+#: libraries/language/admin.php:7392
+msgctxt "Spanish translation for \"Número soporte documento\""
+msgid "ID Support Number"
+msgstr "Numero supporto documento"
+
+#: libraries/language/admin.php:7395
+msgctxt "Spanish translation for \"Parentesco\""
+msgid "Child relation"
+msgstr "Parentela con minore"
+
+#: libraries/language/admin.php:7401 libraries/language/site.php:2060
+msgid "Passport"
+msgstr "Passaporto"
+
+#: libraries/language/admin.php:7404 libraries/language/site.php:2018
+msgid "Grandfather/Grandmother"
+msgstr "Nonno/a"
+
+#: libraries/language/admin.php:7407 libraries/language/site.php:2021
+msgid "Great-grandfather/grandmother"
+msgstr "Bis-nonno/a"
+
+#: libraries/language/admin.php:7410 libraries/language/site.php:2024
+msgid "Great-grandson/granddaughter"
+msgstr "Bis-nipote"
+
+#: libraries/language/admin.php:7413 libraries/language/site.php:2027
+msgid "Brother/Sister-in-law"
+msgstr "Cognato/a"
+
+#: libraries/language/admin.php:7416 libraries/language/site.php:2030
+msgid "Spouse"
+msgstr "Coniuge"
+
+#: libraries/language/admin.php:7419 libraries/language/site.php:2033
+msgid "Son/Daughter"
+msgstr "Figlio/a"
+
+#: libraries/language/admin.php:7422 libraries/language/site.php:2036
+msgid "Brother/Sister"
+msgstr "Fratello/sorella"
+
+#: libraries/language/admin.php:7425 libraries/language/site.php:2039
+msgid "Grandson/Granddaughter"
+msgstr "Nipote"
+
+#: libraries/language/admin.php:7428 libraries/language/site.php:2042
+msgid "Father/Mother"
+msgstr "Padre/madre"
+
+#: libraries/language/admin.php:7431 libraries/language/site.php:2045
+msgid "Nephew/Nephew"
+msgstr "Nipote (zio)"
+
+#: libraries/language/admin.php:7434 libraries/language/site.php:2048
+msgid "Father/Mother-in-law"
+msgstr "Suocero/a"
+
+#: libraries/language/admin.php:7437 libraries/language/site.php:2051
+msgid "Uncle/Aunt"
+msgstr "Zio/a"
+
+#: libraries/language/admin.php:7440 libraries/language/site.php:2054
+msgid "Son/Daughter-in-law"
+msgstr "Genero/nuora"
+
+#: libraries/language/admin.php:7443 libraries/language/site.php:2057
+msgid "Guardian"
+msgstr "Tutore"
+
+#: libraries/language/admin.php:7446
+msgid "Show occupied listings in search results"
+msgstr "Mostra annunci occupati nei risultati di ricerca"
+
+#: libraries/language/admin.php:7449
+msgid "Link to listing details in search results"
+msgstr "Usa link dettaglio camera nei risultati di ricerca"
+
+#: libraries/language/admin.php:7452 libraries/language/site.php:1966
+msgid "Guest type"
+msgstr "Tipo alloggiato"
+
+#: libraries/language/admin.php:7455 libraries/language/site.php:1969
+msgid "Single guest"
+msgstr "Ospite singolo"
+
+#: libraries/language/admin.php:7458 libraries/language/site.php:1972
+msgid "Head of family"
+msgstr "Capo famiglia"
+
+#: libraries/language/admin.php:7461 libraries/language/site.php:1975
+msgid "Family member"
+msgstr "Familiare"
+
+#: libraries/language/admin.php:7464 libraries/language/site.php:1978
+msgid "Group leader"
+msgstr "Capo gruppo"
+
+#: libraries/language/admin.php:7467 libraries/language/site.php:1981
+msgid "Group member"
+msgstr "Membro gruppo"
+
+#: libraries/language/admin.php:7470 libraries/language/site.php:1984
+msgid "Country of birth"
+msgstr "Paese di nascita"
+
+#: libraries/language/admin.php:7473 libraries/language/site.php:1987
+msgid "Municipality of birth"
+msgstr "Comune di nascita"
+
+#: libraries/language/admin.php:7476 libraries/language/site.php:1990
+msgid "Country of residence"
+msgstr "Paese di residenza"
+
+#: libraries/language/admin.php:7479 libraries/language/site.php:1993
+msgid "Municipality of residence"
+msgstr "Comune di residenza"
+
+#: libraries/language/admin.php:7482 libraries/language/site.php:1996
+msgid "ID issue place"
+msgstr "Luogo rilascio documento"
+
+#. TRANSLATORS: Only if country = Italy.
+#: libraries/language/admin.php:7486 libraries/language/site.php:2003
+#, php-format
+msgctxt "e.g. Only if country = Italy"
+msgid "Only if country = %s"
+msgstr "Solo se paese = %s"
+
+#: libraries/language/admin.php:7489 libraries/language/site.php:2006
+msgid "Optional"
+msgstr "Opzionale"
+
+#: libraries/language/admin.php:7492 libraries/language/site.php:2012
+msgid "Select country"
+msgstr "Seleziona paese"
+
+#: libraries/language/admin.php:7495 libraries/language/site.php:2015
+msgid "Select document"
+msgstr "Seleziona documento"
+
+#: libraries/language/admin.php:7498 libraries/language/site.php:2063
+msgid "Driving License"
+msgstr "Patente di guida"
+
+#: libraries/language/admin.php:7501 libraries/language/site.php:2066
+msgid "Identity Document"
+msgstr "Carta d’identità"
 
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
@@ -14646,6 +14835,9 @@ msgstr "no"
 #: modules/mod_vikbooking_rooms/language/handler.php:204
 msgid "Sleep"
 msgstr "Posto letto"
+
+#~ msgid "Check-In Time"
+#~ msgstr "Ora check-in"
 
 #~ msgid "Access Tableaux"
 #~ msgstr "Accedi al Tableaux"

@@ -333,19 +333,55 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 		$booked_dates = [];
 		$info_start = getdate($tsstart);
 		$endts = mktime(23, 59, 59, $info_start['mon'], ($info_start['mday'] + $MAX_DAYS), $info_start['year']);
-		$q = "SELECT `b`.*,`ob`.`idorder` FROM `#__vikbooking_busy` AS `b`,`#__vikbooking_ordersbusy` AS `ob` WHERE `b`.`idroom` IN (".implode(', ', $reqids).") AND `b`.`id`=`ob`.`idbusy` AND (`b`.`checkin`>=".$tsstart." OR `b`.`checkout`>=".$tsstart.") AND (`b`.`checkin`<=".$endts." OR `b`.`checkout`<=".$tsstart.");";
+
+		$q = "SELECT `b`.*,`ob`.`idorder`,`o`.`custdata`,`o`.`status`,`o`.`days`,`o`.`roomsnum`,`o`.`idorderota`,`o`.`channel`,`o`.`colortag`,`o`.`closure`,`o`.`total`,`o`.`totpaid`,`o`.`paymentlog`
+			FROM `#__vikbooking_busy` AS `b` 
+			LEFT JOIN `#__vikbooking_ordersbusy` AS `ob` ON `b`.`id`=`ob`.`idbusy` 
+			LEFT JOIN `#__vikbooking_orders` AS `o` ON `ob`.`idorder`=`o`.`id` 
+			WHERE `b`.`idroom` IN (" . implode(', ', $reqids) . ") AND (`b`.`checkin`>=" . $tsstart . " OR `b`.`checkout`>=" . $tsstart . ") AND (`b`.`checkin`<=" . $endts . " OR `b`.`checkout`<=" . $tsstart . ");";
 		$dbo->setQuery($q);
 		$rbusy = $dbo->loadAssocList();
+
 		$ridbusy = [];
 		foreach ($rbusy as $rb) {
 			if (!isset($ridbusy[$rb['idroom']])) {
 				$ridbusy[$rb['idroom']] = [];
 			}
-			array_push($ridbusy[$rb['idroom']], $rb);
+			$ridbusy[$rb['idroom']][] = $rb;
 		}
+
+		// collect additional information for each booking
+		$extra_info_map = [];
+		foreach ($ridbusy as $rid => $roomres) {
+			foreach ($roomres as $k => $res) {
+				if (empty($res['idorder'])) {
+					continue;
+				}
+				if (isset($extra_info_map[$res['idorder']])) {
+					// merge existing extra information
+					$ridbusy[$rid][$k] = array_merge($res, $extra_info_map[$res['idorder']]);
+					continue;
+				}
+				// get booking extra information
+				$q = "SELECT `oc`.`idcustomer`,`c`.`first_name`,`c`.`last_name`,`c`.`pic`
+					FROM `#__vikbooking_customers_orders` AS `oc`
+					LEFT JOIN `#__vikbooking_customers` AS `c` ON `oc`.`idcustomer`=`c`.`id`
+					WHERE `oc`.`idorder`={$res['idorder']}";
+				$dbo->setQuery($q, 0, 1);
+				$extra_info = $dbo->loadAssoc();
+				$extra_info = $extra_info ?: [];
+				// merge and map booking extra information
+				$ridbusy[$rid][$k] = array_merge($res, $extra_info);
+				$extra_info_map[$res['idorder']] = $extra_info;
+			}
+		}
+
 		foreach ($req_room_ids as $rid) {
-			$booked_dates[(int)$rid] = isset($ridbusy[(int)$rid]) ? $ridbusy[(int)$rid] : [];
+			$booked_dates[$rid] = $ridbusy[$rid] ?? [];
 		}
+
+		// free memory up
+		unset($ridbusy, $rbusy);
 
 		/**
 		 * Load room day notes for the requested dates
@@ -353,8 +389,27 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 		 * @since 	1.13.5
 		 */
 		$rdaynotes = VikBooking::getCriticalDatesInstance()->loadRoomDayNotes(date('Y-m-d', $tsstart), date('Y-m-d', $endts));
-		//
-		
+
+		/**
+		 * Build room-ota relations for pricing alterations, if any.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		$room_ota_relations = [];
+		foreach ($req_room_ids as $rid) {
+			// always get a new instance of the VikChannelManagerLogos class
+			$vcm_logos = VikBooking::getVcmChannelsLogo('', true);
+			// load channels (firsr) and accounts (after) for this listing
+			$room_ota_channels = is_object($vcm_logos) && method_exists($vcm_logos, 'getVboRoomLogosMapped') ? $vcm_logos->getVboRoomLogosMapped($rid) : [];
+			$room_ota_accounts = is_object($vcm_logos) && method_exists($vcm_logos, 'getRoomOtaAccounts') ? $vcm_logos->getRoomOtaAccounts() : [];
+			if ($room_ota_channels && ($room_ota_accounts[$rid] ?? [])) {
+				$room_ota_relations[$rid] = [
+					'channels' => $room_ota_channels,
+					'accounts' => $room_ota_accounts[$rid],
+				];
+			}
+		}
+
 		$this->all_rooms = $all_rooms;
 		$this->categories = $categories;
 		$this->reqcats = $reqcats;
@@ -369,6 +424,7 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 		$this->firstroom = $roomid;
 		$this->festivities = $festivities;
 		$this->rdaynotes = $rdaynotes;
+		$this->room_ota_relations = $room_ota_relations;
 		$this->max_days = $MAX_DAYS;
 		
 		// Display the template

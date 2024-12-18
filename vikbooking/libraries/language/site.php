@@ -1962,6 +1962,109 @@ class VikBookingLanguageSite implements JLanguageHandler
 			case 'VBO_ALL_LISTINGS':
 				$result = __('All listings', 'vikbooking');
 				break;
+			case 'VBO_GUEST_TYPE':
+				$result = __('Guest type', 'vikbooking');
+				break;
+			case 'VBO_SINGLE_GUEST':
+				$result = __('Single guest', 'vikbooking');
+				break;
+			case 'VBO_FAMILY_HEAD':
+				$result = __('Head of family', 'vikbooking');
+				break;
+			case 'VBO_FAMILY_MEMBER':
+				$result = __('Family member', 'vikbooking');
+				break;
+			case 'VBO_GROUP_HEAD':
+				$result = __('Group leader', 'vikbooking');
+				break;
+			case 'VBO_GROUP_MEMBER':
+				$result = __('Group member', 'vikbooking');
+				break;
+			case 'VBO_BIRTH_STATE':
+				$result = __('Country of birth', 'vikbooking');
+				break;
+			case 'VBO_BIRTH_MUNICIPALITY':
+				$result = __('Municipality of birth', 'vikbooking');
+				break;
+			case 'VBO_STAY_STATE':
+				$result = __('Country of residence', 'vikbooking');
+				break;
+			case 'VBO_STAY_MUNICIPALITY':
+				$result = __('Municipality of residence', 'vikbooking');
+				break;
+			case 'VBO_ID_ISSUE_PLACE':
+				$result = __('ID issue place', 'vikbooking');
+				break;
+			case 'VBOGUESTEXTRANOTES':
+				$result = __('Extra notes', 'vikbooking');
+				break;
+			case 'VBO_ONLY_IF_COUNTRY_EQ':
+				// @TRANSLATORS: Only if country = Italy.
+				$result = _x('Only if country = %s', 'e.g. Only if country = Italy', 'vikbooking');
+				break;
+			case 'VBO_OPTIONAL':
+				$result = __('Optional', 'vikbooking');
+				break;
+			case 'VBO_SELECT':
+				$result = __('Select', 'vikbooking');
+				break;
+			case 'VBO_SELECT_COUNTRY':
+				$result = __('Select country', 'vikbooking');
+				break;
+			case 'VBO_SELECT_DOCUMENT':
+				$result = __('Select document', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_AB':
+				$result = __('Grandfather/Grandmother', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_BA':
+				$result = __('Great-grandfather/grandmother', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_BN':
+				$result = __('Great-grandson/granddaughter', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_CD':
+				$result = __('Brother/Sister-in-law', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_CY':
+				$result = __('Spouse', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_HJ':
+				$result = __('Son/Daughter', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_HR':
+				$result = __('Brother/Sister', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_NI':
+				$result = __('Grandson/Granddaughter', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_PM':
+				$result = __('Father/Mother', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_SB':
+				$result = __('Nephew/Nephew', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_SG':
+				$result = __('Father/Mother-in-law', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_TI':
+				$result = __('Uncle/Aunt', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_YN':
+				$result = __('Son/Daughter-in-law', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_TU':
+				$result = __('Guardian', 'vikbooking');
+				break;
+			case 'VBO_PASSPORT':
+				$result = __('Passport', 'vikbooking');
+				break;
+			case 'VBO_DRIVING_LICENSE':
+				$result = __('Driving License', 'vikbooking');
+				break;
+			case 'VBO_IDENTITY_DOCUMENT':
+				$result = __('Identity Document', 'vikbooking');
+				break;
 		}
 
 		return $result;

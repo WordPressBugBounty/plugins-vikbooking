@@ -1071,7 +1071,7 @@ jQuery(function() {
 						<tr class="<?php echo $usepricecal === true ? 'vbcalnumdaysprice' : 'vbcalnumdays'; ?>">
 						<?php
 						for ($i = 0, $n = $days_indexes[$newarr['wday']]; $i < $n; $i++, $d_count++) {
-							$cal .= "<td align=\"center\">&nbsp;</td>";
+							$cal .= "<td class=\"vbtdempty\" align=\"center\">&nbsp;</td>";
 						}
 						while ($newarr['mon'] == $mon) {
 							if ($d_count > 6) {
@@ -1174,7 +1174,7 @@ jQuery(function() {
 						}
 
 						for ($i = $d_count; $i <= 6; $i++) {
-							$cal .= "<td align=\"center\">&nbsp;</td>";
+							$cal .= "<td class=\"vbtdempty\" align=\"center\">&nbsp;</td>";
 						}
 
 						echo $cal;
@@ -1485,7 +1485,7 @@ jQuery(function() {
 				$promo_checkin = VikRequest::getString('checkin', '', 'request');
 				$ispromo = count($promo_season) > 0 ? $promo_season['id'] : 0;
 
-				$form_method = defined('ABSPATH') ? 'post' : 'get';
+				$form_method = VBOPlatformDetection::isWordPress() ? 'post' : 'get';
 				
 				$selform = "<div class=\"vbdivsearch\"><form action=\"".JRoute::rewrite('index.php?option=com_vikbooking'.(!empty($pitemid) ? '&Itemid='.$pitemid : ''))."\" method=\"{$form_method}\" onsubmit=\"return vboValidateDates();\"><div class=\"vb-search-inner\">\n";
 				$selform .= "<input type=\"hidden\" name=\"option\" value=\"com_vikbooking\"/>\n";

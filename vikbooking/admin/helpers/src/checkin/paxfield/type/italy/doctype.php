@@ -91,6 +91,9 @@ HTML;
 		$set_value  = (!empty($value) ? 1 : 0);
 		$json_value = json_encode(($set_value ? [$value] : []));
 
+		// build select2 placeholder label
+		$plch_lbl = addslashes(JText::translate('VBO_SELECT_DOCUMENT'));
+
 		// append select2 JS script for rendering the field
 		$field_html .= <<<HTML
 <script>
@@ -99,7 +102,7 @@ HTML;
 		jQuery("#$field_id").select2({
 			data: vbo_documenti_json,
 			width: "100%",
-			placeholder: "Seleziona documento",
+			placeholder: "$plch_lbl",
 			allowClear: true
 		});
 
@@ -122,13 +125,23 @@ HTML;
 	 * Helper method that takes advantage of the collector class own method.
 	 *
 	 * @return 	array
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)  added support to normalized document types.
 	 */
 	private function loadDocumenti()
 	{
-		// call the same method on the collector instance
-		$documenti = $this->callCollector(__FUNCTION__);
+		// whether to normalize the document types
+		$normalize = false;
 
-		return is_array($documenti) ? $documenti : array();
+		if (VikBooking::isSite() && strtolower(substr(JFactory::getLanguage()->getTag(), 0, 2)) !== 'it') {
+			// turn flag on
+			$normalize = true;
+		}
+
+		// call the same method on the collector instance
+		$documenti = $this->callCollector(__FUNCTION__, $normalize);
+
+		return is_array($documenti) ? $documenti : [];
 	}
 
 	/**

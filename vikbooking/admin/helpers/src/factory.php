@@ -200,6 +200,14 @@ final class VBOFactory
                 static::$crontabSimulator->schedule(new VBOCrontabRunnerAware('pay_schedules_watcher', 5 * 60, function(VBOCrontabLogger $logger) {
                     VBOModelPayschedules::getInstance()->watch();
                 }));
+
+                /**
+                 * Run performances cleaner.
+                 * Should run every week.
+                 */
+                static::$crontabSimulator->schedule(new VBOCrontabRunnerAware('performance_cleaner', 60 * 60 * 24 * 7, function(VBOCrontabLogger $logger) {
+                    VBOPerformanceCleaner::runCheck();
+                }));
             }
 
             if (class_exists('VCMCrontabProvider')) {

@@ -517,8 +517,8 @@ foreach ($rooms_busy as $rid => $busy) {
 										$room_extra_infos = [];
 
 										// parse Website and OTA rate plans
-										$room_rplans = explode('__', $rbook['ridtars']);
-										$room_ota_rplans = explode('__', $rbook['rotarplans']);
+										$room_rplans = explode('__', (string) $rbook['ridtars']);
+										$room_ota_rplans = explode('__', (string) $rbook['rotarplans']);
 										if (!empty($room_rplans[$nowdataindex])) {
 											$rplan_name = $this->getRatePlanFromTariff(($room_rplans[$nowdataindex]));
 											if ($rplan_name) {
@@ -529,7 +529,7 @@ foreach ($rooms_busy as $rid => $busy) {
 										}
 
 										// parse options
-										$room_options = explode('__', $rbook['roptions']);
+										$room_options = explode('__', (string) $rbook['roptions']);
 										if (!empty($room_options[$nowdataindex])) {
 											$room_options_list = [];
 											$all_room_options = explode(';', $room_options[$nowdataindex]);
@@ -546,7 +546,7 @@ foreach ($rooms_busy as $rid => $busy) {
 										}
 
 										// parse extra services
-										$room_extras = explode('__', $rbook['rextras']);
+										$room_extras = explode('__', (string) $rbook['rextras']);
 										if (!empty($room_extras[$nowdataindex])) {
 											$room_extras_list = [];
 											$decoded_room_extras = json_decode($room_extras[$nowdataindex]);

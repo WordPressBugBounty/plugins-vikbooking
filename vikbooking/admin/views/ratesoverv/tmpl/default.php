@@ -47,11 +47,13 @@ $vbo_app->loadDatePicker();
 
 $pdebug = VikRequest::getint('e4j_debug', '', 'request');
 
-$currencysymb = VikBooking::getCurrencySymb();
 $vbo_df = VikBooking::getDateFormat();
 $datesep = VikBooking::getDateSeparator();
 $df = $vbo_df == "%d/%m/%Y" ? 'd/m/Y' : ($vbo_df == "%m/%d/%Y" ? 'm/d/Y' : 'Y/m/d');
 $juidf = $vbo_df == "%d/%m/%Y" ? 'dd/mm/yy' : ($vbo_df == "%m/%d/%Y" ? 'mm/dd/yy' : 'yy/mm/dd');
+
+$currencysymb = VikBooking::getCurrencySymb();
+list($currency_digits, $currency_decimals, $currency_thousands) = explode(':', VikBooking::getNumberFormatData());
 
 $MAX_DAYS = $this->max_days;
 $pcheckinh = 0;
@@ -69,8 +71,9 @@ if (is_array($timeopst)) {
 }
 
 /**
- * Check if season records should be pre-cached. Be aware
- * of the hundreds of MBs of server's memory that could be used.
+ * Check if season records should be preloaded. Beware of the
+ * hundreds of MBs of server's memory that could be used for
+ * pre-loading and pre-caching records in favour of CPU.
  * 
  * @since 	1.16.10 (J) - 1.6.10 (WP)
  */
@@ -129,11 +132,18 @@ foreach ($short_mons as $k => $v) {
 }
 $json_short_wdays = json_encode($short_wdays);
 $json_short_mons = json_encode($short_mons);
+$json_room_ota_rels = json_encode($this->room_ota_relations);
 
+// add to DOM the necessary script declaration
 $document->addScriptDeclaration(
 <<<JS
 var vboMapWdays = $json_short_wdays;
 var vboMapMons = $json_short_mons;
+var vboRoomOtaRels = $json_room_ota_rels;
+var vbo_currency_symbol = "$currencysymb";
+var vbo_currency_digits = "$currency_digits";
+var vbo_currency_decimals = "$currency_decimals";
+var vbo_currency_thousands = "$currency_thousands";
 JS
 );
 
@@ -625,43 +635,72 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 						$cell_count = 0;
 						$last_booking_info = [];
 						$last_booking_tag = [];
+						$room_bookings_pool = [];
 						while ($cell_count < $MAX_DAYS) {
 							$style = '';
+							$is_checkin = false;
 							$dclass = "vbo-roverw-daynotbusy";
 							$id_block = "cell-".$nowts['mday'].'-'.$nowts['mon']."-".$nowts['year']."-".$nowts['wday']."-".$rid."-avail";
 
+							$prev_day_key = date('Y-m-d', strtotime('-1 day', $nowts[0]));
+							$cur_day_key = date('Y-m-d', $nowts[0]);
 							$totfound = 0;
-							$last_bid = 0;
+							$last_bid_data = [];
 							$bids_pool = [];
 
-							if (isset($this->booked_dates[$roomrow['id']]) && $this->booked_dates[$roomrow['id']]) {
-								foreach ($this->booked_dates[$roomrow['id']] as $b) {
-									$tmpone = getdate($b['checkin']);
-									$ritts = mktime(0, 0, 0, $tmpone['mon'], $tmpone['mday'], $tmpone['year']);
-									$tmptwo = getdate($b['checkout']);
-									$conts = mktime(0, 0, 0, $tmptwo['mon'], $tmptwo['mday'], $tmptwo['year']);
-									if ($nowts[0] >= $ritts && $nowts[0] < $conts) {
-										$dclass = "vbo-roverw-daybusy";
-										$last_bid = $b['idorder'];
-										$totfound++;
-										// push bid to pool
-										$bid_str = '-' . $b['idorder'] . '-';
-										if (!in_array($bid_str, $bids_pool)) {
-											$bids_pool[] = $bid_str;
-										}
+							$day_booking_snake = '';
+							$day_booking_data = [];
+
+							foreach (($this->booked_dates[$roomrow['id']] ?? []) as $b) {
+								$tmpone = getdate($b['checkin']);
+								$ritts = mktime(0, 0, 0, $tmpone['mon'], $tmpone['mday'], $tmpone['year']);
+								$tmptwo = getdate($b['checkout']);
+								$conts = mktime(0, 0, 0, $tmptwo['mon'], $tmptwo['mday'], $tmptwo['year']);
+								if ($nowts[0] >= $ritts && $nowts[0] < $conts) {
+									// booking found
+									$dclass = "vbo-roverw-daybusy";
+									$last_bid_data = $b;
+									$totfound++;
+
+									// push bid to pool
+									$bid_str = '-' . $b['idorder'] . '-';
+									if (!in_array($bid_str, $bids_pool)) {
+										$bids_pool[] = $bid_str;
+									}
+
+									// push day booking details
+									if (!isset($room_bookings_pool[$roomrow['id']])) {
+										$room_bookings_pool[$roomrow['id']] = [];
+									}
+									if (!isset($room_bookings_pool[$roomrow['id']][$cur_day_key])) {
+										$room_bookings_pool[$roomrow['id']][$cur_day_key] = [];
+									}
+									if ($roomrow['units'] == 1 && !$b['closure'] && !($b['sharedcal'] ?? 0)) {
+										// push room day booking
+										$room_bookings_pool[$roomrow['id']][$cur_day_key][] = $b;
+									}
+
+									if ($nowts[0] == $ritts) {
+										// turn flag on
+										$is_checkin = true;
 									}
 								}
 							}
 
+							// count units left
 							$units_remaining = $roomrow['units'] - $totfound;
+
 							if ($units_remaining > 0 && $units_remaining < $roomrow['units'] && $roomrow['units'] > 1) {
+								// room with hotel-like inventory
 								$dclass .= " vbo-roverw-daybusypartially";
-							} elseif ($units_remaining <= 0 && $roomrow['units'] <= 1 && !empty($last_bid)) {
-								// Booking color tag
+							} elseif ($units_remaining <= 0 && $roomrow['units'] <= 1 && $last_bid_data) {
+								// single-unit listing
+
+								// gather the booking color tag data
 								$btag_style = '';
-								$binfo = ($last_booking_info['data'] ?? null) && ($last_booking_info['id'] ?? null) == $last_bid ? $last_booking_info['data'] : VikBooking::getBookingInfoFromID($last_bid);
+								$binfo = ($last_booking_info['data'] ?? null) && ($last_booking_info['id'] ?? null) == $last_bid_data['idorder'] ? $last_booking_info['data'] : $last_bid_data;
 								if ($binfo) {
-									$bcolortag = ($last_booking_tag['data'] ?? null) && ($last_booking_tag['id'] ?? null) == $last_bid ? $last_booking_tag['data'] : VikBooking::applyBookingColorTag($binfo);
+									$bcolortag = ($last_booking_tag['data'] ?? null) && ($last_booking_tag['id'] ?? null) == $last_bid_data['idorder'] ? $last_booking_tag['data'] : VikBooking::applyBookingColorTag($binfo);
 									if ($bcolortag) {
 										// set values
 										$bcolortag['name'] = JText::translate($bcolortag['name']);
@@ -669,11 +708,11 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 										$dclass .= ' vbo-roverw-hascolortag';
 										// cache data to avoid duplicate queries
 										$last_booking_info = [
-											'id'   => $last_bid,
+											'id'   => $last_bid_data['idorder'],
 											'data' => $binfo,
 										];
 										$last_booking_tag = [
-											'id'   => $last_bid,
+											'id'   => $last_bid_data['idorder'],
 											'data' => $bcolortag,
 										];
 									}
@@ -682,11 +721,137 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 									$style = !empty($style) ? ' style="display: none; '.$btag_style.'"' : ' style="'.$btag_style.'"';
 									$style .= ' title="'.addslashes($bcolortag['name']).'"';
 								}
+
+								/**
+								 * Build room-day-booking snake.
+								 * 
+								 * @since 	1.17.2 (J) - 1.7.2 (WP)
+								 */
+								if ($room_bookings_pool[$roomrow['id']][$cur_day_key][0] ?? []) {
+									$day_booking_data = $room_bookings_pool[$roomrow['id']][$cur_day_key][0];
+								}
+								if ($room_bookings_pool[$roomrow['id']][$prev_day_key][0] ?? []) {
+									if (!$room_bookings_pool[$roomrow['id']][$prev_day_key][0]['closure'] && date('Y-m-d', $room_bookings_pool[$roomrow['id']][$prev_day_key][0]['checkout']) == $cur_day_key) {
+										// prepend checkout snake
+										$day_booking_snake .= '<div class="vbo-tableaux-booking vbo-tableaux-booking-singleunit vbo-tableaux-booking-checkout"><span>&nbsp;</span></div>';
+									}
+								}
+								if ($day_booking_data && !$day_booking_data['closure']) {
+									// build tableaux-style snake container for guest
+									$customer_descr = '';
+									if ($is_checkin) {
+										// customer details
+										if (!empty($day_booking_data['first_name']) || !empty($day_booking_data['last_name'])) {
+											// check if we need to display a profile picture or a channel logo
+											$booking_avatar_src = null;
+											$booking_avatar_alt = null;
+											if (!empty($day_booking_data['pic'])) {
+												// customer profile picture
+												$booking_avatar_src = strpos($day_booking_data['pic'], 'http') === 0 ? $day_booking_data['pic'] : VBO_SITE_URI . 'resources/uploads/' . $day_booking_data['pic'];
+												$booking_avatar_alt = basename($booking_avatar_src);
+											} elseif (!empty($day_booking_data['idorderota']) && !empty($day_booking_data['channel'])) {
+												// channel logo
+												$logo_helper = VikBooking::getVcmChannelsLogo($day_booking_data['channel'], $get_istance = true);
+												if ($logo_helper !== false) {
+													$booking_avatar_src = $logo_helper->getSmallLogoURL();
+													$booking_avatar_alt = $logo_helper->provenience;
+												}
+											}
+
+											if (!empty($booking_avatar_src)) {
+												// make sure the alt attribute is not too long in case of broken images
+												$booking_avatar_alt = !empty($booking_avatar_alt) && strlen($booking_avatar_alt) > 15 ? '...' . substr($booking_avatar_alt, -12) : $booking_avatar_alt;
+												// append booking avatar image
+												$customer_descr .= '<span class="vbo-tableaux-booking-avatar"><img src="' . $booking_avatar_src . '" class="vbo-tableaux-booking-avatar-img" ' . (!empty($booking_avatar_alt) ? 'alt="' . htmlspecialchars($booking_avatar_alt) . '" ' : '') . '/></span>';
+											}
+
+											// customer name
+											$customer_fullname = trim($day_booking_data['first_name'] . ' ' . $day_booking_data['last_name']);
+											if (strlen($customer_fullname) > 26) {
+												if (function_exists('mb_substr')) {
+													$customer_fullname = trim(mb_substr($customer_fullname, 0, 26, 'UTF-8')) . '..';
+												} else {
+													$customer_fullname = trim(substr($customer_fullname, 0, 26)) . '..';
+												}
+											}
+											$customer_descr .= '<span class="vbo-tableaux-guest-name">' . $customer_fullname . '</span>';
+										} else {
+											// parse the customer data string
+											$custdata_parts = explode("\n", $day_booking_data['custdata']);
+											$enoughinfo = false;
+											if (count($custdata_parts) > 2 && strpos($custdata_parts[0], ':') !== false && strpos($custdata_parts[1], ':') !== false) {
+												// get the first two fields
+												$custvalues = array();
+												foreach ($custdata_parts as $custdet) {
+													if (strlen($custdet) < 1) {
+														continue;
+													}
+													$custdet_parts = explode(':', $custdet);
+													if (count($custdet_parts) >= 2) {
+														unset($custdet_parts[0]);
+														array_push($custvalues, trim(implode(':', $custdet_parts)));
+													}
+													if (count($custvalues) > 1) {
+														break;
+													}
+												}
+												if (count($custvalues) > 1) {
+													$enoughinfo = true;
+													$customer_nominative = trim(implode(' ', $custvalues));
+													if (strlen($customer_nominative) > 26) {
+														if (function_exists('mb_substr')) {
+															$customer_nominative = trim(mb_substr($customer_nominative, 0, 26, 'UTF-8')) . '..';
+														} else {
+															$customer_nominative = trim(substr($customer_nominative, 0, 26)) . '..';
+														}
+													}
+													if (!empty($day_booking_data['idorderota']) && !empty($day_booking_data['channel'])) {
+														// add support for the channel logo for the imported OTA reservations with no customer record
+														$logo_helper = VikBooking::getVcmChannelsLogo($day_booking_data['channel'], $get_istance = true);
+														if ($logo_helper !== false) {
+															$booking_avatar_src = $logo_helper->getSmallLogoURL();
+															$booking_avatar_alt = $logo_helper->provenience;
+															// make sure the alt attribute is not too long in case of broken images
+															$booking_avatar_alt = !empty($booking_avatar_alt) && strlen($booking_avatar_alt) > 15 ? '...' . substr($booking_avatar_alt, -12) : $booking_avatar_alt;
+															// append booking avatar image
+															$customer_descr .= '<span class="vbo-tableaux-booking-avatar"><img src="' . $booking_avatar_src . '" class="vbo-tableaux-booking-avatar-img" ' . (!empty($booking_avatar_alt) ? 'alt="' . htmlspecialchars($booking_avatar_alt) . '" ' : '') . '/></span>';
+														}
+													}
+													// set customer nominative built
+													$customer_descr .= '<span class="vbo-tableaux-guest-name">' . $customer_nominative . '</span>';
+												}
+											}
+											if (!$enoughinfo) {
+												$customer_descr .= '<span class="vbo-tableaux-guest-name">#' . $day_booking_data['idorder'] . '</span>';
+											}
+										}
+									}
+									// set value
+									$day_booking_snake .= '<div class="vbo-tableaux-booking vbo-tableaux-booking-singleunit ' . ($is_checkin ? 'vbo-tableaux-booking-checkin' : 'vbo-tableaux-booking-stay') . '"' . ($is_checkin ? ' data-nights="' . $day_booking_data['days'] . '"' : '') . '><span>' . ($is_checkin ? $customer_descr : '&nbsp;') . '</span></div>';
+								}
+							}
+
+							if ($roomrow['units'] <= 1 && !$totfound) {
+								// no booked records
+								if ($room_bookings_pool[$roomrow['id']][$prev_day_key][0] ?? []) {
+									if (!$room_bookings_pool[$roomrow['id']][$prev_day_key][0]['closure'] && date('Y-m-d', $room_bookings_pool[$roomrow['id']][$prev_day_key][0]['checkout']) == $cur_day_key) {
+										// prepend checkout snake
+										$day_booking_snake .= '<div class="vbo-tableaux-booking vbo-tableaux-booking-singleunit vbo-tableaux-booking-checkout"><span>&nbsp;</span></div>';
+									}
+								}
 							}
 
 							?>
-							<td align="center" class="<?php echo $dclass.' cell-'.$nowts['mday'].'-'.$nowts['mon']; ?>" id="<?php echo $id_block; ?>" data-bids="<?php echo implode(',', $bids_pool); ?>" data-vbodateread="<?php echo $days_labels[$nowts['wday']].', '.$months_labels[$nowts['mon']-1].' '.$nowts['mday']; ?>"<?php echo $style; ?>>
+							<td align="center" class="vbo-grid-avcell <?php echo $dclass.' cell-'.$nowts['mday'].'-'.$nowts['mon']; ?>" id="<?php echo $id_block; ?>" data-bids="<?php echo implode(',', $bids_pool); ?>" data-vbodateread="<?php echo $days_labels[$nowts['wday']].', '.$months_labels[$nowts['mon']-1].' '.$nowts['mday']; ?>" data-curunits="<?php echo $units_remaining; ?>"<?php echo $style; ?>>
+							<?php
+							if (($day_booking_snake ?? '')) {
+								echo $day_booking_snake;
+							} else {
+								?>
 								<span class="vbo-roverw-curunits"><?php echo $units_remaining; ?></span>
+								<?php
+							}
+							?>
 							</td>
 							<?php
 
@@ -1103,8 +1268,9 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 
 // overlay modal to change rates, restrictions etc..
 $vcm_enabled = VikBooking::vcmAutoUpdate();
-	?>
+?>
 <div class="vbo-ratesoverview-newratesrestr-helper" style="display: none;">
+
 	<div class="vbo-ratesoverview-newratesrestr-wrap">
 		<div class="vbo-roverw-infoblock">
 			<span id="rovervw-roomname"></span>
@@ -1146,12 +1312,23 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 							<?php echo JText::translate('VBOUPDRATESONCHANNELS'); ?>
 						</span>
 					</div>
-					<div class="vbo-roverw-setnewrate-vcm-body">
-						<label class="vbo-switch">
-							<input type="checkbox" id="roverw-newrate-vcm" onchange="vboCheckVcmRestrictions();" value="1" <?php echo $vcm_enabled < 0 ? 'disabled="disabled"' : ($vcm_enabled > 0 ? 'checked="checked"' : ''); ?>/>
-							<span class="vbo-slider<?php echo $vcm_enabled < 0 ? ' vbo-slider-disabled' : ''; ?> vbo-round"></span>
-						</label>
+					<div class="vbo-roverw-setnewrate-vcm-body vbo-toggle-small">
+						<?php
+						echo $vbo_app->printYesNoButtons('roverw-newrate-vcm', JText::translate('VBYES'), JText::translate('VBNO'), ($vcm_enabled > 0 ? 1 : 0), 1, 0, 'vboCheckVcmRestrictions();', ['blue']);
+
+						if ($vcm_enabled < 0) {
+							// disable the toggle button when VCM is not available
+							?>
+						<script type="text/javascript">
+							jQuery(function() {
+								jQuery('input[name="roverw-newrate-vcm"]').prop('disabled', true);
+							});
+						</script>
+							<?php
+						}
+						?>
 					</div>
+					<div class="vbo-roverw-setnewrate-vcm-otas"></div>
 				</div>
 			</div>
 		</div>
@@ -1163,6 +1340,25 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 			</div>
 		</div>
 	</div>
+
+	<div class="vbo-roverw-setnewrate-vcm-ota-pricing-alteration">
+		<div class="vbo-roverw-setnewrate-vcm-ota-alteration-elem">
+			<select data-alter-rule="rmodsop">
+				<option value="1">+</option>
+				<option value="0">-</option>
+			</select>
+		</div>
+		<div class="vbo-roverw-setnewrate-vcm-ota-alteration-elem">
+			<input type="number" value="" step="any" min="0" data-alter-rule="rmodsamount" />
+		</div>
+		<div class="vbo-roverw-setnewrate-vcm-ota-alteration-elem">
+			<select data-alter-rule="rmodsval">
+				<option value="1">%</option>
+				<option value="0"><?php echo $currencysymb; ?></option>
+			</select>
+		</div>
+	</div>
+
 </div>
 
 <form name="adminForm" id="adminForm" action="index.php" method="post">
@@ -1388,7 +1584,10 @@ jQuery(function() {
 	jQuery('.vbo-ratesoverview-period-box-left, .vbo-ratesoverview-period-box-right').click(function() {
 		jQuery(this).closest('.vbo-ratesoverview-period-boxes').find('.vbo-ratesoverview-period-box-cals').fadeToggle();
 	});
-	jQuery("#roomsel, #roomselcalc").select2();
+	jQuery("#roomsel").select2({
+		allowClear: true
+	});
+	jQuery("#roomselcalc").select2();
 });
 <?php
 if ($df == "Y/m/d") {
@@ -1439,6 +1638,7 @@ var vbomonths = <?php echo json_encode($long_months_labels); ?>;
 var vbolistener = null;
 
 jQuery(function() {
+
 	// fests
 	jQuery(document.body).on("click", "td.bluedays", function() {
 		if (jQuery(this).hasClass('skip-bluedays-click')) {
@@ -1496,11 +1696,14 @@ jQuery(function() {
 			vboRenderRdayNotes(ymd, jQuery(this).attr('data-rid'));
 		}
 	});
-	//
+
+	// calendar-day selection listener
 	vbolistener = new CalendarListener();
+
 	jQuery('.day-block').click(function() {
 		pickBlock(jQuery(this).attr('id'));
 	});
+
 	jQuery('.day-block').hover(
 		function() {
 			if (vbolistener.isFirstPicked() && !vbolistener.isLastPicked()) {
@@ -1522,6 +1725,7 @@ jQuery(function() {
 			}
 		}
 	);
+
 	jQuery("body").on("click", ".vbo-roverw-daymod-infospids", function() {
 		if (jQuery(this).hasClass('vbo-roverw-daymod-infospids-on')) {
 			// dismiss modal
@@ -1539,6 +1743,7 @@ jQuery(function() {
 			spids_info.appendTo(spids_modal);
 		}
 	});
+
 	jQuery('.vbo-roverw-closeopenrp h4').click(function() {
 		jQuery('.vbo-roverw-closeopenrp-btns').fadeToggle(400, function() {
 			if (jQuery(this).is(':visible')) {
@@ -1548,6 +1753,7 @@ jQuery(function() {
 			}
 		});
 	});
+
 	jQuery(document.body).on('click', '.vbo-ratesoverview-vcmwarn-close', function() {
 		vcm_exists = 0;
 		jQuery('.vbo-ratesoverview-right-inner').hide().html('');
@@ -1676,6 +1882,112 @@ jQuery(function() {
 			}
 		);
 	});
+
+	// register listener for the "input" event on the "set new rate" input field of type number
+	document.querySelector('#roverw-newrate').addEventListener('input', VBOCore.debounceEvent((e) => {
+		// dispatch the event to calculate the new OTA pricing value
+		VBOCore.emitEvent('vbo-roverv-setnewrate-calc-ota-pricing', {rate: e.target.value});
+	}, 200));
+
+	// register listener for when a new rate is set to update what will be the OTA pricing value
+	document.addEventListener('vbo-roverv-setnewrate-calc-ota-pricing', VBOCore.debounceEvent((e) => {
+		if (!e || !e.detail || !e.detail.rate) {
+			// invalid event data
+			return;
+		}
+
+		// get the new PMS rate
+		let rate_amount = parseFloat(e.detail.rate);
+
+		// access the currency object
+		let currencyObj = VBOCore.getCurrency({
+			symbol:     vbo_currency_symbol,
+			digits:     vbo_currency_digits,
+			decimals:   vbo_currency_decimals,
+			thousands:  vbo_currency_thousands,
+			noDecimals: 1,
+		});
+
+		// scan all OTA alteration rules, if any
+		document.querySelectorAll('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]').forEach((elem) => {
+			// channel alteration string
+			let alter_string = elem.getAttribute('data-alteration');
+			if (!alter_string) {
+				alter_string = '+0%';
+			}
+
+			// default alteration factors (no pricing alteration rules)
+			let alter_op = alter_string.substr(0, 1);
+			let alter_val = alter_string.substr(-1, 1);
+			let alter_amount = parseFloat(alter_string.replace(alter_op, '').replace(alter_val, ''));
+
+			// calculate what the rate will be on the OTA
+			let ota_rate_amount = rate_amount;
+
+			if (!isNaN(alter_amount) && Math.abs(alter_amount) > 0) {
+				if (alter_op == '+') {
+					// increase rate
+					if (alter_val == '%') {
+						// percent
+						let amount_inc = currencyObj.multiply(alter_amount, 0.01);
+						amount_inc = currencyObj.multiply(rate_amount, amount_inc);
+						ota_rate_amount = currencyObj.sum(rate_amount, amount_inc);
+					} else {
+						// absolute
+						ota_rate_amount = currencyObj.sum(rate_amount, alter_amount);
+					}
+				} else {
+					// discount rate
+					if (alter_val == '%') {
+						// percent
+						let amount_inc = currencyObj.multiply(alter_amount, 0.01);
+						amount_inc = currencyObj.multiply(rate_amount, amount_inc);
+						ota_rate_amount = currencyObj.diff(rate_amount, amount_inc);
+					} else {
+						// absolute
+						ota_rate_amount = currencyObj.diff(rate_amount, alter_amount);
+					}
+				}
+			}
+
+			// get the element containing the calculated ota pricing
+			let will_alter_elem = elem
+				.closest('.vbo-roverw-setnewrate-vcm-ota-pricing-startvalue')
+				.querySelector('.vbo-roverw-setnewrate-ota-pricing-willvalue');
+
+			// define the currency options
+			let ota_currency_options = {};
+
+			// check if the channel requires a specific currency
+			let ota_currency_data = will_alter_elem.getAttribute('data-currency');
+			if (ota_currency_data) {
+				// decode currency data instructions
+				try {
+					ota_currency_data = JSON.parse(ota_currency_data);
+				} catch (e) {
+					ota_currency_data = {};
+				}
+
+				// set custom currency options
+				if (ota_currency_data['symbol']) {
+					ota_currency_options['symbol'] = ota_currency_data['symbol'];
+				}
+				if (ota_currency_data['decimals']) {
+					ota_currency_options['digits'] = ota_currency_data['decimals'];
+				}
+				if (ota_currency_data['decimals_sep']) {
+					ota_currency_options['decimals'] = ota_currency_data['decimals_sep'];
+				}
+				if (ota_currency_data['thousands_sep']) {
+					ota_currency_options['thousands'] = ota_currency_data['thousands_sep'];
+				}
+			}
+
+			// set calculated OTA rate value
+			will_alter_elem.innerHTML = currencyObj.format(ota_rate_amount, ota_currency_options);
+		});
+	}, 200));
+
 });
 
 /**
@@ -1763,6 +2075,7 @@ function vboRenderFests(day, daytitle) {
 		jQuery('.vbo-ratesoverview-fests-wrap').appendTo(modal_body);
 	}
 }
+
 function vboRemoveFest(day, index, fest_type, that) {
 	if (!confirm('<?php echo addslashes(JText::translate('VBDELCONFIRM')); ?>')) {
 		return false;
@@ -1803,6 +2116,7 @@ function vboRemoveFest(day, index, fest_type, that) {
 		}
 	);
 }
+
 function vboAddFest() {
 	var ymd = jQuery('.vbo-overlay-fests-addnew').attr('data-ymd');
 	var fest_name = jQuery('#vbo-newfest-name').val();
@@ -1846,21 +2160,24 @@ function vboAddFest() {
 		}
 	);
 }
+
 /**
  * Fests dialog
  */
 function hideVboDialogFests() {
 	VBOCore.emitEvent('vbo-dismiss-modal-roverv-fests');
 }
-//
 
 function checkInvokeVcm() {
+	// trigger restriction and related checks
+	vboCheckVcmRestrictions();
+
 	if (!vbolistener || !vbolistener.first || !vbolistener.first.rplan) {
 		return;
 	}
 	var rplanid = vbolistener.first.rplan;
 	var idroom = vbolistener.first.idroom;
-	var curval = document.getElementById('roverw-newrate-vcm').value;
+	var curval = document.querySelector('input[name="roverw-newrate-vcm"]').value;
 	if (parseInt(curval) < 0) {
 		return;
 	}
@@ -1873,26 +2190,31 @@ function checkInvokeVcm() {
 		// last cookie does not terminate with ; so just use 0 to compare
 		vcmmatch += "0";
 		if (buiscuits.indexOf(vcmmatch) >= 0) {
-			jQuery('#roverw-newrate-vcm').prop('checked', false);
+			jQuery('input[name="roverw-newrate-vcm"]').prop('checked', false);
 		} else {
-			jQuery('#roverw-newrate-vcm').prop('checked', true);
+			jQuery('input[name="roverw-newrate-vcm"]').prop('checked', true);
 		}
+
+		// re-trigger elements update
+		vboCheckVcmRestrictions();
 	}
-	vboCheckVcmRestrictions();
 }
 
 /**
  * Restrictions can be updated only if VCM is available and toggled ON, because
  * the creation and transmission is made through the Connector Class of VCM.
+ * On top of that, the OTA pricing alteration rule overrides will toggle a status class.
  *
  * @since 	1.11
  */
 function vboCheckVcmRestrictions() {
-	if (!jQuery('#roverw-newrate-vcm').prop('disabled') && jQuery('#roverw-newrate-vcm').prop('checked')) {
+	if (!jQuery('input[name="roverw-newrate-vcm"]').prop('disabled') && jQuery('input[name="roverw-newrate-vcm"]').prop('checked')) {
 		jQuery('#roverw-newrestr').val('');
 		jQuery('.vbo-roverw-newrestr-wrap').show();
+		jQuery('.vbo-roverw-setnewrate-vcm-ota-relation').removeClass('vbo-roverw-setnewrate-vcm-ota-relation-disabled');
 	} else {
 		jQuery('.vbo-roverw-newrestr-wrap').hide();
+		jQuery('.vbo-roverw-setnewrate-vcm-ota-relation').addClass('vbo-roverw-setnewrate-vcm-ota-relation-disabled');
 	}
 }
 
@@ -1959,6 +2281,9 @@ function showVboDialog() {
 		}
 	}
 
+	// populate OTA relations
+	vboRatesOvervSetRoomOtaRelations(vbolistener.first.idroom, vbolistener.first.rplan);
+
 	// VCM check
 	checkInvokeVcm();
 
@@ -2001,6 +2326,9 @@ function showVboDialog() {
 			jQuery('.vbo-ratesoverview-period-from-icon').show();
 			jQuery('.vbo-ratesoverview-period-to').find('span').text('');
 			jQuery('.vbo-ratesoverview-period-to-icon').show();
+
+			// reset room-ota relations
+			jQuery('.vbo-roverw-setnewrate-vcm-otas').html('');
 
 			// move the element back to its original position
 			jQuery('.vbo-ratesoverview-newratesrestr-wrap').appendTo('.vbo-ratesoverview-newratesrestr-helper');
@@ -2037,6 +2365,9 @@ function showVboDialogPeriod() {
 		}
 	}
 
+	// populate OTA relations
+	vboRatesOvervSetRoomOtaRelations(vbolistener.first.idroom, vbolistener.first.rplan);
+
 	// VCM check
 	checkInvokeVcm();
 
@@ -2079,6 +2410,9 @@ function showVboDialogPeriod() {
 			jQuery('.vbo-ratesoverview-period-from-icon').show();
 			jQuery('.vbo-ratesoverview-period-to').find('span').text('');
 			jQuery('.vbo-ratesoverview-period-to-icon').show();
+
+			// reset room-ota relations
+			jQuery('.vbo-roverw-setnewrate-vcm-otas').html('');
 
 			// move the element back to its original position
 			jQuery('.vbo-ratesoverview-newratesrestr-wrap').appendTo('.vbo-ratesoverview-newratesrestr-helper');
@@ -2241,150 +2575,439 @@ function renderChannelManagerResult(vcm_response) {
 	});
 }
 
+function vboRatesOvervSetRoomOtaRelations(room_id, rplan_id) {
+	// the room-ota relations wrapper
+	let wrapper = jQuery('.vbo-roverw-setnewrate-vcm-otas');
+
+	// always empty the wrapper
+	wrapper.html('');
+
+	if (!room_id || !rplan_id || !vboRoomOtaRels.hasOwnProperty(room_id)) {
+		// nothing to render
+		return;
+	}
+
+	// start counter
+	let ota_ch_counter = 0;
+
+	// build and append room-OTA relations
+	for (const ota_name in vboRoomOtaRels[room_id]['channels']) {
+		// build ota readable name
+		let ota_read_name = ota_name;
+		ota_read_name = ota_read_name.replace(/api$/, '');
+		ota_read_name = ota_read_name.replace(/^(google)(hotel|vr)$/i, '$1 $2');
+
+		// build room-ota relation block and elements
+		let ota_block = jQuery('<div></div>');
+		ota_block.addClass('vbo-roverw-setnewrate-vcm-ota-relation');
+
+		let ota_block_inner = jQuery('<div></div>');
+		ota_block_inner
+			.addClass('vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+			.attr('data-ota', (ota_name + '').toLowerCase());
+
+		let ota_block_channel = jQuery('<div></div>');
+		ota_block_channel
+			.addClass('vbo-roverw-setnewrate-vcm-ota-relation-channel')
+			.attr('data-otaid', vboRoomOtaRels[room_id]['accounts'][ota_ch_counter]['idchannel'])
+			.append('<img src="' + vboRoomOtaRels[room_id]['channels'][ota_name] + '" />')
+			.append('<span>' + ota_read_name + '</span>');
+
+		let ota_pricing_value = jQuery('<span></span>');
+		ota_pricing_value
+			.addClass('vbo-roverw-setnewrate-vcm-ota-pricing-startvalue')
+			.html('<?php VikBookingIcons::e('circle-notch', 'fa-spin fa-fw'); ?>')
+			.on('click', function() {
+				jQuery(this)
+					.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+					.find('.vbo-roverw-setnewrate-vcm-ota-channel-pricing')
+					.toggle();
+			});
+
+		let ota_block_pricing = jQuery('<div></div>');
+		ota_block_pricing
+			.addClass('vbo-roverw-setnewrate-vcm-ota-channel-pricing')
+			.css('display', 'none')
+			.append(jQuery('.vbo-roverw-setnewrate-vcm-ota-pricing-alteration').first().clone());
+
+		// register "input" event for select/input elements to control the channel alteration rule overrides
+		ota_block_pricing.find('select, input').on('input', function() {
+			let input_elem = jQuery(this);
+
+			// get the current channel alteration command
+			let ota_alteration_command = input_elem
+				.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+				.find('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]')
+				.attr('data-alteration');
+
+			// access alteration rule and input value
+			let rmod_type  = input_elem.attr('data-alter-rule');
+			let rmod_value = input_elem.val();
+
+			if (!ota_alteration_command || !rmod_type || !(rmod_value + '').length) {
+				return;
+			}
+
+			// check what pricing factor was changed
+			if (rmod_type == 'rmodsop') {
+				// increase or decrease rate
+				let command_old_val = ota_alteration_command.substr(0, 1);
+				let command_new_val = parseInt(rmod_value) == 1 ? '+' : '-';
+				ota_alteration_command = ota_alteration_command.replace(command_old_val, command_new_val);
+			} else if (rmod_type == 'rmodsamount') {
+				// amount
+				let command_op  = ota_alteration_command.substr(0, 1);
+				let command_val = ota_alteration_command.substr(-1, 1);
+				let command_old_val = ota_alteration_command.replace(command_op, '').replace(command_val, '');
+				let command_new_val = parseFloat(rmod_value);
+				ota_alteration_command = ota_alteration_command.replace(command_old_val, command_new_val);
+			} else if (rmod_type == 'rmodsval') {
+				// percent or absolute
+				let command_old_val = ota_alteration_command.substr(-1, 1);
+				let command_new_val = parseInt(rmod_value) == 1 ? '%' : '*';
+				ota_alteration_command = ota_alteration_command.replace(command_old_val, command_new_val);
+			}
+
+			// get current currency options
+			let currencyObj = VBOCore.getCurrency();
+			let orig_currency_options = currencyObj.getOptions();
+
+			// check if the channel requires a specific currency
+			let ota_currency_data = input_elem
+				.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+				.find('.vbo-roverw-setnewrate-ota-pricing-willvalue')
+				.attr('data-currency');
+			if (ota_currency_data) {
+				// decode currency data instructions
+				try {
+					ota_currency_data = JSON.parse(ota_currency_data);
+				} catch (e) {
+					ota_currency_data = {};
+				}
+			}
+
+			// define the current channel alteration string (readable)
+			let ota_alteration_string = ota_alteration_command;
+
+			// finalize the current channel alteration string (readable)
+			let ota_alteration_val = ota_alteration_string.substr(-1, 1);
+			if (ota_alteration_val != '%') {
+				ota_alteration_string = ota_alteration_string.replace(ota_alteration_val, '') + ((ota_currency_data && ota_currency_data?.symbol ? ota_currency_data.symbol : '') || vbo_currency_symbol);
+			}
+
+			// update the alteration rule command attribute
+			input_elem
+				.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+				.find('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]')
+				.attr('data-alteration', ota_alteration_command);
+
+			// update the alteration rule string tag text
+			input_elem
+				.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+				.find('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]')
+				.html(ota_alteration_string);
+
+			// get the current rate to set
+			let current_room_rate = jQuery('#roverw-newrate').val();
+			if (current_room_rate) {
+				// dispatch the event to trigger the re-calculation of the OTA rates
+				VBOCore.emitEvent('vbo-roverv-setnewrate-calc-ota-pricing', {
+					rate: current_room_rate,
+				});
+			}
+		});
+
+		// append elements to wrapper
+		ota_block_channel.append(ota_pricing_value);
+		ota_block_inner.append(ota_block_channel);
+		ota_block_inner.append(ota_block_pricing);
+		ota_block.append(ota_block_inner);
+		wrapper.append(ota_block);
+
+		// increase OTA channel counter
+		ota_ch_counter++;
+	}
+
+	// trigger an AJAX request to load the current alteration rules, if any
+	VBOCore.doAjax(
+		"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=pricing.loadOtaAlterationRules'); ?>",
+		{
+			room_id: room_id,
+			rate_id: rplan_id,
+		},
+		(res) => {
+			var obj_res = typeof res === 'string' ? JSON.parse(res) : res;
+			let alter_room_rates = obj_res['rmod'] == '1' || obj_res['rmod'] == 1;
+
+			// scan all room OTAs
+			jQuery('.vbo-roverw-setnewrate-vcm-otas').find('.vbo-roverw-setnewrate-vcm-ota-relation').each(function(key, elem) {
+				// get the current OTA identifier and whether pricing is altered
+				let ota_wrap = jQuery(elem);
+				let ota_id = ota_wrap.find('.vbo-roverw-setnewrate-vcm-ota-relation-channel').attr('data-otaid');
+				let alter_ota_rates = alter_room_rates && obj_res['channels'] && (obj_res['channels'].includes(ota_id) || obj_res['channels'].includes(parseInt(ota_id)));
+
+				// check if the current channel is using a different currency
+				let ota_currency_data = {};
+				if (obj_res.hasOwnProperty('cur_rplans') && obj_res['cur_rplans'].hasOwnProperty(ota_id)) {
+					let ota_check_currency = obj_res['cur_rplans'][ota_id];
+					if (obj_res.hasOwnProperty('currency_data_options') && obj_res['currency_data_options'].hasOwnProperty(ota_check_currency)) {
+						// set custom currency data returned
+						ota_currency_data = obj_res['currency_data_options'][ota_check_currency];
+					}
+				}
+
+				// build pricing alteration strings
+				let alteration_command = '';
+				let alteration_string  = '';
+
+				// default alteration factors (no pricing alteration rules)
+				let alter_op = '+';
+				let alter_amount = '0';
+				let alter_val = '%';
+
+				if (alter_ota_rates) {
+					// check how rates are altered for this channel
+					if (obj_res.hasOwnProperty('rmod_channels') && obj_res['rmod_channels'].hasOwnProperty(ota_id)) {
+						// ota-level pricing alteration rule
+						if (parseInt(obj_res['rmod_channels'][ota_id]['rmod']) == 1) {
+							alter_op = parseInt(obj_res['rmod_channels'][ota_id]['rmodop']) == 1 ? '+' : '-';
+							alter_amount = obj_res['rmod_channels'][ota_id]['rmodamount'];
+							alter_val = parseInt(obj_res['rmod_channels'][ota_id]['rmodop']) == 1 ? '%' : '*';
+						}
+					} else {
+						// room-level pricing alteration rule
+						alter_op = parseInt(obj_res['rmodop']) == 1 ? '+' : '-';
+						alter_amount = obj_res['rmodamount'] || '0';
+						alter_val = parseInt(obj_res['rmodop']) == 1 ? '%' : '*';
+					}
+				}
+
+				// construct alteration strings
+				alteration_command = alter_op + (alter_amount + '') + (alter_val + '');
+				alteration_string  = alter_op + (alter_amount + '') + (alter_val == '%' ? '%' : (ota_currency_data?.symbol || vbo_currency_symbol));
+
+				// stop room-ota loading and set alteration string
+				let alteration_elem = jQuery('<span></span>');
+				alteration_elem
+					.addClass('vbo-roverw-setnewrate-ota-pricing-currentvalue')
+					.attr('data-alteration', alteration_command)
+					.html(alteration_string);
+
+				let will_alter_elem = jQuery('<span></span>').addClass('vbo-roverw-setnewrate-ota-pricing-willvalue');
+
+				if (ota_currency_data.symbol) {
+					// set currency data object
+					will_alter_elem.attr('data-currency', JSON.stringify(ota_currency_data));
+				}
+
+				// set elements
+				ota_wrap
+					.find('.vbo-roverw-setnewrate-vcm-ota-pricing-startvalue')
+					.html('')
+					.append(will_alter_elem)
+					.append(alteration_elem)
+					.append('<?php VikBookingIcons::e('edit', 'edit-ota-pricing'); ?>');
+
+				// populate default values for input element overrides
+				ota_wrap.find('select[data-alter-rule="rmodsop"]').val(alter_op == '+' ? 1 : 0);
+				ota_wrap.find('input[data-alter-rule="rmodsamount"]').val(parseInt(alter_amount) > 0 ? alter_amount : '');
+				ota_wrap.find('select[data-alter-rule="rmodsval"]').val(alter_val == '%' ? 1 : 0);
+			});
+
+			// check the current rate value
+			let current_room_rate = jQuery('#roverw-newrate').val();
+			if (current_room_rate) {
+				// dispatch the event to allow the actual calculation of the OTA rate
+				VBOCore.emitEvent('vbo-roverv-setnewrate-calc-ota-pricing', {
+					rate: current_room_rate,
+					room_id: room_id,
+					rate_id: rplan_id,
+				});
+			}
+		},
+		(err) => {
+			alert(err.responseText || 'Request Failed');
+		}
+	);
+}
+
 function setNewRates() {
 	var all_blocks = getAllBlocksBetween(vbolistener.first, vbolistener.last, true);
 	var toval = jQuery("#roverw-newrate").val();
 	var tovalint = parseFloat(toval);
-	var invoke_vcm = jQuery("#roverw-newrate-vcm").is(":checked") ? 1 : 0;
-	var setminlos = jQuery("#roverw-newrestr").val();
+	var invoke_vcm = jQuery('input[name="roverw-newrate-vcm"]').is(':checked') ? 1 : 0;
+	var setminlos = jQuery('#roverw-newrestr').val();
 	var closerplan = 0;
-	if (all_blocks !== false && toval.length > 0 && !isNaN(tovalint) && tovalint > 0.00) {
-		// set cookie to remember the action to invoke VCM for this combination of room-rateplan
-		var nd = new Date();
-		nd.setTime(nd.getTime() + (365*24*60*60*1000));
-		document.cookie = "vboVcmRov"+vbolistener.first.idroom+vbolistener.first.rplan+"="+invoke_vcm+"; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
-		// check whether all blocks have closed the rate plan
-		var allblocksclosed = true;
-		jQuery.each(all_blocks, function(k, v) {
-			if (!v.hasClass('vbo-roverw-rplan-off')) {
-				allblocksclosed = false;
-				// break
-				return false;
-			}
-		});
-		closerplan = allblocksclosed ? 1 : closerplan;
 
-		// show loading
-		VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
-
-		VBOCore.doAjax(
-			"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=pricing.setnewrates'); ?>",
-			{
-				tmpl: "component",
-				e4j_debug: debug_mode,
-				id_room: vbolistener.first.idroom,
-				id_price: vbolistener.first.rplan,
-				rate: toval,
-				vcm: invoke_vcm,
-				minlos: setminlos,
-				fromdate: vbolistener.first.toDate("yy-mm-dd"),
-				todate: vbolistener.last.toDate("yy-mm-dd"),
-				rateclosed: closerplan
-			},
-			(res) => {
-				if (typeof res === 'string' && res.indexOf('e4j.error') === 0) {
-					alert(res.replace('e4j.error.', ''));
-					// stop loading
-					VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
-					// abort
-					return;
-				}
-
-				try {
-					// display new rates in all_blocks IDs
-					var restr_set = false;
-					var obj_res = typeof res === 'string' ? JSON.parse(res) : res;
-
-					jQuery.each(obj_res, function(k, v) {
-						if (k == 'vcm') {
-							return true;
-						}
-
-						var elem = jQuery("#cell-"+k+"-"+vbolistener.first.idroom);
-						if (elem.length) {
-							elem.find(".vbo-rplan-price").html(v.cost);
-							var spids = '';
-							if (v.hasOwnProperty('spids')) {
-								jQuery.each(v.spids, function(spk, spv) {
-									spids += spv+'-';
-								});
-								//right trim dash
-								spids = spids.replace(/-+$/, '');
-							}
-							elem.attr('data-vbospids', spids);
-							// check if restrictions were set
-							if (v.hasOwnProperty('newminlos')) {
-								// always convert v.newminlos to a string to avoid errors with indexOf
-								var newminlos = v.newminlos+'';
-								if (newminlos.indexOf('e4j.error') >= 0) {
-									// an error occurred
-									alert(newminlos.replace("e4j.error.", ""));
-								} else {
-									// get cell identifier part
-									restr_set = true;
-									var cell_parts = k.split('-');
-									var restr_elem = jQuery('#cell-'+cell_parts[0]+'-'+cell_parts[1]+'-'+cell_parts[2]+'-'+vbolistener.first.idroom+'-restr');
-									if (restr_elem.length) {
-										var restr_cont = restr_elem.find('.vbo-roverw-curminlos');
-										restr_cont.html(newminlos);
-										if (parseInt(newminlos) > 1) {
-											restr_cont.addClass('vbo-roverw-curminlos-active');
-										} else {
-											restr_cont.removeClass('vbo-roverw-curminlos-active');
-										}
-									}
-									// attempt to remove an eventual orphan list
-									var orphan_elem = jQuery('.vbo-ratesoverview-orphan-dt[data-dt="'+cell_parts[0]+'-'+cell_parts[1]+'-'+cell_parts[2]+'-'+vbolistener.first.idroom+'"]');
-									if (orphan_elem.length) {
-										if (orphan_elem.length < 2) {
-											jQuery('#vbo-ratesoverview-orphans-wrapper-'+vbolistener.first.idroom).fadeOut(400, function() {
-												orphan_elem.remove();
-											});
-										} else {
-											orphan_elem.remove();
-										}
-									}
-								}
-							}
-							//
-						}
-					});
-
-					// stop loading
-					VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
-
-					// dismiss modal
-					VBOCore.emitEvent('vbo-dismiss-modal-roverv-newratesrestr');
-
-					if (obj_res.hasOwnProperty('vcm')) {
-						// display CM results
-						renderChannelManagerResult(obj_res['vcm']);
-					} else {
-						setTimeout(function() {
-							vboCheckVcmRatesChanges();
-						}, 500);
-					}
-
-					if (restr_set) {
-						// re-calculate orphans after setting the restriction
-						setTimeout(function() {
-							vboCheckOrphans();
-						}, 200);
-					}
-				} catch(err) {
-					throw new Error(err);
-				}
-			},
-			(err) => {
-				alert(err.responseText || 'Request Failed');
-				// stop loading
-				VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
-			}
-		);
-	} else {
+	if (all_blocks === false || !toval.length || isNaN(tovalint) || tovalint <= 0) {
 		alert(roverw_messages.setNewRatesMissing);
 		return false;
 	}
+
+	// set cookie to remember the action to invoke VCM for this combination of room-rateplan
+	var nd = new Date();
+	nd.setTime(nd.getTime() + (365*24*60*60*1000));
+	document.cookie = "vboVcmRov"+vbolistener.first.idroom+vbolistener.first.rplan+"="+invoke_vcm+"; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
+	// check whether all blocks have closed the rate plan
+	var allblocksclosed = true;
+	jQuery.each(all_blocks, function(k, v) {
+		if (!v.hasClass('vbo-roverw-rplan-off')) {
+			allblocksclosed = false;
+			// break
+			return false;
+		}
+	});
+	closerplan = allblocksclosed ? 1 : closerplan;
+
+	// check the OTA pricing alteration rules, if any
+	let ota_pricing = {};
+	if (invoke_vcm) {
+		// scan all OTA alteration rules, if any
+		document.querySelectorAll('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]').forEach((elem) => {
+			// channel alteration string
+			let alter_string = elem.getAttribute('data-alteration');
+			if (!alter_string) {
+				alter_string = '';
+			}
+
+			// access the parent node to get the OTA channel identifier
+			let ota_id = elem
+				.closest('.vbo-roverw-setnewrate-vcm-ota-relation-channel[data-otaid]')
+				.getAttribute('data-otaid');
+
+			if (!ota_id || !alter_string || alter_string == '+0%' || alter_string == '+0*') {
+				// avoid pushing an empty alteration command
+				return;
+			}
+
+			// push OTA pricing alteration command
+			ota_pricing[ota_id] = alter_string;
+		});
+	}
+
+	if (!Object.keys(ota_pricing).length) {
+		// unset the object for the request
+		ota_pricing = null;
+	}
+
+	// show loading
+	VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
+
+	VBOCore.doAjax(
+		"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=pricing.setnewrates'); ?>",
+		{
+			tmpl: "component",
+			e4j_debug: debug_mode,
+			id_room: vbolistener.first.idroom,
+			id_price: vbolistener.first.rplan,
+			rate: toval,
+			vcm: invoke_vcm,
+			minlos: setminlos,
+			fromdate: vbolistener.first.toDate("yy-mm-dd"),
+			todate: vbolistener.last.toDate("yy-mm-dd"),
+			rateclosed: closerplan,
+			ota_pricing: ota_pricing,
+		},
+		(res) => {
+			if (typeof res === 'string' && res.indexOf('e4j.error') === 0) {
+				alert(res.replace('e4j.error.', ''));
+				// stop loading
+				VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
+				// abort
+				return;
+			}
+
+			try {
+				// display new rates in all_blocks IDs
+				var restr_set = false;
+				var obj_res = typeof res === 'string' ? JSON.parse(res) : res;
+
+				jQuery.each(obj_res, function(k, v) {
+					if (k == 'vcm') {
+						return true;
+					}
+
+					var elem = jQuery("#cell-"+k+"-"+vbolistener.first.idroom);
+					if (elem.length) {
+						elem.find(".vbo-rplan-price").html(v.cost);
+						var spids = '';
+						if (v.hasOwnProperty('spids')) {
+							jQuery.each(v.spids, function(spk, spv) {
+								spids += spv+'-';
+							});
+							//right trim dash
+							spids = spids.replace(/-+$/, '');
+						}
+						elem.attr('data-vbospids', spids);
+						// check if restrictions were set
+						if (v.hasOwnProperty('newminlos')) {
+							// always convert v.newminlos to a string to avoid errors with indexOf
+							var newminlos = v.newminlos+'';
+							if (newminlos.indexOf('e4j.error') >= 0) {
+								// an error occurred
+								alert(newminlos.replace("e4j.error.", ""));
+							} else {
+								// get cell identifier part
+								restr_set = true;
+								var cell_parts = k.split('-');
+								var restr_elem = jQuery('#cell-'+cell_parts[0]+'-'+cell_parts[1]+'-'+cell_parts[2]+'-'+vbolistener.first.idroom+'-restr');
+								if (restr_elem.length) {
+									var restr_cont = restr_elem.find('.vbo-roverw-curminlos');
+									restr_cont.html(newminlos);
+									if (parseInt(newminlos) > 1) {
+										restr_cont.addClass('vbo-roverw-curminlos-active');
+									} else {
+										restr_cont.removeClass('vbo-roverw-curminlos-active');
+									}
+								}
+								// attempt to remove an eventual orphan list
+								var orphan_elem = jQuery('.vbo-ratesoverview-orphan-dt[data-dt="'+cell_parts[0]+'-'+cell_parts[1]+'-'+cell_parts[2]+'-'+vbolistener.first.idroom+'"]');
+								if (orphan_elem.length) {
+									if (orphan_elem.length < 2) {
+										jQuery('#vbo-ratesoverview-orphans-wrapper-'+vbolistener.first.idroom).fadeOut(400, function() {
+											orphan_elem.remove();
+										});
+									} else {
+										orphan_elem.remove();
+									}
+								}
+							}
+						}
+						//
+					}
+				});
+
+				// stop loading
+				VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
+
+				// dismiss modal
+				VBOCore.emitEvent('vbo-dismiss-modal-roverv-newratesrestr');
+
+				if (obj_res.hasOwnProperty('vcm')) {
+					// display CM results
+					renderChannelManagerResult(obj_res['vcm']);
+				} else {
+					setTimeout(function() {
+						vboCheckVcmRatesChanges();
+					}, 500);
+				}
+
+				if (restr_set) {
+					// re-calculate orphans after setting the restriction
+					setTimeout(function() {
+						vboCheckOrphans();
+					}, 200);
+				}
+			} catch(err) {
+				throw new Error(err);
+			}
+		},
+		(err) => {
+			alert(err.responseText || 'Request Failed');
+			// stop loading
+			VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
+		}
+	);
 }
 
 function modRoomRatePlan(mode) {
@@ -2871,11 +3494,11 @@ function vboCheckOrphans() {
 		var avcells 	 = jQuery(this).find('tr.vbo-roverviewtableavrow').find('td');
 		var restrcells 	 = jQuery(this).find('tr.vbo-roverviewtablerow-restrs').find('td');
 		avcells.each(function(k, v) {
-			if (!jQuery(v).find('.vbo-roverw-curunits').length) {
+			if (!jQuery(v).attr('data-curunits')) {
 				// continue
 				return true;
 			}
-			var todayav = parseInt(jQuery(v).find('.vbo-roverw-curunits').text());
+			var todayav = parseInt(jQuery(v).attr('data-curunits'));
 			if (!restrcells.hasOwnProperty(k) || isNaN(todayav) || todayav < 1) {
 				// continue, no restriction cell found or no availability for this day
 				return true;
@@ -2895,7 +3518,7 @@ function vboCheckOrphans() {
 					// break loop, no info for this day after
 					break;
 				}
-				var tomorrowav = parseInt(jQuery(avcells[(k + i)]).find('.vbo-roverw-curunits').text());
+				var tomorrowav = parseInt(jQuery(avcells[(k + i)]).attr('data-curunits'));
 				if (isNaN(tomorrowav) || tomorrowav != 0) {
 					// continue, availability found for tomorrow, we need a non available next-day
 					continue;
@@ -2912,7 +3535,7 @@ function vboCheckOrphans() {
 					// break loop, no info for this prev day
 					break;
 				}
-				var yesterdayav = parseInt(jQuery(avcells[(k - i)]).find('.vbo-roverw-curunits').text());
+				var yesterdayav = parseInt(jQuery(avcells[(k - i)]).attr('data-curunits'));
 				if (isNaN(yesterdayav) || yesterdayav != 0) {
 					// increase free nights going backward
 					backward_count++;

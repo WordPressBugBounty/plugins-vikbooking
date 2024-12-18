@@ -57,6 +57,10 @@ final class VBOCheckinPaxfieldTypeSpainDoctype extends VBOCheckinPaxfieldType
 </select>
 HTML;
 
+		// placeholder translation
+		$doctype_tn = JText::translate('VBCUSTOMERDOCTYPE');
+		$doctype_tn = JHtml::fetch('esc_attr', $doctype_tn == 'VBCUSTOMERDOCTYPE' ? 'ID Type' : $doctype_tn);
+
 		// append select2 JS script for rendering the field
 		$field_html .= <<<HTML
 <script>
@@ -64,7 +68,7 @@ HTML;
 
 		jQuery("#$field_id").select2({
 			width: "100%",
-			placeholder: "Tipo Documento",
+			placeholder: "$doctype_tn",
 			allowClear: true
 		});
 
@@ -86,6 +90,6 @@ HTML;
 		// call the same method on the collector instance
 		$documenti = $this->callCollector(__FUNCTION__);
 
-		return is_array($documenti) ? $documenti : array();
+		return is_array($documenti) ? $documenti : [];
 	}
 }

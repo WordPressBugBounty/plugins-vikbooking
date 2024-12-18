@@ -714,7 +714,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Update Rates', 'vikbooking');
 				break;
 			case 'VBCONFIGONETHREE':
-				$result = __('Check-out Time', 'vikbooking');
+				$result = __('Check-out time', 'vikbooking');
 				break;
 			case 'VBCONFIGONEFIVE':
 				$result = __('Booking Enabled', 'vikbooking');
@@ -723,7 +723,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Booking Disabled Message', 'vikbooking');
 				break;
 			case 'VBCONFIGONESEVEN':
-				$result = __('Check-In Time', 'vikbooking');
+				$result = __('Check-in time', 'vikbooking');
 				break;
 			case 'VBCONFIGONEEIGHT':
 				$result = __('Hours of Extended Gratuity Period', 'vikbooking');
@@ -3912,7 +3912,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Guest #%d', 'vikbooking');
 				break;
 			case 'VBOGUESTEXTRANOTES':
-				$result = __('Extra Notes', 'vikbooking');
+				$result = __('Extra notes', 'vikbooking');
 				break;
 			case 'VBOCHECKEDSTATUS':
 				$result = __('Registration', 'vikbooking');
@@ -7368,6 +7368,137 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_REPORT_EXPORT_PAYLOAD_HELP':
 				$result = __('The payload is needed to let the report export dynamic information every day.', 'vikbooking');
+				break;
+			case 'VBO_MANDATORY_FEE':
+				$result = __('Mandatory fee', 'vikbooking');
+				break;
+			case 'VBO_CUSTOM_CHECKINOUT_WARN':
+				// @TRANSLATORS: Default booking check-in and check-out times should be kept in mind.
+				$result = _x('By booking this option it is possible to modify the default check-in and/or check-out time of the reservation. Make sure the new check-out time to set will be before the default check-in time (%s). Same goes for the new check-in time to set, it should be after the default check-out time (%s), or issues will occur with the availability calculation (turnover day).', 'Default booking check-in and check-out times should be kept in mind.', 'vikbooking');
+				break;
+			case 'VBO_LATE_CHECKOUT':
+				$result = __('Late check-out', 'vikbooking');
+				break;
+			case 'VBO_EARLY_CHECKIN':
+				$result = __('Early check-in', 'vikbooking');
+				break;
+			case 'VBO_LATE_CHECKIN':
+				$result = __('Late check-in', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_MUNICIPIO_CODE':
+				$result = _x('Spain City Code', 'Spanish city code for "Código de municipio"', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_DOC_SUPPORT_NUMBER':
+				$result = _x('ID Support Number', 'Spanish translation for "Número soporte documento"', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_RELATION':
+				$result = _x('Child relation', 'Spanish translation for "Parentesco"', 'vikbooking');
+				break;
+			case 'VBO_OTHER':
+				$result = __('Other', 'vikbooking');
+				break;
+			case 'VBO_PASSPORT':
+				$result = __('Passport', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_AB':
+				$result = __('Grandfather/Grandmother', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_BA':
+				$result = __('Great-grandfather/grandmother', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_BN':
+				$result = __('Great-grandson/granddaughter', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_CD':
+				$result = __('Brother/Sister-in-law', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_CY':
+				$result = __('Spouse', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_HJ':
+				$result = __('Son/Daughter', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_HR':
+				$result = __('Brother/Sister', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_NI':
+				$result = __('Grandson/Granddaughter', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_PM':
+				$result = __('Father/Mother', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_SB':
+				$result = __('Nephew/Nephew', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_SG':
+				$result = __('Father/Mother-in-law', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_TI':
+				$result = __('Uncle/Aunt', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_YN':
+				$result = __('Son/Daughter-in-law', 'vikbooking');
+				break;
+			case 'VBO_SPAIN_CHILD_REL_TU':
+				$result = __('Guardian', 'vikbooking');
+				break;
+			case 'VBO_SEARCH_SHOW_BUSY_LISTINGS':
+				$result = __('Show occupied listings in search results', 'vikbooking');
+				break;
+			case 'VBO_SEARCH_LINK_ROOMDETAILS':
+				$result = __('Link to listing details in search results', 'vikbooking');
+				break;
+			case 'VBO_GUEST_TYPE':
+				$result = __('Guest type', 'vikbooking');
+				break;
+			case 'VBO_SINGLE_GUEST':
+				$result = __('Single guest', 'vikbooking');
+				break;
+			case 'VBO_FAMILY_HEAD':
+				$result = __('Head of family', 'vikbooking');
+				break;
+			case 'VBO_FAMILY_MEMBER':
+				$result = __('Family member', 'vikbooking');
+				break;
+			case 'VBO_GROUP_HEAD':
+				$result = __('Group leader', 'vikbooking');
+				break;
+			case 'VBO_GROUP_MEMBER':
+				$result = __('Group member', 'vikbooking');
+				break;
+			case 'VBO_BIRTH_STATE':
+				$result = __('Country of birth', 'vikbooking');
+				break;
+			case 'VBO_BIRTH_MUNICIPALITY':
+				$result = __('Municipality of birth', 'vikbooking');
+				break;
+			case 'VBO_STAY_STATE':
+				$result = __('Country of residence', 'vikbooking');
+				break;
+			case 'VBO_STAY_MUNICIPALITY':
+				$result = __('Municipality of residence', 'vikbooking');
+				break;
+			case 'VBO_ID_ISSUE_PLACE':
+				$result = __('ID issue place', 'vikbooking');
+				break;
+			case 'VBO_ONLY_IF_COUNTRY_EQ':
+				// @TRANSLATORS: Only if country = Italy.
+				$result = _x('Only if country = %s', 'e.g. Only if country = Italy', 'vikbooking');
+				break;
+			case 'VBO_OPTIONAL':
+				$result = __('Optional', 'vikbooking');
+				break;
+			case 'VBO_SELECT_COUNTRY':
+				$result = __('Select country', 'vikbooking');
+				break;
+			case 'VBO_SELECT_DOCUMENT':
+				$result = __('Select document', 'vikbooking');
+				break;
+			case 'VBO_DRIVING_LICENSE':
+				$result = __('Driving License', 'vikbooking');
+				break;
+			case 'VBO_IDENTITY_DOCUMENT':
+				$result = __('Identity Document', 'vikbooking');
 				break;
 		}
 

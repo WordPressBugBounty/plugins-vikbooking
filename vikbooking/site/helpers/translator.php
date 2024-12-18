@@ -178,6 +178,11 @@ class VikBookingTranslator
 	 */
 	public function getLanguagesList()
 	{
+		if ($this->all_langs) {
+			// return the cached languages
+			return $this->all_langs;
+		}
+
 		$langs = [];
 		$known_langs = VikBooking::getVboApplication()->getKnownLanguages();
 
@@ -189,6 +194,7 @@ class VikBookingTranslator
 			}
 		}
 
+		// cache and return languages
 		$this->all_langs = $langs;
 
 		return $this->all_langs;
@@ -201,6 +207,11 @@ class VikBookingTranslator
 	 */
 	public function getLanguagesTags()
 	{
+		if (!$this->all_langs) {
+			// set known languages
+			$this->getLanguagesList();
+		}
+
 		return array_keys($this->all_langs);
 	}
 
@@ -522,7 +533,7 @@ class VikBookingTranslator
 	 *
 	 * @return  array 				The initial array with translated values (if applicable).
 	 */
-	public function translateContents(&$content, $table, $alias_keys = array(), $ids = array(), $lang = null)
+	public function translateContents(&$content, $table, array $alias_keys = [], array $ids = [], $lang = null)
 	{
 		$to_lang = is_null($lang) ? $this->current_lang : $lang;
 		$to_lang = !is_null(self::$force_tolang) ? self::$force_tolang : $to_lang;
@@ -561,7 +572,7 @@ class VikBookingTranslator
 			}
 		}
 
-		if (count($translated)) {
+		if ($translated) {
 			// set translations buffer
 			$this->translations_buffer[$table][$to_lang] = $translated;
 
@@ -586,6 +597,71 @@ class VikBookingTranslator
 		}
 
 		return $content;
+	}
+
+	/**
+	 * Translates a single database record with no reference as a proxy for the records list translations.
+	 * 
+	 * @param 	array|object 	$record 	The record (associative or object) to translate.
+	 * @param 	string 			$table 		The database table to which the record belongs.
+	 * @param 	string 			$lang 		Force the translation to a specific language tag like it-IT.
+	 * @param 	array 			$alias_keys Key-Value pairs where Key is the ALIAS used and Value is the original field name.
+	 * @param 	array 			$ids 		The reference_IDs to be translated, the IDs of the records.
+	 * 
+	 * @return 	array|object 				The original record translated or identical.
+	 * 
+	 * @uses 	translateContents()
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	public function translateRecord($record, $table, $lang = null, array $alias_keys = [], array $ids = [])
+	{
+		$is_assoc  = is_array($record);
+		$is_object = is_object($record);
+
+		if ((!$is_assoc && !$is_object) || !$record) {
+			// abort
+			return $record;
+		}
+
+		if ($lang) {
+			// ensure the given language tag exists
+			$known_tags = $this->getLanguagesTags();
+
+			if (!in_array($lang, $known_tags)) {
+				// try to normalize the given language tag
+				$main_lang  = substr($lang, 0, 2);
+				$main_langs = [];
+				foreach ($known_tags as $tag) {
+					$main_langs[$tag] = substr($tag, 0, 2);
+				}
+
+				// try to find the first matching 2-char language tag
+				$match_tag = array_search($main_lang, $main_langs);
+
+				if ($match_tag) {
+					// swap given lang
+					$lang = $match_tag;
+				}
+			}
+		}
+
+		// always cast the record to array and treat it as a list
+		$records = [(array) $record];
+
+		// translate record as a list
+		$this->translateContents($records, $table, $alias_keys, $ids, $lang);
+
+		// get the translated (or identical) record
+		$record = $records[0];
+
+		if ($is_object) {
+			// cast back to object
+			$record = (object) $record;
+		}
+
+		// return the evnetually translated original record
+		return $record;
 	}
 
 	/**

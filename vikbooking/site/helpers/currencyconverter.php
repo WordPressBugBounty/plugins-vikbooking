@@ -230,6 +230,7 @@ class VboCurrencyConverter
 		$this->format  		 = $format;
 		$this->error 		 = '';
 		$this->currencymap 	 = array(
+			'AED' => array('symbol' => '1583;.&#1573'),
 			'ALL' => array('symbol' => '76'),
 			'AFN' => array('symbol' => '1547'),
 			'ARS' => array('symbol' => '36'),
@@ -799,26 +800,33 @@ class VboCurrencyConverter
 	}
 	
 	/**
-	 * Finds and returns an appropriate symbol for the currency converted
+	 * Finds and returns an appropriate symbol for the currency converted.
 	 * 
-	 * @return 	string 	the symbol to return to the controller for the exchanged rates
+	 * @param 	string 	$custom_currency 	Optional currency ISO name to read.
+	 * 
+	 * @return 	string 	The symbol to return to the controller for the exchanged rates.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)  	added argument $custom_currency.
 	 */
-	protected function currencySymbol()
+	protected function currencySymbol($custom_currency = null)
 	{
+		// the currency to evaluate
+		$use_currency = $custom_currency ?: $this->to_currency;
+
 		/**
 		 * Trigger event to allow third party plugins to return specific information for a currency.
 		 * 
 		 * @since 	1.16.0 (J) - 1.6.0 (WP)
 		 */
-		$custom_conv = VBOFactory::getPlatform()->getDispatcher()->filter('onGetCurrencyDataVikBooking', [$this->to_currency]);
-		if (is_array($custom_conv) && !empty($custom_conv[0]) && is_array($custom_conv[0]) && !empty($custom_conv[0]['symbol'])) {
+		$custom_conv = VBOFactory::getPlatform()->getDispatcher()->filter('onGetCurrencyDataVikBooking', [$use_currency]);
+		if (is_array($custom_conv) && !empty($custom_conv[0]['symbol'])) {
 			return $custom_conv[0]['symbol'];
 		}
 
-		if (isset($this->currencymap[$this->to_currency]) && isset($this->currencymap[$this->to_currency]['symbol'])) {
-			$symbol = '&#'.$this->currencymap[$this->to_currency]['symbol'].';';	
+		if (isset($this->currencymap[$use_currency]['symbol'])) {
+			$symbol = '&#'.$this->currencymap[$use_currency]['symbol'].';';	
 		} else {
-			$symbol = $this->to_currency;
+			$symbol = $use_currency;
 		}
 
 		return $symbol;
@@ -833,11 +841,35 @@ class VboCurrencyConverter
 	 */
 	protected function currencyFormat($num)
 	{
-		$num_decimals = (int)$this->format[0];
-		if (array_key_exists($this->to_currency, $this->currencymap)) {
-			if (array_key_exists('decimals', $this->currencymap[$this->to_currency])) {
-				$num_decimals = $this->currencymap[$this->to_currency]['decimals'];
+		// obtain the "to currency" formatting data options
+		list($num_decimals, $decimals_sep, $thousands_sep) = $this->getCurrencyFormatData();
+
+		// return the formatted amount according to currency settings
+		return number_format($num, $num_decimals, $decimals_sep, $thousands_sep);
+	}
+
+	/**
+	 * Returns a list of currency formatting data (number of decimals, separators).
+	 * 
+	 * @param 	string 	$custom_currency 	Optional currency ISO name to check.
+	 * 
+	 * @return 	array 						Linear list of formatting data.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	protected function getCurrencyFormatData($custom_currency = null)
+	{
+		// the currency to evaluate
+		$use_currency = $custom_currency ?: $this->to_currency;
+
+		$num_decimals = (int) $this->format[0];
+
+		if (isset($this->currencymap[$use_currency])) {
+			if (isset($this->currencymap[$use_currency]['decimals'])) {
+				// use the currency related number of decimals
+				$num_decimals = $this->currencymap[$use_currency]['decimals'];
 			} else {
+				// default to 2 decimal points when the currency exists by default
 				$num_decimals = 2;
 			}
 		}
@@ -851,7 +883,7 @@ class VboCurrencyConverter
 		 * 
 		 * @since 	1.16.0 (J) - 1.6.0 (WP)
 		 */
-		$custom_conv = VBOFactory::getPlatform()->getDispatcher()->filter('onGetCurrencyDataVikBooking', [$this->to_currency]);
+		$custom_conv = VBOFactory::getPlatform()->getDispatcher()->filter('onGetCurrencyDataVikBooking', [$use_currency]);
 		if (is_array($custom_conv) && !empty($custom_conv[0]) && is_array($custom_conv[0])) {
 			// override currency information for formatting the amounts
 			$num_decimals  = isset($custom_conv[0]['decimals']) && is_int($custom_conv[0]['decimals']) ? $custom_conv[0]['decimals'] : $num_decimals;
@@ -859,7 +891,41 @@ class VboCurrencyConverter
 			$thousands_sep = isset($custom_conv[0]['thousands_separator']) && is_string($custom_conv[0]['thousands_separator']) ? $custom_conv[0]['thousands_separator'] : $thousands_sep;
 		}
 
-		return number_format($num, $num_decimals, $decimals_sep, $thousands_sep);
+		return [
+			$num_decimals,
+			$decimals_sep,
+			$thousands_sep,
+		];
+	}
+
+	/**
+	 * Obtains a list of currency data options for the requested currency.
+	 * 
+	 * @param 	string 	$currency 	The currency ISO name (3-char) to get.
+	 * 
+	 * @return 	array 				Associative currency options, or empty list.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	public function getCurrencyData($currency)
+	{
+		if (!$this->currencyExists($currency)) {
+			return [];
+		}
+
+		// get the currency symbol
+		$symbol = $this->currencySymbol($currency);
+
+		// obtain the currency formatting data options
+		list($num_decimals, $decimals_sep, $thousands_sep) = $this->getCurrencyFormatData($currency);
+
+		return [
+			'name' 			=> $this->currency_names[$currency] ?? $currency,
+			'symbol'        => $symbol,
+			'decimals'      => $num_decimals,
+			'decimals_sep'  => $decimals_sep,
+			'thousands_sep' => $thousands_sep,
+		];
 	}
 	
 	/**

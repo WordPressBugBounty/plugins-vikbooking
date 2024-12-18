@@ -25,19 +25,19 @@ $currencysymb = VikBooking::getCurrencySymb(true);
 $arrcats = array();
 $arrcarats = array();
 $arropts = array();
-$oldcats = count($row) ? explode(";", (string)$row['idcat']) : array();
+$oldcats = $row ? explode(";", (string)$row['idcat']) : array();
 foreach ($oldcats as $oc) {
 	if (!empty($oc)) {
 		$arrcats[$oc] = $oc;
 	}
 }
-$oldcarats = count($row) ? explode(";", (string)$row['idcarat']) : array();
+$oldcarats = $row ? explode(";", (string)$row['idcarat']) : array();
 foreach ($oldcarats as $ocr) {
 	if (!empty($ocr)) {
 		$arrcarats[$ocr] = $ocr;
 	}
 }
-$oldopts = count($row) ? explode(";", (string)$row['idopt']) : array();
+$oldopts = $row ? explode(";", (string)$row['idopt']) : array();
 foreach ($oldopts as $oopt) {
 	if (!empty($oopt)) {
 		$arropts[$oopt] = $oopt;
@@ -78,7 +78,7 @@ if (is_array($optionals)) {
 	$woptionals .= "</div>\n";
 }
 //more images
-$morei = count($row) ? explode(';;', (string)$row['moreimgs']) : array();
+$morei = $row ? explode(';;', (string)$row['moreimgs']) : array();
 $totmorei = count($morei);
 $actmoreimgs = "";
 if ($totmorei > 0) {
@@ -91,7 +91,7 @@ if ($totmorei > 0) {
 			$actmoreimgs .= '<li class="vbo-editroom-currentphoto">';
 			$actmoreimgs .= '<a href="'.VBO_SITE_URI.'resources/uploads/big_'.$mi.'" target="_blank" class="vbomodal"><img src="'.VBO_SITE_URI.'resources/uploads/thumb_'.$mi.'" class="maxfifty"/></a>';
 			$actmoreimgs .= '<a class="vbo-toggle-imgcaption" href="javascript: void(0);" onclick="vbOpenImgDetails(\''.$ki.'\', this)"><i class="'.VikBookingIcons::i('cog').'"></i></a>';
-			$actmoreimgs .= '<div id="vbimgdetbox'.$ki.'" class="vbimagedetbox" style="display: none;"><div class="captionlabel"><span>'.JText::translate('VBIMGCAPTION').'</span><input type="text" name="caption'.$ki.'" value="'.($usecaptions === true && isset($imgcaptions[$ki]) ? $imgcaptions[$ki] : "").'" size="40"/></div><input type="hidden" name="imgsorting[]" value="'.$mi.'"/><input class="captionsubmit" type="button" name="updcatpion" value="'.JText::translate('VBIMGUPDATE').'" onclick="javascript: updateCaptions();"/><div class="captionremoveimg"><a class="vbimgrm btn btn-danger" href="index.php?option=com_vikbooking&task=removemoreimgs&roomid='.$row['id'].'&imgind='.$ki.'" title="'.JText::translate('VBREMOVEIMG').'"><i class="icon-remove"></i>'.JText::translate('VBREMOVEIMG').'</a></div></div>';
+			$actmoreimgs .= '<div id="vbimgdetbox'.$ki.'" class="vbimagedetbox" style="display: none;"><div class="captionlabel"><span>'.JText::translate('VBIMGCAPTION').'</span><input type="text" name="caption'.$ki.'" value="'.($usecaptions === true && isset($imgcaptions[$ki]) ? htmlspecialchars($imgcaptions[$ki]) : "").'" size="40"/></div><input type="hidden" name="imgsorting[]" value="'.$mi.'"/><input class="captionsubmit" type="button" name="updcatpion" value="'.JText::translate('VBIMGUPDATE').'" onclick="javascript: updateCaptions();"/><div class="captionremoveimg"><a class="vbimgrm btn btn-danger" href="index.php?option=com_vikbooking&task=removemoreimgs&roomid='.$row['id'].'&imgind='.$ki.'" title="'.JText::translate('VBREMOVEIMG').'"><i class="icon-remove"></i>'.JText::translate('VBREMOVEIMG').'</a></div></div>';
 			$actmoreimgs .= '</li>';
 		}
 	}
@@ -277,7 +277,7 @@ function vboToggleMaxAdvNotice(is_checked) {
 	}
 }
 /* Start - Room Disctinctive Features */
-var cur_units = <?php echo count($row) ? $row['units'] : '1'; ?>;
+var cur_units = <?php echo $row ? $row['units'] : '1'; ?>;
 
 jQuery(function() {
 	jQuery('#share_with_sel, #categories_sel, #upgrade-rooms').select2();
@@ -376,18 +376,18 @@ if (count($row)) {
 					<div class="vbo-params-container">
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBNEWROOMFIVE'); ?></div>
-							<div class="vbo-param-setting"><input type="text" name="cname" value="<?php echo count($row) ? htmlspecialchars($row['name']) : ''; ?>" size="40"/></div>
+							<div class="vbo-param-setting"><input type="text" name="cname" value="<?php echo $row ? htmlspecialchars($row['name']) : ''; ?>" size="40"/></div>
 						</div>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBNEWROOMEIGHT'); ?></div>
-							<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('cavail', JText::translate('VBYES'), JText::translate('VBNO'), ((count($row) && intval($row['avail']) == 1) || !count($row) ? 'yes' : 0), 'yes', 0); ?></div>
+							<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('cavail', JText::translate('VBYES'), JText::translate('VBNO'), ((count($row) && intval($row['avail']) == 1) || !$row ? 'yes' : 0), 'yes', 0); ?></div>
 						</div>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBNEWROOMNINE'); ?></div>
-							<div class="vbo-param-setting"><input type="number" min="1" name="units" id="room_units" value="<?php echo count($row) ? $row['units'] : '1'; ?>" size="3" onfocus="this.select();" /></div>
+							<div class="vbo-param-setting"><input type="number" min="1" name="units" id="room_units" value="<?php echo $row ? $row['units'] : '1'; ?>" size="3" onfocus="this.select();" /></div>
 						</div>
 						<?php
-						$room_features = count($row) ? VikBooking::getRoomParam('features', $row['params']) : array(1 => VikBooking::getDefaultDistinctiveFeatures());
+						$room_features = $row ? VikBooking::getRoomParam('features', $row['params']) : array(1 => VikBooking::getDefaultDistinctiveFeatures());
 						if (!is_array($room_features)) {
 							$room_features = array();
 						}
@@ -406,7 +406,7 @@ if (count($row)) {
 								</div>
 								<div class="vbo-distfeatures-cont">
 								<?php
-								$unitslim = count($row) ? $row['units'] : 1;
+								$unitslim = $row ? $row['units'] : 1;
 								for ($i=1; $i <= $unitslim; $i++) {
 									?>
 									<div class="vbo-runit-features-cont" id="runit-features-<?php echo $i; ?>">
@@ -417,9 +417,9 @@ if (count($row)) {
 										foreach ($room_features[$i] as $fkey => $fval) {
 											?>
 											<div class="vbo-runit-feature">
-												<input type="text" name="feature-name<?php echo $i; ?>[]" value="<?php echo JText::translate($fkey); ?>" size="20"/>
+												<input type="text" name="feature-name<?php echo $i; ?>[]" value="<?php echo htmlspecialchars(JText::translate($fkey)); ?>" size="20"/>
 												<input type="hidden" name="feature-lang<?php echo $i; ?>[]" value="<?php echo $fkey; ?>"/>
-												<input type="text" name="feature-value<?php echo $i; ?>[]" value="<?php echo $fval; ?>" size="20"/>
+												<input type="text" name="feature-value<?php echo $i; ?>[]" value="<?php echo htmlspecialchars($fval); ?>" size="20"/>
 												<span class="vbo-feature-remove"><?php VikBookingIcons::e('far fa-minus-square'); ?></span>
 											</div>
 											<?php
@@ -441,7 +441,7 @@ if (count($row)) {
 								<div class="vbo-param-setting-group">
 									<div class="vbplusminuscont">
 										<span><?php echo JText::translate('VBNEWROOMMIN'); ?></span>
-										<input type="number" min="0" id="fromadult" name="fromadult" value="<?php echo count($row) ? $row['fromadult'] : '1'; ?>" size="4" onchange="vbMinTotPeople();" style="width: 40px;"/>
+										<input type="number" min="0" id="fromadult" name="fromadult" value="<?php echo $row ? $row['fromadult'] : '1'; ?>" size="4" onchange="vbMinTotPeople();" style="width: 40px;"/>
 									</div>
 									<div class="vbplusminus-btns">
 										<span class="vbplusminus" onclick="vbPlusMinus('fromadult', 'plus');"><?php VikBookingIcons::e('far fa-plus-square'); ?></span>
@@ -451,7 +451,7 @@ if (count($row)) {
 								<div class="vbo-param-setting-group">
 									<div class="vbplusminuscont">
 										<span><?php echo JText::translate('VBNEWROOMMAX'); ?></span>
-										<input type="number" min="0" id="toadult" name="toadult" value="<?php echo count($row) ? $row['toadult'] : '1'; ?>" size="3" onchange="vbMaxTotPeople();" style="width: 40px;"/>
+										<input type="number" min="0" id="toadult" name="toadult" value="<?php echo $row ? $row['toadult'] : '1'; ?>" size="3" onchange="vbMaxTotPeople();" style="width: 40px;"/>
 									</div>
 									<div class="vbplusminus-btns">
 										<span class="vbplusminus" onclick="vbPlusMinus('toadult', 'plus');"><?php VikBookingIcons::e('far fa-plus-square'); ?></span>
@@ -490,7 +490,7 @@ if (count($row)) {
 								<div class="vbo-param-setting-group">
 									<div class="vbplusminuscont">
 										<span><?php echo JText::translate('VBNEWROOMMIN'); ?></span>
-										<input type="number" min="0" id="fromchild" name="fromchild" value="<?php echo count($row) ? $row['fromchild'] : '0'; ?>" size="3" onchange="vbMinTotPeople();" style="width: 40px;"/>
+										<input type="number" min="0" id="fromchild" name="fromchild" value="<?php echo $row ? $row['fromchild'] : '0'; ?>" size="3" onchange="vbMinTotPeople();" style="width: 40px;"/>
 									</div>
 									<div class="vbplusminus-btns">
 										<span class="vbplusminus" onclick="vbPlusMinus('fromchild', 'plus');"><?php VikBookingIcons::e('far fa-plus-square'); ?></span>
@@ -500,7 +500,7 @@ if (count($row)) {
 								<div class="vbo-param-setting-group">
 									<div class="vbplusminuscont">
 										<span><?php echo JText::translate('VBNEWROOMMAX'); ?></span>
-										<input type="number" min="0" id="tochild" name="tochild" value="<?php echo count($row) ? $row['tochild'] : '0'; ?>" size="3" onchange="vbMaxTotPeople();" style="width: 40px;"/>
+										<input type="number" min="0" id="tochild" name="tochild" value="<?php echo $row ? $row['tochild'] : '0'; ?>" size="3" onchange="vbMaxTotPeople();" style="width: 40px;"/>
 									</div>
 									<div class="vbplusminus-btns">
 										<span class="vbplusminus" onclick="vbPlusMinus('tochild', 'plus');"><?php VikBookingIcons::e('far fa-plus-square'); ?></span>
@@ -512,14 +512,14 @@ if (count($row)) {
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBMAXTOTPEOPLE'); ?></div>
 							<div class="vbo-param-setting">
-								<input type="number" min="1" name="totpeople" id="totpeople" value="<?php echo count($row) ? $row['totpeople'] : '1'; ?>" size="3" style="width: 40px;"/>
+								<input type="number" min="1" name="totpeople" id="totpeople" value="<?php echo $row ? $row['totpeople'] : '1'; ?>" size="3" style="width: 40px;"/>
 								<span class="vbo-param-setting-comment-inline"><?php echo JText::translate('VBMAXTOTPEOPLEDESC'); ?></span>
 							</div>
 						</div>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBMINTOTPEOPLE'); ?></div>
 							<div class="vbo-param-setting">
-								<input type="number" min="1" name="mintotpeople" id="mintotpeople" value="<?php echo count($row) ? $row['mintotpeople'] : '1'; ?>" size="3" style="width: 40px;"/>
+								<input type="number" min="1" name="mintotpeople" id="mintotpeople" value="<?php echo $row ? $row['mintotpeople'] : '1'; ?>" size="3" style="width: 40px;"/>
 								<span class="vbo-param-setting-comment-inline"><?php echo JText::translate('VBMINTOTPEOPLEDESC'); ?></span>
 							</div>
 						</div>
@@ -566,7 +566,7 @@ if (count($row)) {
 					<legend class="adminlegend"><?php echo JText::translate('VBNEWROOMPARAMS'); ?></legend>
 					<div class="vbo-params-container">
 						<?php
-						$multi_units = count($row) ? VikBooking::getRoomParam('multi_units', $row['params']) : 0;
+						$multi_units = $row ? VikBooking::getRoomParam('multi_units', $row['params']) : 0;
 						?>
 						<div class="vbo-param-container param-multiunits" style="display: <?php echo (count($row) && $row['units'] > 0 ? 'flex' : 'none'); ?>;">
 							<div class="vbo-param-label"><label for="multi_units"><?php echo JText::translate('VBPARAMROOMMULTIUNITS'); ?></label></div>
@@ -581,34 +581,34 @@ if (count($row)) {
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><label for="lastavail"><?php echo JText::translate('VBPARAMLASTAVAIL'); ?></label></div>
 							<div class="vbo-param-setting">
-								<input type="number" min="0" name="lastavail" id="lastavail" value="<?php echo count($row) ? (int)VikBooking::getRoomParam('lastavail', $row['params']) : '0'; ?>"/>
+								<input type="number" min="0" name="lastavail" id="lastavail" value="<?php echo $row ? (int)VikBooking::getRoomParam('lastavail', $row['params']) : '0'; ?>"/>
 								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBPARAMLASTAVAILHELP'); ?></span>
 							</div>
 						</div>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><label for="suggocc"><?php echo JText::translate('VBOPARAMSUGGOCC'); ?></label></div>
 							<div class="vbo-param-setting">
-								<input type="number" min="0" name="suggocc" id="suggocc" value="<?php echo count($row) ? (int)VikBooking::getRoomParam('suggocc', $row['params']) : '1'; ?>"/>
+								<input type="number" min="0" name="suggocc" id="suggocc" value="<?php echo $row ? (int)VikBooking::getRoomParam('suggocc', $row['params']) : '1'; ?>"/>
 							</div>
 						</div>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><label for="custprice"><?php echo JText::translate('VBPARAMCUSTPRICE'); ?></label></div>
 							<div class="vbo-param-setting">
-								<input type="text" name="custprice" id="custprice" value="<?php echo count($row) ? VikBooking::getRoomParam('custprice', $row['params']) : ''; ?>" size="5"/>
+								<input type="text" name="custprice" id="custprice" value="<?php echo $row ? JHtml::fetch('esc_attr', VikBooking::getRoomParam('custprice', $row['params'])) : ''; ?>" size="5"/>
 								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBPARAMCUSTPRICEHELP'); ?></span>
 							</div>
 						</div>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><label for="custpricetxt"><?php echo JText::translate('VBPARAMCUSTPRICETEXT'); ?></label></div>
 							<div class="vbo-param-setting">
-								<input type="text" name="custpricetxt" id="custpricetxt" value="<?php echo count($row) ? VikBooking::getRoomParam('custpricetxt', $row['params']) : ''; ?>" size="9"/>
+								<input type="text" name="custpricetxt" id="custpricetxt" value="<?php echo $row ? JHtml::fetch('esc_attr', VikBooking::getRoomParam('custpricetxt', $row['params'])) : ''; ?>" size="9"/>
 								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBPARAMCUSTPRICETEXTHELP'); ?></span>
 							</div>
 						</div>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><label for="custpricesubtxt"><?php echo JText::translate('VBPARAMCUSTPRICESUBTEXT'); ?></label></div>
 							<div class="vbo-param-setting">
-								<input type="text" name="custpricesubtxt" id="custpricesubtxt" value="<?php echo count($row) ? htmlentities(VikBooking::getRoomParam('custpricesubtxt', $row['params'])) : ''; ?>" size="31"/>
+								<input type="text" name="custpricesubtxt" id="custpricesubtxt" value="<?php echo $row ? htmlentities(VikBooking::getRoomParam('custpricesubtxt', $row['params'])) : ''; ?>" size="31"/>
 								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBPARAMCUSTPRICESUBTEXTHELP'); ?></span>
 							</div>
 						</div>
@@ -617,7 +617,7 @@ if (count($row)) {
 							<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('reqinfo', JText::translate('VBYES'), JText::translate('VBNO'), (count($row) && intval(VikBooking::getRoomParam('reqinfo', $row['params'])) == 1 ? 1 : 0), 1, 0); ?></div>
 						</div>
 						<?php
-						$paramshowpeople = count($row) ? VikBooking::getRoomParam('maxminpeople', $row['params']) : '';
+						$paramshowpeople = $row ? VikBooking::getRoomParam('maxminpeople', $row['params']) : '';
 						?>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><label for="maxminpeople"><?php echo JText::translate('VBPARAMSHOWPEOPLE'); ?></label></div>
@@ -673,7 +673,7 @@ if (count($row)) {
 							?>
 							<div class="vbo-param-label"><label for="defcalcost"><?php echo JText::translate('VBPARAMDEFCALCOST'); ?></label></div>
 							<div class="vbo-param-setting">
-								<input type="number" min="0" step="any" name="defcalcost" id="defcalcost" value="<?php echo count($row) ? VikBooking::getRoomParam('defcalcost', $row['params']) : ''; ?>" placeholder="50.00"/>
+								<input type="number" min="0" step="any" name="defcalcost" id="defcalcost" value="<?php echo $row ? VikBooking::getRoomParam('defcalcost', $row['params']) : ''; ?>" placeholder="50.00"/>
 								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBPARAMDEFCALCOSTHELP'); ?></span>
 							</div>
 							<?php
@@ -681,9 +681,9 @@ if (count($row)) {
 						?>
 						</div>
 						<?php
-						$season_cal = count($row) ? VikBooking::getRoomParam('seasoncal', $row['params']) : 0;
-						$season_cal_prices = count($row) ? VikBooking::getRoomParam('seasoncal_prices', $row['params']) : 0;
-						$season_cal_restr = count($row) ? VikBooking::getRoomParam('seasoncal_restr', $row['params']) : 0;
+						$season_cal = $row ? VikBooking::getRoomParam('seasoncal', $row['params']) : 0;
+						$season_cal_prices = $row ? VikBooking::getRoomParam('seasoncal_prices', $row['params']) : 0;
+						$season_cal_restr = $row ? VikBooking::getRoomParam('seasoncal_restr', $row['params']) : 0;
 						?>
 						<div class="vbo-param-container param-seasoncal">
 							<div class="vbo-param-label"><label for="seasoncal"><?php echo JText::translate('VBPARAMSEASONCALENDAR'); ?></label></div>
@@ -701,7 +701,7 @@ if (count($row)) {
 						<div class="vbo-param-container vbo-param-nested param-seasoncal" style="display: <?php echo (intval($season_cal) > 0 ? 'flex' : 'none'); ?>;">
 							<div class="vbo-param-label"><label for="seasoncal_nights"><?php echo JText::translate('VBPARAMSEASONCALNIGHTS'); ?></label></div>
 							<div class="vbo-param-setting">
-								<input type="text" name="seasoncal_nights" id="seasoncal_nights" size="10" value="<?php echo count($row) ? VikBooking::getRoomParam('seasoncal_nights', $row['params']) : ''; ?>" placeholder="1, 3, 7, 14"/>
+								<input type="text" name="seasoncal_nights" id="seasoncal_nights" size="10" value="<?php echo $row ? JHtml::fetch('esc_attr', VikBooking::getRoomParam('seasoncal_nights', $row['params'])) : ''; ?>" placeholder="1, 3, 7, 14"/>
 								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBPARAMSEASONCALNIGHTSHELP'); ?></span>
 							</div>
 						</div>
@@ -872,7 +872,7 @@ if (count($row)) {
 					?>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBNEWROOMSMALLDESC'); ?></div>
-							<div class="vbo-param-setting"><textarea name="smalldesc" rows="6" cols="50"><?php echo count($row) ? $row['smalldesc'] : ''; ?></textarea></div>
+							<div class="vbo-param-setting"><textarea name="smalldesc" rows="6" cols="50"><?php echo $row ? $row['smalldesc'] : ''; ?></textarea></div>
 						</div>
 						<div class="vbo-param-container vbo-param-container-full">
 							<div class="vbo-param-label"><?php echo JText::translate('VBNEWROOMSEVEN'); ?></div>
@@ -887,13 +887,13 @@ if (count($row)) {
 									 * @wponly
 									 */
 									try {
-										echo $editor->display( "cdescr", (count($row) ? $row['info'] : ""), '100%', 300, 70, 20 );
+										echo $editor->display( "cdescr", ($row ? $row['info'] : ""), '100%', 300, 70, 20 );
 									} catch (Throwable $t) {
 										echo $t->getMessage() . ' in ' . $t->getFile() . ':' . $t->getLine() . '<br/>';
 									}
 								} else {
 									// we cannot catch Fatal Errors in PHP 5.x
-									echo $editor->display( "cdescr", (count($row) ? $row['info'] : ""), '100%', 300, 70, 20 );
+									echo $editor->display( "cdescr", ($row ? $row['info'] : ""), '100%', 300, 70, 20 );
 								}
 								?>
 							</div>
@@ -965,7 +965,7 @@ if (count($row)) {
 		 * @since 	1.16.0 (J) - 1.6.0 (WP)
 		 */
 		if (count($this->rooms_map)) {
-			$room_upgrade_options = count($row) ? VBOFactory::getConfig()->getArray('room_upgrade_options_' . $row['id'], []) : [];
+			$room_upgrade_options = $row ? VBOFactory::getConfig()->getArray('room_upgrade_options_' . $row['id'], []) : [];
 			$room_upgrade_options['rooms'] = !empty($room_upgrade_options['rooms']) ? $room_upgrade_options['rooms'] : [];
 			$room_upgrade_enabled = count($room_upgrade_options['rooms']) ? 1 : 0;
 			?>
@@ -1020,19 +1020,19 @@ if (count($row)) {
 					<legend class="adminlegend"><?php echo JText::translate('VBOADMINLEGENDSETTINGS'); ?></legend>
 					<div class="vbo-params-container">
 						<?php
-						$custptitle = count($row) ? VikBooking::getRoomParam('custptitle', $row['params']) : '';
-						$custptitlew = count($row) ? VikBooking::getRoomParam('custptitlew', $row['params']) : '';
-						$metakeywords = count($row) ? VikBooking::getRoomParam('metakeywords', $row['params']) : '';
-						$metadescription = count($row) ? VikBooking::getRoomParam('metadescription', $row['params']) : '';
-						if (defined('_JEXEC')) {
+						$custptitle = $row ? VikBooking::getRoomParam('custptitle', $row['params']) : '';
+						$custptitlew = $row ? VikBooking::getRoomParam('custptitlew', $row['params']) : '';
+						$metakeywords = $row ? VikBooking::getRoomParam('metakeywords', $row['params']) : '';
+						$metadescription = $row ? VikBooking::getRoomParam('metadescription', $row['params']) : '';
+						if (VBOPlatformDetection::isJoomla()) {
 							/**
-							 * @wponly  removed SEF alias
+							 * @joomlaonly  room SEF alias
 							 */
 							?>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><label for="sefalias"><?php echo JText::translate('VBROOMSEFALIAS'); ?></label></div>
 							<div class="vbo-param-setting">
-								<input type="text" id="sefalias" name="sefalias" value="<?php echo count($row) ? $row['alias'] : ''; ?>" placeholder="double-room-superior"/>
+								<input type="text" id="sefalias" name="sefalias" value="<?php echo $row ? JHtml::fetch('esc_attr', $row['alias']) : ''; ?>" placeholder="double-room-superior"/>
 							</div>
 						</div>
 							<?php
@@ -1041,7 +1041,7 @@ if (count($row)) {
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><label for="custptitle"><?php echo JText::translate('VBPARAMPAGETITLE'); ?></label></div>
 							<div class="vbo-param-setting">
-								<input type="text" id="custptitle" name="custptitle" value="<?php echo $custptitle; ?>"/> 
+								<input type="text" id="custptitle" name="custptitle" value="<?php echo JHtml::fetch('esc_attr', $custptitle); ?>"/> 
 							</div>
 						</div>
 						<div class="vbo-param-container vbo-param-child">
@@ -1170,7 +1170,7 @@ jQuery(document).ready(function() {
 	});
 });
 jQuery(function() {
-	var url = 'index.php?option=com_vikbooking&task=multiphotosupload&roomid=<?php echo count($row) ? $row['id'] : '0'; ?>',
+	var url = 'index.php?option=com_vikbooking&task=multiphotosupload&roomid=<?php echo $row ? $row['id'] : '0'; ?>',
 		uploadButton = jQuery('<button/>')
 			.addClass('btn btn-primary')
 			.prop('disabled', true)

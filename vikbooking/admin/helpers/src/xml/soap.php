@@ -76,10 +76,17 @@ class VBOXmlSoap extends SimpleXMLElement
      */
     public function formatXml()
     {
+        $xmlFeed = $this->asXml();
+
+        if (!$xmlFeed) {
+            // prevent errors with empty XML strings
+            return '';
+        }
+
         // format XML string feed
         $dom = new DOMDocument;
         $dom->preserveWhiteSpace = false;
-        $dom->loadXML($this->asXml());
+        $dom->loadXML($xmlFeed);
         $dom->formatOutput = true;
 
         return $dom->saveXML();
@@ -97,5 +104,55 @@ class VBOXmlSoap extends SimpleXMLElement
     public function getSoapBody($ns = 'soap', $isPrefix = true, $node = 'Body')
     {
         return $this->children($ns, $isPrefix)->{$node}->children();
+    }
+
+    /**
+     * Returns the SimpleXMLElement object from a recursive list of nested namespaces.
+     * Useful to access a node that belongs to multiple and different namespaces.
+     * 
+     * @param   array   $recursiveNs    List of recursive namespace instruction pairs (ns, isPrefix, node).
+     * 
+     * @return  SimpleXMLElement
+     * 
+     * @since   1.17.2 (J) - 1.7.2 (WP)
+     */
+    public function getSoapRecursiveNsElement(array $recursiveNs)
+    {
+        // starting element
+        $element = $this;
+
+        // scan the list of namespace instructions to advance the elements
+        foreach ($recursiveNs as $ind => $pairs) {
+            // instructions
+            list($ns, $isPrefix, $node) = $pairs;
+
+            $node = (string) ($node ?? '');
+
+            if (!$node) {
+                // abort
+                return $this;
+            }
+
+            // attempt to get the requested element
+            $childElement = $element->children((string) ($ns ?? ''), (bool) ($isPrefix ?? true));
+
+            if (!isset($childElement)) {
+                // abort
+                return $this;
+            }
+
+            if (count($recursiveNs) - 1 === $ind) {
+                // exit from namespace
+                $childElement = $childElement->children();
+            } else {
+                // enter the next node
+                $childElement = $childElement->{$node};
+            }
+
+            // advance the element
+            $element = $childElement;
+        }
+
+        return $element;
     }
 }

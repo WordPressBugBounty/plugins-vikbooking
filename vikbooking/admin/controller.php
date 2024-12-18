@@ -8300,6 +8300,8 @@ class VikBookingController extends JControllerVikBooking
 		$config->set('searchsuggestions', $psearchsuggestions);
 		$config->set('tokenform', empty($ptokenform) || $ptokenform != "yes" ? 0 : 1);
 		$config->set('guests_label', $app->input->getString('guests_label', 'adults'));
+		$config->set('search_show_busy_listings', $app->input->getInt('search_show_busy_listings', 0));
+		$config->set('search_link_roomdetails', $app->input->getInt('search_link_roomdetails', 0));
 
 		// translatable text
 		$q = "UPDATE `#__vikbooking_texts` SET `setting`=".$dbo->quote($pfooterordmail)." WHERE `param`='footerordmail';";
@@ -9371,14 +9373,28 @@ class VikBookingController extends JControllerVikBooking
 		}
 		$damagedep = VikRequest::getInt('damagedep', 0, 'request');
 		$pet_fee = VikRequest::getInt('pet_fee', 0, 'request');
-		$oparams = array(
-			'minguestsnum' 	=> $minguestsnum,
-			'mingueststype' => $mingueststype,
-			'maxguestsnum' 	=> $maxguestsnum,
-			'maxgueststype' => $maxgueststype,
-			'damagedep' 	=> $damagedep,
-			'pet_fee' 		=> $pet_fee,
-		);
+		$custom_checkinout = VikRequest::getInt('custom_checkinout', 0, 'request');
+		$set_checkin = VikRequest::getInt('set_checkin', 0, 'request');
+		$set_checkout = VikRequest::getInt('set_checkout', 0, 'request');
+		if (!$custom_checkinout) {
+			$set_checkin = 0;
+			$set_checkout = 0;
+		}
+		if ((!$set_checkin && !$set_checkout) || $set_checkin == $set_checkout) {
+			// check-in and check-out times should not be equal or both empty
+			$custom_checkinout = 0;
+		}
+		$oparams = [
+			'minguestsnum' 	    => $minguestsnum,
+			'mingueststype'     => $mingueststype,
+			'maxguestsnum' 	    => $maxguestsnum,
+			'maxgueststype'     => $maxgueststype,
+			'damagedep' 	    => $damagedep,
+			'pet_fee' 		    => $pet_fee,
+			'custom_checkinout' => $custom_checkinout,
+			'set_checkin' 		=> $set_checkin,
+			'set_checkout' 		=> $set_checkout,
+		];
 		/**
 		 * We fetch the previous params to merge them with the new ones 
 		 * in case some properties have been set somewhere else.
@@ -9622,14 +9638,28 @@ class VikBookingController extends JControllerVikBooking
 		}
 		$damagedep = VikRequest::getInt('damagedep', 0, 'request');
 		$pet_fee = VikRequest::getInt('pet_fee', 0, 'request');
-		$oparams = array(
-			'minguestsnum' 	=> $minguestsnum,
-			'mingueststype' => $mingueststype,
-			'maxguestsnum' 	=> $maxguestsnum,
-			'maxgueststype' => $maxgueststype,
-			'damagedep' 	=> $damagedep,
-			'pet_fee' 		=> $pet_fee,
-		);
+		$custom_checkinout = VikRequest::getInt('custom_checkinout', 0, 'request');
+		$set_checkin = VikRequest::getInt('set_checkin', 0, 'request');
+		$set_checkout = VikRequest::getInt('set_checkout', 0, 'request');
+		if (!$custom_checkinout) {
+			$set_checkin = 0;
+			$set_checkout = 0;
+		}
+		if ((!$set_checkin && !$set_checkout) || $set_checkin == $set_checkout) {
+			// check-in and check-out times should not be equal or both empty
+			$custom_checkinout = 0;
+		}
+		$oparams = [
+			'minguestsnum' 	    => $minguestsnum,
+			'mingueststype'     => $mingueststype,
+			'maxguestsnum' 	    => $maxguestsnum,
+			'maxgueststype'     => $maxgueststype,
+			'damagedep' 	    => $damagedep,
+			'pet_fee' 		    => $pet_fee,
+			'custom_checkinout' => $custom_checkinout,
+			'set_checkin' 		=> $set_checkin,
+			'set_checkout' 		=> $set_checkout,
+		];
 		if (!empty($poptname)) {
 			if (intval($_FILES['optimg']['error']) == 0 && VikBooking::caniWrite(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR) && trim($_FILES['optimg']['name'])!="") {
 				jimport('joomla.filesystem.file');
@@ -11209,7 +11239,7 @@ jQuery(".' . $selector . '").hover(function() {
 
 	public function createcheckindoc()
 	{
-		if (!JFactory::getUser()->authorise('core.create', 'com_vikbooking')) {
+		if (!JFactory::getUser()->authorise('core.vbo.bookings', 'com_vikbooking')) {
 			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
 		}
 
@@ -11398,7 +11428,7 @@ jQuery(".' . $selector . '").hover(function() {
 
 	public function updatebookingcheckin()
 	{
-		if (!JFactory::getUser()->authorise('core.edit', 'com_vikbooking')) {
+		if (!JFactory::getUser()->authorise('core.vbo.bookings', 'com_vikbooking')) {
 			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
 		}
 

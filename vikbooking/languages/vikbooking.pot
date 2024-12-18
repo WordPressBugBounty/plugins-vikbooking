@@ -2,14 +2,14 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: VikBooking 1.7.0\n"
+"Project-Id-Version: VikBooking 1.7.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/vikbooking\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-11-12T16:42:48+01:00\n"
+"POT-Creation-Date: 2024-12-18T18:10:10+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: vikbooking\n"
@@ -575,7 +575,7 @@ msgid "Vik Booking - Availability Overview"
 msgstr ""
 
 #: libraries/language/admin.php:246
-#: libraries/language/system.php:448
+#: libraries/language/system.php:452
 msgid "Main Settings"
 msgstr ""
 
@@ -5044,7 +5044,7 @@ msgid "Registration"
 msgstr ""
 
 #: libraries/language/admin.php:3909
-msgid "Guests Details"
+msgid "Guest Details"
 msgstr ""
 
 #: libraries/language/admin.php:3912
@@ -5090,7 +5090,7 @@ msgid "The check-out date is in the past."
 msgstr ""
 
 #: libraries/language/admin.php:3954
-msgid "Some guests details are missing. Proceed?"
+msgid "Some guest details are missing. Proceed?"
 msgstr ""
 
 #: libraries/language/admin.php:3957
@@ -5355,7 +5355,7 @@ msgid "Remove Room"
 msgstr ""
 
 #: libraries/language/admin.php:4137
-msgid "The Closing Dates of the company are settings defined at Account-Level for the booking engine of the website. The closed dates will not be selectable from the calendars in the front-end. However, these settings will NOT apply to the channels connected through the Channel Manager. You should rather close the rooms from the page Calendar if you wanted the Channel Manager to close the availability on the channels."
+msgid "The property closing dates are settings defined at account-level for the booking engine of the website. The closed dates will not be selectable from the calendars in the front-end. However, these settings will NOT apply to the channels connected through the Channel Manager (unless you submit the Bulk Action). You should rather close the rooms from the page Calendar if you wanted the Channel Manager to immediately close the availability on the OTAs as well."
 msgstr ""
 
 #: libraries/language/admin.php:4140
@@ -5642,6 +5642,7 @@ msgid "PMS"
 msgstr ""
 
 #: libraries/language/admin.php:4383
+#: libraries/language/admin.php:7361
 msgid "Reports"
 msgstr ""
 
@@ -5739,7 +5740,7 @@ msgid "- All Options"
 msgstr ""
 
 #: libraries/language/admin.php:4479
-msgid "Italian Police: Guests Details"
+msgid "Italian Police: Guest Details"
 msgstr ""
 
 #: libraries/language/admin.php:4482
@@ -7856,7 +7857,7 @@ msgstr ""
 
 #: libraries/language/admin.php:6081
 #: libraries/language/site.php:669
-#: libraries/language/system.php:392
+#: libraries/language/system.php:396
 msgid "Select"
 msgstr ""
 
@@ -9516,6 +9517,31 @@ msgstr ""
 
 #: libraries/language/admin.php:7348
 msgid "Update payment"
+msgstr ""
+
+#: libraries/language/admin.php:7352
+msgctxt "Create listing on \"Booking.com\""
+msgid "Create listing on %s"
+msgstr ""
+
+#: libraries/language/admin.php:7355
+msgid "OTA Account ID"
+msgstr ""
+
+#: libraries/language/admin.php:7358
+msgid "OTA Listing ID"
+msgstr ""
+
+#: libraries/language/admin.php:7364
+msgid "Examples"
+msgstr ""
+
+#: libraries/language/admin.php:7367
+msgid "Choose the export format or the action to execute."
+msgstr ""
+
+#: libraries/language/admin.php:7370
+msgid "The payload is needed to let the report export dynamic information every day."
 msgstr ""
 
 #: libraries/language/adminsys.php:45
@@ -11811,76 +11837,80 @@ msgstr ""
 msgid "Save failed with the following error: %s"
 msgstr ""
 
-#: libraries/language/system.php:380
-msgid "Image preview"
+#: libraries/language/system.php:376
+msgid "- Select an option -"
 msgstr ""
 
 #: libraries/language/system.php:384
-msgid "Choose an image"
+msgid "Image preview"
 msgstr ""
 
 #: libraries/language/system.php:388
+msgid "Choose an image"
+msgstr ""
+
+#: libraries/language/system.php:392
 msgid "Choose one or more images"
 msgstr ""
 
-#: libraries/language/system.php:396
+#: libraries/language/system.php:400
 msgid "Pick or upload an image"
 msgstr ""
 
-#: libraries/language/system.php:400
+#: libraries/language/system.php:404
 msgid "Clear selection"
 msgstr ""
 
-#: libraries/language/system.php:408
+#: libraries/language/system.php:412
 msgid "Less than a minute ago."
 msgstr ""
 
-#: libraries/language/system.php:412
+#: libraries/language/system.php:416
 msgid "%d minutes ago."
 msgstr ""
 
-#: libraries/language/system.php:416
+#: libraries/language/system.php:420
 msgid "a minute ago."
 msgstr ""
 
-#: libraries/language/system.php:420
+#: libraries/language/system.php:424
 msgid "%d hours ago."
 msgstr ""
 
-#: libraries/language/system.php:424
+#: libraries/language/system.php:428
 msgid "an hour ago."
 msgstr ""
 
-#: libraries/language/system.php:428
+#: libraries/language/system.php:432
 msgid "%d days ago."
 msgstr ""
 
-#: libraries/language/system.php:432
+#: libraries/language/system.php:436
 msgid "a day ago."
 msgstr ""
 
-#: libraries/language/system.php:436
+#: libraries/language/system.php:440
 msgid "%d weeks ago."
 msgstr ""
 
-#: libraries/language/system.php:440
+#: libraries/language/system.php:444
 msgid "a week ago."
 msgstr ""
 
-#: libraries/language/system.php:452
+#: libraries/language/system.php:456
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:44
 msgid "Title"
 msgstr ""
 
-#: libraries/language/system.php:456
+#: libraries/language/system.php:460
 msgid "Optional widget title to display."
 msgstr ""
 
-#: libraries/language/system.php:460
+#: libraries/language/system.php:464
 msgid "Preview is not available"
 msgstr ""
 
-#: libraries/language/system.php:468
+#: libraries/language/system.php:472
 msgid "The Pro license for VikBooking has expired. Do not install any updates or you will downgrade the plugin to the Free version."
 msgstr ""
 

@@ -166,9 +166,18 @@ class VBOModelPricing extends JObject
 		// read current room rates
 		$current_rates = [];
 
-		// loop through all the requested range of dates
+		// dates involved
 		$start_ts = strtotime($from_date);
 		$end_ts = strtotime($to_date);
+
+		/**
+		 * Preload seasonal records in favour of CPU usage, but against RAM usage.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		$cached_seasons = VikBooking::getDateSeasonRecords($start_ts, ($end_ts + ($checkout_h * 3600)), [$id_room]);
+
+		// loop through all the requested range of dates
 		$infostart = getdate($start_ts);
 		while ($infostart[0] > 0 && $infostart[0] <= $end_ts) {
 			// calculate timestamps
@@ -178,7 +187,7 @@ class VBOModelPricing extends JObject
 			$today_mid_ts = mktime(0, 0, 0, $infostart['mon'], $infostart['mday'], $infostart['year']);
 
 			// calculate tariffs for this day
-			$tars = VikBooking::applySeasonsRoom($roomrates, $today_tsin, $today_tsout);
+			$tars = VikBooking::applySeasonsRoom($roomrates, $today_tsin, $today_tsout, [], $cached_seasons);
 
 			foreach ($tars as $index => $tar) {
 				// apply rounding to 2 decimals at most
@@ -211,6 +220,10 @@ class VBOModelPricing extends JObject
 			$infostart = getdate($tomorrow_ts);
 		}
 
+		// free memory up
+		unset($cached_seasons);
+
+		// return the calculated rates
 		return $current_rates;
 	}
 
@@ -242,6 +255,7 @@ class VBOModelPricing extends JObject
 		$upd_otas    = (bool) $this->get('update_otas', true);
 		$close_rplan = (bool) $this->get('close_rate_plan', false);
 		$merge_restr = (bool) $this->get('merge_restrictions', true);
+		$ota_pricing = (array) $this->get('ota_pricing', []);
 
 		if (!$from_date || !$to_date) {
 			// must be in Y-m-d format
@@ -404,17 +418,27 @@ class VBOModelPricing extends JObject
 			// set rate plan name
 			$rate_plan_name = $roomrates['name'];
 
-			// read current room rates
-			$current_rates = [];
+			// dates involved
 			$start_ts = strtotime($from_date);
 			$end_ts = strtotime($to_date);
+
+			/**
+			 * Preload seasonal records in favour of CPU usage, but against RAM usage.
+			 * 
+			 * @since 	1.17.2 (J) - 1.7.2 (WP)
+			 */
+			$cached_seasons = VikBooking::getDateSeasonRecords($start_ts, ($end_ts + ($checkout_h * 3600)), [$id_room]);
+
+			// read current room rates
+			$current_rates = [];
 			$infostart = getdate($start_ts);
 			while ($infostart[0] > 0 && $infostart[0] <= $end_ts) {
 				$tomorrow_ts = mktime(0, 0, 0, $infostart['mon'], ($infostart['mday'] + 1), $infostart['year']);
 				$today_tsin = VikBooking::getDateTimestamp(date($df, $infostart[0]), $checkin_h, $checkin_m);
 				$today_tsout = VikBooking::getDateTimestamp(date($df, $tomorrow_ts), $checkout_h, $checkout_m);
 
-				$tars = VikBooking::applySeasonsRoom([$roomrates], $today_tsin, $today_tsout);
+				// apply seasonal rates by injecting the cached seasonal records
+				$tars = VikBooking::applySeasonsRoom([$roomrates], $today_tsin, $today_tsout, [], $cached_seasons);
 
 				// apply rounding to 2 decimals at most
 				$tars[0]['cost'] = round($tars[0]['cost'], 2);
@@ -550,6 +574,13 @@ class VBOModelPricing extends JObject
 					$season_record->idprices = $pricestr;
 
 					$dbo->insertObject('#__vikbooking_seasons', $season_record, 'id');
+
+					/**
+					 * Push the newly created season record to the list of preloaded records.
+					 * 
+					 * @since 	1.17.2 (J) - 1.7.2 (WP)
+					 */
+					$cached_seasons[] = (array) $season_record;
 				}
 			}
 
@@ -657,7 +688,8 @@ class VBOModelPricing extends JObject
 				$today_tsin = VikBooking::getDateTimestamp(date($df, $infostart[0]), $checkin_h, $checkin_m);
 				$today_tsout = VikBooking::getDateTimestamp(date($df, $tomorrow_ts), $checkout_h, $checkout_m);
 
-				$tars = VikBooking::applySeasonsRoom([$roomrates], $today_tsin, $today_tsout);
+				// apply seasonal rates by injecting the cached seasonal records
+				$tars = VikBooking::applySeasonsRoom([$roomrates], $today_tsin, $today_tsout, [], $cached_seasons);
 
 				// apply rounding to 2 decimals at most
 				$tars[0]['cost'] = round($tars[0]['cost'], 2);
@@ -681,6 +713,9 @@ class VBOModelPricing extends JObject
 
 				$infostart = getdate($tomorrow_ts);
 			}
+
+			// free memory up
+			unset($cached_seasons);
 
 			/**
 			 * Store a record in the rates flow for this rate modification on VBO.
@@ -758,6 +793,52 @@ class VBOModelPricing extends JObject
 					// load the 'Bulk Action - Rates Upload' cache
 					$bulk_rates_cache = VikChannelManager::getBulkRatesCache();
 
+					// check for custom ota pricing overrides
+					if ($ota_pricing) {
+						// build ota pricing overrides for each channel
+						$ota_pricing_overrides = [];
+
+						foreach ($ota_pricing as $ota_id => $pricing_command) {
+							if (!preg_match("/^(\+|\-)[0-9]+(\.|\,)?([0-9]+)?(\%|\*)$/", $pricing_command)) {
+								// invalid pricing instructions
+								continue;
+							}
+
+							// get pricing command
+							$rmodop = substr($pricing_command, 0, 1);
+							$rmodval = substr($pricing_command, -1, 1);
+							$rmodamount = (float) str_replace([$rmodop, $rmodval], '', $pricing_command);
+
+							if ($rmodamount <= 0) {
+								// invalid rate amount factor
+								continue;
+							}
+
+							// build ota pricing instructions
+							$ota_pricing_overrides[$ota_id] = [
+								// modify rates
+								1,
+								// increase or decrease
+								($rmodop == '+' ? 1 : 0),
+								// amount
+								$rmodamount,
+								// percent or absolute
+								($rmodval == '%' ? 1 : 0),
+							];
+						}
+
+						if ($ota_pricing_overrides && method_exists($vboConnector, 'setOTAPricingOverrides')) {
+							/**
+							 * Set OTA pricing instruction overrides.
+							 * 
+							 * @since 		1.17.2 (J) - 1.7.2 (WP)
+							 * 
+							 * @requires 	VCM >= 1.9.4
+							 */
+							$vboConnector->setOTAPricingOverrides($ota_pricing_overrides);
+						}
+					}
+
 					// we update one rate plan per time, even though we could update all of them with a similar request
 					$rates_data = [
 						[
@@ -810,7 +891,7 @@ class VBOModelPricing extends JObject
 						}
 
 						// check bulk rates cache to see if the exact rate should be increased for the channels (the exact rate has already been set in VBO at this point of the code)
-						if (($bulk_rates_cache[$id_room][$rd['rate_id']] ?? null)) {
+						if (!$ota_pricing && ($bulk_rates_cache[$id_room][$rd['rate_id']] ?? null)) {
 							if ((int) $bulk_rates_cache[$id_room][$rd['rate_id']]['rmod'] > 0 && (float) $bulk_rates_cache[$id_room][$rd['rate_id']]['rmodamount'] > 0) {
 								if ((int) $bulk_rates_cache[$id_room][$rd['rate_id']]['rmodop'] > 0) {
 									// Increase rates
@@ -884,23 +965,32 @@ class VBOModelPricing extends JObject
 						// check the channels mapped for this room and add what was not found in the Bulk Rates Cache, if anything
 						foreach ($node['channels'] as $idchannel => $ch_data) {
 							if (!isset($node['pushdata']['rplans'][$idchannel])) {
-								// this channel was not found in the Bulk Rates Cache. Read data from OTA Pricing
-								$otapricing = json_decode($ch_data['otapricing'], true);
+								// this channel was not found in the Bulk Rates Cache. Read data from ota mapping pricing
+								$ota_mapping_pricing = json_decode($ch_data['otapricing'], true);
 								$ch_rplan_id = '';
-								if (is_array($otapricing) && isset($otapricing['RatePlan'])) {
-									foreach ($otapricing['RatePlan'] as $rpkey => $rpv) {
+								if (is_array($ota_mapping_pricing) && isset($ota_mapping_pricing['RatePlan'])) {
+									foreach ($ota_mapping_pricing['RatePlan'] as $rpkey => $rpv) {
 										// get the first key (rate plan ID) of the RatePlan array from OTA Pricing
 										$ch_rplan_id = $rpkey;
 										break;
 									}
 								}
 
+								// prevent channel from being updated if not directly involved
+								$is_secondary_rplan = $this->guessOTASecondaryRatePlan($idchannel, $roomrates, ($bulk_rates_cache[$id_room] ?? []));
+								$is_mapped_rplan    = $this->isOTARatePlanMapped($idchannel, $roomrates, ($bulk_rates_cache[$id_room] ?? []));
+								$is_google_platform = defined('VikChannelManagerConfig::GOOGLEHOTEL') && $idchannel == VikChannelManagerConfig::GOOGLEHOTEL;
+								$is_google_platform = $is_google_platform || (defined('VikChannelManagerConfig::GOOGLEVR') && $idchannel == VikChannelManagerConfig::GOOGLEVR);
+
 								// prevent Airbnb from being updated if not for the main rate plan only
-								if ($idchannel == VikChannelManagerConfig::AIRBNBAPI) {
-									if ($rplan_info['is_derived'] || $this->guessOTASecondaryRatePlan($idchannel, $roomrates, ($bulk_rates_cache[$id_room] ?? []))) {
+								if (defined('VikChannelManagerConfig::AIRBNBAPI') && $idchannel == VikChannelManagerConfig::AIRBNBAPI) {
+									if ($rplan_info['is_derived'] || $is_secondary_rplan) {
 										// skip this channel from updating a derived/secondary rate plan that would not exist
 										$ch_rplan_id = '';
 									}
+								} elseif (!$is_google_platform && !$is_mapped_rplan) {
+									// no bulk rates cache found for this channel, room and rate plan
+									$ch_rplan_id = '';
 								}
 
 								// make sure an OTA rate plan ID was found
@@ -1428,6 +1518,56 @@ class VBOModelPricing extends JObject
 
 		// this is probably a secondary rate plan for this OTA
 		return true;
+	}
+
+	/**
+	 * Detects if we are updating a non-mapped rate plan, probably not supported by the OTA. Useful to
+	 * prevent non-refundable rate plans to be transmitted to OTAs that would not directly support it.
+	 * 
+	 * @param 	int 	$idchannel 		The channel unique key.
+	 * @param 	array 	$room_rates 	The rate plan record details.
+	 * @param 	array 	$room_cahe 		The Bulk Rates Cache for the current room-type.
+	 * 
+	 * @return 	bool 					True if the rate plan was mapped in the Bulk Rates Cache.
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	protected function isOTARatePlanMapped($idchannel, array $room_rates, array $room_cache)
+	{
+		$room_type_id   = $room_rates['idroom'] ?? 0;
+		$rate_plan_id   = $room_rates['idprice'] ?? 0;
+
+		// access the room rate plan relations
+		if (!($this->room_rate_plans[$room_type_id] ?? [])) {
+			$this->room_rate_plans[$room_type_id] = VBORoomHelper::getInstance()->getRatePlans($room_type_id);
+		}
+
+		if (count(($this->room_rate_plans[$room_type_id] ?: [])) < 2) {
+			// this room-type has got just one rate plan assigned, so we consider it as mapped
+			return true;
+		}
+
+		if (!$room_cache) {
+			// unable to perform a detection
+			return false;
+		}
+
+		// check how many rate plans are linked to the given channel identifier
+		$cached_ota_rate_plans = [];
+
+		foreach ($room_cache as $price_id => $plan_cache) {
+			if (is_array($plan_cache) && ($plan_cache['rplans'][$idchannel] ?? null)) {
+				$cached_ota_rate_plans[] = $price_id;
+			}
+		}
+
+		if (!$cached_ota_rate_plans) {
+			// unable to perform a detection due to missing bulk rates cache data
+			return false;
+		}
+
+		// return whether this rate plan was updated through a bulk action
+		return in_array($rate_plan_id, $cached_ota_rate_plans);
 	}
 
 	/**

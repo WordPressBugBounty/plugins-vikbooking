@@ -375,7 +375,7 @@ class VBOModelReservation extends JObject
 		}
 
 		// availability helper
-		$av_helper = VikBooking::getAvailabilityInstance();
+		$av_helper = VikBooking::getAvailabilityInstance(true);
 
 		// validate mandatory fields
 		$room = $this->getRoom();
@@ -710,7 +710,7 @@ class VBOModelReservation extends JObject
 		$history_descr_rows = [];
 
 		// access availability helper
-		$av_helper = VikBooking::getAvailabilityInstance();
+		$av_helper = VikBooking::getAvailabilityInstance(true);
 
 		// calculate the new stay dates, if different
 		$diff_stay_dates = false;
@@ -1702,7 +1702,7 @@ class VBOModelReservation extends JObject
 	 */
 	protected function getRoomDetails($rid = null)
 	{
-		$all_rooms = VikBooking::getAvailabilityInstance()->loadRooms();
+		$all_rooms = VikBooking::getAvailabilityInstance(true)->loadRooms();
 
 		if (!$rid) {
 			$inj_room = $this->getRoom();
@@ -1741,7 +1741,7 @@ class VBOModelReservation extends JObject
 		$hcheckout 		  = $this->get('checkout_h', 10);
 		$mcheckout 		  = $this->get('checkout_m', 0);
 
-		$av_helper 	 = VikBooking::getAvailabilityInstance();
+		$av_helper 	 = VikBooking::getAvailabilityInstance(true);
 		$all_rooms 	 = $av_helper->loadRooms();
 		$rooms_pool  = [];
 		$closeothers = [];
@@ -1832,7 +1832,6 @@ class VBOModelReservation extends JObject
 		$num_rooms = $this->get('num_rooms', 1);
 
 		$room_available = true;
-		$all_rooms = VikBooking::getAvailabilityInstance()->loadRooms();
 
 		if (empty($split_stay_data)) {
 			// make sure the rooms are available
@@ -1843,6 +1842,7 @@ class VBOModelReservation extends JObject
 			}
 			$room_available = VikBooking::roomBookable($room['id'], $check_units, $this->get('checkin', 0), $this->get('checkout', 0));
 		} else {
+			$all_rooms = VikBooking::getAvailabilityInstance(true)->loadRooms();
 			// make sure the rooms for the split stay are available
 			foreach ($split_stay_data as $split_stay) {
 				if (!isset($all_rooms[$split_stay['idroom']])) {
@@ -1871,7 +1871,6 @@ class VBOModelReservation extends JObject
 		$set_closed = $this->get('set_closed', 0);
 
 		$forced_reason = $this->get('forced_reason', '');
-		$all_rooms = VikBooking::getAvailabilityInstance()->loadRooms();
 
 		if (empty($split_stay_data)) {
 			// eventually build string for the description of the history event
@@ -1879,6 +1878,7 @@ class VBOModelReservation extends JObject
 				$forced_reason = JText::translate('VBO_FORCED_BOOKDATES');
 			}
 		} else {
+			$all_rooms = VikBooking::getAvailabilityInstance(true)->loadRooms();
 			// set "split stay" as the description of the history event
 			$forced_reason = JText::translate('VBO_SPLIT_STAY') . "\n";
 			foreach ($split_stay_data as $sps_k => $split_stay) {

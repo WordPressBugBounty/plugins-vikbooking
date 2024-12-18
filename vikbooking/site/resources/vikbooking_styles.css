@@ -1827,6 +1827,30 @@ a:focus {
 	display: inline-block;
 	margin: 4px 10px 0 0;
 }
+.vbo-unavailable-block {
+	position: relative;
+	padding: 8px 10px 8px 10px;
+	border-radius: 4px;
+	background: var(--vbo-light-grey-bg-color);
+	border: 1px solid var(--vbo-red-color);
+	margin: 10px 0px 10px 0;
+	display: flex;
+}
+.vbo-unavailable-block .vbo-unavailable-icon {
+	display: inline-block;
+	margin-right: 10px;
+}
+.vbo-unavailable-block .vbo-unavailable-icon i {
+	width: 34px;
+	height: 34px;
+	line-height: 31px;
+	border: 2px solid var(--vbo-red-color);
+	border-radius: 50%;
+	text-align: center;
+	color: #fff;
+	font-size: 14px;
+	background: var(--vbo-red-color);
+}
 .vbo-promotion-block {
 	position: relative;
 	padding: 8px 10px 8px 10px;
@@ -2215,7 +2239,7 @@ form .vbselectm {
 	height:10px;
 }
 
-.vbtdfree {
+.vbtdfree, .vbtdempty {
 	border: 1px solid var(--vbo-light-border-color);
 }
 .vbcal .vbtdbusy {
@@ -2232,7 +2256,7 @@ form .vbselectm {
 .vbcalnumdaysprice .vbtdfree, .vbcalnumdaysprice .vbtdbusy, .vbcalnumdaysprice .vbtdwarning {
 	border: 1px solid var(--vbo-light-border-color);
 }
-.vbcalnumdaysprice .vbtdpast .vbcalpricedaycost {
+.vbcalnumdaysprice .vbtdpast .vbcalpricedaycost, .vbcalnumdaysprice .vbtdbusy .vbcalpricedaycost {
 	display: none;
 }
 .vbdetsep {
@@ -2762,6 +2786,12 @@ form .vbselectm {
 	display: table;
 	margin: 0 auto;
 	width: 65%;
+}
+.vbselectordiv .vbo-result-unavailable {
+	text-decoration: none;
+}
+.vbrowcname a {
+	text-decoration: none;
 }
 
 .vbstepsbarcont {
@@ -3452,6 +3482,11 @@ table {
 }
 .vbo-showprc-wrapper .vbroomimgdesc .vikfx-showprc-gallery-container .vikfx-gallery {
 	display: none;
+}
+.vbo-unavailable-description {
+	color: var(--vbo-text-color);
+	padding: 0 25px 0 0;
+	align-self: center;
 }
 .vbo-promotion-details {
 	display: inline-block;
@@ -8155,6 +8190,9 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	.vbo-promotion-det-wrapper {
 		width:100%;
 		float: none;
+	}
+	.vbo-unavailable-description {
+		padding: 0;
 	}
 	.vbo-promotion-description {
 		padding: 0;

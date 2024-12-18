@@ -154,10 +154,52 @@ final class VBOReportLoader
 		foreach ($this->country_reports as $ckey => $cvalue) {
 			if (!isset($countries[$ckey])) {
 				// this country does not exist, so maybe the report file was given a short beginning name. Push it to the global reports array
-				unset($countries[$ckey]);
+				unset($this->country_reports[$ckey]);
 				$this->global_reports = array_merge($this->global_reports, $cvalue);
 			}
 		}
+
+		/**
+		 * Apply sorting based on most advanced PMS reports supporting electronic transmission.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		foreach ($this->country_reports as $ckey => &$creports) {
+			// apply sorting by priority and then by name
+			usort($creports, function($a, $b) use ($ckey) {
+				// calculate the priority based on electronic transmission functions
+				$a_reflection = new ReflectionMethod($a, 'getScopedActions');
+				$a_priority = (int) ($a_reflection->getDeclaringClass()->getName() === get_class($a));
+				$b_reflection = new ReflectionMethod($b, 'getScopedActions');
+				$b_priority = (int) ($b_reflection->getDeclaringClass()->getName() === get_class($b));
+
+				// technical priority
+				$tech_priority = $b_priority - $a_priority;
+
+				if ($tech_priority !== 0) {
+					// the higher the priority is, the higher the position will be
+					return $tech_priority;
+				}
+
+				// get report names
+				$a_name = $a->getName();
+				$b_name = $b->getName();
+
+				if ($ckey === 'IT') {
+					// static priority to Police related reports
+					$police_priority = (int) stripos($b_name, 'poli') - (int) stripos($a_name, 'poli');
+					if ($police_priority !== 0) {
+						// sort by authority
+						return $police_priority;
+					}
+				}
+
+				// sort by report name
+				return strcasecmp($a_name, $b_name);
+			});
+		}
+		// unset last reference
+		unset($creports);
 
 		// return the list of drivers
 		return [$this->global_reports, $this->country_reports];

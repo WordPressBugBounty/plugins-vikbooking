@@ -160,12 +160,88 @@ JText::script('VBO_PRECHECKIN_TOAST_HELP');
 						 */
 						$pax_field_ind = 1;
 						foreach ($pax_fields as $paxk => $paxv) {
+							// determine the pax field rendering type
+
+							if (isset($pax_fields_attributes[$paxk]) && is_array($pax_fields_attributes[$paxk])) {
+								// select with choices
+								$field_rendering_type = 'select';
+							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'country') {
+								// field of type country
+								$field_rendering_type = 'country';
+							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'calendar') {
+								// datepicker calendar
+								$field_rendering_type = 'calendar';
+							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'file') {
+								// file upload (multiple files allowed)
+								$field_rendering_type = 'file';
+							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'text') {
+								// text
+								$field_rendering_type = 'text';
+							} else {
+								// custom pax-field type
+								$field_rendering_type = 'paxfield';
+							}
+
+							// the pax-field HTML string, if any
+							$pax_field_html = '';
+
+							// run pre-flight check to ensure the paxfield is compatible with the current guest
+							if ($field_rendering_type === 'paxfield') {
+								/**
+								 * Attempt to render a custom field previously installed through a third party plugin.
+								 * If no such field type is found, the object will default to the "text" type.
+								 * 
+								 * @since 	1.16.3 (J) - 1.6.3 (WP)
+								 */
+
+								// get an instance of the VBOCheckinPaxfield object
+								$pax_field_obj = $pax_fields_obj->getField($paxk);
+
+								// detect the current type of guest
+								$guest_type = $g > $arrpeople[$num]['adults'] ? 'child' : 'adult';
+
+								// set object data
+								$pax_field_obj->setGuestType($guest_type)
+									->setFieldNumber($pax_field_ind)
+									->setGuestNumber($g)
+									->setGuestData($current_guest)
+									->setRoomIndex($ind)
+									->setRoomGuests($arrpeople[$num]['adults'], $arrpeople[$num]['children'])
+									->setTotalRooms(count($arrpeople));
+
+								// render input field
+								$pax_field_html = $pax_fields_obj->render($pax_field_obj);
+								if (empty($pax_field_html)) {
+									// nothing to display, increase the counter and continue
+									$pax_field_ind++;
+									continue;
+								}
+							}
+
+							// open field container
 							?>
 							<div class="vbo-precheckin-guest-detail<?php echo isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'file' ? ' vbo-precheckin-guest-detail-files' : ''; ?>">
 								<label for="pax-field-<?php echo $paxv . '-' . $ind . '-' . $g . '-' . $paxk; ?>"><?php echo $paxv; ?></label>
 							<?php
-							if (isset($pax_fields_attributes[$paxk]) && is_array($pax_fields_attributes[$paxk])) {
-								// select with multiple choices
+
+							if ($field_rendering_type === 'paxfield') {
+								// render the custom pax-field input element
+
+								// access the implementor object
+								$implementor = $pax_fields_obj->getFieldTypeImplementor($pax_field_obj);
+
+								// check if a particular CSS class has been defined
+								$field_container_class = $implementor->getContainerClassAttr();
+								$field_container_class = !empty($field_container_class) ? " $field_container_class" : '';
+
+								// display the custom field type
+								?>
+								<div class="vbo-precheckin-custom-field<?php echo $field_container_class; ?>">
+									<?php echo $pax_field_html; ?>
+								</div>
+								<?php
+							} elseif ($field_rendering_type === 'select') {
+								// select with choices
 								?>
 								<select name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]">
 									<option></option>
@@ -188,15 +264,15 @@ JText::script('VBO_PRECHECKIN_TOAST_HELP');
 								?>
 								</select>
 								<?php
-							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'country') {
+							} elseif ($field_rendering_type === 'country') {
 								// field of type country
 								echo VikBooking::getCountriesSelect('guests['.$ind.']['.$g.']['.$paxk.']', $all_countries, (isset($current_guest[$paxk]) ? $current_guest[$paxk] : ''), $paxv);
-							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'calendar') {
-								// datepicker
+							} elseif ($field_rendering_type === 'calendar') {
+								// datepicker calendar
 								?>
 								<input type="text" autocomplete="off" data-gind="<?php echo $g; ?>" class="vbo-paxfield vbo-paxfield-datepicker" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]" value="<?php echo (isset($current_guest[$paxk]) ? $this->escape($current_guest[$paxk]) : ''); ?>" />
 								<?php
-							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'file') {
+							} elseif ($field_rendering_type === 'file') {
 								// file upload (multiple files allowed)
 								?>
 								<input type="hidden" id="vbo-paxfield-curfiles-<?php echo $ind . '-' . $g . '-' . $paxk; ?>" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]" value="<?php echo (isset($current_guest[$paxk]) ? $this->escape($current_guest[$paxk]) : ''); ?>" />
@@ -233,59 +309,19 @@ JText::script('VBO_PRECHECKIN_TOAST_HELP');
 								?>
 								</div>
 								<?php
-							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'text') {
+							} else {
 								// text
 								?>
 								<input type="text" autocomplete="off" data-gind="<?php echo $g; ?>" class="vbo-paxfield" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]" value="<?php echo (isset($current_guest[$paxk]) ? $this->escape($current_guest[$paxk]) : ''); ?>" />
 								<?php
-							} else {
-								/**
-								 * Attempt to render a custom field previously installed through a third party plugin.
-								 * If no such field type is found, the object will default to the "text" type.
-								 * 
-								 * @since 	1.16.3 (J) - 1.6.3 (WP)
-								 */
-
-								// get an instance of the VBOCheckinPaxfield object
-								$pax_field_obj = $pax_fields_obj->getField($paxk);
-
-								// detect the current type of guest
-								$guest_type = $g > $arrpeople[$num]['adults'] ? 'child' : 'adult';
-
-								// set object data
-								$pax_field_obj->setGuestType($guest_type)
-									->setFieldNumber($pax_field_ind)
-									->setGuestNumber($g)
-									->setGuestData($current_guest)
-									->setRoomIndex($ind)
-									->setRoomGuests($arrpeople[$num]['adults'], $arrpeople[$num]['children'])
-									->setTotalRooms(count($arrpeople));
-
-								// render input field
-								$pax_field_html = $pax_fields_obj->render($pax_field_obj);
-								if (empty($pax_field_html)) {
-									// nothing to display, increase the counter and continue
-									$pax_field_ind++;
-									continue;
-								}
-
-								// access the implementor object
-								$implementor = $pax_fields_obj->getFieldTypeImplementor($pax_field_obj);
-
-								// check if a particular CSS class has been defined
-								$field_container_class = $implementor->getContainerClassAttr();
-								$field_container_class = !empty($field_container_class) ? " $field_container_class" : '';
-
-								// display the custom field type
-								?>
-								<div class="vbo-precheckin-custom-field<?php echo $field_container_class; ?>">
-									<?php echo $pax_field_html; ?>
-								</div>
-								<?php
 							}
+
+							// close field container
 							?>
 							</div>
 							<?php
+
+							// increase field counter
 							$pax_field_ind++;
 						}
 						?>

@@ -3,7 +3,7 @@
 Plugin Name:  VikBooking
 Plugin URI:   https://vikwp.com/plugin/vikbooking
 Description:  Certified Booking Engine for Hotels and Accommodations.
-Version:      1.7.1
+Version:      1.7.2
 Author:       E4J s.r.l.
 Author URI:   https://vikwp.com
 License:      GPL2
@@ -600,10 +600,19 @@ add_action('vikbooking_cron_payments_scheduled', function()
 });
 
 /**
+ * Action used to register a periodic performance cleaning check.
+ * This hook will be called by a scheduled event in WP-Cron.
+ * 
+ * @since 	1.7.2
+ */
+add_action('vikbooking_cron_performance_cleaner', ['VBOPerformanceCleaner', 'runCheck']);
+
+/**
  * Install the scheduling of the hook within WP-Cron needed
  * to watch and process the automatic payments scheduled.
  * 
  * @since 	1.6.10
+ * @since 	1.7.2  registered "vikbooking_cron_performance_cleaner".
  */
 add_action('plugins_loaded', function()
 {
@@ -613,6 +622,13 @@ add_action('plugins_loaded', function()
 		// schedule event starting from the current time for "every half hour"
 		// such interval will be installed by VikBookingCron::setup()
 		wp_schedule_event(time(), 'half_hour', 'vikbooking_cron_payments_scheduled');
+	}
+
+	// make sure the cron event hasn't been yet scheduled.
+	if (!wp_next_scheduled('vikbooking_cron_performance_cleaner'))
+	{
+		// schedule event starting from the current time for "every week"
+		wp_schedule_event(time(), 'weekly', 'vikbooking_cron_performance_cleaner');
 	}
 }, (PHP_INT_MAX - 1));
 

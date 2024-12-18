@@ -402,7 +402,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 				$room_bookings = [];
 				while ($moncurts['mon'] == $mon) {
 					// init cell values
-					$dclass = 'vbo-overv-avcell ' . (!$is_subunit ? "notbusy" : "subnotbusy");
+					$dclass = 'vbo-grid-avcell vbo-overv-avcell ' . (!$is_subunit ? "notbusy" : "subnotbusy");
 					$is_checkin = false;
 					$is_sharedcal = false;
 					$is_closure = false;
@@ -432,7 +432,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 								// booking does not involve the current day
 								continue;
 							}
-							$dclass = "vbo-overv-avcell busy";
+							$dclass = "vbo-grid-avcell vbo-overv-avcell busy";
 							$bid = $b['idorder'];
 							$is_sharedcal = !empty($b['sharedcal']) ? true : $is_sharedcal;
 							$is_closure = !empty($b['closure']) ? true : $is_closure;
@@ -540,7 +540,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 							if (in_array($bid, $rooms_features_bookings[$room['id']][$room['unit_index']])) {
 								$room['units'] = 1;
 								$totfound = 1;
-								$dclass = "vbo-overv-avcell subroom-busy";
+								$dclass = "vbo-grid-avcell vbo-overv-avcell subroom-busy";
 								$is_checkin = isset($bids_checkins[$bid]) && $bids_checkins[$bid] == $cur_day_key ? true : $is_checkin;
 								break;
 							}

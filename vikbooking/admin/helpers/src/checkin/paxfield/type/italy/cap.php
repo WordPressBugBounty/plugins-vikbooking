@@ -45,9 +45,12 @@ final class VBOCheckinPaxfieldTypeItalyCap extends VBOCheckinPaxfieldType
 		// get the field value attribute
 		$value = htmlspecialchars($this->getFieldValueAttr());
 
+		// placeholder label
+		$plch_lbl = '(' . htmlspecialchars(JText::translate('VBO_OPTIONAL')) . ')';
+
 		// compose HTML content for the field
 		$field_html = <<<HTML
-<input id="$field_id" type="text" autocomplete="off" placeholder="(Opzionale)" data-gind="$guest_number" class="$pax_field_class" name="$name" value="$value" />
+<input id="$field_id" type="text" autocomplete="off" placeholder="$plch_lbl" data-gind="$guest_number" class="$pax_field_class" name="$name" value="$value" />
 HTML;
 
 		// return the necessary HTML string to display the field

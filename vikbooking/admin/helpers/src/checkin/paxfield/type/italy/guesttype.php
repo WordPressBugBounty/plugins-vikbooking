@@ -23,29 +23,29 @@ final class VBOCheckinPaxfieldTypeItalyGuesttype extends VBOCheckinPaxfieldType
 	 * 
 	 * @var 	array
 	 */
-	private $single_guest = array(
+	private $single_guest = [
 		'16' => 'Ospite Singolo',
-	);
+	];
 
 	/**
 	 * The choices available for the first multi-guest.
 	 * 
 	 * @var 	array
 	 */
-	private $first_multi_guest = array(
+	private $first_multi_guest = [
 		'17' => 'Capo Famiglia',
 		'18' => 'Capo Gruppo',
-	);
+	];
 
 	/**
 	 * The choices available for the Nth multi-guest.
 	 * 
 	 * @var 	array
 	 */
-	private $nth_multi_guest = array(
+	private $nth_multi_guest = [
 		'19' => 'Familiare',
 		'20' => 'Membro Gruppo',
-	);
+	];
 
 	/**
 	 * The container of this field should have a precise class.
@@ -61,6 +61,19 @@ final class VBOCheckinPaxfieldTypeItalyGuesttype extends VBOCheckinPaxfieldType
 	 */
 	public function render()
 	{
+		// translate language definitions
+		$this->single_guest = [
+			'16' => JText::translate('VBO_SINGLE_GUEST'),
+		];
+		$this->first_multi_guest = [
+			'17' => JText::translate('VBO_FAMILY_HEAD'),
+			'18' => JText::translate('VBO_GROUP_HEAD'),
+		];
+		$this->nth_multi_guest = [
+			'19' => JText::translate('VBO_FAMILY_MEMBER'),
+			'20' => JText::translate('VBO_GROUP_MEMBER'),
+		];
+
 		// get the field unique ID
 		$field_id = $this->getFieldIdAttr();
 

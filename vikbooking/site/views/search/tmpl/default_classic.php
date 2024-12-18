@@ -24,7 +24,9 @@ $pitemid = VikRequest::getInt('Itemid', '', 'request');
 if (VikBooking::interactiveMapEnabled()) {
 	echo $this->loadTemplate('interactive_map');
 }
-//
+
+// whether to use links to room details
+$link_to_details = VBOFactory::getConfig()->getBool('search_link_roomdetails', false);
 
 ?>
 <div class="vbo-searchresults-classic-wrap">
@@ -47,11 +49,10 @@ foreach ($this->res as $indroom => $rooms) {
 		$has_promotion = array_key_exists('promotion', $room[0]) ? true : false;
 		$maindivclass = $rdiffusage ? "room_resultdiffusage" : "room_result";
 		$carats = VikBooking::getRoomCaratOriz($room[0]['idcarat'], $this->vbo_tn);
-		/**
-		 * @wponly 	we try to parse any shortcode inside the short description of the room
-		 */
-		$room[0]['smalldesc'] = do_shortcode($room[0]['smalldesc']);
-		//
+
+		// prepare CMS contents depending on platform
+		$room[0] = VBORoomHelper::getInstance()->prepareCMSContents($room[0], ['smalldesc']);
+
 		$saylastavail = false;
 		$showlastavail = (int)VikBooking::getRoomParam('lastavail', $room[0]['params']);
 		if (!empty($showlastavail) && $showlastavail > 0) {
@@ -66,18 +67,35 @@ foreach ($this->res as $indroom => $rooms) {
 		 * 
 		 * @since 	1.14 (J) - 1.4.0 (WP)
 		 */
-		$gallery_data = array();
+		$gallery_data = [];
 		if (!empty($room[0]['moreimgs'])) {
 			$moreimages = explode(';;', $room[0]['moreimgs']);
-			foreach ($moreimages as $mimg) {
-				if (empty($mimg)) {
-					continue;
-				}
+			foreach (array_filter($moreimages) as $mimg) {
 				// push thumb URL
-				array_push($gallery_data, $mimg);
+				$gallery_data[] = $mimg;
 			}
 		}
-		//
+
+		// build listing details URI components
+		$listing_uri_data = [
+			'option'       => 'com_vikbooking',
+			'view'         => 'roomdetails',
+			'roomid'       => $room[0]['idroom'],
+			'start_date'   => date('Y-m-d', $this->checkin),
+			'end_date'     => date('Y-m-d', $this->checkout),
+			'num_adults'   => $this->arrpeople[$indroom]['adults'],
+			'num_children' => $this->arrpeople[$indroom]['children'],
+			'Itemid'       => ($pitemid ?: null),
+		];
+		// route proper URI
+		$listing_page_uri = JRoute::rewrite('index.php?' . http_build_query($listing_uri_data), false);
+
+		// use link to listing details page or plain text
+		$main_listing_elem = $room[0]['name'];
+		if ($link_to_details) {
+			// embed HTML link
+			$main_listing_elem = '<a class="vbo-search-results-listing-link" href="' . $listing_page_uri . '" target="_blank">' . $room[0]['name'] . '</a>';
+		}
 		?>
 		<div class="room_item <?php echo $maindivclass; ?><?php echo $has_promotion === true ? ' vbo-promotion-price' : ''; ?>" id="vbcontainer<?php echo $indroom.'_'.$room[0]['idroom']; ?>">
 			<div class="vblistroomblock">
@@ -99,7 +117,7 @@ foreach ($this->res as $indroom => $rooms) {
 				</div>
 				<div class="vbo-info-room">
 					<div class="vbdescrlistdiv">
-						<h4 class="vbrowcname" id="vbroomname<?php echo $indroom.'_'.$room[0]['idroom']; ?>"><?php echo $room[0]['name']; ?></h4>
+						<h4 class="vbrowcname" id="vbroomname<?php echo $indroom.'_'.$room[0]['idroom']; ?>"><?php echo $main_listing_elem; ?></h4>
 						<div class="vbrowcdescr"><?php echo $room[0]['smalldesc']; ?></div>
 					</div>
 				<?php
@@ -200,11 +218,126 @@ foreach ($this->res as $indroom => $rooms) {
 		<?php
 	}
 }
+
+/**
+ * Unavailable listings.
+ * 
+ * @since 	1.17.2 (J) - 1.7.2 (WP)
+ * @todo
+ */
+if ($this->roomsnum === 1 && $this->unavailable_listings && VBOFactory::getConfig()->getBool('search_show_busy_listings', false)) {
+	foreach ($this->unavailable_listings as $listing_id) {
+		// fetch the room details
+		$listing_details = [VikBooking::getRoomInfo($listing_id)];
+		if (!$listing_details[0]) {
+			continue;
+		}
+
+		// translate records list
+		$this->vbo_tn->translateContents($listing_details, '#__vikbooking_rooms');
+
+		// convert list into associative
+		$listing_details = $listing_details[0];
+
+		// prepare CMS contents depending on platform
+		$listing_details = VBORoomHelper::getInstance()->prepareCMSContents($listing_details, ['smalldesc']);
+
+		// build listing details URI components
+		$listing_uri_data = [
+			'option'       => 'com_vikbooking',
+			'view'         => 'roomdetails',
+			'roomid'       => $listing_details['id'],
+			'num_adults'   => ($this->arrpeople[1]['adults'] ?? 2),
+			'num_children' => ($this->arrpeople[1]['children'] ?? 0),
+			'Itemid'       => ($pitemid ?: null),
+		];
+		// route proper URI
+		$listing_page_uri = JRoute::rewrite('index.php?' . http_build_query($listing_uri_data), false);
+
+		// listing amenities
+		$carats = VikBooking::getRoomCaratOriz($listing_details['idcarat'], $this->vbo_tn);
+
+		// build image gallery, if available
+		$gallery_data = [];
+		if (!empty($listing_details['moreimgs'])) {
+			$moreimages = explode(';;', $listing_details['moreimgs']);
+			foreach (array_filter($moreimages) as $mimg) {
+				// push thumb URL
+				$gallery_data[] = $mimg;
+			}
+		}
+
+		// print unavailable listing details
+		?>
+		<div class="room_item room_result vbo-result-listing-unavailable" data-unavailable-id="<?php echo $listing_details['id']; ?>">
+			<div class="vblistroomblock">
+				<div class="vbimglistdiv">
+					<div class="vbo-dots-slider-selector">
+						<a href="<?php echo $listing_page_uri; ?>" target="_blank" data-gallery="<?php echo implode('|', $gallery_data); ?>">
+						<?php
+						if (!empty($listing_details['img']) && is_file(VBO_SITE_PATH . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $listing_details['img'])) {
+							?>
+							<img class="vblistimg" alt="<?php echo htmlspecialchars($listing_details['name']); ?>" src="<?php echo VBO_SITE_URI; ?>resources/uploads/<?php echo $listing_details['img']; ?>"/>
+							<?php
+						}
+						?>
+						</a>
+					</div>
+					<div class="vbmodalrdetails">
+						<a href="<?php echo $listing_page_uri; ?>" target="_blank"><?php VikBookingIcons::e('plus'); ?></a>
+					</div>
+				</div>
+				<div class="vbo-info-room">
+					<div class="vbdescrlistdiv">
+						<h4 class="vbrowcname"><a class="vbo-search-results-listing-link" href="<?php echo $listing_page_uri; ?>" target="_blank"><?php echo $listing_details['name']; ?></a></h4>
+						<div class="vbrowcdescr"><?php echo $listing_details['smalldesc']; ?></div>
+					</div>
+				<?php
+				if (!empty($carats)) {
+					?>
+					<div class="roomlist_carats">
+						<?php echo $carats; ?>
+					</div>
+					<?php
+				}
+				?>
+					<div class="vbo-unavailable-block">
+						<div class="vbo-unavailable-icon"><?php VikBookingIcons::e('ban'); ?></div>
+						<div class="vbo-unavailable-description"><?php echo JText::translate('VBLEGBUSY'); ?></div>
+					</div>
+				</div>
+			</div>
+			<div class="vbcontdivtot">
+				<div class="vbdivtot">
+					<div class="vbdivtotinline">
+						<div class="vbsrowprice">
+							<div class="vbrowroomcapacity">
+							<?php
+							for ($i = 1; $i <= $listing_details['toadult']; $i++) {
+								if ($i <= ($this->arrpeople[1]['adults'] ?? 2)) {
+									VikBookingIcons::e('male', 'vbo-pref-color-text');
+								} else {
+									VikBookingIcons::e('male', 'vbo-empty-personicn');
+								}
+							}
+							?>
+							</div>
+						</div>
+						<div class="vbselectordiv">
+							<a class="btn vbselectr-result vbo-result-unavailable vbo-pref-color-btn" href="<?php echo $listing_page_uri; ?>" target="_blank"><?php echo JText::translate('VBSEARCHRESDETAILS'); ?></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+}
 ?>
 </div>
 
 <script type="text/javascript">
-	jQuery(document).ready(function() {
+	jQuery(function() {
 		jQuery('.vbo-dots-slider-selector').each(function() {
 			var sliderLink = jQuery(this).find('a').first();
 			if (!sliderLink.length) {
@@ -239,13 +372,22 @@ foreach ($this->res as $indroom => $rooms) {
 				navButNextContent: '<?php VikBookingIcons::e('chevron-right'); ?>',
 				onDisplaySlide: function() {
 					var content = jQuery(this).children().clone(true, true);
+				<?php
+				if (VBOPlatformDetection::isWordPress()) {
 					/**
 					 * @wponly 	In order to avoid delays with Fancybox, we do not re-construct the A tag.
 					 * 			We just append the slide image.
-					 * var link = jQuery('<a target="_blank"></a>').attr('href', slideWrap.attr('href')).attr('class', slideWrap.attr('class')).append(content);
-					 * jQuery(this).html('').append(link);
 					 */
+					?>
 					jQuery(this).html('').append(content);
+					<?php
+				} else {
+					?>
+					var link = jQuery('<a target="_blank"></a>').attr('href', slideWrap.attr('href')).attr('class', slideWrap.attr('class')).append(content);
+					jQuery(this).html('').append(link);
+					<?php
+				}
+				?>
 				}
 			});
 		});

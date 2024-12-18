@@ -58,6 +58,16 @@ class JWidget extends WP_Widget
 	protected $registered = false;
 
 	/**
+	 * An incremental counter to make sure the used ID is always unique,
+	 * since Gutenberg seems to always use the number ID for the widgets
+	 * published under the same page.
+	 * 
+	 * @var int
+	 * @since 10.1.59
+	 */
+	protected static $incrementalCounter = 0;
+
+	/**
 	 * Class constructor.
 	 *
 	 * @param 	string 	$path  The widget absolute path.
@@ -184,7 +194,7 @@ class JWidget extends WP_Widget
 		 * @since 10.1.30
 		 */
 		$module = new stdClass;
-		$module->id = $this->number;
+		$module->id = ++static::$incrementalCounter;
 
 		/**
 		 * Plugins can manipulate the configuration of the widget at runtime.
@@ -874,7 +884,7 @@ JS
 			'render_callback' => function($config) {
 				// prepare widget arguments
 				$args = [
-					'before_widget' => '<div class="widget widget_' . $this->_id . '" id="' . $this->_id . '_' . $this->number . '">',
+					'before_widget' => '<div class="widget widget_' . $this->_id . '" id="' . $this->_id . '_' . (++static::$incrementalCounter) . '">',
 					'before_title'  => '<h3 class="widget-title">',
 					'after_title'   => '</h3>',
 					'after_widget'  => '</div>',

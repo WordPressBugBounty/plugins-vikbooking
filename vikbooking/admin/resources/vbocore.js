@@ -1,5 +1,5 @@
 /**
- * VikBooking Core v1.7.0
+ * VikBooking Core v1.7.2
  * Copyright (C) 2024 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -3039,6 +3039,17 @@
 
 			return menu_actions;
 		}
+
+		/**
+		 * Proxy to access the VBOCurrency object.
+		 * 
+		 * @param 	object 	options The currency options.
+		 * 
+		 * @return 	VBOCurrency	
+		 */
+		static getCurrency(options) {
+			return VBOCurrency.getInstance(options);
+		}
 	}
 
 	/**
@@ -3202,6 +3213,211 @@
 		}
 
 		return ok;
+	}
+
+	w['VBOCurrency'] = class VBOCurrency {
+		/**
+		 * Singleton entry-point.
+		 * 
+		 * @see construct()
+		 */
+		static getInstance(options) {
+			if (typeof VBOCurrency.instance === 'undefined') {
+				VBOCurrency.instance = new VBOCurrency(options);
+			}
+
+			return VBOCurrency.instance;
+		}
+
+		/**
+		 * Class constructor.
+		 * 
+		 * @param  object  options  The currency options object:
+		 *                          - symbol           string  The currency symbol (such as €, $, £ and so on).
+		 *                          - position         int     The position of the currency (1 before, 2 after). In case the amount is negative
+		 *                                                     the space between the currency and the amount won't be used.
+		 *                          - decimals         string  The decimals separator character ("." or ",").
+		 *                          - thousands        string  The thousands separator character ("," or ".").
+		 *                          - digits           int     The number of decimal digits.
+		 *                          - noDecimals       int     Whether empty decimals should be omitted (1 true, 0 false).
+		 *                          - conversionRate   float   The currency conversion rate.
+		 */
+		constructor(options) {
+			this.setOptions(options);
+		}
+
+		/**
+		 * Sets the currency options.
+		 * 
+		 * @param  object  options  The currency options object.
+		 * 
+		 * @see    construct()
+		 */
+		setOptions(options) {
+			if (options === undefined) {
+				options = {};
+			}
+
+			// define default currency options for eventually merging with new options
+			let def_symbol      = this.symbol !== undefined ? this.symbol : '$';
+			let def_position    = this.position !== undefined ? this.position : 1;
+			let def_decimals    = this.decimals !== undefined ? this.decimals : '.';
+			let def_thousands   = this.thousands !== undefined ? this.thousands : ',';
+			let def_digits      = this.digits !== undefined ? this.digits : 2;
+			let def_no_decimals = this.noDecimals !== undefined ? this.noDecimals : 1;
+			let def_conv_rate   = this.conversionRate !== undefined ? this.conversionRate : 1;
+
+			// set currency options
+			this.symbol      = (options.hasOwnProperty('symbol')      ? options.symbol    : def_symbol);
+			this.position    = (options.hasOwnProperty('position')    ? options.position  : def_position);
+			this.decimals    = (options.hasOwnProperty('decimals')    ? options.decimals  : def_decimals);
+			this.thousands   = (options.hasOwnProperty('thousands')   ? options.thousands : def_thousands);
+			this.digits      = (options.hasOwnProperty('digits')      ? parseInt(options.digits) : def_digits);
+			this.noDecimals  = (options.hasOwnProperty('noDecimals')  ? parseInt(options.noDecimals) : def_no_decimals);
+			this.conversionRate = Math.abs((options.hasOwnProperty('conversionRate') ? parseFloat(options.conversionRate) : 1));
+		}
+
+		/**
+		 * Gets the current currency options.
+		 * 
+		 * @return 	object
+		 */
+		getOptions() {
+			let options = {};
+
+			Object.keys(this).forEach((option) => {
+				if (this.hasOwnProperty(option)) {
+					options[option] = this[option];
+				}
+			});
+
+			return options;
+		}
+
+		/**
+		 * Formats the given price according to the configuration preferences.
+		 * 
+		 * @param   float   price    The price to format.
+		 * @param   object  options  Temporarily overrides the currency options.
+		 * 
+		 * @return  string  The formatted price.
+		 */
+		format(price, options) {
+			// merge currency settings
+			options = Object.assign(this.getOptions(), (options || {}));
+
+			let no_decimals = options.noDecimals;
+			let dig = options.digits;
+
+			if (no_decimals && parseInt(price) == price) {
+				// no decimal digits in case of empty decimals
+				dig = 0;
+			}
+
+			price = parseFloat(price) / options.conversionRate;
+
+			// check whether the price is negative
+			const isNegative = price < 0;
+
+			// adjust to given decimals
+			price = Math.abs(price).toFixed(dig);
+
+			let _d = options.decimals;
+			let _t = options.thousands;
+
+			// make sure the decimal separator is a valid character
+			if (!_d.match(/[.,\s]/)) {
+				// revert to default one
+				_d = '.';
+			}
+
+			// make sure the thousands separator is a valid character
+			if (!_t.match(/[.,\s]/)) {
+				// revert to default one
+				_t = ',';
+			}
+
+			// make sure both the separators are not equals
+			if (_d == _t) {
+				_t = _d == ',' ? '.' : ',';
+			}
+
+			price = price.split('.');
+
+			price[0] = price[0].replace(/./g, function(c, i, a) {
+				return i > 0 && (a.length - i) % 3 === 0 ? _t + c : c;
+			});
+
+			if (isNegative) {
+				// re-add negative sign
+				price[0] = '-' + price[0];
+			}
+
+			if (price.length > 1) {
+				price = price[0] + _d + price[1];
+			} else {
+				price = price[0];
+			}
+
+			if (Math.abs(options.position) == 1) {
+				// do not use space in case the position is "-1"
+				return options.symbol + (options.position == 1 ? ' ' : '') + price;
+			}
+
+			// do not use space in case the position is "-2"
+			return price + (options.position == 2 ? ' ' : '') + options.symbol;
+		}
+
+		/**
+		 * Safely sums 2 prices (a + b).
+		 * 
+		 * @param   float  a
+		 * @param   float  b
+		 * 
+		 * @return  The resulting sum.
+		 */
+		sum(a, b) {
+			// get rid of decimals for higher precision
+			a *= Math.pow(10, this.digits);
+			b *= Math.pow(10, this.digits);
+
+			// do sum and go back to decimal
+			return (Math.round(a) + Math.round(b)) / Math.pow(10, this.digits);
+		}
+
+		/**
+		 * Safely subtracts 2 prices (a - b).
+		 * 
+		 * @param   float  a
+		 * @param   float  b
+		 * 
+		 * @return  The resulting difference.
+		 */
+		diff(a, b) {
+			// get rid of decimals for higher precision
+			a *= Math.pow(10, this.digits);
+			b *= Math.pow(10, this.digits);
+
+			// do difference and go back to decimal
+			return (Math.round(a) - Math.round(b)) / Math.pow(10, this.digits);
+		}
+
+		/**
+		 * Safely multiplies 2 prices (a * b).
+		 * 
+		 * @param   float  a
+		 * @param   float  b
+		 * 
+		 * @return  The resulting multiplication.
+		 */
+		multiply(a, b) {
+			// get rid of decimals for higher precision
+			a *= Math.pow(10, this.digits);
+			b *= Math.pow(10, this.digits);
+
+			// do multiplication and go back to decimal
+			return (Math.round(a) * Math.round(b)) / Math.pow(10, this.digits * 2);
+		}
 	}
 
 })(jQuery, window);

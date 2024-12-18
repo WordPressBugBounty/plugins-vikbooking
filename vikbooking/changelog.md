@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.2
+
+*Release date - 18 December 2024*
+
+- Custom OTA pricing overrides in Rates Overview.
+- New default PMS Reports.
+- New options/extras of type late check-out/early check-in.
+- Various AI framework improvements.
+- New front-end search settings to display unavailable rooms.
+
 ## 1.7.1
 
 *Release date - 12 November 2024*

@@ -113,6 +113,10 @@ HTML;
 		$set_value  = (!empty($value) ? 1 : 0);
 		$json_value = json_encode(($set_value ? [$value] : []));
 
+		// build select2 placeholder label
+		$italy_country_name = strtolower(substr(JFactory::getLanguage()->getTag(), 0, 2)) === 'it' ? 'Italia' : 'Italy';
+		$plch_lbl = addslashes(JText::sprintf('VBO_ONLY_IF_COUNTRY_EQ', $italy_country_name));
+
 		// append select2 JS script for rendering the field
 		$field_html .= <<<HTML
 <script>
@@ -121,7 +125,7 @@ HTML;
 		jQuery("#$field_id").select2({
 			data: vbo_comuni_province_json,
 			width: "100%",
-			placeholder: "Solo se stato = Italia",
+			placeholder: "$plch_lbl",
 			allowClear: true
 		});
 
@@ -149,7 +153,7 @@ HTML;
 		// call the same method on the collector instance
 		$com_prov = $this->callCollector(__FUNCTION__);
 
-		return is_array($com_prov) ? $com_prov : array();
+		return is_array($com_prov) ? $com_prov : [];
 	}
 
 	/**

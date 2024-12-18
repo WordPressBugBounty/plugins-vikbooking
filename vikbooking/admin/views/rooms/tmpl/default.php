@@ -246,7 +246,7 @@ if (empty($rows)) {
 					// build readable channel name
 					$raw_ch_name  = $source;
 					$lower_name   = strtolower($raw_ch_name);
-					$lower_name   = preg_replace("/hotel$/", ' hotel', $lower_name);
+					$lower_name   = preg_replace("/(hotel|vr)$/", ' $1', $lower_name);
 					$channel_name = ucwords(preg_replace("/api$/", '', $lower_name));
 					// build OTA account attributes
 					$ota_account_attributes = [];

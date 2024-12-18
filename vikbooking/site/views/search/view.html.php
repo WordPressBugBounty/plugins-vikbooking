@@ -31,10 +31,10 @@ class VikbookingViewSearch extends JViewVikBooking
 			$proomsnum = VikRequest::getInt('roomsnum', '', 'request');
 			$proomsnum = $proomsnum < 1 ? 1 : $proomsnum;
 			$showchildren = VikBooking::showChildrenFront();
-			$padults = VikRequest::getVar('adults', array());
-			$pchildren = VikRequest::getVar('children', array());
+			$padults = VikRequest::getVar('adults', []);
+			$pchildren = VikRequest::getVar('children', []);
 			$ppkg_id = VikRequest::getInt('pkg_id', '', 'request');
-			$pcategory_ids = VikRequest::getVar('category_ids', array());
+			$pcategory_ids = VikRequest::getVar('category_ids', []);
 			$nowdf = VikBooking::getDateFormat();
 			if ($nowdf == "%d/%m/%Y") {
 				$df = 'd/m/Y';
@@ -59,10 +59,10 @@ class VikbookingViewSearch extends JViewVikBooking
 			$ch_num_children = VikRequest::getInt('num_children', '', 'request');
 			if (!empty($ch_start_date) && !empty($ch_end_date)) {
 				if (!empty($ch_num_adults) && $ch_num_adults > 0) {
-					$padults = array(0 => $ch_num_adults);
+					$padults = [$ch_num_adults];
 				}
 				if (!empty($ch_num_children) && $ch_num_children > 0) {
-					$pchildren = array(0 => $ch_num_children);
+					$pchildren = [$ch_num_children];
 				}
 				if ($ch_start_date_ts = strtotime($ch_start_date)) {
 					if ($ch_end_date_ts = strtotime($ch_end_date)) {
@@ -99,12 +99,19 @@ class VikbookingViewSearch extends JViewVikBooking
 			 * @since 	1.14.3 (J) - 1.4.3 (WP)
 			 */
 			$booking_suggestion = VikRequest::getInt('suggestion', 0, 'request');
-			//
 
-			$arradultsrooms = array();
-			$arradultsclause = array();
-			$arrpeople = array();
-			if (count($padults) > 0) {
+			/**
+			 * It is possible to display some listings as unavailable in case they are fully booked.
+			 * If enabled, the unavailable listings will be displayed as long as some are available.
+			 * 
+			 * @since 	1.17.2 (J) - 1.7.2 (WP)
+			 */
+			$unavailable_listings = [];
+
+			$arradultsrooms = [];
+			$arradultsclause = [];
+			$arrpeople = [];
+			if ($padults) {
 				foreach ($padults as $kad => $adu) {
 					$roomnumb = $kad + 1;
 					if (strlen($adu)) {
@@ -113,7 +120,7 @@ class VikbookingViewSearch extends JViewVikBooking
 							$arradultsrooms[$roomnumb] = $numadults;
 							$arrpeople[$roomnumb]['adults'] = $numadults;
 							// build capacity requirement clauses
-							$room_requirements = array();
+							$room_requirements = [];
 							if (!$booking_suggestion) {
 								array_push($room_requirements, "`r`.`fromadult`<=" . $numadults);
 							}
@@ -145,10 +152,10 @@ class VikbookingViewSearch extends JViewVikBooking
 			}
 
 			//VBO 1.10 - Modify booking
-			$mod_booking = array();
-			$skip_busy_ids = array();
+			$mod_booking = [];
+			$skip_busy_ids = [];
 			$cur_mod = $session->get('vboModBooking', '');
-			if (is_array($cur_mod) && count($cur_mod)) {
+			if (is_array($cur_mod) && $cur_mod) {
 				$mod_booking = $cur_mod;
 				$skip_busy_ids = VikBooking::loadBookingBusyIds($mod_booking['id']);
 			}
@@ -198,12 +205,12 @@ class VikbookingViewSearch extends JViewVikBooking
 						$restrictionsvalid = true;
 						$restrictions_affcount = 0;
 						$restrictionerrmsg = '';
-						if (count($restrictions) > 0) {
+						if ($restrictions) {
 							if (array_key_exists($restrcheckin['mon'], $restrictions)) {
 								//restriction found for this month, checking:
 								$restrictions_affcount++;
 								if (strlen((string)$restrictions[$restrcheckin['mon']]['wday'])) {
-									$rvalidwdays = array($restrictions[$restrcheckin['mon']]['wday']);
+									$rvalidwdays = [$restrictions[$restrcheckin['mon']]['wday']];
 									if (strlen((string)$restrictions[$restrcheckin['mon']]['wdaytwo'])) {
 										$rvalidwdays[] = $restrictions[$restrcheckin['mon']]['wdaytwo'];
 									}
@@ -217,7 +224,7 @@ class VikbookingViewSearch extends JViewVikBooking
 										}
 									}
 									$comborestr = VikBooking::parseJsDrangeWdayCombo($restrictions[$restrcheckin['mon']]);
-									if (count($comborestr) > 0) {
+									if ($comborestr) {
 										if (array_key_exists($restrcheckin['wday'], $comborestr)) {
 											if (!in_array($restrcheckout['wday'], $comborestr[$restrcheckin['wday']])) {
 												$restrictionsvalid = false;
@@ -258,10 +265,10 @@ class VikbookingViewSearch extends JViewVikBooking
 								 * 
 								 * @since 	1.13.5 (J) - 1.3.6 (WP)
 								 */
-								$minlos_priority = array(
-									'ok'  => array(),
-									'nok' => array()
-								);
+								$minlos_priority = [
+									'ok'  => [],
+									'nok' => [],
+								];
 								//
 								foreach ($restrictions['range'] as $restr) {
 									/**
@@ -277,7 +284,7 @@ class VikbookingViewSearch extends JViewVikBooking
 										// restriction found for this date range based on arrival date, check if compliant
 										$restrictions_affcount++;
 										if (strlen((string)$restr['wday'])) {
-											$rvalidwdays = array($restr['wday']);
+											$rvalidwdays = [$restr['wday']];
 											if (strlen((string)$restr['wdaytwo'])) {
 												$rvalidwdays[] = $restr['wdaytwo'];
 											}
@@ -347,7 +354,7 @@ class VikbookingViewSearch extends JViewVikBooking
 								 * 
 								 * @since 	1.13.5 (J) - 1.3.6 (WP)
 								 */
-								if (!$restrictionsvalid && count($minlos_priority['ok']) && count($minlos_priority['nok']) && max($minlos_priority['ok']) > max($minlos_priority['nok'])) {
+								if (!$restrictionsvalid && $minlos_priority['ok'] && $minlos_priority['nok'] && max($minlos_priority['ok']) > max($minlos_priority['nok'])) {
 									// we unset the error message and we reset the validity because a more recent restriction is allowing this MinLOS
 									$restrictionsvalid = true;
 									$restrictionerrmsg = '';
@@ -361,11 +368,11 @@ class VikbookingViewSearch extends JViewVikBooking
 						 * way we apply the default Min LOS only when there are no restrictions at all. We are
 						 * also ignoring if some restrictions were applied. This is the previous IF statement:
 						 * 
-						 * if (!count($restrictions) || $restrictions_affcount <= 0) {
+						 * if (!$restrictions || $restrictions_affcount <= 0) {
 						 * 
 						 * @since 	1.15.0 (J) - 1.5.0 (WP)
 						 */
-						if (!count($allrestrictions)) {
+						if (!$allrestrictions) {
 							// check global MinLOS (only in case there are no restrictions affecting these dates or no restrictions at all)
 							$globminlos = VikBooking::getDefaultNightsCalendar();
 							if ($globminlos > 1 && $daysdiff < $globminlos) {
@@ -376,7 +383,7 @@ class VikbookingViewSearch extends JViewVikBooking
 						//VBO 1.9 - check if we are coming from a package to not consider the global restrictions for the standard booking procedure
 						if (!empty($ppkg_id)) {
 							$pkg = VikBooking::getPackage($ppkg_id);
-							if (count($pkg)) {
+							if ($pkg) {
 								//the package exists so we let the next view perform the validation of the package criteria (MinLOS, MaxLOS etc..).
 								$restrictionsvalid = true;
 								$restrictionerrmsg = '';
@@ -410,14 +417,14 @@ class VikbookingViewSearch extends JViewVikBooking
 							$dbo->setQuery($q);
 							$tars = $dbo->loadAssocList();
 							if ($tars) {
-								$vbo_tn->translateContents($tars, '#__vikbooking_rooms', array('id' => 'r_reference_id'));
-								$arrtar = array();
+								$vbo_tn->translateContents($tars, '#__vikbooking_rooms', ['id' => 'r_reference_id']);
+								$arrtar = [];
 								foreach ($tars as $tar) {
 									$arrtar[$tar['idroom']][] = $tar;
 								}
 								//Closed rate plans on these dates
 								$roomrpclosed = VikBooking::getRoomRplansClosedInDates(array_keys($arrtar), $first, $daysdiff);
-								if (count($roomrpclosed) > 0) {
+								if ($roomrpclosed) {
 									foreach ($arrtar as $kk => $tt) {
 										if (array_key_exists($kk, $roomrpclosed)) {
 											foreach ($tt as $tk => $tv) {
@@ -425,7 +432,7 @@ class VikbookingViewSearch extends JViewVikBooking
 													unset($arrtar[$kk][$tk]);
 												}
 											}
-											if (!(count($arrtar[$kk]) > 0)) {
+											if (!$arrtar[$kk]) {
 												unset($arrtar[$kk]);
 											} else {
 												$arrtar[$kk] = array_values($arrtar[$kk]);
@@ -443,7 +450,7 @@ class VikbookingViewSearch extends JViewVikBooking
 											unset($arrtar[$kk][$tk]);
 										}
 									}
-									if (!(count($arrtar[$kk]) > 0)) {
+									if (!$arrtar[$kk]) {
 										unset($arrtar[$kk]);
 									} else {
 										$arrtar[$kk] = array_values($arrtar[$kk]);
@@ -451,7 +458,7 @@ class VikbookingViewSearch extends JViewVikBooking
 								}
 								//
 								$filtercat = (!empty($pcategories) && $pcategories != "all");
-								$filtermulticat = (is_array($pcategory_ids) && count($pcategory_ids));
+								$filtermulticat = (is_array($pcategory_ids) && $pcategory_ids);
 								//vikbooking 1.1
 								$groupdays = VikBooking::getGroupDays($first, $second, $daysdiff);
 								$morehst = VikBooking::getHoursRoomAvail() * 3600;
@@ -500,6 +507,8 @@ class VikbookingViewSearch extends JViewVikBooking
 												}
 											}
 											if ($bfound >= $tt[0]['units']) {
+												// listing is fully booked
+												$unavailable_listings[] = $kk;
 												unset($arrtar[$kk]);
 												break;
 											} else {
@@ -550,14 +559,14 @@ class VikbookingViewSearch extends JViewVikBooking
 									// single room restrictions
 									if (isset($arrtar[$kk]) && $allrestrictions) {
 										$roomrestr = VikBooking::roomRestrictions($kk, $allrestrictions);
-										if (count($roomrestr) > 0) {
+										if ($roomrestr) {
 											$restrictionerrmsg = VikBooking::validateRoomRestriction($roomrestr, $restrcheckin, $restrcheckout, $daysdiff);
 											if (strlen($restrictionerrmsg) > 0) {
 												//VBO 1.9 - check if we are coming from a package to not consider the restrictions for the standard booking procedure
 												$canunset = true;
 												if (!empty($ppkg_id)) {
 													$pkg = VikBooking::getPackage($ppkg_id);
-													if (count($pkg)) {
+													if ($pkg) {
 														//the package exists so we let the next view perform the validation of the package criterai (MinLOS, MaxLOS etc..).
 														$canunset = false;
 													}
@@ -598,7 +607,7 @@ class VikbookingViewSearch extends JViewVikBooking
 									}
 									if ($multi_rates > 1) {
 										for ($r = 1; $r < $multi_rates; $r++) {
-											$deeper_rates = array();
+											$deeper_rates = [];
 											foreach ($arrtar as $idr => $tars) {
 												foreach ($tars as $tk => $tar) {
 													if ($tk == $r) {
@@ -623,11 +632,11 @@ class VikbookingViewSearch extends JViewVikBooking
 
 									// separate results per number of rooms with $results
 									$tmparrtar = $arrtar;
-									$results = array();
-									$multiroomcount = array();
+									$results = [];
+									$multiroomcount = [];
 									foreach ($arrpeople as $numroom => $aduchild) {
 										$arrtar = $tmparrtar;
-										$diffusage = array();
+										$diffusage = [];
 										$aduchild['children'] = !array_key_exists('children', $aduchild) ? 0 : $aduchild['children'];
 										$nowtotpeople = $aduchild['adults'] + $aduchild['children'];
 										foreach ($arrtar as $kk => $tt) {
@@ -732,7 +741,7 @@ class VikbookingViewSearch extends JViewVikBooking
 													//best usage
 													$results[$numroom][] = $arrtar[$kk];
 													if (!isset($multiroomcount[$arrtar[$kk][0]['idroom']])) {
-														$multiroomcount[$arrtar[$kk][0]['idroom']] = array('count' => 0);
+														$multiroomcount[$arrtar[$kk][0]['idroom']] = ['count' => 0];
 													}
 													$multiroomcount[$arrtar[$kk][0]['idroom']]['count'] += 1;
 													$multiroomcount[$arrtar[$kk][0]['idroom']]['unitsavail'] = (int)$arrtar[$kk][0]['unitsavail'];
@@ -786,7 +795,7 @@ class VikbookingViewSearch extends JViewVikBooking
 													}
 													$diffusage[$numroom][] = $arrtar[$kk];
 													if (!isset($multiroomcount[$arrtar[$kk][0]['idroom']])) {
-														$multiroomcount[$arrtar[$kk][0]['idroom']] = array('count' => 0);
+														$multiroomcount[$arrtar[$kk][0]['idroom']] = ['count' => 0];
 													}
 													$multiroomcount[$arrtar[$kk][0]['idroom']]['count'] += 1;
 													$multiroomcount[$arrtar[$kk][0]['idroom']]['unitsavail'] = (int)$arrtar[$kk][0]['unitsavail'];
@@ -795,7 +804,7 @@ class VikbookingViewSearch extends JViewVikBooking
 											}
 										}
 										//merge $diffusage rooms with and after best usage rooms in $results
-										if (count($diffusage) > 0) {
+										if ($diffusage) {
 											foreach ($diffusage as $nr => $du) {
 												foreach ($du as $duroom) {
 													$results[$nr][]=$duroom;
@@ -810,8 +819,8 @@ class VikbookingViewSearch extends JViewVikBooking
 									$search_type = VikBooking::getSmartSearchType();
 									$js_search = $search_type == 'dynamic' ? true : false;
 									//dynamic smart search via PHP
-									$js_overcounter = array();
-									if ($js_search && $proomsnum > 1 && count($multiroomcount) > 0) {
+									$js_overcounter = [];
+									if ($js_search && $proomsnum > 1 && $multiroomcount) {
 										$tot_avail = 0;
 										foreach ($multiroomcount as $idroom => $info) {
 											$tot_avail += $info['unitsavail'];
@@ -865,7 +874,7 @@ class VikbookingViewSearch extends JViewVikBooking
 											 */
 											if (!$js_search) {
 												for ($z = $proomsnum; $z >= 1; $z--) {
-													if (!isset($gen_avail[$z]) || !count($gen_avail[$z])) {
+													if (!isset($gen_avail[$z]) || !$gen_avail[$z]) {
 														foreach ($gen_avail as $oknroom => $res) {
 															if (count($gen_avail[$oknroom]) > 1) {
 																$searchfrom = min(array_keys($res));
@@ -903,7 +912,7 @@ class VikbookingViewSearch extends JViewVikBooking
 											 *
 											 */
 											foreach ($gen_avail as $oknroom => $res) {
-												if (!count($gen_avail[$oknroom])) {
+												if (!$gen_avail[$oknroom]) {
 													unset($gen_avail[$oknroom]);
 												}
 											}
@@ -916,7 +925,7 @@ class VikbookingViewSearch extends JViewVikBooking
 									}
 									//
 									//automatic smart search via PHP
-									if ($proomsnum > 1 && count($multiroomcount) > 0) {
+									if ($proomsnum > 1 && $multiroomcount) {
 										foreach ($multiroomcount as $idroom => $info) {
 											if ($info['count'] > $info['unitsavail']) {
 												$excessnum = $info['count'] - $info['unitsavail'];
@@ -929,7 +938,7 @@ class VikbookingViewSearch extends JViewVikBooking
 													 */
 													if (true || (array_key_exists('diffusage_r'.$z, $info) && $info['diffusage_r'.$z] == 1)) {
 														//remove repeated room where diffusage and excessnum still exceeds
-														if ($excessnum > 0 && count($js_overcounter) == 0) {
+														if ($excessnum > 0 && !$js_overcounter) {
 															foreach ($results[$z] as $kres => $res) {
 																if ($res[0]['idroom'] == $idroom) {
 																	unset($results[$z][$kres]);
@@ -946,7 +955,7 @@ class VikbookingViewSearch extends JViewVikBooking
 												//if excessnum still exceeds, means that the room is not available for the repeated best usages
 												if ($excessnum > 0) {
 													for ($z = $proomsnum; $z >= 1; $z--) {
-														if ($excessnum > 0 && count($js_overcounter) == 0) {
+														if ($excessnum > 0 && !$js_overcounter) {
 															foreach ($results[$z] as $kres => $res) {
 																if ($res[0]['idroom'] == $idroom) {
 																	unset($results[$z][$kres]);
@@ -966,16 +975,16 @@ class VikbookingViewSearch extends JViewVikBooking
 									//
 									//if some room was repeated and removed from the multi rooms searched, check if enough results for each room
 									if ($limitpassed == true) {
-										$critic = array();
+										$critic = [];
 										for ($z = $proomsnum; $z >= 1; $z--) {
-											if (!isset($results[$z]) || !count($results[$z])) {
+											if (!isset($results[$z]) || !$results[$z]) {
 												$critic[] = $z;
 												unset($results[$z]);
 											}
 										}
-										if (count($critic) > 0) {
+										if ($critic) {
 											//some rooms have 0 results, check if something good for this num of adults can be placed here
-											$moved = array();
+											$moved = [];
 											foreach ($critic as $kcr => $nroom) {
 												foreach ($results as $oknroom => $res) {
 													if (count($results[$oknroom]) > 1) {
@@ -996,7 +1005,7 @@ class VikbookingViewSearch extends JViewVikBooking
 												}
 											}
 											ksort($results);
-											if (count($moved) > 0) {
+											if ($moved) {
 												//check if moved rooms had charges/discounts for adults occupancy to update it
 												foreach ($moved as $move) {
 													$movedata = explode('_', $move);
@@ -1105,8 +1114,8 @@ class VikbookingViewSearch extends JViewVikBooking
 									//
 									$results = VikBooking::sortMultipleResults($results);
 									//save prices in session for the modules
-									$sessvals = array();
-									$modprices = array();
+									$sessvals = [];
+									$modprices = [];
 									$sessvals['roomsnum'] = $proomsnum;
 									$sessvals['checkin'] = $first;
 									$sessvals['checkout'] = $second;
@@ -1159,7 +1168,7 @@ class VikbookingViewSearch extends JViewVikBooking
 										$proomdetail = VikRequest::getInt('roomdetail', 0, 'request');
 										$rate_plan_id = VikRequest::getInt('rate_plan_id', 0, 'request');
 										$user_currency = VikRequest::getString('user_currency', '', 'request');
-										$children_age = VikRequest::getVar('children_age', array());
+										$children_age = VikRequest::getVar('children_age', []);
 										$pitemid = VikRequest::getInt('Itemid', 0, 'request');
 										if (!empty($proomdetail) && array_key_exists($proomdetail, $arrtar) && $proomsnum == 1) {
 											// VBO 1.11 - push data to tracker and close
@@ -1196,7 +1205,7 @@ class VikbookingViewSearch extends JViewVikBooking
 											if (!empty($rate_plan_id)) {
 												$url_query_args['rate_plan_id'] = $rate_plan_id;
 											}
-											if (is_array($children_age) && count($children_age)) {
+											if (is_array($children_age) && $children_age) {
 												$url_query_args['children_age'] = $children_age;
 											}
 											if (!empty($user_currency)) {
@@ -1271,6 +1280,11 @@ class VikbookingViewSearch extends JViewVikBooking
 													}
 												}
 											}
+
+											// filter unavailable listing IDs
+											$unavailable_listings = array_filter(array_map('intval', array_unique($unavailable_listings)));
+
+											// set View properties
 											$this->res = $results;
 											$this->days = $daysdiff;
 											$this->checkin = $first;
@@ -1281,8 +1295,9 @@ class VikbookingViewSearch extends JViewVikBooking
 											$this->showchildren = $showchildren;
 											$this->js_overcounter = $js_overcounter;
 											$this->mod_booking = $mod_booking;
+											$this->unavailable_listings = $unavailable_listings;
 											$this->vbo_tn = $vbo_tn;
-											//theme
+											// theme
 											$theme = VikBooking::getTheme();
 											if ($theme != 'default') {
 												$thdir = VBO_SITE_PATH.DS.'themes'.DS.$theme.DS.'search';
@@ -1304,8 +1319,8 @@ class VikbookingViewSearch extends JViewVikBooking
 										//
 									} else {
 										//zero results for some room
-										$errmess = array();
-										if (isset($critic) && count($critic) > 0) {
+										$errmess = [];
+										if (isset($critic) && $critic) {
 											foreach ($critic as $nroom) {
 												$errmess[] = $arrpeople[$nroom]['adults']." ".($arrpeople[$nroom]['adults'] == 1 ? JText::translate('VBSEARCHRESADULT') : JText::translate('VBSEARCHRESADULTS')).($arrpeople[$nroom]['children'] > 0 ? ", ".$arrpeople[$nroom]['children']." ".($arrpeople[$nroom]['children'] == 1 ? JText::translate('VBSEARCHRESCHILD') : JText::translate('VBSEARCHRESCHILDREN')) : "");
 											}
@@ -1313,12 +1328,12 @@ class VikbookingViewSearch extends JViewVikBooking
 										} else {
 											$errmess[] = JText::translate('VBOSEARCHERRCODETHREEBASE');
 										}
-										$err_code_info = array(
+										$err_code_info = [
 											'code' => 3,
 											'fromts' => $first,
 											'tots' => $second,
 											'party' => $arrpeople
-										);
+										];
 										$msg = JText::sprintf('VBSEARCHERRNOTENOUGHROOMS', implode(" - ", $errmess));
 										// VBO 1.11 - push data to tracker and close
 										VikBooking::getTracker()->pushMessage($msg, 'error')->closeTrack();
@@ -1326,16 +1341,16 @@ class VikbookingViewSearch extends JViewVikBooking
 										$this->setVboError($msg, $err_code_info);
 									}
 								} else {
-									$err_code_info = array();
-									if (strlen($restrictionerrmsg) > 0) {
+									$err_code_info = [];
+									if (strlen($restrictionerrmsg)) {
 										VikError::raiseWarning('', $restrictionerrmsg);
 									} else {
-										$err_code_info = array(
+										$err_code_info = [
 											'code' => 1,
 											'fromts' => $first,
 											'tots' => $second,
 											'party' => $arrpeople
-										);
+										];
 									}
 									$msg = JText::translate('VBNOROOMSINDATE');
 									// VBO 1.11 - push data to tracker and close
@@ -1351,12 +1366,12 @@ class VikbookingViewSearch extends JViewVikBooking
 										$sayerr .= ", ".$arrpeople[1]['children']." ".($arrpeople[1]['children'] > 1 ? JText::translate('VBSEARCHRESCHILDREN') : JText::translate('VBSEARCHRESCHILD'));
 									}
 								}
-								$err_code_info = array(
+								$err_code_info = [
 									'code' => 2,
 									'fromts' => $first,
 									'tots' => $second,
 									'party' => $arrpeople
-								);
+								];
 								// VBO 1.11 - push data to tracker and close
 								VikBooking::getTracker()->pushMessage($sayerr, 'error')->closeTrack();
 								//

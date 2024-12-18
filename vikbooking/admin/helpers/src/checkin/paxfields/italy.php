@@ -67,23 +67,23 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 	public function getLabels()
 	{
 		return [
-			'guest_type' => 'Tipo alloggiato',
+			'guest_type' => JText::translate('VBO_GUEST_TYPE'),
 			'first_name' => JText::translate('VBCUSTOMERFIRSTNAME'),
 			'last_name'  => JText::translate('VBCUSTOMERLASTNAME'),
 			'gender' 	 => JText::translate('VBOCUSTGENDER'),
 			'date_birth' => JText::translate('ORDER_DBIRTH'),
-			'country_b'  => 'Stato di nascita',
-			'comune_b' 	 => 'Comune di nascita',
-			'province_b' => 'Provincia',
+			'country_b'  => JText::translate('VBO_BIRTH_STATE'),
+			'comune_b' 	 => JText::translate('VBO_BIRTH_MUNICIPALITY'),
+			'province_b' => JText::translate('VBO_STATE_PROVINCE'),
 			'zip_b' 	 => JText::translate('ORDER_ZIP'),
-			'country_s'  => 'Stato di residenza',
-			'comune_s' 	 => 'Comune di residenza',
-			'province_s' => 'Provincia',
-			'zip_s' 	 => 'CAP (residenza)',
-			'country_c'  => 'Cittadinanza',
-			'doctype'  	 => 'Tipo documento',
-			'docnum' 	 => JText::translate('VBCUSTOMERDOCNUM'),
-			'docplace' 	 => 'Luogo di rilascio',
+			'country_s'  => JText::translate('VBO_STAY_STATE'),
+			'comune_s' 	 => JText::translate('VBO_STAY_MUNICIPALITY'),
+			'province_s' => JText::translate('VBO_STATE_PROVINCE'),
+			'zip_s' 	 => JText::translate('ORDER_ZIP'),
+			'country_c'  => JText::translate('VBOCUSTNATIONALITY'),
+			'doctype'  	 => JText::translate('VBOCUSTDOCTYPE'),
+			'docnum' 	 => JText::translate('VBOCUSTDOCNUM'),
+			'docplace' 	 => JText::translate('VBO_ID_ISSUE_PLACE'),
 			'extranotes' => JText::translate('VBOGUESTEXTRANOTES'),
 		];
 	}
@@ -125,15 +125,47 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 	}
 
 	/**
+	 * @inheritDoc
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)
+	 */
+	public function listPrecheckinFields(array $def_fields)
+	{
+		// use the same fields for the back-end guests registration
+		$labels = $this->getLabels();
+		$attributes = $this->getAttributes();
+
+		// for pre-checkin we keep any default field of type "file" for uploading IDs
+		foreach (($def_fields[1] ?? []) as $field_key => $field_type) {
+			if (!is_string($field_type)) {
+				// not looking for a list of options
+				continue;
+			}
+			if (!strcasecmp($field_type, 'file') && ($def_fields[0][$field_key] ?? null)) {
+				// append this pax field of type "file" for uploading IDs
+				$labels[$field_key] = $def_fields[0][$field_key];
+				$attributes[$field_key] = $field_type;
+			}
+		}
+
+		// return the list of pre-checkin pax fields
+		return [$labels, $attributes];
+	}
+
+	/**
 	 * Parses the file Nazioni.csv and returns an associative
 	 * array with the code and name of the "Nazione" (country).
 	 * 
 	 * Public and internal method, not part of the interface.
 	 * Useful for all the implementor fields that need it.
+	 * 
+	 * @param 	bool 	$normalize 	Whether to normalize the country names into localised values.
 	 *
 	 * @return 	array
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)  added argument $normalize and related behaviour.
 	 */
-	public function loadNazioni()
+	public function loadNazioni($normalize = true)
 	{
 		// always try access the registry instance data
 		$collect_registry = VBOCheckinPax::getInstanceData();
@@ -141,14 +173,14 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 		// check if the registry instance of this collection type has cached values
 		if ($collect_registry) {
 			$prev_country_codes = $collect_registry->get('nazioni');
-			if (is_array($prev_country_codes) && count($prev_country_codes)) {
+			if (is_array($prev_country_codes) && $prev_country_codes) {
 				// another field of this collection must have loaded already the "Nazioni"
 				return $prev_country_codes;
 			}
 		}
 
 		// container
-		$country_codes = array();
+		$country_codes = [];
 
 		$csv = VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'report' . DIRECTORY_SEPARATOR . 'Nazioni.csv';
 		$rows = file($csv);
@@ -162,13 +194,39 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 				continue;
 			}
 
+			// remove unwanted chars
+			$v[0] = trim($v[0]);
+
 			if (!isset($country_codes[$v[0]])) {
 				$country_codes[$v[0]] = [];
 			}
 
 			// push values
-			$country_codes[$v[0]]['name'] = $v[1];
-			$country_codes[$v[0]]['three_code'] = $v[2];
+			$country_codes[$v[0]]['name'] = trim($v[1]);
+			$country_codes[$v[0]]['three_code'] = trim($v[2]);
+		}
+
+		/**
+		 * Apply translations based on country 3-char ISO code, if not in Italian or denied.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		if ($normalize && strtolower(substr(JFactory::getLanguage()->getTag(), 0, 2)) !== 'it') {
+			// get the translated countries list
+			$tn_countries = VikBooking::getCountriesArray();
+
+			$country_codes = array_map(function($country_vals) use ($tn_countries) {
+				if (!($tn_countries[$country_vals['three_code']] ?? null)) {
+					// unknown country
+					return $country_vals;
+				}
+
+				// replace country name
+				$country_vals['name'] = $tn_countries[$country_vals['three_code']]['country_name'];
+
+				// return the modified country values array
+				return $country_vals;
+			}, $country_codes);
 		}
 
 		// try to cache the country codes for other fields that may need them later
@@ -198,7 +256,7 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 		// check if the registry instance of this collection type has cached values
 		if ($collect_registry) {
 			$prev_comprov_codes = $collect_registry->get('comuni_province');
-			if (is_array($prev_comprov_codes) && count($prev_comprov_codes)) {
+			if (is_array($prev_comprov_codes) && $prev_comprov_codes) {
 				// another field of this collection must have loaded already the "Comuni"
 				return $prev_comprov_codes;
 			}
@@ -250,10 +308,17 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 	 * Parses the file Documenti.csv and returns an associative
 	 * array with the code and name of the Documento.
 	 * Every line of the CSV is composed of: Codice, Documento.
+	 * 
+	 * Public and internal method, not part of the interface.
+	 * Useful for all the implementor fields that need it.
+	 * 
+	 * @param 	bool 	$normalize 	Whether to display values relevant to non-italian guests.
 	 *
 	 * @return 	array
+	 * 
+	 * @since 	1.17.2 (J) - 1.7.2 (WP)  added argument $normalize and related behaviour.
 	 */
-	public function loadDocumenti()
+	public function loadDocumenti($normalize = false)
 	{
 		// always try access the registry instance data
 		$collect_registry = VBOCheckinPax::getInstanceData();
@@ -261,7 +326,7 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 		// check if the registry instance of this collection type has cached values
 		if ($collect_registry) {
 			$prev_documenti = $collect_registry->get('documenti');
-			if (is_array($prev_documenti) && count($prev_documenti)) {
+			if (is_array($prev_documenti) && $prev_documenti) {
 				// another field of this collection must have loaded already the "Comuni"
 				return $prev_documenti;
 			}
@@ -288,6 +353,23 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 
 			// push values
 			$documenti[$v[0]] = $v[1];
+		}
+
+		if ($normalize === true) {
+			// we expect these values to be displayed to non-italian guests
+			$known_documents = [
+				'PASOR' => JText::translate('VBO_PASSPORT'),
+				'PATEN' => JText::translate('VBO_DRIVING_LICENSE'),
+				'IDENT' => JText::translate('VBO_IDENTITY_DOCUMENT'),
+			];
+
+			// filter documents by foreign types
+			$documenti = array_filter($documenti, function($doc_type) use ($known_documents) {
+				return isset($known_documents[$doc_type]);
+			}, ARRAY_FILTER_USE_KEY);
+
+			// normalize known document names
+			$documenti = array_merge($documenti, $known_documents);
 		}
 
 		// try to cache the documenti codes for other fields that may need them later

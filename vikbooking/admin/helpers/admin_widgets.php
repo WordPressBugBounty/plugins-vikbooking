@@ -218,6 +218,7 @@ class VikBookingHelperAdminWidgets
 		$container = new stdClass;
 		$container->size = 'small';
 		$container->widgets = [
+			'aitools',
 			'forecast',
 			'bookings_calendar',
 			'reminders',

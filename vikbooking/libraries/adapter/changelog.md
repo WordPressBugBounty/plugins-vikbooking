@@ -1,5 +1,15 @@
 # Framework Changelog
 
+### 10.1.59
+
+*Release date - 4 December 2024*
+
+##### BUG FIXES
+
+* The site widgets now always use an incremental identifier, since WordPress is no longer able to provide a unique number when publishing them as Gutenberg blocks.
+
+---
+
 ### 10.1.58
 
 *Release date - 25 July 2024*

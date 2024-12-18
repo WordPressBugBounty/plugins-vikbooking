@@ -3,7 +3,7 @@ Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
 Tested up to: 6.7
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 Requires PHP: 7.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -129,6 +129,15 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 
 == Changelog ==
 
+= 1.7.2 =
+*Release date - 18 December 2024*
+
+* Custom OTA pricing overrides in Rates Overview.
+* New default PMS Reports.
+* New options/extras of type late check-out/early check-in.
+* Various AI framework improvements.
+* New front-end search settings to display unavailable rooms.
+
 = 1.7.1 =
 *Release date - 12 November 2024*
 
@@ -155,43 +164,6 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 * New financial statistics.
 * New back-end styles.
 * Several framework improvements.
-
-= 1.6.9 =
-*Release date - 11 June 2024*
-
-* New operator-tool permissions framework.
-* New finance operators tool.
-* Refactoring of the operators dashboard and tools.
-* Fixed month-day rows in Availability Overview.
-* New layout for CC/VCC details for OTA reservations.
-* New "Takings" tab for the payment events of a reservation.
-* Improved "Guest Messages" admin-widget.
-* Improved OTA guest messaging functions through Cron Jobs.
-
-= 1.6.8 =
-*Release date - 2 April 2024*
-
-* Introducing the Notifications Center.
-* Admin-widget framework refactoring.
-* Improved ACL controls.
-
-= 1.6.7 =
-*Release date - 7 February 2024*
-
-* Added support to new Gutenberg blocks for the widgets.
-* All widgets have been converted into native Gutenberg blocks.
-* Introduced live preview for the Shortcode block.
-* New admin widget "Bulk Messaging".
-* Added support to pin/recent widgets in Quick Actions menus.
-* Refactoring of the e-invoicing framework to support new local requirements.
-* Various framework improvements.
-
-= 1.6.6 =
-*Release date - 13 December 2023*
-
-* Added support for the E4jConnect Trial activation system.
-* Added search facility to translations.
-* New actions and filters introduced.
 
 = Earlier versions =
 

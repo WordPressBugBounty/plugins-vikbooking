@@ -564,6 +564,13 @@ class VikBookingController extends JControllerVikBooking
 			}
 		}
 
+		/**
+		 * Custom check-in/out times due to late check-out/early check-in options.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		$custom_checkinout = [];
+
 		$selopt = [];
 		$optstr = [];
 		$children_age = [];
@@ -661,12 +668,24 @@ class VikBookingController extends JControllerVikBooking
 				 * 
 				 * @since 	1.16.2 (J) - 1.6.2 (WP)
 				 */
-				if ($opt_params && isset($opt_params['pet_fee']) && $opt_params['pet_fee']) {
+				if ($opt_params['pet_fee'] ?? 0) {
 					$tot_pets = 1;
 					if ($actopt[0]['hmany'] > 0 && $stept[1] > 1) {
 						$tot_pets = (int)$stept[1];
 					}
 					$arrpeople[$rnoid[0]]['pets'] = $tot_pets;
+				}
+
+				/**
+				 * Custom check-in/out times due to late check-out/early check-in options.
+				 * 
+				 * @since 	1.17.2 (J) - 1.7.2 (WP)
+				 */
+				if (($opt_params['custom_checkinout'] ?? 0) && (($opt_params['set_checkin'] ?? 0) || ($opt_params['set_checkout'] ?? 0))) {
+					$custom_checkinout = [
+						($opt_params['set_checkin'] ?? 0),
+						($opt_params['set_checkout'] ?? 0),
+					];
 				}
 
 				$realcost = ($actopt[0]['perperson'] == 1 ? ($realcost * $arrpeople[$rnoid[0]]['adults']) : $realcost);
@@ -710,8 +729,8 @@ class VikBookingController extends JControllerVikBooking
 				$coupondateok = true;
 				if (strlen((string)$coupon['datevalid'])) {
 					$dateparts = explode("-", $coupon['datevalid']);
-					$pickinfo = getdate($pcheckin);
-					$dropinfo = getdate($pcheckout);
+					$pickinfo = $checkin_info;
+					$dropinfo = $checkout_info;
 					$checkpick = mktime(0, 0, 0, $pickinfo['mon'], $pickinfo['mday'], $pickinfo['year']);
 					$checkdrop = mktime(0, 0, 0, $dropinfo['mon'], $dropinfo['mday'], $dropinfo['year']);
 					if (!($checkpick >= $dateparts[0] && $checkpick <= $dateparts[1] && $checkdrop >= $dateparts[0] && $checkdrop <= $dateparts[1])) {
@@ -960,6 +979,29 @@ class VikBookingController extends JControllerVikBooking
 		// push data to tracker for conversion
 		$vbo_tracker = VikBooking::getTracker();
 		$vbo_tracker->pushDates($pcheckin, $pcheckout, $pdays)->pushParty($arrpeople)->pushData('idcustomer', $cpin->getNewCustomerId());
+
+		/**
+		 * Custom check-in/out times due to late check-out/early check-in options.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		if ($custom_checkinout) {
+			// overwrite check-in and/or check-out timestamp(s)
+			if ($custom_checkinout[0] >= 3600) {
+				// overwrite check-in timestamp
+				$time_hours = floor($custom_checkinout[0] / 3600);
+				$time_minutes = floor(($custom_checkinout[0] - ($time_hours * 3600)) / 60);
+				$pcheckin = mktime($time_hours, $time_minutes, 0, $checkin_info['mon'], $checkin_info['mday'], $checkin_info['year']);
+			}
+			if ($custom_checkinout[1] >= 3600) {
+				// overwrite check-out timestamp
+				$time_hours = floor($custom_checkinout[1] / 3600);
+				$time_minutes = floor(($custom_checkinout[1] - ($time_hours * 3600)) / 60);
+				$pcheckout = mktime($time_hours, $time_minutes, 0, $checkout_info['mon'], $checkout_info['mday'], $checkout_info['year']);
+				// overwrite "realback" timestamp as well
+				$realback = $turnover_secs + $pcheckout;
+			}
+		}
 
 		if (!$mod_booking && ((!empty($payment) && intval($payment['setconfirmed']) == 1) || !$must_payment || ($usedcoupon && $isdue <= 0))) {
 			// we enter this statement to set the booking to Confirmed when: no booking modification and, payment selected sets status to confirmed or no payments enabled or 100% coupon
@@ -1500,7 +1542,18 @@ class VikBookingController extends JControllerVikBooking
 			$vbo_tracker->pushData('idorder', $neworderid)->closeTrack();
 			$vbo_tracker->resetTrack();
 
-			$app->redirect(JRoute::rewrite("index.php?option=com_vikbooking&view=booking&sid=" . $sid . "&ts=" . $nowts . (!empty($pnodep) ? "&nodep=".$pnodep : "") . (!empty($pitemid) ? "&Itemid=" . $pitemid : ""), false));
+			// redirect URI to pending booking details
+			$booking_details_uri = "index.php?option=com_vikbooking&view=booking&sid=" . $sid . "&ts=" . $nowts . (!empty($pnodep) ? "&nodep=".$pnodep : "") . (!empty($pitemid) ? "&Itemid=" . $pitemid : "");
+
+			/**
+			 * Trigger event to allow third-party plugins to manipulate the redirect URI.
+			 * 
+			 * @since 	1.17.2 (J) - 1.7.2 (WP)
+			 */
+			VBOFactory::getPlatform()->getDispatcher()->trigger('onRedirectOrder', [&$booking_details_uri, $neworderid]);
+
+			// redirect to booking details page
+			$app->redirect(JRoute::rewrite($booking_details_uri, false));
 		}
 	}
 
@@ -3070,20 +3123,17 @@ class VikBookingController extends JControllerVikBooking
 
 		$q = "SELECT `o`.* FROM `#__vikbooking_orders` AS `o` WHERE (`o`.`sid`=" . $dbo->quote($sid) . " OR `o`.`idorderota`=" . $dbo->quote($sid) . ") AND `o`.`ts`=" . $dbo->quote($ts) . ";";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$order = $dbo->loadAssoc();
+		if (!$order) {
 			throw new Exception('Booking not found', 404);
 		}
-		$order = $dbo->loadAssoc();
 
-		$orderrooms = [];
 		$q = "SELECT `or`.*,`r`.`name` AS `room_name` FROM `#__vikbooking_ordersrooms` AS `or`,`#__vikbooking_rooms` AS `r` WHERE `or`.`idorder`=".(int)$order['id']." AND `or`.`idroom`=`r`.`id` ORDER BY `or`.`id` ASC;";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$orderrooms = $dbo->loadAssocList();
+		if (!$orderrooms) {
 			throw new Exception('No rooms found', 404);
 		}
-		$orderrooms = $dbo->loadAssocList();
 
 		// availability helper
 		$av_helper = VikBooking::getAvailabilityInstance();
@@ -3102,18 +3152,24 @@ class VikBookingController extends JControllerVikBooking
 		$alloptions = [];
 		$q = "SELECT * FROM `#__vikbooking_optionals`;";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$records = $dbo->loadAssocList();
+		if (!$records) {
 			throw new Exception('No options found', 404);
 		}
-		$records = $dbo->loadAssocList();
 		foreach ($records as $v) {
-			$alloptions[(int)$v['id']] = $v;
+			$alloptions[$v['id']] = $v;
 		}
+
+		/**
+		 * Custom check-in/out times due to late check-out/early check-in options.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		$custom_checkinout = [];
 
 		$extras_booked = [];
 		foreach ($orderrooms as $kor => $or) {
-			if (!isset($paddopt[$kor]) || !count($paddopt[$kor])) {
+			if (!isset($paddopt[$kor]) || !$paddopt[$kor]) {
 				continue;
 			}
 
@@ -3131,25 +3187,42 @@ class VikBookingController extends JControllerVikBooking
 					// this option has already been booked, skip it
 					continue;
 				}
-				if (!isset($alloptions[(int)$optid])) {
+				if (!isset($alloptions[$optid])) {
 					// this option ID does not exist, skip it
 					continue;
 				}
 				$extraoptstr .= $optid . ':' . (int)$quant . ';';
+
+				// option params
+				$opt_params = !empty($alloptions[$optid]['oparams']) ? (array) json_decode($alloptions[$optid]['oparams'], true) : [];
+
+				/**
+				 * Custom check-in/out times due to late check-out/early check-in options.
+				 * 
+				 * @since 	1.17.2 (J) - 1.7.2 (WP)
+				 */
+				if (($opt_params['custom_checkinout'] ?? 0) && (($opt_params['set_checkin'] ?? 0) || ($opt_params['set_checkout'] ?? 0))) {
+					$custom_checkinout = [
+						($opt_params['set_checkin'] ?? 0),
+						($opt_params['set_checkout'] ?? 0),
+					];
+				}
+
 				// push option booked
-				array_push($extras_booked, array(
-					'id' => $optid,
-					'idroom' => $or['idroom'],
-					'name' => $alloptions[(int)$optid]['name'],
-					'quant' => $quant,
+				$extras_booked[] = [
+					'id'        => $optid,
+					'idroom'    => $or['idroom'],
+					'name'      => $alloptions[$optid]['name'],
+					'quant'     => $quant,
 					'room_cost' => (!empty($or['cust_cost']) ? $or['cust_cost'] : $or['room_cost']),
 					'room_name' => $or['room_name'],
-					'optcost' => $alloptions[(int)$optid]['cost'],
-					'adults' => $or['adults'],
-					'children' => $or['children'],
-					'nights' => $room_stay_nights,
-				));
+					'optcost'   => $alloptions[$optid]['cost'],
+					'adults'    => $or['adults'],
+					'children'  => $or['children'],
+					'nights'    => $room_stay_nights,
+				];
 			}
+
 			// update options for this room record
 			$newoptstr = $or['optionals'] . $extraoptstr;
 			$q = "UPDATE `#__vikbooking_ordersrooms` SET `optionals`=" . $dbo->quote($newoptstr) . " WHERE `id`={$or['id']};";
@@ -3189,23 +3262,73 @@ class VikBookingController extends JControllerVikBooking
 
 		$newtotbooking = $order['total'] + $increase;
 		$new_tot_taxes = $order['tot_taxes'] + $add_tax;
+
 		/**
 		 * Important: the 'paymcount' should be increased only if the status is
 		 * "confirmed" or no rooms may be occupied when receiving a payment.
 		 */
-		$q = "UPDATE `#__vikbooking_orders` SET `total`=" . $dbo->quote($newtotbooking) . ", `paymcount`=" . ($order['status'] == 'confirmed' && (int)$order['paymcount'] < 1 ? '1' : $order['paymcount']) . ", `tot_taxes`=" . $dbo->q($new_tot_taxes) . ", `payable`=" . $dbo->quote(((float)$order['payable'] + $increase)) . " WHERE `id`={$order['id']};";
+		$q = $dbo->getQuery(true)
+			->update($dbo->qn('#__vikbooking_orders'))
+			->set($dbo->qn('total') . ' = ' . $dbo->q($newtotbooking))
+			->set($dbo->qn('paymcount') . ' = ' . ($order['status'] == 'confirmed' && (int)$order['paymcount'] < 1 ? '1' : $order['paymcount']))
+			->set($dbo->qn('tot_taxes') . ' = ' . $dbo->q($new_tot_taxes))
+			->set($dbo->qn('payable') . ' = ' . $dbo->q(((float)$order['payable'] + $increase)))
+			->where($dbo->qn('id') . ' = ' . (int) $order['id']);
+
+		/**
+		 * Custom check-in/out times due to late check-out/early check-in options.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		if ($custom_checkinout) {
+			$checkin_info = getdate($order['checkin']);
+			$checkout_info = getdate($order['checkout']);
+			// overwrite check-in and/or check-out timestamp(s)
+			if ($custom_checkinout[0] >= 3600) {
+				// overwrite check-in timestamp
+				$time_hours = floor($custom_checkinout[0] / 3600);
+				$time_minutes = floor(($custom_checkinout[0] - ($time_hours * 3600)) / 60);
+				$new_booking_checkin = mktime($time_hours, $time_minutes, 0, $checkin_info['mon'], $checkin_info['mday'], $checkin_info['year']);
+				// update db record field
+				$q->set($dbo->qn('checkin') . ' = ' . $dbo->q($new_booking_checkin));
+			}
+			if ($custom_checkinout[1] >= 3600) {
+				// overwrite check-out timestamp
+				$time_hours = floor($custom_checkinout[1] / 3600);
+				$time_minutes = floor(($custom_checkinout[1] - ($time_hours * 3600)) / 60);
+				$new_booking_checkout = mktime($time_hours, $time_minutes, 0, $checkout_info['mon'], $checkout_info['mday'], $checkout_info['year']);
+				// update db record field
+				$q->set($dbo->qn('checkout') . ' = ' . $dbo->q($new_booking_checkout));
+			}
+		}
+
+		// update booking record on db
 		$dbo->setQuery($q);
 		$dbo->execute();
 
 		// Booking History
-		VikBooking::getBookingHistoryInstance()->setBid($order['id'])->store('UE', implode("\n", $extraslog));
+		VikBooking::getBookingHistoryInstance($order['id'])->store('UE', implode("\n", $extraslog));
 
-		// send email notification to guest and admin
-		VikBooking::sendBookingEmail($order['id'], array('guest', 'admin'));
+		/**
+		 * Trigger event to allow third-party plugins to choose whether upselling notifications should be sent.
+		 * 
+		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 */
+		$send_notifications = true;
+		$should_send = VBOFactory::getPlatform()->getDispatcher()->filter('onUpsellingReceivedShouldSendNotifications', [$order]);
+		if (is_array($should_send) && in_array(false, $should_send, true)) {
+			$send_notifications = false;
+		}
+
+		if ($send_notifications) {
+			// send email notification to guest and admin
+			VikBooking::sendBookingEmail($order['id'], array('guest', 'admin'));
+		}
 
 		$goto = JRoute::rewrite('index.php?option=com_vikbooking&view=booking&sid=' . (empty($order['sid']) && !empty($order['idorderota']) ? $order['idorderota'] : $order['sid']) . '&ts=' . $order['ts'] . (!empty($pitemid) ? '&Itemid=' . $pitemid : ''), false);
 		$app->enqueueMessage(JText::translate('VBOUPSELLRESULTOK'));
 		$app->redirect($goto);
+		$app->close();
 	}
 
 	/**
