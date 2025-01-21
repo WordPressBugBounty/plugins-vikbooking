@@ -19,9 +19,18 @@ $adultsdiff = $this->adultsdiff;
 JHtml::fetch('jquery.framework', true, true);
 JHtml::fetch('script', VBO_SITE_URI.'resources/jquery-ui.sortable.min.js');
 
+$has_vcm = class_exists('VikChannelManager');
+
+JText::script('VBO_AI_LABEL_DEF');
+JText::script('VBO_GEN_CONTENT');
+JText::script('VBNEWROOMSMALLDESC');
+JText::script('VBNEWROOMSEVEN');
+JText::script('VBPVIEWROOMTHREE');
+JText::script('VBANNULLA');
+
 $vbo_app = VikBooking::getVboApplication();
 $vbo_app->loadSelect2();
-$currencysymb = VikBooking::getCurrencySymb(true);
+$currencysymb = VikBooking::getCurrencySymb();
 $arrcats = array();
 $arrcarats = array();
 $arropts = array();
@@ -764,7 +773,22 @@ if (count($row)) {
 						</div>
 							<?php
 						}
+						/**
+						 * Room details page layout stile.
+						 * 
+						 * @since 	1.17.3 (J) - 1.7.3 (WP)
+						 */
+						$layout_style = $row ? VikBooking::getRoomParam('layout_style', $row['params'], 'classic') : 'listing';
 						?>
+						<div class="vbo-param-container">
+							<div class="vbo-param-label"><label for="layout_style"><?php echo JText::translate('COM_VIKBOOKING_LAYOUT_STYLE'); ?></label></div>
+							<div class="vbo-param-setting">
+								<select name="layout_style" id="layout_style">
+									<option value="classic"><?php echo JText::translate('VBOCONFIGSEARCHRESTPLCL'); ?></option>
+									<option value="listing"<?php echo $layout_style == 'listing' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_LISTING'); ?></option>
+								</select>
+							</div>
+						</div>
 					</div>
 				</div>
 			</fieldset>
@@ -871,11 +895,35 @@ if (count($row)) {
 					}
 					?>
 						<div class="vbo-param-container">
-							<div class="vbo-param-label"><?php echo JText::translate('VBNEWROOMSMALLDESC'); ?></div>
+							<div class="vbo-param-label with-buttons">
+								<span class="vbo-param-label-main"><?php echo JText::translate('VBNEWROOMSMALLDESC'); ?></span>
+							<?php
+							if ($has_vcm) {
+								// Gen-AI small description
+								?>
+								<div class="vbo-room-genai-btn-wrap">
+									<button type="button" class="btn btn-small vbo-content-genai vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', JText::translate('VBO_GEN_CONTENT')); ?>" data-type="short"><?php echo JText::translate('VBO_AI_LABEL_DEF'); ?></button>
+								</div>
+								<?php
+							}
+							?>
+							</div>
 							<div class="vbo-param-setting"><textarea name="smalldesc" rows="6" cols="50"><?php echo $row ? $row['smalldesc'] : ''; ?></textarea></div>
 						</div>
 						<div class="vbo-param-container vbo-param-container-full">
-							<div class="vbo-param-label"><?php echo JText::translate('VBNEWROOMSEVEN'); ?></div>
+							<div class="vbo-param-label with-buttons">
+								<span class="vbo-param-label-main"><?php echo JText::translate('VBNEWROOMSEVEN'); ?></span>
+							<?php
+							if ($has_vcm) {
+								// Gen-AI small description
+								?>
+								<span class="vbo-room-genai-btn-wrap inline">
+									<button type="button" class="btn btn-small vbo-content-genai vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', JText::translate('VBO_GEN_CONTENT')); ?>" data-type="long"><?php echo JText::translate('VBO_AI_LABEL_DEF'); ?></button>
+								</span>
+								<?php
+							}
+							?>
+							</div>
 							<div class="vbo-param-setting">
 								<?php
 								if (interface_exists('Throwable')) {
@@ -1118,6 +1166,21 @@ echo $this->loadTemplate('geocoding_modal');
 </div>
 
 <?php
+/**
+ * Render the Gen-AI content layout.
+ * 
+ * @since 	1.17.3 (J) - 1.7.3 (WP)
+ */
+$layout_data = [
+	'type'   => 'room_content',
+	'prefix' => 'vbo-content-genai',
+	'room'   => $this->row,
+];
+echo JLayoutHelper::render('ai.gencontent', $layout_data, null, [
+	'component' => 'com_vikbooking',
+	'client' 	=> 'administrator',
+]);
+
 // the Load Image plugin is included for the preview images and image resizing functionality
 $vbo_app->addScript(VBO_ADMIN_URI . 'resources/js_upload/load-image.all.min.js');
 // the Iframe Transport is required for browsers without support for XHR file uploads
@@ -1144,7 +1207,7 @@ function vboCloseModal() {
 	});
 	vbo_overlay_on = false;
 }
-jQuery(document).ready(function() {
+jQuery(function() {
 	togglePriceCalendarParam();
 	toggleSeasonalCalendarParam();
 
@@ -1157,6 +1220,7 @@ jQuery(document).ready(function() {
 			vboCloseModal();
 		}
 	});
+
 	jQuery(document).keyup(function(e) {
 		if (e.keyCode == 27) {
 			if (vbo_overlay_on) {
@@ -1168,8 +1232,7 @@ jQuery(document).ready(function() {
 			}
 		}
 	});
-});
-jQuery(function() {
+
 	var url = 'index.php?option=com_vikbooking&task=multiphotosupload&roomid=<?php echo $row ? $row['id'] : '0'; ?>',
 		uploadButton = jQuery('<button/>')
 			.addClass('btn btn-primary')
@@ -1189,6 +1252,7 @@ jQuery(function() {
 					$this.remove();
 				});
 			});
+
 	jQuery('#fileupload').fileupload({
 		url: url,
 		dataType: 'json',
@@ -1279,5 +1343,107 @@ jQuery(function() {
 		});
 	}).prop('disabled', !jQuery.support.fileInput)
 		.parent().addClass(jQuery.support.fileInput ? undefined : 'disabled');
+
+	// generate content through AI
+	jQuery('.vbo-content-genai').click(function() {
+		// get the type of room description to generate
+		let content_type = jQuery(this).attr('data-type');
+
+		// define the modal cancel button
+		let cancel_btn = jQuery('<button></button>')
+			.attr('type', 'button')
+			.addClass('btn')
+			.text(Joomla.JText._('VBANNULLA'))
+			.on('click', function() {
+				VBOCore.emitEvent('vbo-content-genai-dismiss');
+			});
+
+		// define the submit button
+		let submit_btn = jQuery('<button></button>')
+			.attr('type', 'button')
+			.addClass('btn btn-success')
+			.text(Joomla.JText._('VBO_GEN_CONTENT'))
+			.on('click', function() {
+				// start loading
+				VBOCore.emitEvent('vbo-content-genai-loading');
+
+				// perform the request
+				VBOCore.doAjax(
+					"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=ai.roomContent'); ?>",
+					{
+						type: content_type,
+						information: document.querySelector('.vbo-content-genai-field[data-field="information"]').value,
+						language: document.querySelector('.vbo-content-genai-field[data-field="language"]').value.replace('__', ' - '),
+					},
+					(resp) => {
+						// stop loading
+						VBOCore.emitEvent('vbo-content-genai-loading');
+
+						// set description content
+						resp = typeof resp === 'string' ? JSON.parse(resp) : resp;
+
+						if (content_type == 'short') {
+							// short description
+							jQuery('textarea[name="smalldesc"]').val(resp['content']);
+						} else {
+							// long HTML description
+							try {
+								// attempt to inject value inside wysiwyg editor
+								Joomla.editors.instances['cdescr'].setValue(resp['content']);
+							} catch(e) {
+								// fallback to standard textarea
+								jQuery('textarea[name="cdescr"]').val(resp['content']).trigger('change');
+							}
+						}
+
+						// dismiss the modal on success
+						VBOCore.emitEvent('vbo-content-genai-dismiss');
+					},
+					(error) => {
+						// stop loading
+						VBOCore.emitEvent('vbo-content-genai-loading');
+
+						// display the error
+						alert(error.responseText);
+					}
+				);
+			});
+
+		// dynamically add the selected amenities
+		let active_amenities = jQuery('input[type="checkbox"][name="ccarat[]"]:checked');
+		if (active_amenities.length) {
+			let amenity_texts = [];
+			active_amenities.each(function(index, elem) {
+				amenity_texts.push(jQuery(elem).parent().find('label').text());
+			});
+			amenity_texts = amenity_texts.filter(v => v);
+			if (amenity_texts.length) {
+				// replace any previously added string related to the amenities
+				let current_info_txt = document.querySelector('.vbo-content-genai-field[data-field="information"]').value.trim();
+				let amenities_lbl = Joomla.JText._('VBPVIEWROOMTHREE');
+				let amenities_rgx = new RegExp("(" + amenities_lbl + ":\\s.+)", 'i');
+				current_info_txt = current_info_txt.replace(amenities_rgx, '').trim();
+				current_info_txt += "\n" + amenities_lbl + ': ' + amenity_texts.join(', ') + "\n";
+				// set new information text
+				document.querySelector('.vbo-content-genai-field[data-field="information"]').value = current_info_txt;
+			}
+		}
+
+		// display modal
+		let modal_body = VBOCore.displayModal({
+			suffix: 		'content-genai',
+			extra_class: 	'vbo-modal-rounded',
+			title: 			Joomla.JText._((content_type == 'short' ? 'VBNEWROOMSMALLDESC' : 'VBNEWROOMSEVEN')) + ' - ' + Joomla.JText._('VBO_AI_LABEL_DEF'),
+			footer_left: 	cancel_btn,
+			footer_right: 	submit_btn,
+			loading_event:  'vbo-content-genai-loading',
+			dismiss_event:  'vbo-content-genai-dismiss',
+			onDismiss: 		() => {
+				jQuery('.vbo-content-genai-wrap').appendTo('.vbo-content-genai-helper');
+			},
+		});
+
+		jQuery('.vbo-content-genai-wrap').appendTo(modal_body);
+	});
 });
 </script>

@@ -20,6 +20,7 @@ $dbo = JFactory::getDbo();
 $vbo_app = VikBooking::getVboApplication();
 $vbo_app->loadSelect2();
 $vbo_app->loadDatePicker();
+$vbo_app->loadDatesRangePicker();
 
 $document = JFactory::getDocument();
 $document->addStyleSheet(VBO_ADMIN_URI.'resources/jquery.highlighttextarea.min.css');
@@ -109,7 +110,7 @@ if (is_array($timeopst)) {
 	$mcheckout = 0;
 }
 $formatparts = explode(':', VikBooking::getNumberFormatData());
-$currencysymb = VikBooking::getCurrencySymb(true);
+$currencysymb = VikBooking::getCurrencySymb();
 $globnumadults = VikBooking::getSearchNumAdults(true);
 $adultsparts = explode('-', $globnumadults);
 $seladults = "<select name=\"adults\" id=\"vbo-sel-adults\">\n";
@@ -206,7 +207,7 @@ if (count($allc) > 1) {
 							<div class="vbo-param-setting">
 								<div class="input-append">
 									<input type="text" autocomplete="off" name="checkindate" id="checkindate" size="10" />
-									<button type="button" class="btn vbodatepicker-trig-icon"><span class="icon-calendar"></span></button>
+									<button type="button" class="btn btn-secondary" id="checkindate-trig"><?php VikBookingIcons::e('calendar', 'icn-nomargin'); ?></button>
 								</div>
 								<span class="vbo-calendar-time-inline"><?php echo JText::translate('VBAT')." ".($hcheckin < 10 ? '0'.$hcheckin : $hcheckin).":".($mcheckin < 10 ? '0'.$mcheckin : $mcheckin); ?></span>
 								<input type="hidden" name="checkinh" value="<?php echo $hcheckin; ?>"/>
@@ -218,7 +219,7 @@ if (count($allc) > 1) {
 							<div class="vbo-param-setting">
 								<div class="input-append">
 									<input type="text" autocomplete="off" name="checkoutdate" id="checkoutdate" size="10" />
-									<button type="button" class="btn vbodatepicker-trig-icon"><span class="icon-calendar"></span></button>
+									<button type="button" class="btn btn-secondary" id="checkoutdate-trig"><?php VikBookingIcons::e('calendar', 'icn-nomargin'); ?></button>
 								</div>
 								<span class="vbo-calendar-time-inline"><?php echo JText::translate('VBAT')." ".($hcheckout < 10 ? '0'.$hcheckout : $hcheckout).":".($mcheckout < 10 ? '0'.$mcheckout : $mcheckout); ?></span>
 								<span style="display: none; margin-left: 25px; vertical-align: top;" id="vbjstotnights">
@@ -753,7 +754,12 @@ function showCustomFields() {
 }
 
 function hideCustomFields() {
+	// dismiss modal
 	VBOCore.emitEvent('vbo-calendar-cfields-dismiss');
+	// empty any customer search value
+	jQuery("#vbo-searchcust").val('').trigger('keyup');
+	// trigger event to unregister the keydown event for choosing the customer
+	VBOCore.emitEvent('vbo-search-customers-navigation-dismissed');
 }
 
 function applyCustomFieldsContent() {
@@ -1081,12 +1087,11 @@ jQuery(function() {
 		var outdate = jQuery('#checkoutdate').val();
 		var clickdate = jQuery(this).attr('data-daydate');
 		if (!(indate.length > 0)) {
-			jQuery('#checkindate').datepicker("setDate", clickdate);
+			jQuery('#checkindate').vboDatesRangePicker("setCheckinDate", clickdate);
 		} else if (!(outdate.length > 0) && clickdate != indate) {
-			jQuery('#checkoutdate').datepicker("setDate", clickdate);
+			jQuery('#checkindate').vboDatesRangePicker("setDates", [indate, clickdate]);
 		} else {
-			jQuery('#checkoutdate').datepicker("setDate", '');
-			jQuery('#checkindate').datepicker("setDate", clickdate);
+			jQuery('#checkindate').vboDatesRangePicker("setDates", [clickdate, '']);
 		}
 		jQuery(".ui-datepicker-current-day").click();
 	});
@@ -1217,53 +1222,75 @@ jQuery(function() {
 	});
 	// search customer - end
 
-	// datepickers - start
-	jQuery("#checkindate").datepicker({
+	// DRP - start
+	jQuery("#checkindate").vboDatesRangePicker({
+		checkout: '#checkoutdate',
 		showOn: "focus",
 		dateFormat: "<?php echo $juidf; ?>",
-		numberOfMonths: 1,
-		onSelect: function(selectedDate) {
-			var nownights = parseInt(jQuery("#vbo-numnights").val());
-			var nowcheckin = jQuery("#checkindate").datepicker("getDate");
-			var nowcheckindate = new Date(nowcheckin.getTime());
-			nowcheckindate.setDate(nowcheckindate.getDate() + nownights);
-			jQuery("#checkoutdate").datepicker("option", "minDate", nowcheckindate);
-			jQuery("#checkoutdate").datepicker("setDate", nowcheckindate);
-			vbCalcNights();
-		}
+		numberOfMonths: 2,
+		responsiveNumMonths: {
+			threshold: 860,
+		},
+		onSelect: {
+			checkin: (selectedDate) => {
+				var nownights = parseInt(jQuery('#vbo-numnights').val());
+				var nowcheckin = jQuery('#checkindate').vboDatesRangePicker('getCheckinDate');
+				var nowcheckindate = new Date(nowcheckin.getTime());
+				nowcheckindate.setDate(nowcheckindate.getDate() + nownights);
+				jQuery('#checkindate').vboDatesRangePicker('checkout', 'minDate', nowcheckindate);
+				vbCalcNights();
+			},
+			checkout: (selectedDate) => {
+				if (!jQuery('#checkindate').vboDatesRangePicker('getCheckoutDate')) {
+					return;
+				}
+				vbCalcNights();
+			},
+		},
+		labels: {
+			checkin: Joomla.JText._('VBPICKUPROOM'),
+			checkout: Joomla.JText._('VBRETURNROOM'),
+		},
+		bottomCommands: {
+			clear: Joomla.JText._('VBO_CLEAR_DATES'),
+			close: Joomla.JText._('VBO_CLOSE'),
+			onClear: () => {
+				vbCalcNights();
+			},
+		},
+		environment: {
+			section: 'admin',
+			autoHide: true,
+		},
 	});
-	jQuery("#checkoutdate").datepicker({
-		showOn: "focus",
-		dateFormat: "<?php echo $juidf; ?>",
-		numberOfMonths: 1,
-		onSelect: function(selectedDate) {
-			vbCalcNights();
+	jQuery('#checkindate-trig, #checkoutdate-trig').click(function() {
+		let dp = jQuery(this).prev('input');
+		if (!dp.length) {
+			return;
 		}
-	});
-	jQuery(".vbodatepicker-trig-icon").click(function(){
-		var jdp = jQuery(this).prev("input.hasDatepicker");
-		if (jdp.length) {
-			jdp.focus();
+		if (dp.hasClass('hasDatepicker')) {
+			dp.focus();
+		} else if (dp.attr('id') == 'checkoutdate') {
+			jQuery('#checkindate').focus();
 		}
 	});
 	jQuery("#vbo-numnights").on("change keyup", function() {
-		if (!jQuery("#checkindate").length) {
+		if (!jQuery('#checkindate').vboDatesRangePicker('getCheckinDate')) {
 			return;
 		}
 		var nownights = parseInt(jQuery(this).val());
-		var nowcheckin = jQuery("#checkindate").datepicker("getDate");
+		var nowcheckin = jQuery('#checkindate').vboDatesRangePicker('getCheckinDate');
 		var nowcheckindate = new Date(nowcheckin.getTime());
 		nowcheckindate.setDate(nowcheckindate.getDate() + nownights);
-		jQuery("#checkoutdate").datepicker("option", "minDate", nowcheckindate);
-		jQuery("#checkoutdate").datepicker("setDate", nowcheckindate);
+		// update checkout date
+		jQuery('#checkindate').vboDatesRangePicker('setCheckoutDate', nowcheckindate);
+		// update global nights of stay
 		vbo_glob_sel_nights = nownights;
 		// update average cost per night
 		vbCalcDailyCost(document.getElementById("cust_cost").value);
 	});
 	// datepickers - end
-	<?php echo (!empty($pcheckin) ? 'jQuery("#checkindate").datepicker("setDate", "'.$pcheckin.'");'."\n" : ''); ?>
-	<?php echo (!empty($pcheckout) ? 'jQuery("#checkoutdate").datepicker("setDate", "'.$pcheckout.'");'."\n" : ''); ?>
-	<?php echo (!empty($pcheckin) || !empty($pcheckout) ? 'jQuery(".ui-datepicker-current-day").click();'."\n" : ''); ?>
+	<?php echo (!empty($pcheckin) || !empty($pcheckout) ? 'jQuery("#checkindate").vboDatesRangePicker("setDates", ["'.$pcheckin.'", "'.$pcheckout.'"]);'."\n" : ''); ?>
 });
 
 jQuery(document).on("click", ".vbo-custsearchres-entry", function() {

@@ -58,8 +58,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 	 */
 	public function loadBookingsCalendar()
 	{
-		// get today's date
+		// get today's date and timestamp
 		$today_ymd = date('Y-m-d');
+		$today_ts  = time();
 
 		$wrapper = VikRequest::getString('wrapper', '', 'request');
 		$offset = VikRequest::getString('offset', $today_ymd, 'request');
@@ -196,7 +197,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				</div>
 				<div class="vbo-widget-booskcal-mday-pricing-data">
 					<div class="vbo-widget-booskcal-mday-pricing-data-cost">
-						<span class="vbo-widget-booskcal-mday-pricing-currency"><?php echo VikBooking::getCurrencySymb(); ?></span>
+						<span class="vbo-widget-booskcal-mday-pricing-currency"><?php echo $currencysymb; ?></span>
 						<span class="vbo-widget-booskcal-mday-pricing-cost"></span>
 					</div>
 					<div class="vbo-widget-booskcal-mday-pricing-data-restr">
@@ -221,118 +222,120 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
 					<div class="vbo-params-wrap">
 						<div class="vbo-params-container">
+							<div class="vbo-params-block">
 
-							<div class="vbo-param-container">
-								<div class="vbo-param-label"><?php echo JText::translate('VBPICKUPAT'); ?></div>
-								<div class="vbo-param-setting">
-									<div class="vbo-field-calendar">
-										<div class="input-append">
-											<input type="text" class="vbo-widget-bookscal-checkindt" value="" autocomplete="off" />
-											<button type="button" class="btn btn-secondary vbo-widget-bookscal-checkindt-trigger"><?php VikBookingIcons::e('calendar'); ?></button>
+								<div class="vbo-param-container">
+									<div class="vbo-param-label"><?php echo JText::translate('VBPICKUPAT'); ?></div>
+									<div class="vbo-param-setting">
+										<div class="vbo-field-calendar">
+											<div class="input-append">
+												<input type="text" class="vbo-widget-bookscal-checkindt" value="" autocomplete="off" />
+												<button type="button" class="btn btn-secondary vbo-widget-bookscal-checkindt-trigger"><?php VikBookingIcons::e('calendar'); ?></button>
+											</div>
 										</div>
 									</div>
 								</div>
-							</div>
 
-							<div class="vbo-param-container">
-								<div class="vbo-param-label"><?php echo JText::translate('VBRELEASEAT'); ?></div>
-								<div class="vbo-param-setting">
-									<div class="vbo-field-calendar">
-										<div class="input-append">
-											<input type="text" class="vbo-widget-bookscal-checkoutdt" value="" autocomplete="off" />
-											<button type="button" class="btn btn-secondary vbo-widget-bookscal-checkoutdt-trigger"><?php VikBookingIcons::e('calendar'); ?></button>
+								<div class="vbo-param-container">
+									<div class="vbo-param-label"><?php echo JText::translate('VBRELEASEAT'); ?></div>
+									<div class="vbo-param-setting">
+										<div class="vbo-field-calendar">
+											<div class="input-append">
+												<input type="text" class="vbo-widget-bookscal-checkoutdt" value="" autocomplete="off" />
+												<button type="button" class="btn btn-secondary vbo-widget-bookscal-checkoutdt-trigger"><?php VikBookingIcons::e('calendar'); ?></button>
+											</div>
 										</div>
 									</div>
 								</div>
-							</div>
 
-							<div class="vbo-param-container vbo-toggle-small">
-								<div class="vbo-param-label"><?php echo JText::translate('VBSUBMCLOSEROOM'); ?></div>
-								<div class="vbo-param-setting">
-									<?php echo $this->vbo_app->printYesNoButtons('closeroom', JText::translate('VBYES'), JText::translate('VBNO'), 0, 1, 0, "vboWidgetBooksCalClosure('{$wrapper}');"); ?>
+								<div class="vbo-param-container vbo-toggle-small">
+									<div class="vbo-param-label"><?php echo JText::translate('VBSUBMCLOSEROOM'); ?></div>
+									<div class="vbo-param-setting">
+										<?php echo $this->vbo_app->printYesNoButtons('closeroom', JText::translate('VBYES'), JText::translate('VBNO'), 0, 1, 0, "vboWidgetBooksCalClosure('{$wrapper}');"); ?>
+									</div>
 								</div>
-							</div>
 
-							<div class="vbo-param-container" data-noclosure="1">
-								<div class="vbo-param-label"><?php echo JText::translate('VBOCUSTOMER'); ?></div>
-								<div class="vbo-param-setting">
-									<span class="vbo-assign-customer" onclick="vboWidgetBooksCalAssignCustomer('<?php echo $wrapper; ?>');">
-										<?php VikBookingIcons::e('user-circle'); ?>
-										<span><?php echo JText::translate('VBFILLCUSTFIELDS'); ?></span>
-									</span>
-									<input type="hidden" value="" class="vbo-widget-bookscal-custid" />
-									<input type="hidden" value="" class="vbo-widget-bookscal-custmail" />
-									<input type="hidden" value="" class="vbo-widget-bookscal-custdata" />
-									<input type="hidden" value="" class="vbo-widget-bookscal-country" />
-									<input type="hidden" value="" class="vbo-widget-bookscal-state" />
-									<input type="hidden" value="" class="vbo-widget-bookscal-phone" />
-									<input type="hidden" value="" class="vbo-widget-bookscal-tfname" />
-									<input type="hidden" value="" class="vbo-widget-bookscal-tlname" />
-									<input type="hidden" value="" class="vbo-widget-bookscal-roomcost" />
-									<input type="hidden" value="" class="vbo-widget-bookscal-idprice" />
+								<div class="vbo-param-container" data-noclosure="1">
+									<div class="vbo-param-label"><?php echo JText::translate('VBOCUSTOMER'); ?></div>
+									<div class="vbo-param-setting">
+										<span class="vbo-assign-customer" onclick="vboWidgetBooksCalAssignCustomer('<?php echo $wrapper; ?>');">
+											<?php VikBookingIcons::e('user-circle'); ?>
+											<span><?php echo JText::translate('VBFILLCUSTFIELDS'); ?></span>
+										</span>
+										<input type="hidden" value="" class="vbo-widget-bookscal-custid" />
+										<input type="hidden" value="" class="vbo-widget-bookscal-custmail" />
+										<input type="hidden" value="" class="vbo-widget-bookscal-custdata" />
+										<input type="hidden" value="" class="vbo-widget-bookscal-country" />
+										<input type="hidden" value="" class="vbo-widget-bookscal-state" />
+										<input type="hidden" value="" class="vbo-widget-bookscal-phone" />
+										<input type="hidden" value="" class="vbo-widget-bookscal-tfname" />
+										<input type="hidden" value="" class="vbo-widget-bookscal-tlname" />
+										<input type="hidden" value="" class="vbo-widget-bookscal-roomcost" />
+										<input type="hidden" value="" class="vbo-widget-bookscal-idprice" />
+									</div>
 								</div>
-							</div>
 
-							<div class="vbo-param-container" data-noclosure="1">
-								<div class="vbo-param-label"><?php echo JText::translate('VBPVIEWROOMSEVEN'); ?></div>
-								<div class="vbo-param-setting">
-									<input type="number" class="vbo-input-number-small vbo-widget-bookscal-units" value="1" min="1" max="99" onchange="vboWidgetBooksCalGetWebsiteRates('<?php echo $wrapper; ?>');" />
+								<div class="vbo-param-container" data-noclosure="1">
+									<div class="vbo-param-label"><?php echo JText::translate('VBPVIEWROOMSEVEN'); ?></div>
+									<div class="vbo-param-setting">
+										<input type="number" class="vbo-input-number-small vbo-widget-bookscal-units" value="1" min="1" max="99" onchange="vboWidgetBooksCalGetWebsiteRates('<?php echo $wrapper; ?>');" />
+									</div>
 								</div>
-							</div>
 
-							<div class="vbo-param-container" data-noclosure="1">
-								<div class="vbo-param-label"><?php echo JText::translate('VBPVIEWORDERSPEOPLE'); ?></div>
-								<div class="vbo-param-setting">
-									<span class="vbo-quickres-aduchi-wrap">
-										<span class="vbo-quickres-aduchi-inlbl"><?php echo JText::translate('VBEDITORDERADULTS'); ?></span>
-										<input type="number" class="vbo-input-number-small vbo-widget-bookscal-adults" value="2" min="0" max="99" onchange="vboWidgetBooksCalGetWebsiteRates('<?php echo $wrapper; ?>');" />
-									</span>
-									<span class="vbo-quickres-aduchi-wrap">
-										<span class="vbo-quickres-aduchi-inlbl"><?php echo JText::translate('VBEDITORDERCHILDREN'); ?></span>
-										<input type="number" class="vbo-input-number-small vbo-widget-bookscal-children" value="0" min="0" max="99" />
-									</span>
+								<div class="vbo-param-container" data-noclosure="1">
+									<div class="vbo-param-label"><?php echo JText::translate('VBPVIEWORDERSPEOPLE'); ?></div>
+									<div class="vbo-param-setting">
+										<span class="vbo-quickres-aduchi-wrap">
+											<span class="vbo-quickres-aduchi-inlbl"><?php echo JText::translate('VBEDITORDERADULTS'); ?></span>
+											<input type="number" class="vbo-input-number-small vbo-widget-bookscal-adults" value="2" min="0" max="99" onchange="vboWidgetBooksCalGetWebsiteRates('<?php echo $wrapper; ?>');" />
+										</span>
+										<span class="vbo-quickres-aduchi-wrap">
+											<span class="vbo-quickres-aduchi-inlbl"><?php echo JText::translate('VBEDITORDERCHILDREN'); ?></span>
+											<input type="number" class="vbo-input-number-small vbo-widget-bookscal-children" value="0" min="0" max="99" />
+										</span>
+									</div>
 								</div>
-							</div>
 
-							<div class="vbo-param-container vbo-website-rates-row" data-noclosure="1" data-unavailable="1" style="display: none;">
-								<div class="vbo-param-label"><?php echo JText::translate('VBOWEBSITERATES'); ?></div>
-								<div class="vbo-param-setting">
-									<div class="vbo-website-rates-cont"></div>
+								<div class="vbo-param-container vbo-website-rates-row" data-noclosure="1" data-unavailable="1" style="display: none;">
+									<div class="vbo-param-label"><?php echo JText::translate('VBOWEBSITERATES'); ?></div>
+									<div class="vbo-param-setting">
+										<div class="vbo-website-rates-cont"></div>
+									</div>
 								</div>
-							</div>
 
-							<div class="vbo-param-container vbo-row-custcost" data-noclosure="1">
-								<div class="vbo-param-label"><?php echo JText::translate('VBOROOMCUSTRATEPLANADD'); ?></div>
-								<div class="vbo-param-setting">
-									<div class="vbo-calendar-costs-wrapper">
-										<?php echo $currencysymb; ?> <input type="number" class="vbo-widget-bookscal-custcost" value="" step="any" min="0" onfocus="vboWidgetBooksCalFocusTaxes('<?php echo $wrapper; ?>');" />
-									<?php
-									if ($tax_rates) {
-										?>
-										<select class="vbo-widget-bookscal-taxid" style="display: none;">
-											<option value=""><?php echo JText::translate('VBNEWOPTFOUR'); ?></option>
+								<div class="vbo-param-container vbo-row-custcost" data-noclosure="1">
+									<div class="vbo-param-label"><?php echo JText::translate('VBOROOMCUSTRATEPLANADD'); ?></div>
+									<div class="vbo-param-setting">
+										<div class="vbo-calendar-costs-wrapper">
+											<?php echo $currencysymb; ?> <input type="number" class="vbo-widget-bookscal-custcost" value="" step="any" min="0" onfocus="vboWidgetBooksCalFocusTaxes('<?php echo $wrapper; ?>');" />
 										<?php
-										foreach ($tax_rates as $kiv => $iv) {
+										if ($tax_rates) {
 											?>
-											<option value="<?php echo $iv['id']; ?>"<?php echo $kiv < 1 ? ' selected="selected"' : ''; ?>><?php echo empty($iv['name']) ? "{$iv['aliq']}%" : "{$iv['name']} - {$iv['aliq']}%"; ?></option>
+											<select class="vbo-widget-bookscal-taxid" style="display: none;">
+												<option value=""><?php echo JText::translate('VBNEWOPTFOUR'); ?></option>
+											<?php
+											foreach ($tax_rates as $kiv => $iv) {
+												?>
+												<option value="<?php echo $iv['id']; ?>"<?php echo $kiv < 1 ? ' selected="selected"' : ''; ?>><?php echo empty($iv['name']) ? "{$iv['aliq']}%" : "{$iv['name']} - {$iv['aliq']}%"; ?></option>
+												<?php
+											}
+											?>
+											</select>
 											<?php
 										}
 										?>
-										</select>
-										<?php
-									}
-									?>
+										</div>
 									</div>
 								</div>
-							</div>
 
-							<div class="vbo-param-container vbo-param-confirm-btn">
-								<div class="vbo-param-label"></div>
-								<div class="vbo-param-setting">
-									<button type="button" class="btn btn-success vbo-btn-wide" onclick="vboWidgetBooksCalSaveBooking('<?php echo $wrapper; ?>');"><?php VikBookingIcons::e('save'); ?> <?php echo JText::translate('VBSAVE'); ?></button>
+								<div class="vbo-param-container vbo-param-confirm-btn">
+									<div class="vbo-param-label"></div>
+									<div class="vbo-param-setting">
+										<button type="button" class="btn btn-success vbo-btn-wide" onclick="vboWidgetBooksCalSaveBooking('<?php echo $wrapper; ?>');"><?php VikBookingIcons::e('save'); ?> <?php echo JText::translate('VBSAVE'); ?></button>
+									</div>
 								</div>
-							</div>
 
+							</div>
 						</div>
 					</div>
 				</div>
@@ -426,6 +429,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 						if ($cell_ymd == $today_ymd) {
 							// set the "today" cell class
 							$cell_classes[] = 'is-today';
+						} elseif ($info_arr[0] < $today_ts) {
+							// set the "past" cell class
+							$cell_classes[] = 'past';
 						}
 						$cell_day_read = VikBooking::sayWeekDay($info_arr['wday']) . ' ' . $info_arr['mday'];
 
@@ -477,33 +483,66 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 
 		<script type="text/javascript">
 
-			// render datepicker calendar for dates navigation
-			jQuery('#<?php echo $wrapper; ?>').find('.vbo-widget-bookscal-checkindt, .vbo-widget-bookscal-checkoutdt').datepicker({
+			// render DRP calendar for dates selection
+			jQuery('#<?php echo $wrapper; ?>').find('.vbo-widget-bookscal-checkindt').vboDatesRangePicker({
+				checkout: jQuery('#<?php echo $wrapper; ?>').find('.vbo-widget-bookscal-checkoutdt'),
+				showOn: "focus",
 				minDate: "-1m",
 				maxDate: "+3y",
 				yearRange: "<?php echo date('Y'); ?>:<?php echo (date('Y') + 3); ?>",
 				changeMonth: true,
 				changeYear: true,
 				dateFormat: "<?php echo $dtpicker_df; ?>",
-				onSelect: function(selectedDate) {
-					if (!selectedDate) {
-						return;
-					}
-					if (jQuery(this).hasClass('vbo-widget-bookscal-checkindt')) {
-						let nowstart = jQuery(this).datepicker('getDate');
+				numberOfMonths: 2,
+				responsiveNumMonths: {
+					threshold: 860,
+				},
+				onSelect: {
+					checkin: (selectedDate) => {
+						if (!selectedDate) {
+							return;
+						}
+						let nowstart = jQuery('#<?php echo $wrapper; ?>').find('.vbo-widget-bookscal-checkindt').vboDatesRangePicker('getCheckinDate');
 						let nowstartdate = new Date(nowstart.getTime());
-						jQuery('.vbo-widget-bookscal-checkoutdt').datepicker('option', {minDate: nowstartdate});
-					}
-					// calculate website rates
-					vboWidgetBooksCalGetWebsiteRates('<?php echo $wrapper; ?>');
-				}
+						jQuery('#<?php echo $wrapper; ?>').find('.vbo-widget-bookscal-checkindt').vboDatesRangePicker('checkout', 'minDate', nowstartdate);
+						// calculate website rates
+						vboWidgetBooksCalGetWebsiteRates('<?php echo $wrapper; ?>');
+					},
+					checkout: (selectedDate) => {
+						if (!selectedDate) {
+							return;
+						}
+						// calculate website rates
+						vboWidgetBooksCalGetWebsiteRates('<?php echo $wrapper; ?>');
+					},
+				},
+				labels: {
+					checkin: Joomla.JText._('VBPICKUPROOM'),
+					checkout: Joomla.JText._('VBRETURNROOM'),
+				},
+				bottomCommands: {
+					clear: Joomla.JText._('VBO_CLEAR_DATES'),
+					close: Joomla.JText._('VBO_CLOSE'),
+					onClear: () => {
+						vbCalcNights();
+					},
+				},
+				environment: {
+					section: 'admin',
+					autoHide: true,
+				},
 			});
 
 			// triggering for datepicker calendar icon
 			jQuery('#<?php echo $wrapper; ?>').find('.vbo-widget-bookscal-checkindt-trigger, .vbo-widget-bookscal-checkoutdt-trigger').click(function() {
-				var jdp = jQuery(this).parent().find('input.hasDatepicker');
-				if (jdp.length) {
-					jdp.focus();
+				let dp = jQuery(this).parent().find('input[type="text"]');
+				if (!dp.length) {
+					return;
+				}
+				if (dp.hasClass('hasDatepicker')) {
+					dp.focus();
+				} else if (dp.hasClass('vbo-widget-bookscal-checkoutdt')) {
+					jQuery('#<?php echo $wrapper; ?>').find('.vbo-widget-bookscal-checkindt').focus();
 				}
 			});
 
@@ -1385,10 +1424,36 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 			}
 		}
 
+		/**
+		 * Build room-ota relations for pricing alterations, if any.
+		 * 
+		 * @since 	1.17.3 (J) - 1.7.3 (WP)
+		 */
+		$room_ota_relations = [];
+		// always get a new instance of the VikChannelManagerLogos class
+		$vcm_logos = VikBooking::getVcmChannelsLogo('', true);
+		// load channels (firsr) and accounts (after) for this listing
+		$room_ota_channels = is_object($vcm_logos) && method_exists($vcm_logos, 'getVboRoomLogosMapped') ? $vcm_logos->getVboRoomLogosMapped($room_data['id']) : [];
+		$room_ota_accounts = is_object($vcm_logos) && method_exists($vcm_logos, 'getRoomOtaAccounts') ? $vcm_logos->getRoomOtaAccounts() : [];
+		// filter channels not available as accounts (i.e. iCal)
+		if (count($room_ota_channels) != count(($room_ota_accounts[$room_data['id']] ?? []))) {
+			$ota_account_names = array_map('strtolower', array_column(($room_ota_accounts[$room_data['id']] ?? []), 'channel'));
+			$room_ota_channels = array_filter($room_ota_channels, function($chid) use ($ota_account_names) {
+				return in_array(strtolower($chid), $ota_account_names);
+			}, ARRAY_FILTER_USE_KEY);
+		}
+		if ($room_ota_channels && ($room_ota_accounts[$room_data['id']] ?? [])) {
+			$room_ota_relations[$room_data['id']] = [
+				'channels' => $room_ota_channels,
+				'accounts' => $room_ota_accounts[$room_data['id']],
+			];
+		}
+
 		return [
 			'wday'          => $from_date_info['wday'],
 			'room_rates'    => $room_rates,
 			'derived_rates' => $derived_rates_info,
+			'ota_relations' => $room_ota_relations ?: (new stdClass),
 		];
 	}
 
@@ -1406,12 +1471,13 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 	{
 		$app = JFactory::getApplication();
 
-		$ymd      = $app->input->getString('ymd', date('Y-m-d'));
-		$rplan_id = $app->input->getInt('rplan_id', 0);
-		$room_id  = $app->input->getInt('room_id', 0);
-		$rate     = $app->input->getFloat('rate', 0);
-		$minlos   = $app->input->getInt('minlos', 0);
-		$updotas  = $app->input->getBool('updotas', false);
+		$ymd        = $app->input->getString('ymd', date('Y-m-d'));
+		$rplan_id   = $app->input->getInt('rplan_id', 0);
+		$room_id    = $app->input->getInt('room_id', 0);
+		$rate       = $app->input->getFloat('rate', 0);
+		$minlos     = $app->input->getInt('minlos', 0);
+		$updotas    = $app->input->getBool('updotas', false);
+		$otapricing = $app->input->get('ota_pricing', [], 'array');
 
 		try {
             // access the model pricing by binding data
@@ -1423,6 +1489,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
                 'rate'        => $rate,
                 'min_los'     => $minlos,
                 'update_otas' => $updotas,
+                'ota_pricing' => $otapricing,
             ]);
 
             // apply the new rate/restrictions
@@ -1449,6 +1516,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 	{
 		// load assets
 		$this->vbo_app->loadDatePicker();
+		$this->vbo_app->loadDatesRangePicker();
 		$this->vbo_app->loadPhoneInputFieldAssets();
 
 		// JS lang def
@@ -1506,8 +1574,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		// check pricing tax configuration
 		$prices_vat_included = (int)VikBooking::ivaInclusa();
 
-		// currency symbol
+		// currency symbol and formatting options
 		$currencysymb = VikBooking::getCurrencySymb();
+		list($currency_digits, $currency_decimals, $currency_thousands) = explode(':', VikBooking::getNumberFormatData());
 
 		/**
 		 * This widget can make use of the Select2 jQuery plugin, but we do not preload it in
@@ -1698,6 +1767,25 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 
 				</div>
 			</div>
+			<div class="vbo-widget-booskcal-html-helper" style="display: none;">
+				<div class="vbo-roverw-setnewrate-vcm-ota-pricing-alteration">
+					<div class="vbo-roverw-setnewrate-vcm-ota-alteration-elem">
+						<select data-alter-rule="rmodsop">
+							<option value="1">+</option>
+							<option value="0">-</option>
+						</select>
+					</div>
+					<div class="vbo-roverw-setnewrate-vcm-ota-alteration-elem">
+						<input type="number" value="" step="any" min="0" data-alter-rule="rmodsamount" />
+					</div>
+					<div class="vbo-roverw-setnewrate-vcm-ota-alteration-elem">
+						<select data-alter-rule="rmodsval">
+							<option value="1">%</option>
+							<option value="0"><?php echo $currencysymb; ?></option>
+						</select>
+					</div>
+				</div>
+			</div>
 		</div>
 		<?php
 
@@ -1710,6 +1798,15 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		<a class="vbo-widget-bookscal-basenavuri" href="<?php echo VBOFactory::getPlatform()->getUri()->admin('index.php?option=com_vikbooking&task=editorder&cid[]=%d', $xhtml = false); ?>" style="display: none;"></a>
 
 		<script type="text/javascript">
+
+			/**
+			 * The current room-ota relations and currency options.
+			 */
+			var vboWidgetBooksCalRoomOtaRels = {};
+			var vbo_currency_symbol = "<?php echo $currencysymb; ?>";
+			var vbo_currency_digits = "<?php echo $currency_digits; ?>";
+			var vbo_currency_decimals = "<?php echo $currency_decimals; ?>";
+			var vbo_currency_thousands = "<?php echo $currency_thousands; ?>";
 
 			/**
 			 * Open the booking details page for the clicked reservation.
@@ -2094,6 +2191,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 					return false;
 				}
 
+				// subscribe to the set new rate event for calculating the ota pricing information
+				document.addEventListener('vbo-wbookscal-setnewrate-calc-ota-pricing-' + wrapper, vboWidgetBooksCalSetNewRateCalcOtaPricing);
+
 				// set month-day title
 				var day_read = cell.attr('data-dayread');
 				widget_instance.find('.vbo-widget-booskcal-mday-name').text(day_read);
@@ -2162,6 +2262,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 					// show loading
 					mday_pricing_cell.find('.vbo-widget-booskcal-mday-pricing-title').find('span').append(' <span class="vbo-widget-bookscal-mday-mngrates-loading"><?php VikBookingIcons::e('circle-notch', 'fa-spin fa-fw'); ?></span>');
 
+					// the current room ID
+					var room_id = widget_instance.find('.vbo-booskcal-roomid').val();
+
 					// the widget method to call
 					var call_method = 'loadRoomDayRatePlans';
 
@@ -2173,7 +2276,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 							call: call_method,
 							return: 1,
 							ymd: day_ymd,
-							room_id: widget_instance.find('.vbo-booskcal-roomid').val(),
+							room_id: room_id,
 							wrapper: wrapper,
 							tmpl: "component"
 						},
@@ -2189,6 +2292,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 
 								// remove the pricing node that will be rebuilt
 								mday_pricing_cell.find('.vbo-widget-booskcal-mday-pricing-data-cost').remove();
+
+								// update room-ota relations object
+								vboWidgetBooksCalRoomOtaRels = obj_res[call_method]['ota_relations'];
 
 								// display the cost for each rate plan and related name
 								obj_res[call_method]['room_rates'][day_ymd].forEach((tariff, index) => {
@@ -2211,7 +2317,6 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 									day_rplan_html += '		<label>' + Joomla.JText._('VBRATESOVWSETNEWRATE') + '</label>';
 									day_rplan_html += '		<div class="vbo-widget-booskcal-mday-pricing-edit-input vbo-input-currency-wrap">';
 									day_rplan_html += '			<span class="vbo-widget-booskcal-mday-pricing-edit-currency"><?php echo VikBooking::getCurrencySymb(); ?></span> ';
-									day_rplan_html += '			<input class="vbo-widget-booskcal-mday-pricing-edit-newcost" type="number" value="' + tariff['cost'] + '" min="0" />';
 									day_rplan_html += '		</div>';
 									day_rplan_html += '	</div>';
 									day_rplan_html += '	<div class="vbo-widget-booskcal-mday-pricing-edit-block vbo-widget-booskcal-mday-pricing-edit-minlos">';
@@ -2229,6 +2334,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 									day_rplan_html += '	<div class="vbo-widget-booskcal-mday-pricing-edit-block vbo-widget-booskcal-mday-pricing-edit-save">';
 									day_rplan_html += '		<button type="button" class="btn vbo-btn-black" onclick="vboWidgetBooksCalSetRateRestriction(this, \'' + wrapper + '\');">' + Joomla.JText._('VBAPPLY') + '</button>';
 									day_rplan_html += '	</div>';
+									day_rplan_html += '	<div class="vbo-widget-booskcal-mday-otapricing-wrap"></div>';
 									day_rplan_html += '</div>';
 									// close block
 									day_rplan_html += '</div>';
@@ -2246,6 +2352,33 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 
 									// prepend pricing information block
 									mday_pricing_cell.find('.vbo-widget-booskcal-mday-pricing-data').prepend(day_rplan_html);
+
+									// build set-new-rate input field and related listener
+									let new_rate_input = jQuery('<input/>');
+									new_rate_input.addClass('vbo-widget-booskcal-mday-pricing-edit-newcost');
+									new_rate_input.attr('type', 'number');
+									new_rate_input.attr('min', 0);
+									new_rate_input.val(tariff['cost']);
+									new_rate_input.on('input', VBOCore.debounceEvent((e) => {
+										// dispatch the event to calculate the new OTA pricing value
+										VBOCore.emitEvent('vbo-wbookscal-setnewrate-calc-ota-pricing-' + wrapper, {
+											wrapper: wrapper,
+											rate: e.target.value,
+											room_id: room_id,
+											rate_id: tariff['idprice'],
+										});
+									}, 200));
+
+									// append input field
+									mday_pricing_cell
+										.find('.vbo-widget-booskcal-mday-pricing-data')
+										.find('.vbo-widget-booskcal-mday-pricing-data-cost[data-rplan-id="' + tariff['idprice'] + '"]')
+										.find('.vbo-widget-booskcal-mday-pricing-edit-cost')
+										.find('.vbo-widget-booskcal-mday-pricing-edit-input')
+										.append(new_rate_input);
+
+									// populate room-ota relations
+									vboWidgetBooksCalSetRoomOtaRelations(wrapper, room_id, tariff['idprice']);
 								});
 
 								// replace raw checkbox with the hidden toggle button
@@ -2292,6 +2425,387 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 			}
 
 			/**
+			 * Populates the room-ota pricing information.
+			 */
+			function vboWidgetBooksCalSetRoomOtaRelations(wrapper, room_id, rplan_id) {
+				var widget_instance = jQuery('#' + wrapper);
+				if (!widget_instance.length) {
+					return false;
+				}
+
+				// the room-rate wrapper
+				let rrate_wrapper = widget_instance.find('.vbo-widget-booskcal-mday-pricing-data-cost[data-rplan-id="' + rplan_id + '"]');
+
+				// the room-ota relations wrapper
+				let rota_wrapper = rrate_wrapper.find('.vbo-widget-booskcal-mday-otapricing-wrap');
+
+				// always empty the wrapper
+				rota_wrapper.html('');
+
+				if (!room_id || !rplan_id || !vboWidgetBooksCalRoomOtaRels.hasOwnProperty(room_id) || !vboWidgetBooksCalRoomOtaRels[room_id].hasOwnProperty('channels')) {
+					// nothing to render
+					return;
+				}
+
+				// start counter
+				let ota_ch_counter = 0;
+
+				// build and append room-OTA relations
+				for (const ota_name in vboWidgetBooksCalRoomOtaRels[room_id]['channels']) {
+					// build ota readable name
+					let ota_read_name = ota_name;
+					ota_read_name = ota_read_name.replace(/api$/, '');
+					ota_read_name = ota_read_name.replace(/^(google)(hotel|vr)$/i, '$1 $2');
+
+					// build room-ota relation block and elements
+					let ota_block = jQuery('<div></div>');
+					ota_block.addClass('vbo-roverw-setnewrate-vcm-ota-relation');
+
+					let ota_block_inner = jQuery('<div></div>');
+					ota_block_inner
+						.addClass('vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+						.attr('data-ota', (ota_name + '').toLowerCase());
+
+					let ota_block_channel = jQuery('<div></div>');
+					ota_block_channel
+						.addClass('vbo-roverw-setnewrate-vcm-ota-relation-channel')
+						.attr('data-otaid', vboWidgetBooksCalRoomOtaRels[room_id]['accounts'][ota_ch_counter]['idchannel'])
+						.append('<img src="' + vboWidgetBooksCalRoomOtaRels[room_id]['channels'][ota_name] + '" />')
+						.append('<span>' + ota_read_name + '</span>');
+
+					let ota_pricing_value = jQuery('<span></span>');
+					ota_pricing_value
+						.addClass('vbo-roverw-setnewrate-vcm-ota-pricing-startvalue')
+						.html('<?php VikBookingIcons::e('circle-notch', 'fa-spin fa-fw'); ?>')
+						.on('click', function() {
+							jQuery(this)
+								.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+								.find('.vbo-roverw-setnewrate-vcm-ota-channel-pricing')
+								.toggle();
+						});
+
+					let ota_block_pricing = jQuery('<div></div>');
+					ota_block_pricing
+						.addClass('vbo-roverw-setnewrate-vcm-ota-channel-pricing')
+						.css('display', 'none')
+						.append(jQuery('.vbo-roverw-setnewrate-vcm-ota-pricing-alteration').first().clone());
+
+					// register "input" event for select/input elements to control the channel alteration rule overrides
+					ota_block_pricing.find('select, input').on('input', function() {
+						let input_elem = jQuery(this);
+
+						// get the current channel alteration command
+						let ota_alteration_command = input_elem
+							.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+							.find('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]')
+							.attr('data-alteration');
+
+						// access alteration rule and input value
+						let rmod_type  = input_elem.attr('data-alter-rule');
+						let rmod_value = input_elem.val();
+
+						if (!ota_alteration_command || !rmod_type || !(rmod_value + '').length) {
+							return;
+						}
+
+						// check what pricing factor was changed
+						if (rmod_type == 'rmodsop') {
+							// increase or decrease rate
+							let command_old_val = ota_alteration_command.substr(0, 1);
+							let command_new_val = parseInt(rmod_value) == 1 ? '+' : '-';
+							ota_alteration_command = ota_alteration_command.replace(command_old_val, command_new_val);
+						} else if (rmod_type == 'rmodsamount') {
+							// amount
+							let command_op  = ota_alteration_command.substr(0, 1);
+							let command_val = ota_alteration_command.substr(-1, 1);
+							let command_old_val = ota_alteration_command.replace(command_op, '').replace(command_val, '');
+							let command_new_val = parseFloat(rmod_value);
+							ota_alteration_command = ota_alteration_command.replace(command_old_val, command_new_val);
+						} else if (rmod_type == 'rmodsval') {
+							// percent or absolute
+							let command_old_val = ota_alteration_command.substr(-1, 1);
+							let command_new_val = parseInt(rmod_value) == 1 ? '%' : '*';
+							ota_alteration_command = ota_alteration_command.replace(command_old_val, command_new_val);
+						}
+
+						// get current currency options
+						let currencyObj = VBOCore.getCurrency();
+						let orig_currency_options = currencyObj.getOptions();
+
+						// check if the channel requires a specific currency
+						let ota_currency_data = input_elem
+							.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+							.find('.vbo-roverw-setnewrate-ota-pricing-willvalue')
+							.attr('data-currency');
+						if (ota_currency_data) {
+							// decode currency data instructions
+							try {
+								ota_currency_data = JSON.parse(ota_currency_data);
+							} catch (e) {
+								ota_currency_data = {};
+							}
+						}
+
+						// define the current channel alteration string (readable)
+						let ota_alteration_string = ota_alteration_command;
+
+						// finalize the current channel alteration string (readable)
+						let ota_alteration_val = ota_alteration_string.substr(-1, 1);
+						if (ota_alteration_val != '%') {
+							ota_alteration_string = ota_alteration_string.replace(ota_alteration_val, '') + ((ota_currency_data && ota_currency_data?.symbol ? ota_currency_data.symbol : '') || vbo_currency_symbol);
+						}
+
+						// update the alteration rule command attribute
+						input_elem
+							.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+							.find('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]')
+							.attr('data-alteration', ota_alteration_command);
+
+						// update the alteration rule string tag text
+						input_elem
+							.closest('.vbo-roverw-setnewrate-vcm-ota-relation-pricing')
+							.find('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]')
+							.html(ota_alteration_string);
+
+						// get the current rate to set
+						let current_room_rate = rrate_wrapper.find('.vbo-widget-booskcal-mday-pricing-edit-newcost').val();
+						if (current_room_rate) {
+							// dispatch the event to trigger the re-calculation of the OTA rates
+							VBOCore.emitEvent('vbo-wbookscal-setnewrate-calc-ota-pricing-' + wrapper, {
+								wrapper: wrapper,
+								rate: current_room_rate,
+								room_id: room_id,
+								rate_id: rplan_id,
+							});
+						}
+					});
+
+					// append elements to wrapper
+					ota_block_channel.append(ota_pricing_value);
+					ota_block_inner.append(ota_block_channel);
+					ota_block_inner.append(ota_block_pricing);
+					ota_block.append(ota_block_inner);
+					rota_wrapper.append(ota_block);
+
+					// increase OTA channel counter
+					ota_ch_counter++;
+				}
+
+				// trigger an AJAX request to load the current alteration rules, if any
+				VBOCore.doAjax(
+					"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=pricing.loadOtaAlterationRules'); ?>",
+					{
+						room_id: room_id,
+						rate_id: rplan_id,
+					},
+					(res) => {
+						var obj_res = typeof res === 'string' ? JSON.parse(res) : res;
+						let alter_room_rates = obj_res['rmod'] == '1' || obj_res['rmod'] == 1;
+
+						// scan all room OTAs
+						rota_wrapper.find('.vbo-roverw-setnewrate-vcm-ota-relation').each(function(key, elem) {
+							// get the current OTA identifier and whether pricing is altered
+							let ota_wrap = jQuery(elem);
+							let ota_id = ota_wrap.find('.vbo-roverw-setnewrate-vcm-ota-relation-channel').attr('data-otaid');
+							let alter_ota_rates = alter_room_rates && obj_res['channels'] && (obj_res['channels'].includes(ota_id) || obj_res['channels'].includes(parseInt(ota_id)));
+
+							// check if the current channel is using a different currency
+							let ota_currency_data = {};
+							if (obj_res.hasOwnProperty('cur_rplans') && obj_res['cur_rplans'].hasOwnProperty(ota_id)) {
+								let ota_check_currency = obj_res['cur_rplans'][ota_id];
+								if (obj_res.hasOwnProperty('currency_data_options') && obj_res['currency_data_options'].hasOwnProperty(ota_check_currency)) {
+									// set custom currency data returned
+									ota_currency_data = obj_res['currency_data_options'][ota_check_currency];
+								}
+							}
+
+							// build pricing alteration strings
+							let alteration_command = '';
+							let alteration_string  = '';
+
+							// default alteration factors (no pricing alteration rules)
+							let alter_op = '+';
+							let alter_amount = '0';
+							let alter_val = '%';
+
+							if (alter_ota_rates) {
+								// check how rates are altered for this channel
+								if (obj_res.hasOwnProperty('rmod_channels') && obj_res['rmod_channels'].hasOwnProperty(ota_id)) {
+									// ota-level pricing alteration rule
+									if (parseInt(obj_res['rmod_channels'][ota_id]['rmod']) == 1) {
+										alter_op = parseInt(obj_res['rmod_channels'][ota_id]['rmodop']) == 1 ? '+' : '-';
+										alter_amount = obj_res['rmod_channels'][ota_id]['rmodamount'];
+										alter_val = parseInt(obj_res['rmod_channels'][ota_id]['rmodval']) == 1 ? '%' : '*';
+									}
+								} else {
+									// room-level pricing alteration rule
+									alter_op = parseInt(obj_res['rmodop']) == 1 ? '+' : '-';
+									alter_amount = obj_res['rmodamount'] || '0';
+									alter_val = parseInt(obj_res['rmodval']) == 1 ? '%' : '*';
+								}
+							}
+
+							// construct alteration strings
+							alteration_command = alter_op + (alter_amount + '') + (alter_val + '');
+							alteration_string  = alter_op + (alter_amount + '') + (alter_val == '%' ? '%' : (ota_currency_data?.symbol || vbo_currency_symbol));
+
+							// stop room-ota loading and set alteration string
+							let alteration_elem = jQuery('<span></span>');
+							alteration_elem
+								.addClass('vbo-roverw-setnewrate-ota-pricing-currentvalue')
+								.attr('data-alteration', alteration_command)
+								.html(alteration_string);
+
+							let will_alter_elem = jQuery('<span></span>').addClass('vbo-roverw-setnewrate-ota-pricing-willvalue');
+
+							if (ota_currency_data.symbol) {
+								// set currency data object
+								will_alter_elem.attr('data-currency', JSON.stringify(ota_currency_data));
+							}
+
+							// set elements
+							ota_wrap
+								.find('.vbo-roverw-setnewrate-vcm-ota-pricing-startvalue')
+								.html('')
+								.append(will_alter_elem)
+								.append(alteration_elem)
+								.append('<?php VikBookingIcons::e('edit', 'edit-ota-pricing'); ?>');
+
+							// populate default values for input element overrides
+							ota_wrap.find('select[data-alter-rule="rmodsop"]').val(alter_op == '+' ? 1 : 0);
+							ota_wrap.find('input[data-alter-rule="rmodsamount"]').val(parseInt(alter_amount) > 0 ? alter_amount : '');
+							ota_wrap.find('select[data-alter-rule="rmodsval"]').val(alter_val == '%' ? 1 : 0);
+						});
+
+						// check the current rate value
+						let current_room_rate = rrate_wrapper.find('.vbo-widget-booskcal-mday-pricing-edit-newcost').val();
+						if (current_room_rate) {
+							// dispatch the event to allow the actual calculation of the OTA rate
+							VBOCore.emitEvent('vbo-wbookscal-setnewrate-calc-ota-pricing-' + wrapper, {
+								wrapper: wrapper,
+								rate: current_room_rate,
+								room_id: room_id,
+								rate_id: rplan_id,
+							});
+						}
+					},
+					(err) => {
+						alert(err.responseText || 'Request Failed');
+					}
+				);
+			}
+
+			/**
+			 * Calculates the OTA pricing information when a new rate is input.
+			 */
+			function vboWidgetBooksCalSetNewRateCalcOtaPricing(e) {
+				if (!e || !e.detail || !e.detail.wrapper || !e.detail.rate || !e.detail.room_id || !e.detail.rate_id) {
+					// invalid event data
+					return;
+				}
+
+				let widget_instance = document.querySelector('#' + e.detail.wrapper);
+				if (!widget_instance) {
+					// could not find widget instance
+					return;
+				}
+
+				// the room-rate wrapper
+				let rrate_wrapper = widget_instance.querySelector('.vbo-widget-booskcal-mday-pricing-data-cost[data-rplan-id="' + e.detail.rate_id + '"]');
+
+				// get the new PMS rate
+				let rate_amount = parseFloat(e.detail.rate);
+
+				// access the currency object
+				let currencyObj = VBOCore.getCurrency({
+					symbol:     vbo_currency_symbol,
+					digits:     vbo_currency_digits,
+					decimals:   vbo_currency_decimals,
+					thousands:  vbo_currency_thousands,
+					noDecimals: 1,
+				});
+
+				// scan all OTA alteration rules, if any
+				rrate_wrapper.querySelectorAll('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]').forEach((elem) => {
+					// channel alteration string
+					let alter_string = elem.getAttribute('data-alteration');
+					if (!alter_string) {
+						alter_string = '+0%';
+					}
+
+					// default alteration factors (no pricing alteration rules)
+					let alter_op = alter_string.substr(0, 1);
+					let alter_val = alter_string.substr(-1, 1);
+					let alter_amount = parseFloat(alter_string.replace(alter_op, '').replace(alter_val, ''));
+
+					// calculate what the rate will be on the OTA
+					let ota_rate_amount = rate_amount;
+
+					if (!isNaN(alter_amount) && Math.abs(alter_amount) > 0) {
+						if (alter_op == '+') {
+							// increase rate
+							if (alter_val == '%') {
+								// percent
+								let amount_inc = currencyObj.multiply(alter_amount, 0.01);
+								amount_inc = currencyObj.multiply(rate_amount, amount_inc);
+								ota_rate_amount = currencyObj.sum(rate_amount, amount_inc);
+							} else {
+								// absolute
+								ota_rate_amount = currencyObj.sum(rate_amount, alter_amount);
+							}
+						} else {
+							// discount rate
+							if (alter_val == '%') {
+								// percent
+								let amount_inc = currencyObj.multiply(alter_amount, 0.01);
+								amount_inc = currencyObj.multiply(rate_amount, amount_inc);
+								ota_rate_amount = currencyObj.diff(rate_amount, amount_inc);
+							} else {
+								// absolute
+								ota_rate_amount = currencyObj.diff(rate_amount, alter_amount);
+							}
+						}
+					}
+
+					// get the element containing the calculated ota pricing
+					let will_alter_elem = elem
+						.closest('.vbo-roverw-setnewrate-vcm-ota-pricing-startvalue')
+						.querySelector('.vbo-roverw-setnewrate-ota-pricing-willvalue');
+
+					// define the currency options
+					let ota_currency_options = {};
+
+					// check if the channel requires a specific currency
+					let ota_currency_data = will_alter_elem.getAttribute('data-currency');
+					if (ota_currency_data) {
+						// decode currency data instructions
+						try {
+							ota_currency_data = JSON.parse(ota_currency_data);
+						} catch (e) {
+							ota_currency_data = {};
+						}
+
+						// set custom currency options
+						if (ota_currency_data['symbol']) {
+							ota_currency_options['symbol'] = ota_currency_data['symbol'];
+						}
+						if (ota_currency_data['decimals']) {
+							ota_currency_options['digits'] = ota_currency_data['decimals'];
+						}
+						if (ota_currency_data['decimals_sep']) {
+							ota_currency_options['decimals'] = ota_currency_data['decimals_sep'];
+						}
+						if (ota_currency_data['thousands_sep']) {
+							ota_currency_options['thousands'] = ota_currency_data['thousands_sep'];
+						}
+					}
+
+					// set calculated OTA rate value
+					will_alter_elem.innerHTML = currencyObj.format(ota_rate_amount, ota_currency_options);
+				});
+			}
+
+			/**
 			 * Applies the new rate and restriction set for a room rate.
 			 */
 			function vboWidgetBooksCalSetRateRestriction(elem, wrapper) {
@@ -2315,6 +2829,43 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				// start loading
 				btn.append(' <?php VikBookingIcons::e('circle-notch', 'fa-spin fa-fw'); ?>');
 
+				// whether to update OTAs
+				let updotas = rplan_block.find('.vbo-widget-booskcal-mday-pricing-edit-updotas').prop('checked') ? 1 : 0;
+
+				// check the OTA pricing alteration rules, if any
+				let ota_pricing = {};
+				if (updotas) {
+					// access the room-rate pricing block through plain JS
+					let rrate_pricing_block = document.querySelector('#' + wrapper).querySelector('.vbo-widget-booskcal-mday-pricing-data-cost[data-rplan-id="' + rplan_id + '"]');
+
+					// scan all OTA alteration rules, if any
+					rrate_pricing_block.querySelectorAll('.vbo-roverw-setnewrate-ota-pricing-currentvalue[data-alteration]').forEach((elem) => {
+						// channel alteration string
+						let alter_string = elem.getAttribute('data-alteration');
+						if (!alter_string) {
+							alter_string = '';
+						}
+
+						// access the parent node to get the OTA channel identifier
+						let ota_id = elem
+							.closest('.vbo-roverw-setnewrate-vcm-ota-relation-channel[data-otaid]')
+							.getAttribute('data-otaid');
+
+						if (!ota_id || !alter_string || alter_string == '+0%' || alter_string == '+0*') {
+							// avoid pushing an empty alteration command
+							return;
+						}
+
+						// push OTA pricing alteration command
+						ota_pricing[ota_id] = alter_string;
+					});
+				}
+
+				if (!Object.keys(ota_pricing).length) {
+					// unset the object for the request
+					ota_pricing = null;
+				}
+
 				// the widget method to call
 				var call_method = 'setRoomDayRateRestiction';
 
@@ -2330,7 +2881,8 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 						room_id: widget_instance.find('.vbo-booskcal-roomid').val(),
 						rate: rplan_block.find('.vbo-widget-booskcal-mday-pricing-edit-newcost').val(),
 						minlos: rplan_block.find('.vbo-widget-booskcal-mday-pricing-edit-newminlos').val(),
-						updotas: (rplan_block.find('.vbo-widget-booskcal-mday-pricing-edit-updotas').prop('checked') ? 1 : 0),
+						updotas: updotas,
+						ota_pricing: ota_pricing,
 						wrapper: wrapper,
 						tmpl: "component"
 					},
@@ -2555,6 +3107,10 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 					return false;
 				}
 
+				// remove listener for the set new rate event for calculating the ota pricing information
+				document.removeEventListener('vbo-wbookscal-setnewrate-calc-ota-pricing-' + wrapper, vboWidgetBooksCalSetNewRateCalcOtaPricing);
+
+				// check current day and room
 				var current_ymd = '';
 				var current_rid = '';
 				if (widget_instance.find('.vbo-widget-booskcal-newbook-wrap').is(':visible')) {

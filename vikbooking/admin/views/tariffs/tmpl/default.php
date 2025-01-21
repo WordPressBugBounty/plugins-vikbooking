@@ -21,7 +21,7 @@ $vbo_app->loadSelect2();
 // access room helper to detect LOS rates
 $room_helper = VBORoomHelper::getInstance();
 
-$currencysymb = VikBooking::getCurrencySymb(true);
+$currencysymb = VikBooking::getCurrencySymb();
 $idroom = $roomrows['id'];
 $name = $roomrows['name'];
 if (is_file(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$roomrows['img']) && getimagesize(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$roomrows['img'])) {

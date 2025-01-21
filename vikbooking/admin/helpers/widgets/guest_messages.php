@@ -68,6 +68,12 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		$this->widgetIcon = '<i class="' . VikBookingIcons::i('comment-dots') . '"></i>';
 		$this->widgetStyleName = 'light-orange';
 
+		// load widget's settings
+		$this->widgetSettings = $this->loadSettings();
+		if (!is_object($this->widgetSettings)) {
+			$this->widgetSettings = new stdClass;
+		}
+
 		// today Y-m-d date
 		$this->today_ymd = date('Y-m-d');
 
@@ -150,6 +156,13 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			VBOHttpDocument::getInstance()->close(500, 'Vik Channel Manager is either not available or outdated');
 		}
 
+		// check messages custom limit per page
+		if ($length > 0 && $length != $this->messages_per_page) {
+			// update widget settings
+			$this->widgetSettings->limpage = $length;
+			$this->updateSettings(json_encode($this->widgetSettings));
+		}
+
 		// build search filters
 		$search_filters = [
 			'guest_name' => $filters['guest_name'] ?? '',
@@ -157,6 +170,8 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			'sender'     => $filters['sender'] ?? '',
 			'fromdt'     => $filters['fromdt'] ?? '',
 			'todt'       => $filters['todt'] ?? '',
+			'unread'     => (int) ($filters['unread'] ?? 0),
+			'ai_sort'    => (int) ($filters['ai_sort'] ?? 0),
 		];
 
 		// filter out empty search filter values
@@ -179,6 +194,9 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		// initiate the chat messaging object
 		$chat_messaging = class_exists('VCMChatMessaging') ? VCMChatMessaging::getInstance() : null;
 
+		// last error description
+		$latest_error = '';
+
 		// load latest messages
 		$latest_messages = [];
 
@@ -187,7 +205,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			 * Search filters require an updated VCM version.
 			 * 
 			 * @since 		1.16.9 (J) - 1.6.9 (WP)
-			 * @requires 	VCM >= 1.8.27
+			 * @requires 	VCM >= 1.8.27 (1.9.5 "unread", "ai_sort")
 			 */
 			if ($search_filters && $chat_messaging && method_exists($chat_messaging, 'searchMessages')) {
 				// search for specific messages with the specified search filters
@@ -197,7 +215,8 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				$latest_messages = VikChannelManager::getLatestFromGuests(['guest_messages'], $offset, $length);
 			}
 		} catch (Exception $e) {
-			// do nothing
+			// do nothing, but populate the error description
+			$latest_error = $e->getMessage();
 		}
 
 		// the multitask data and notifications can request a specific conversation to be opened
@@ -235,13 +254,22 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		// start output buffering
 		ob_start();
 
+		if ($latest_error) {
+			?>
+			<p class="err"><?php echo $latest_error; ?></p>
+			<?php
+		}
+
 		if (!$latest_messages) {
 			?>
 			<p class="info"><?php echo JText::translate('VBO_NO_RECORDS_FOUND'); ?></p>
 			<?php
 		}
 
-		foreach ($latest_messages as $gmessage) {
+		// count total messages
+		$tot_messages = count($latest_messages);
+
+		foreach ($latest_messages as $ind => $gmessage) {
 			$gmessage_content = $gmessage->content;
 			if (empty($gmessage_content)) {
 				$gmessage_content = '.....';
@@ -254,9 +282,20 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				$gmessage_content .= '...';
 			}
 
+			// build extra classes for main element
+			$wrap_classes = [];
+			if ($ind === 0) {
+				$wrap_classes[] = 'vbo-w-guestmessages-message-first';
+			} elseif ($ind == ($tot_messages - 1)) {
+				$wrap_classes[] = 'vbo-w-guestmessages-message-last';
+			}
+			if (empty($gmessage->read_dt) && !strcasecmp($gmessage->sender_type, 'guest')) {
+				$wrap_classes[] = 'vbo-w-guestmessages-message-new';
+			}
+
 			?>
 			<div
-				class="vbo-dashboard-guest-activity vbo-w-guestmessages-message<?php echo empty($gmessage->read_dt) && !strcasecmp($gmessage->sender_type, 'guest') ? ' vbo-w-guestmessages-message-new' : ''; ?>"
+				class="vbo-dashboard-guest-activity vbo-w-guestmessages-message<?php echo $wrap_classes ? ' ' . implode(' ', $wrap_classes) : ''; ?>"
 				data-idorder="<?php echo $gmessage->idorder; ?>"
 				data-idthread="<?php echo !empty($gmessage->id_thread) ? $gmessage->id_thread : ''; ?>"
 				data-idmessage="<?php echo !empty($gmessage->id_message) ? $gmessage->id_message : ''; ?>"
@@ -283,6 +322,26 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				} else {
 					// we use an icon as fallback
 					VikBookingIcons::e('user', 'vbo-dashboard-guest-activity-avatar-icon');
+				}
+
+				// check for AI priority enum
+				if (!empty($gmessage->ai_priority)) {
+					// display AI-calculated priority icon and apposite class (expected "high", "medium" or "low")
+					$priority_icon  = 'flag';
+					$priority_class = preg_replace("/[^a-z]/", '', strtolower((string) $gmessage->ai_priority));
+					$priority_value = ucwords((string) $gmessage->ai_priority);
+					if (!strcasecmp(trim((string) $gmessage->ai_priority), 'high')) {
+						$priority_value = JText::translate('VBO_PRIORITY_HIGH');
+					} elseif (!strcasecmp(trim((string) $gmessage->ai_priority), 'medium')) {
+						$priority_value = JText::translate('VBO_PRIORITY_MEDIUM');
+					} elseif (!strcasecmp(trim((string) $gmessage->ai_priority), 'low')) {
+						$priority_value = JText::translate('VBO_PRIORITY_LOW');
+					}
+					?>
+					<div class="vbo-w-guestmessages-message-aipriority">
+						<span class="vbo-w-guestmessages-message-aipriority-icn <?php echo $priority_class; ?> vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', $priority_value); ?>"><?php VikBookingIcons::e($priority_icon, $priority_class); ?></span>
+					</div>
+					<?php
 				}
 				?>
 				</div>
@@ -311,6 +370,19 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								echo ' <span class="label label-small message-unreplied">';
 								VikBookingIcons::e('comments', 'message-reply');
 								echo ' ' . JText::translate('VBO_REPLY') . '</span>';
+							}
+
+							/**
+							 * Display the AI message category, if available.
+							 * 
+							 * @since 		1.17.3 (J) - 1.7.3 (WP)
+							 * 
+							 * @requires 	VCM >= 1.9.5
+							 */
+							if (!empty($gmessage->ai_category)) {
+								echo ' <span class="label label-small message-ai-category">';
+								VikBookingIcons::e('tag');
+								echo ' ' . $gmessage->ai_category . '</span>';
 							}
 							?></h4>
 							<div class="vbo-dashboard-guest-activity-content-info-icon">
@@ -414,6 +486,30 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			?>
 			</div>
 		</div>
+
+		<script type="text/javascript">
+			setTimeout(() => {
+			<?php
+			// check if there were actually no filters applied
+			if (!$search_filters || (count($search_filters) === 1 && ($search_filters['ai_sort'] ?? 0))) {
+				?>
+				jQuery('#<?php echo $wrapper; ?>-filters').hide();
+				<?php
+			}
+
+			// check if results were sorted through AI
+			if ($search_filters['ai_sort'] ?? 0) {
+				?>
+				jQuery('#<?php echo $wrapper; ?>-aipowered').fadeIn();
+				<?php
+			} else {
+				?>
+				jQuery('#<?php echo $wrapper; ?>-aipowered').hide();
+				<?php
+			}
+			?>
+			}, 200);
+		</script>
 		<?php
 
 		// check if we should bubble a specific conversation
@@ -428,7 +524,6 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		}
 
 		// append the total number of messages displayed, the current offset and the latest message datetime
-		$tot_messages  = count($latest_messages);
 		$latest_datetime = !$search_filters && $tot_messages > 0 && $offset === 0 ? $latest_messages[0]->last_updated : null;
 
 		// get the HTML buffer
@@ -609,9 +704,12 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		}
 
 		// multitask data event identifier for clearing intervals
-		$js_intvals_id   = '';
-		$bid_convo       = 0;
-		$contains_filter = '';
+		$js_intvals_id    = '';
+		$wrap_extra_class = '';
+		$bid_convo        = 0;
+		$unread_filter    = false;
+		$sort_by_ai       = false;
+		$contains_filter  = '';
 		if ($data && $data->isModalRendering()) {
 			// access Multitask data
 			$js_intvals_id = $data->getModalJsIdentifier();
@@ -623,8 +721,30 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				$bid_convo = $this->options()->fetchBookingId();
 			}
 
+			// set an extra class
+			$wrap_extra_class = ' vbo-w-guestmessages-wrapmodal';
+
+			// check for unread messages filter
+			$unread_filter = (bool) $this->options()->get('unread', '');
+
+			// check for AI sort filter
+			$sort_by_ai = (bool) $this->options()->get('ai_sort', '');
+
 			// check if a specific filter was set for searching guest messages
 			$contains_filter = (string) $this->options()->get('message_contains', '');
+
+			// check custom limit per page only when in modal rendering
+			if (($this->widgetSettings->limpage ?? 0) > 0) {
+				// set custom limit from widget settings
+				$this->messages_per_page = (int) $this->widgetSettings->limpage;
+			}
+
+			// check for limit filter injected
+			$limpage_filter = (int) $this->options()->get('limpage', 0);
+			if ($limpage_filter > 0) {
+				// set custom limit
+				$this->messages_per_page = $limpage_filter;
+			}
 		}
 
 		?>
@@ -636,7 +756,10 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						<div class="vbo-reportwidget-commands">
 							<div class="vbo-reportwidget-commands-main">
 								<div class="vbo-reportwidget-command-dates">
-									<div id="<?php echo $wrapper_id; ?>-filters" class="vbo-reportwidget-period-name" style="<?php echo !$contains_filter ? 'display: none;' : ''; ?>"><?php VikBookingIcons::e('search'); ?> <?php echo JText::translate('VBO_FILTERS_APPLIED'); ?></div>
+									<div id="<?php echo $wrapper_id; ?>-filters" class="vbo-reportwidget-period-name" style="<?php echo !$contains_filter && !$unread_filter ? 'display: none;' : ''; ?>"><?php VikBookingIcons::e('filter'); ?> <?php echo JText::translate('VBO_FILTERS_APPLIED'); ?></div>
+								</div>
+								<div id="<?php echo $wrapper_id; ?>-aipowered" class="vbo-admin-widget-head-ai-powered" style="display: none;">
+									<span class="label label-info"><?php echo JText::translate('VBO_AI_LABEL_DEF'); ?></span>
 								</div>
 							</div>
 							<div class="vbo-reportwidget-command-dots">
@@ -648,7 +771,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					</div>
 				</div>
 			</div>
-			<div id="<?php echo $wrapper_id; ?>" class="vbo-dashboard-guests-latest" data-offset="0" data-length="<?php echo $this->messages_per_page; ?>" data-eventsid="<?php echo $js_intvals_id; ?>" data-latestdt="">
+			<div id="<?php echo $wrapper_id; ?>" class="vbo-dashboard-guests-latest<?php echo $wrap_extra_class; ?>" data-offset="0" data-length="<?php echo $this->messages_per_page; ?>" data-eventsid="<?php echo $js_intvals_id; ?>" data-latestdt="">
 				<div class="vbo-dashboard-guest-messages-inner">
 					<div class="vbo-dashboard-guest-messages-list">
 					<?php
@@ -680,92 +803,115 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
 							<div class="vbo-params-wrap">
 								<div class="vbo-params-container">
+									<div class="vbo-params-block">
 
-									<div class="vbo-param-container">
-										<div class="vbo-param-label"><?php echo JText::translate('VBCUSTOMERNOMINATIVE'); ?></div>
-										<div class="vbo-param-setting">
-											<input type="text" class="vbo-widget-guest-messages-guestname" value="" autocomplete="off" />
-											<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_FIRST_NAME_ACCURATE_HELP'); ?></span>
+										<div class="vbo-param-container">
+											<div class="vbo-param-label"><?php echo JText::translate('VBCUSTOMERNOMINATIVE'); ?></div>
+											<div class="vbo-param-setting">
+												<input type="text" class="vbo-widget-guest-messages-guestname" value="" autocomplete="off" />
+												<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_FIRST_NAME_ACCURATE_HELP'); ?></span>
+											</div>
 										</div>
-									</div>
 
-									<div class="vbo-param-container">
-										<div class="vbo-param-label"><?php echo JText::translate('VBSENDEMAILCUSTCONT'); ?></div>
-										<div class="vbo-param-setting">
-											<input type="text" class="vbo-widget-guest-messages-messcontains" value="<?php echo JHtml::fetch('esc_attr', $contains_filter); ?>" autocomplete="off" />
-											<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_MESSAGE_CONTAINS_HELP'); ?></span>
+										<div class="vbo-param-container">
+											<div class="vbo-param-label"><?php echo JText::translate('VBSENDEMAILCUSTCONT'); ?></div>
+											<div class="vbo-param-setting">
+												<input type="text" class="vbo-widget-guest-messages-messcontains" value="<?php echo JHtml::fetch('esc_attr', $contains_filter); ?>" autocomplete="off" />
+												<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_MESSAGE_CONTAINS_HELP'); ?></span>
+											</div>
 										</div>
-									</div>
 
-									<div class="vbo-param-container">
-										<div class="vbo-param-label"><?php echo JText::translate('VBO_SENDER'); ?></div>
-										<div class="vbo-param-setting">
-											<div class="vbo-widget-guest-messages-multistate">
-												<?php
-												echo $this->vbo_app->multiStateToggleSwitchField(
-													'sender' . $wrapper_instance,
-													'',
-													[
-														'guest',
-														'hotel',
-													],
-													[
+										<div class="vbo-param-container vbo-toggle-small">
+											<div class="vbo-param-label"><?php echo JText::translate('VBO_UNREAD_MESSAGES'); ?></div>
+											<div class="vbo-param-setting">
+												<?php echo $this->vbo_app->printYesNoButtons('unread', JText::translate('VBYES'), JText::translate('VBNO'), (int) $unread_filter, 1, 0, '', ['blue']); ?>
+											</div>
+										</div>
+
+										<div class="vbo-param-container vbo-toggle-small">
+											<div class="vbo-param-label"><?php echo JText::translate('VBO_AI_LABEL_DEF') . ' ' . JText::translate('VBO_SORT_BY_PRIORITY'); ?></div>
+											<div class="vbo-param-setting">
+												<?php echo $this->vbo_app->printYesNoButtons('ai_sort', JText::translate('VBYES'), JText::translate('VBNO'), (int) $sort_by_ai, 1, 0, '', ['gold']); ?>
+											</div>
+										</div>
+
+										<div class="vbo-param-container vbo-toggle-small">
+											<div class="vbo-param-label"><?php echo JText::translate('VBO_SENDER'); ?></div>
+											<div class="vbo-param-setting">
+												<div class="vbo-widget-guest-messages-multistate">
+													<?php
+													echo $this->vbo_app->multiStateToggleSwitchField(
+														'sender' . $wrapper_instance,
+														'',
 														[
-															'value' => JText::translate('VBO_GUEST'),
+															'guest',
+															'hotel',
 														],
 														[
-															'value' => 'Hotel',
-														],
-													],
-													[
-														[
-															'label_class' => 'vik-multiswitch-text vik-multiswitch-radiobtn-guest',
-															'input' 	  => [
-																'class' => 'vbo-widget-guest-messages-filter-sender',
+															[
+																'value' => JText::translate('VBO_GUEST'),
+															],
+															[
+																'value' => 'Hotel',
 															],
 														],
 														[
-															'label_class' => 'vik-multiswitch-text vik-multiswitch-radiobtn-hotel',
-															'input' 	  => [
-																'class' => 'vbo-widget-guest-messages-filter-sender',
+															[
+																'label_class' => 'vik-multiswitch-text vik-multiswitch-radiobtn-guest',
+																'input' 	  => [
+																	'class' => 'vbo-widget-guest-messages-filter-sender',
+																],
+															],
+															[
+																'label_class' => 'vik-multiswitch-text vik-multiswitch-radiobtn-hotel',
+																'input' 	  => [
+																	'class' => 'vbo-widget-guest-messages-filter-sender',
+																],
 															],
 														],
-													],
-													[
-														'class' => 'vik-multiswitch-noanimation',
-													]
-												);
-												?>
-											</div>
-										</div>
-									</div>
-
-									<div class="vbo-param-container">
-										<div class="vbo-param-label"><?php echo JText::translate('VBNEWRESTRICTIONDFROMRANGE'); ?></div>
-										<div class="vbo-param-setting">
-											<div class="vbo-field-calendar">
-												<div class="input-append">
-													<input type="text" class="vbo-widget-guest-messages-fromdt" value="" autocomplete="off" />
-													<button type="button" class="btn btn-secondary vbo-widget-guest-messages-fromdt-trigger"><?php VikBookingIcons::e('calendar'); ?></button>
+														[
+															'class' => 'vik-multiswitch-noanimation',
+														]
+													);
+													?>
 												</div>
 											</div>
-											<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_FROM_DT_HELP'); ?></span>
 										</div>
-									</div>
 
-									<div class="vbo-param-container">
-										<div class="vbo-param-label"><?php echo JText::translate('VBNEWRESTRICTIONDTORANGE'); ?></div>
-										<div class="vbo-param-setting">
-											<div class="vbo-field-calendar">
-												<div class="input-append">
-													<input type="text" class="vbo-widget-guest-messages-todt" value="" autocomplete="off" />
-													<button type="button" class="btn btn-secondary vbo-widget-guest-messages-todt-trigger"><?php VikBookingIcons::e('calendar'); ?></button>
+										<div class="vbo-param-container">
+											<div class="vbo-param-label"><?php echo JText::translate('VBNEWRESTRICTIONDFROMRANGE'); ?></div>
+											<div class="vbo-param-setting">
+												<div class="vbo-field-calendar">
+													<div class="input-append">
+														<input type="text" class="vbo-widget-guest-messages-fromdt" value="" autocomplete="off" />
+														<button type="button" class="btn btn-secondary vbo-widget-guest-messages-fromdt-trigger"><?php VikBookingIcons::e('calendar'); ?></button>
+													</div>
 												</div>
+												<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_FROM_DT_HELP'); ?></span>
 											</div>
-											<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_TO_DT_HELP'); ?></span>
 										</div>
-									</div>
 
+										<div class="vbo-param-container">
+											<div class="vbo-param-label"><?php echo JText::translate('VBNEWRESTRICTIONDTORANGE'); ?></div>
+											<div class="vbo-param-setting">
+												<div class="vbo-field-calendar">
+													<div class="input-append">
+														<input type="text" class="vbo-widget-guest-messages-todt" value="" autocomplete="off" />
+														<button type="button" class="btn btn-secondary vbo-widget-guest-messages-todt-trigger"><?php VikBookingIcons::e('calendar'); ?></button>
+													</div>
+												</div>
+												<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_TO_DT_HELP'); ?></span>
+											</div>
+										</div>
+
+										<div class="vbo-param-container">
+											<div class="vbo-param-label"><?php echo JText::translate('VBO_MESS_PER_PAGE'); ?></div>
+											<div class="vbo-param-setting">
+												<input type="number" class="vbo-widget-guest-messages-limpage" min="1" max="100" value="<?php echo $this->messages_per_page; ?>" />
+											</div>
+										</div>
+
+									</div>
 								</div>
 							</div>
 						</div>
@@ -818,7 +964,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 
 				var search_modal_body = VBOCore.displayModal({
 					suffix: 'wguestmessages-search',
-					extra_class: 'vbo-modal-rounded vbo-modal-tall',
+					extra_class: 'vbo-modal-rounded vbo-modal-dialog',
 					title: '<?php echo JHtml::fetch('esc_attr', JText::translate('VBO_W_GUESTMESSAGES_TITLE')); ?> - ' + Joomla.JText._('VBODASHSEARCHKEYS'),
 					body_prepend: true,
 					draggable: true,
@@ -857,6 +1003,8 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 							if (commands['clearfilters']) {
 								// clear filters
 								widget_instance.find('.vbo-widget-guest-messages-filters-wrap').find('input[type="text"]').val('');
+								widget_instance.find('.vbo-widget-guest-messages-filters-wrap').find('input[type="number"]').val('');
+								widget_instance.find('.vbo-widget-guest-messages-filters-wrap').find('input[type="checkbox"]').prop('checked', false);
 								widget_instance.find('.vbo-widget-guest-messages-filters-wrap').find('input[type="radio"]').prop('checked', false);
 								// hide filters applied label
 								jQuery('#' + wrapper + '-filters').hide();
@@ -1161,7 +1309,18 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					sender: widget_instance.find('input.vbo-widget-guest-messages-filter-sender[type="radio"]:checked').val(),
 					fromdt: widget_instance.find('input.vbo-widget-guest-messages-fromdt').val(),
 					todt: widget_instance.find('input.vbo-widget-guest-messages-todt').val(),
+					unread: (widget_instance.find('input[name="unread"]').prop('checked') ? 1 : 0),
+					ai_sort: (widget_instance.find('input[name="ai_sort"]').prop('checked') ? 1 : 0),
 				};
+
+				// custom messages limit per page
+				let limpage = widget_instance.find('input.vbo-widget-guest-messages-limpage').val();
+				if (!isNaN(limpage) && limpage > 0 && limpage != length_per_page) {
+					// update value
+					length_per_page = limpage;
+					// set new limit
+					widget_instance.attr('data-length', limpage);
+				}
 
 				// the widget method to call
 				var call_method = 'loadMessages';
@@ -1243,7 +1402,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				var current_offset = parseInt(widget_instance.attr('data-offset'));
 
 				// steps per type
-				var steps = <?php echo $this->messages_per_page; ?>;
+				var steps = parseInt(widget_instance.attr('data-length'));
 
 				// show loading skeletons
 				vboWidgetGuestMessagesSkeletons(wrapper);

@@ -1,15 +1,15 @@
-# Copyright (C) 2024 E4J s.r.l.
+# Copyright (C) 2025 E4J s.r.l.
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: VikBooking 1.7.1\n"
+"Project-Id-Version: VikBooking 1.7.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/vikbooking\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-12-18T18:10:10+01:00\n"
+"POT-Creation-Date: 2025-01-21T00:03:06+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: vikbooking\n"
@@ -116,6 +116,7 @@ msgid "In case you are experiencing some issues with the deactivation of this pl
 msgstr ""
 
 #: libraries/html/feedback/thickbox.php:92
+#: libraries/language/admin.php:7398
 msgid "Other"
 msgstr ""
 
@@ -1129,10 +1130,13 @@ msgstr ""
 #: libraries/language/admin.php:888
 #: libraries/language/admin.php:909
 #: libraries/language/admin.php:3498
+#: libraries/language/admin.php:7577
 #: libraries/language/site.php:153
 #: libraries/language/site.php:351
 #: libraries/language/site.php:372
-msgid "Check-in Date"
+#: modules/mod_vikbooking_channelrates/language/handler.php:121
+#: modules/mod_vikbooking_horizontalsearch/language/handler.php:150
+msgid "Check-in date"
 msgstr ""
 
 #: libraries/language/admin.php:576
@@ -1143,10 +1147,13 @@ msgstr ""
 #: libraries/language/admin.php:891
 #: libraries/language/admin.php:912
 #: libraries/language/admin.php:3501
+#: libraries/language/admin.php:7580
 #: libraries/language/site.php:156
 #: libraries/language/site.php:354
 #: libraries/language/site.php:375
-msgid "Check-out Date"
+#: modules/mod_vikbooking_channelrates/language/handler.php:124
+#: modules/mod_vikbooking_horizontalsearch/language/handler.php:153
+msgid "Check-out date"
 msgstr ""
 
 #: libraries/language/admin.php:582
@@ -1307,7 +1314,7 @@ msgid "Update Rates"
 msgstr ""
 
 #: libraries/language/admin.php:717
-msgid "Check-out Time"
+msgid "Check-out time"
 msgstr ""
 
 #: libraries/language/admin.php:720
@@ -1319,7 +1326,7 @@ msgid "Booking Disabled Message"
 msgstr ""
 
 #: libraries/language/admin.php:726
-msgid "Check-In Time"
+msgid "Check-in time"
 msgstr ""
 
 #: libraries/language/admin.php:729
@@ -5053,7 +5060,8 @@ msgid "Guest #%d"
 msgstr ""
 
 #: libraries/language/admin.php:3915
-msgid "Extra Notes"
+#: libraries/language/site.php:1999
+msgid "Extra notes"
 msgstr ""
 
 #: libraries/language/admin.php:3921
@@ -6473,6 +6481,8 @@ msgid "Create Rate Plans"
 msgstr ""
 
 #: libraries/language/admin.php:5022
+#: libraries/language/admin.php:7589
+#: libraries/language/site.php:2075
 msgid "Close"
 msgstr ""
 
@@ -7857,6 +7867,7 @@ msgstr ""
 
 #: libraries/language/admin.php:6081
 #: libraries/language/site.php:669
+#: libraries/language/site.php:2009
 #: libraries/language/system.php:396
 msgid "Select"
 msgstr ""
@@ -9544,6 +9555,325 @@ msgstr ""
 msgid "The payload is needed to let the report export dynamic information every day."
 msgstr ""
 
+#: libraries/language/admin.php:7373
+msgid "Mandatory fee"
+msgstr ""
+
+#: libraries/language/admin.php:7377
+msgctxt "Default booking check-in and check-out times should be kept in mind."
+msgid "By booking this option it is possible to modify the default check-in and/or check-out time of the reservation. Make sure the new check-out time to set will be before the default check-in time (%s). Same goes for the new check-in time to set, it should be after the default check-out time (%s), or issues will occur with the availability calculation (turnover day)."
+msgstr ""
+
+#: libraries/language/admin.php:7380
+msgid "Late check-out"
+msgstr ""
+
+#: libraries/language/admin.php:7383
+msgid "Early check-in"
+msgstr ""
+
+#: libraries/language/admin.php:7386
+msgid "Late check-in"
+msgstr ""
+
+#: libraries/language/admin.php:7389
+msgctxt "Spanish city code for \"Código de municipio\""
+msgid "Spain City Code"
+msgstr ""
+
+#: libraries/language/admin.php:7392
+msgctxt "Spanish translation for \"Número soporte documento\""
+msgid "ID Support Number"
+msgstr ""
+
+#: libraries/language/admin.php:7395
+msgctxt "Spanish translation for \"Parentesco\""
+msgid "Child relation"
+msgstr ""
+
+#: libraries/language/admin.php:7401
+#: libraries/language/site.php:2060
+msgid "Passport"
+msgstr ""
+
+#: libraries/language/admin.php:7404
+#: libraries/language/site.php:2018
+msgid "Grandfather/Grandmother"
+msgstr ""
+
+#: libraries/language/admin.php:7407
+#: libraries/language/site.php:2021
+msgid "Great-grandfather/grandmother"
+msgstr ""
+
+#: libraries/language/admin.php:7410
+#: libraries/language/site.php:2024
+msgid "Great-grandson/granddaughter"
+msgstr ""
+
+#: libraries/language/admin.php:7413
+#: libraries/language/site.php:2027
+msgid "Brother/Sister-in-law"
+msgstr ""
+
+#: libraries/language/admin.php:7416
+#: libraries/language/site.php:2030
+msgid "Spouse"
+msgstr ""
+
+#: libraries/language/admin.php:7419
+#: libraries/language/site.php:2033
+msgid "Son/Daughter"
+msgstr ""
+
+#: libraries/language/admin.php:7422
+#: libraries/language/site.php:2036
+msgid "Brother/Sister"
+msgstr ""
+
+#: libraries/language/admin.php:7425
+#: libraries/language/site.php:2039
+msgid "Grandson/Granddaughter"
+msgstr ""
+
+#: libraries/language/admin.php:7428
+#: libraries/language/site.php:2042
+msgid "Father/Mother"
+msgstr ""
+
+#: libraries/language/admin.php:7431
+#: libraries/language/site.php:2045
+msgid "Nephew/Nephew"
+msgstr ""
+
+#: libraries/language/admin.php:7434
+#: libraries/language/site.php:2048
+msgid "Father/Mother-in-law"
+msgstr ""
+
+#: libraries/language/admin.php:7437
+#: libraries/language/site.php:2051
+msgid "Uncle/Aunt"
+msgstr ""
+
+#: libraries/language/admin.php:7440
+#: libraries/language/site.php:2054
+msgid "Son/Daughter-in-law"
+msgstr ""
+
+#: libraries/language/admin.php:7443
+#: libraries/language/site.php:2057
+msgid "Guardian"
+msgstr ""
+
+#: libraries/language/admin.php:7446
+msgid "Show occupied listings in search results"
+msgstr ""
+
+#: libraries/language/admin.php:7449
+msgid "Link to listing details in search results"
+msgstr ""
+
+#: libraries/language/admin.php:7452
+#: libraries/language/site.php:1966
+msgid "Guest type"
+msgstr ""
+
+#: libraries/language/admin.php:7455
+#: libraries/language/site.php:1969
+msgid "Single guest"
+msgstr ""
+
+#: libraries/language/admin.php:7458
+#: libraries/language/site.php:1972
+msgid "Head of family"
+msgstr ""
+
+#: libraries/language/admin.php:7461
+#: libraries/language/site.php:1975
+msgid "Family member"
+msgstr ""
+
+#: libraries/language/admin.php:7464
+#: libraries/language/site.php:1978
+msgid "Group leader"
+msgstr ""
+
+#: libraries/language/admin.php:7467
+#: libraries/language/site.php:1981
+msgid "Group member"
+msgstr ""
+
+#: libraries/language/admin.php:7470
+#: libraries/language/site.php:1984
+msgid "Country of birth"
+msgstr ""
+
+#: libraries/language/admin.php:7473
+#: libraries/language/site.php:1987
+msgid "Municipality of birth"
+msgstr ""
+
+#: libraries/language/admin.php:7476
+#: libraries/language/site.php:1990
+msgid "Country of residence"
+msgstr ""
+
+#: libraries/language/admin.php:7479
+#: libraries/language/site.php:1993
+msgid "Municipality of residence"
+msgstr ""
+
+#: libraries/language/admin.php:7482
+#: libraries/language/site.php:1996
+msgid "ID issue place"
+msgstr ""
+
+#: libraries/language/admin.php:7486
+#: libraries/language/site.php:2003
+msgctxt "e.g. Only if country = Italy"
+msgid "Only if country = %s"
+msgstr ""
+
+#: libraries/language/admin.php:7489
+#: libraries/language/site.php:2006
+msgid "Optional"
+msgstr ""
+
+#: libraries/language/admin.php:7492
+#: libraries/language/site.php:2012
+msgid "Select country"
+msgstr ""
+
+#: libraries/language/admin.php:7495
+#: libraries/language/site.php:2015
+msgid "Select document"
+msgstr ""
+
+#: libraries/language/admin.php:7498
+#: libraries/language/site.php:2063
+msgid "Driving License"
+msgstr ""
+
+#: libraries/language/admin.php:7501
+#: libraries/language/site.php:2066
+msgid "Identity Document"
+msgstr ""
+
+#: libraries/language/admin.php:7504
+msgid "Messages per page"
+msgstr ""
+
+#: libraries/language/admin.php:7507
+msgid "Unread messages"
+msgstr ""
+
+#: libraries/language/admin.php:7511
+msgctxt "Operation performed through Artificial Intelligence."
+msgid "AI ✨"
+msgstr ""
+
+#: libraries/language/admin.php:7515
+msgctxt "\"High\" priority."
+msgid "High"
+msgstr ""
+
+#: libraries/language/admin.php:7519
+msgctxt "\"Medium\" priority."
+msgid "Medium"
+msgstr ""
+
+#: libraries/language/admin.php:7523
+msgctxt "\"Low\" priority."
+msgid "Low"
+msgstr ""
+
+#: libraries/language/admin.php:7526
+msgid "Sort by priority"
+msgstr ""
+
+#: libraries/language/admin.php:7529
+msgid "Listing"
+msgstr ""
+
+#: libraries/language/admin.php:7532
+msgid "Generate content"
+msgstr ""
+
+#: libraries/language/admin.php:7535
+msgid "Enter the information to help the AI generate a proper content."
+msgstr ""
+
+#: libraries/language/admin.php:7539
+msgctxt "AI Assistant default prompt for generating the content of an email message."
+msgid "Write the body of an email message to welcome a guest that is arriving next weekend."
+msgstr ""
+
+#: libraries/language/admin.php:7542
+msgid "Generated content"
+msgstr ""
+
+#: libraries/language/admin.php:7545
+msgid "Use content"
+msgstr ""
+
+#: libraries/language/admin.php:7548
+msgid "Generate contents"
+msgstr ""
+
+#: libraries/language/admin.php:7551
+msgid "Generate texts with custom information in plain-text or HTML format for any use."
+msgstr ""
+
+#: libraries/language/admin.php:7554
+msgid "Generate reminder messages."
+msgstr ""
+
+#: libraries/language/admin.php:7557
+msgid "Write a check-in reminder message for John Smith for tomorrow, by saying that the door code will be sent via email 1 hour before the arrival time."
+msgstr ""
+
+#: libraries/language/admin.php:7560
+msgid "Write messages in a precise language."
+msgstr ""
+
+#: libraries/language/admin.php:7564
+msgctxt "Write a message for John Smith."
+msgid "Write a message for %s."
+msgstr ""
+
+#: libraries/language/admin.php:7568
+msgctxt "AI Assistant instruction for generating a message in a specific language."
+msgid "The language of the message should be: %s."
+msgstr ""
+
+#: libraries/language/admin.php:7571
+msgid "Write a message for a guest."
+msgstr ""
+
+#: libraries/language/admin.php:7574
+msgid "Use some of the following placeholder tags, if needed."
+msgstr ""
+
+#: libraries/language/admin.php:7583
+#: libraries/language/site.php:2069
+msgid "Minimum stay: %d nights"
+msgstr ""
+
+#: libraries/language/admin.php:7586
+#: libraries/language/site.php:2072
+msgid "Clear dates"
+msgstr ""
+
+#: libraries/language/admin.php:7592
+#: libraries/language/site.php:2078
+msgid "Amenities"
+msgstr ""
+
+#: libraries/language/admin.php:7595
+msgid "Optimize database records"
+msgstr ""
+
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
 msgstr ""
@@ -10544,7 +10874,7 @@ msgid "Not Available"
 msgstr ""
 
 #: libraries/language/site.php:495
-msgid "Select a Check-in and Check-out Date"
+msgid "Select a check-in and check-out date"
 msgstr ""
 
 #: libraries/language/site.php:498
@@ -11640,6 +11970,14 @@ msgstr ""
 msgid "All listings"
 msgstr ""
 
+#: libraries/language/site.php:2081
+msgid "All photos"
+msgstr ""
+
+#: libraries/language/site.php:2084
+msgid "Where you will be"
+msgstr ""
+
 #: libraries/language/system.php:46
 msgid "Error"
 msgstr ""
@@ -12147,14 +12485,6 @@ msgstr ""
 msgid "Refresh Rates"
 msgstr ""
 
-#: modules/mod_vikbooking_channelrates/language/handler.php:121
-msgid "Check-In Date"
-msgstr ""
-
-#: modules/mod_vikbooking_channelrates/language/handler.php:124
-msgid "Check-Out Date"
-msgstr ""
-
 #: modules/mod_vikbooking_channelrates/language/handler.php:145
 msgid "Our Best Rate"
 msgstr ""
@@ -12343,14 +12673,6 @@ msgstr ""
 
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:140
 msgid "Thank you! We have successfully received your request and will reply as soon as possible."
-msgstr ""
-
-#: modules/mod_vikbooking_horizontalsearch/language/handler.php:150
-msgid "Check-in date"
-msgstr ""
-
-#: modules/mod_vikbooking_horizontalsearch/language/handler.php:153
-msgid "Check-out date"
 msgstr ""
 
 #: modules/mod_vikbooking_horizontalsearch/widget.php:45

@@ -150,10 +150,10 @@ class VikBookingLanguageSite implements JLanguageHandler
 				$result = __('Please select Check-in and Check-out Dates and select the number of people per room', 'vikbooking');
 				break;
 			case 'VBPICKUPROOM':
-				$result = __('Check-in Date', 'vikbooking');
+				$result = __('Check-in date', 'vikbooking');
 				break;
 			case 'VBRETURNROOM':
-				$result = __('Check-out Date', 'vikbooking');
+				$result = __('Check-out date', 'vikbooking');
 				break;
 			case 'VBALLE':
 				$result = __('At', 'vikbooking');
@@ -348,10 +348,10 @@ class VikBookingLanguageSite implements JLanguageHandler
 				$result = __('Rooms Reserved', 'vikbooking');
 				break;
 			case 'VBLIBFOUR':
-				$result = __('Check-in Date', 'vikbooking');
+				$result = __('Check-in date', 'vikbooking');
 				break;
 			case 'VBLIBFIVE':
-				$result = __('Check-out Date', 'vikbooking');
+				$result = __('Check-out date', 'vikbooking');
 				break;
 			case 'VBLIBSIX':
 				$result = __('Total', 'vikbooking');
@@ -369,10 +369,10 @@ class VikBookingLanguageSite implements JLanguageHandler
 				$result = __('Rooms Booked', 'vikbooking');
 				break;
 			case 'VBLIBELEVEN':
-				$result = __('Check-in Date', 'vikbooking');
+				$result = __('Check-in date', 'vikbooking');
 				break;
 			case 'VBLIBTWELVE':
-				$result = __('Check-out Date', 'vikbooking');
+				$result = __('Check-out date', 'vikbooking');
 				break;
 			case 'VBLIBTENTHREE':
 				$result = __('To see your booking details, visit the following page', 'vikbooking');
@@ -492,7 +492,7 @@ class VikBookingLanguageSite implements JLanguageHandler
 				$result = __('Book Now', 'vikbooking');
 				break;
 			case 'VBSELECTPDDATES':
-				$result = __('Select a Check-in and Check-out Date', 'vikbooking');
+				$result = __('Select a check-in and check-out date', 'vikbooking');
 				break;
 			case 'VBDETAILCNOTAVAIL':
 				$result = __('%s is not available for %d nights or for the number of guests requested. Please try with different dates or guests.', 'vikbooking');
@@ -2064,6 +2064,24 @@ class VikBookingLanguageSite implements JLanguageHandler
 				break;
 			case 'VBO_IDENTITY_DOCUMENT':
 				$result = __('Identity Document', 'vikbooking');
+				break;
+			case 'VBO_MIN_STAY_NIGHTS':
+				$result = __('Minimum stay: %d nights', 'vikbooking');
+				break;
+			case 'VBO_CLEAR_DATES':
+				$result = __('Clear dates', 'vikbooking');
+				break;
+			case 'VBO_CLOSE':
+				$result = __('Close', 'vikbooking');
+				break;
+			case 'VBO_AMENITIES':
+				$result = __('Amenities', 'vikbooking');
+				break;
+			case 'VBO_ALL_PHOTOS':
+				$result = __('All photos', 'vikbooking');
+				break;
+			case 'VBO_LISTING_WHERE_YOULLBE':
+				$result = __('Where you will be', 'vikbooking');
 				break;
 		}
 

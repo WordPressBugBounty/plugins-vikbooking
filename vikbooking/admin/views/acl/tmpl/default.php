@@ -84,9 +84,11 @@ $ignores = array('administrator');
 		</div>
 	<?php } ?>
 
+	<?php echo JHtml::fetch('form.token'); ?>
+
 	<input type="hidden" name="option" value="com_vikbooking" />
 	<input type="hidden" name="task" value="" />
-	<input type="hidden" name="return" value="<?php echo $this->returnLink; ?>" />
+	<input type="hidden" name="return" value="<?php echo $this->escape($this->returnLink); ?>" />
 
 </form>
 

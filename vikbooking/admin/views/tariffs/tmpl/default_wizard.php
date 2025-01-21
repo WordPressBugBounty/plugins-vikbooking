@@ -12,7 +12,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 
 $vbo_app = VikBooking::getVboApplication();
 $name = $this->roomrows['name'];
-$currencysymb = VikBooking::getCurrencySymb(true);
+$currencysymb = VikBooking::getCurrencySymb();
 
 ?>
 <div class="vbo-info-overlay-block vbo-info-overlay-block-animation">

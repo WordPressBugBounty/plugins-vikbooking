@@ -1254,7 +1254,10 @@ class VikBookingReportIstatVitAlbergatori extends VikBookingReport
 				]);
 
 				// provenience (Provenienza)
-				$provenience = (string) ($this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'state') ?: $guests['state'] ?: '');
+				$provenience = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'state') ?: $guests['state'] ?: '';
+				$provenience = $provenience ?: $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'province_s');
+				$provenience = $provenience ?: $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'province_b');
+				$provenience = (string) ($provenience == 'ES' ? '' : $provenience);
 
 				// access any possible country value
 				$pax_country_list = [

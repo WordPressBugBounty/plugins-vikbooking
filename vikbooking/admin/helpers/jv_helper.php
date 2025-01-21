@@ -297,12 +297,47 @@ JS
 	}
 
 	/**
+	 * Loads the assets solely needed to render the DRP calendar.
+	 * 
+	 * @param 	array 	$options 	Associative list of loading options.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.17.3 (J) - 1.7.3 (WP)
+	 */
+	public function loadDatesRangePicker(array $options = [])
+	{
+		static $drp_loaded = null;
+
+		if ($drp_loaded) {
+			// loaded flag
+			return;
+		}
+
+		// add DRP script
+		$this->addScript(VBO_SITE_URI . 'resources/datesrangepicker.js', ['version' => VIKBOOKING_SOFTWARE_VERSION]);
+
+		// load JS lang defs
+		JText::script('VBPICKUPROOM');
+		JText::script('VBRETURNROOM');
+		JText::script('VBO_MIN_STAY_NIGHTS');
+		JText::script('VBO_CLEAR_DATES');
+		JText::script('VBO_CLOSE');
+	}
+
+	/**
 	 * Loads the necessary JS and CSS assets to render the jQuery UI Datepicker calendar.
+	 * It is also possible to load the assets for the DatesRangePicker extension.
+	 * 
+	 * @param 	array 	$options 	Associative list of loading options.
+	 * 
+	 * @return 	void
 	 * 
 	 * @since   1.1.0
 	 * @since   1.15.0 (J) - 1.5.0 (WP) the lang definitions work for both front and back -ends.
+	 * @since 	1.17.3 (J) - 1.7.3 (WP) added support for the DatesRangePicker extension.
 	 */
-	public function loadDatePicker()
+	public function loadDatePicker(array $options = [])
 	{
 		static $datepicker_loaded = null;
 
@@ -312,47 +347,103 @@ JS
 		}
 
 		$document = JFactory::getDocument();
-		$document->addStyleSheet(VBO_SITE_URI.'resources/jquery-ui.min.css');
+		$document->addStyleSheet(VBO_SITE_URI . 'resources/jquery-ui.min.css');
 		
 		JHtml::fetch('jquery.framework', true, true);
-		$this->addScript(VBO_SITE_URI.'resources/jquery-ui.min.js');
+		$this->addScript(VBO_SITE_URI . 'resources/jquery-ui.min.js');
+
+		if (!strcasecmp(($options['type'] ?? ''), 'dates_range')) {
+			// load DRP calendar assets
+			$this->loadDatesRangePicker($options);
+		}
 
 		$vbo_df = VikBooking::getDateFormat();
 		$juidf = $vbo_df == "%d/%m/%Y" ? 'dd/mm/yy' : ($vbo_df == "%m/%d/%Y" ? 'mm/dd/yy' : 'yy/mm/dd');
 
 		$is_rtl_lan = false;
-		$is_rtl_str = 'false';
 		$day_names_min_len = 2;
 		$now_lang = JFactory::getLanguage();
 		if (method_exists($now_lang, 'isRtl')) {
 			$is_rtl_lan = $now_lang->isRtl();
-			$is_rtl_str = $is_rtl_lan ? 'true' : $is_rtl_str;
 			if ($is_rtl_lan) {
 				// for most RTL languages, 2 chars for the week-days would not make sense
 				$day_names_min_len = 3;
 			}
 		}
 
+		// build default regional values for datepicker
+		$vbo_dp_regional_vals = [
+			'closeText'   => JText::translate('VBJQCALDONE'),
+			'prevText'    => JText::translate('VBJQCALPREV'),
+			'nextText'    => JText::translate('VBJQCALNEXT'),
+			'currentText' => JText::translate('VBJQCALTODAY'),
+			'monthNames'  => [
+				JText::translate('VBMONTHONE'),
+				JText::translate('VBMONTHTWO'),
+				JText::translate('VBMONTHTHREE'),
+				JText::translate('VBMONTHFOUR'),
+				JText::translate('VBMONTHFIVE'),
+				JText::translate('VBMONTHSIX'),
+				JText::translate('VBMONTHSEVEN'),
+				JText::translate('VBMONTHEIGHT'),
+				JText::translate('VBMONTHNINE'),
+				JText::translate('VBMONTHTEN'),
+				JText::translate('VBMONTHELEVEN'),
+				JText::translate('VBMONTHTWELVE'),
+			],
+			'monthNamesShort' => [
+				$this->safeSubstr(JText::translate('VBMONTHONE')),
+				$this->safeSubstr(JText::translate('VBMONTHTWO')),
+				$this->safeSubstr(JText::translate('VBMONTHTHREE')),
+				$this->safeSubstr(JText::translate('VBMONTHFOUR')),
+				$this->safeSubstr(JText::translate('VBMONTHFIVE')),
+				$this->safeSubstr(JText::translate('VBMONTHSIX')),
+				$this->safeSubstr(JText::translate('VBMONTHSEVEN')),
+				$this->safeSubstr(JText::translate('VBMONTHEIGHT')),
+				$this->safeSubstr(JText::translate('VBMONTHNINE')),
+				$this->safeSubstr(JText::translate('VBMONTHTEN')),
+				$this->safeSubstr(JText::translate('VBMONTHELEVEN')),
+				$this->safeSubstr(JText::translate('VBMONTHTWELVE')),
+			],
+			'dayNames' => [
+				JText::translate('VBWEEKDAYZERO'),
+				JText::translate('VBWEEKDAYONE'),
+				JText::translate('VBWEEKDAYTWO'),
+				JText::translate('VBWEEKDAYTHREE'),
+				JText::translate('VBWEEKDAYFOUR'),
+				JText::translate('VBWEEKDAYFIVE'),
+				JText::translate('VBWEEKDAYSIX'),
+			],
+			'dayNamesShort' => [
+				$this->safeSubstr(JText::translate('VBWEEKDAYZERO')),
+				$this->safeSubstr(JText::translate('VBWEEKDAYONE')),
+				$this->safeSubstr(JText::translate('VBWEEKDAYTWO')),
+				$this->safeSubstr(JText::translate('VBWEEKDAYTHREE')),
+				$this->safeSubstr(JText::translate('VBWEEKDAYFOUR')),
+				$this->safeSubstr(JText::translate('VBWEEKDAYFIVE')),
+				$this->safeSubstr(JText::translate('VBWEEKDAYSIX')),
+			],
+			'dayNamesMin' => [
+				$this->safeSubstr(JText::translate('VBWEEKDAYZERO'), $day_names_min_len),
+				$this->safeSubstr(JText::translate('VBWEEKDAYONE'), $day_names_min_len),
+				$this->safeSubstr(JText::translate('VBWEEKDAYTWO'), $day_names_min_len),
+				$this->safeSubstr(JText::translate('VBWEEKDAYTHREE'), $day_names_min_len),
+				$this->safeSubstr(JText::translate('VBWEEKDAYFOUR'), $day_names_min_len),
+				$this->safeSubstr(JText::translate('VBWEEKDAYFIVE'), $day_names_min_len),
+				$this->safeSubstr(JText::translate('VBWEEKDAYSIX'), $day_names_min_len),
+			],
+			'weekHeader'         => JText::translate('VBJQCALWKHEADER'),
+			'dateFormat'         => $juidf,
+			'firstDay'           => VikBooking::getFirstWeekDay(),
+			'isRTL'              => $is_rtl_lan,
+			'showMonthAfterYear' => false,
+			'yearSuffix'         => '',
+		];
+
 		$ldecl = '
-jQuery(function($){'."\n".'
-	$.datepicker.regional["vikbooking"] = {'."\n".'
-		closeText: "'.JText::translate('VBJQCALDONE').'",'."\n".'
-		prevText: "'.JText::translate('VBJQCALPREV').'",'."\n".'
-		nextText: "'.JText::translate('VBJQCALNEXT').'",'."\n".'
-		currentText: "'.JText::translate('VBJQCALTODAY').'",'."\n".'
-		monthNames: ["'.JText::translate('VBMONTHONE').'","'.JText::translate('VBMONTHTWO').'","'.JText::translate('VBMONTHTHREE').'","'.JText::translate('VBMONTHFOUR').'","'.JText::translate('VBMONTHFIVE').'","'.JText::translate('VBMONTHSIX').'","'.JText::translate('VBMONTHSEVEN').'","'.JText::translate('VBMONTHEIGHT').'","'.JText::translate('VBMONTHNINE').'","'.JText::translate('VBMONTHTEN').'","'.JText::translate('VBMONTHELEVEN').'","'.JText::translate('VBMONTHTWELVE').'"],'."\n".'
-		monthNamesShort: ["'.$this->safeSubstr(JText::translate('VBMONTHONE')).'","'.$this->safeSubstr(JText::translate('VBMONTHTWO')).'","'.$this->safeSubstr(JText::translate('VBMONTHTHREE')).'","'.$this->safeSubstr(JText::translate('VBMONTHFOUR')).'","'.$this->safeSubstr(JText::translate('VBMONTHFIVE')).'","'.$this->safeSubstr(JText::translate('VBMONTHSIX')).'","'.$this->safeSubstr(JText::translate('VBMONTHSEVEN')).'","'.$this->safeSubstr(JText::translate('VBMONTHEIGHT')).'","'.$this->safeSubstr(JText::translate('VBMONTHNINE')).'","'.$this->safeSubstr(JText::translate('VBMONTHTEN')).'","'.$this->safeSubstr(JText::translate('VBMONTHELEVEN')).'","'.$this->safeSubstr(JText::translate('VBMONTHTWELVE')).'"],'."\n".'
-		dayNames: ["'.JText::translate('VBWEEKDAYZERO').'", "'.JText::translate('VBWEEKDAYONE').'", "'.JText::translate('VBWEEKDAYTWO').'", "'.JText::translate('VBWEEKDAYTHREE').'", "'.JText::translate('VBWEEKDAYFOUR').'", "'.JText::translate('VBWEEKDAYFIVE').'", "'.JText::translate('VBWEEKDAYSIX').'"],'."\n".'
-		dayNamesShort: ["'.$this->safeSubstr(JText::translate('VBWEEKDAYZERO')).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYONE')).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYTWO')).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYTHREE')).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYFOUR')).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYFIVE')).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYSIX')).'"],'."\n".'
-		dayNamesMin: ["'.$this->safeSubstr(JText::translate('VBWEEKDAYZERO'), $day_names_min_len).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYONE'), $day_names_min_len).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYTWO'), $day_names_min_len).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYTHREE'), $day_names_min_len).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYFOUR'), $day_names_min_len).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYFIVE'), $day_names_min_len).'", "'.$this->safeSubstr(JText::translate('VBWEEKDAYSIX'), $day_names_min_len).'"],'."\n".'
-		weekHeader: "'.JText::translate('VBJQCALWKHEADER').'",'."\n".'
-		dateFormat: "'.$juidf.'",'."\n".'
-		firstDay: '.VikBooking::getFirstWeekDay().','."\n".'
-		isRTL: ' . $is_rtl_str . ','."\n".'
-		showMonthAfterYear: false,'."\n".'
-		yearSuffix: ""'."\n".'
-	};'."\n".'
-	$.datepicker.setDefaults($.datepicker.regional["vikbooking"]);'."\n".'
+jQuery(function($) {' . "\n" . '
+	$.datepicker.regional["vikbooking"] = ' . json_encode($vbo_dp_regional_vals) . ';
+	$.datepicker.setDefaults($.datepicker.regional["vikbooking"]);' . "\n" . '
 });';
 
 		/**
@@ -495,7 +586,7 @@ jQuery(function($){'."\n".'
 		';
 		$js = '
 		<script type="text/javascript">
-		jQuery(document).ready(function() {
+		jQuery(function() {
 			jQuery("'.$selector.'").fancybox('.$opts.');
 		});'.($reloadfunc ? $reloadjs : '').'
 		</script>';
@@ -804,11 +895,38 @@ JS
 	}
 
 	/**
+	 * Loads the necessary language definitions for the third-party visual editor (Quill).
+	 * 
+	 * @return  void
+	 * 
+	 * @since   1.17.3 (J) - 1.7.3 (WP)  added support to Generative AI text functions.
+	 */
+	public function loadVisualEditorDefinitions()
+	{
+		static $loaded = null;
+
+		if ($loaded) {
+			return;
+		}
+
+		$loaded = 1;
+
+		// load language definitions for JS
+		JText::script('VBO_CONT_WRAPPER');
+		JText::script('VBO_CONT_WRAPPER_HELP');
+		JText::script('VBO_GEN_CONTENT');
+		JText::script('VBO_AI_LABEL_DEF');
+		JText::script('VBO_AITOOL_WRITER_DEF_PROMPT');
+		JText::script('VBANNULLA');
+	}
+
+	/**
 	 * Loads the necessary assets for the third-party visual editor (Quill).
 	 * 
 	 * @return  void
 	 * 
 	 * @since   1.15.0 (J) - 1.5.0 (WP)
+	 * @since   1.17.3 (J) - 1.7.3 (WP)  added support to Generative AI text functions.
 	 */
 	public function loadVisualEditorAssets()
 	{
@@ -822,6 +940,9 @@ JS
 
 		// access the document
 		$doc = JFactory::getDocument();
+
+		// load JS langs
+		$this->loadVisualEditorDefinitions();
 
 		// build the list of font families
 		$font_families = $this->getVisualEditorFonts();
@@ -846,6 +967,10 @@ JS
 			.ql-picker.ql-specialtags .ql-picker-label:before {
 				content: "' . htmlspecialchars(JText::translate('VBO_CONDTEXT_TKN')) . '";
 			}
+			.ql-formats .ql-genai {
+				width: auto !important;
+				font-weight: bold;
+			}
 		';
 
 		/**
@@ -854,9 +979,11 @@ JS
 		 * change the styles used to be added as an inline style declaration.
 		 * 
 		 * @since 	1.16.7 (J) - 1.6.7 (WP)
+		 * @since 	1.17.3 (J) - 1.7.3 (WP)  cached file is related to software version.
 		 */
-		$cached_preconfig_css_path = implode(DIRECTORY_SEPARATOR, [VBO_ADMIN_PATH, 'resources', 'quill', 'vik-quill-preconfig-cache.css']);
-		$cached_preconfig_css_uri  = VBO_ADMIN_URI . 'resources/quill/vik-quill-preconfig-cache.css';
+		$cached_preconfig_suffix   = defined('VIKBOOKING_SOFTWARE_VERSION') ? '-' . VIKBOOKING_SOFTWARE_VERSION : '';
+		$cached_preconfig_css_path = implode(DIRECTORY_SEPARATOR, [VBO_ADMIN_PATH, 'resources', 'quill', 'vik-quill-preconfig-cache' . $cached_preconfig_suffix . '.css']);
+		$cached_preconfig_css_uri  = VBO_ADMIN_URI . 'resources/quill/vik-quill-preconfig-cache' . $cached_preconfig_suffix . '.css';
 		$cached_preconfig_css_ok   = is_file($cached_preconfig_css_path);
 
 		if (!$cached_preconfig_css_ok) {
@@ -888,6 +1015,9 @@ JS
 
 		// icon for property logo (home icon)
 		$mail_homelogo_icn = '<i class="' . VikBookingIcons::i('hotel') . '" title="' . htmlspecialchars(JText::translate('VBCONFIGFOURLOGO'), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401) . '"></i>';
+
+		// text for generating content through AI
+		$mail_genai_icn = htmlspecialchars(JText::translate('VBO_AI_LABEL_DEF'), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401);
 
 		// build script pre-configuration string
 		$quill_preconfig_script = 
@@ -978,6 +1108,7 @@ JS
 	icons['mailwrapper'] = '$mail_wrapper_icn';
 	icons['preview'] = '$mail_preview_icn';
 	icons['homelogo'] = '$mail_homelogo_icn';
+	icons['genai'] = '$mail_genai_icn';
 })();
 JS
 		;
@@ -988,9 +1119,11 @@ JS
 		 * change the script used to be added as an inline script declaration.
 		 * 
 		 * @since 	1.16.7 (J) - 1.6.7 (WP)
+		 * @since 	1.17.3 (J) - 1.7.3 (WP)  cached file is related to software version.
 		 */
-		$cached_preconfig_script_path = implode(DIRECTORY_SEPARATOR, [VBO_ADMIN_PATH, 'resources', 'quill', 'vik-quill-preconfig-cache.js']);
-		$cached_preconfig_script_uri  = VBO_ADMIN_URI . 'resources/quill/vik-quill-preconfig-cache.js';
+		$cached_preconfig_suffix      = defined('VIKBOOKING_SOFTWARE_VERSION') ? '-' . VIKBOOKING_SOFTWARE_VERSION : '';
+		$cached_preconfig_script_path = implode(DIRECTORY_SEPARATOR, [VBO_ADMIN_PATH, 'resources', 'quill', 'vik-quill-preconfig-cache' . $cached_preconfig_suffix . '.js']);
+		$cached_preconfig_script_uri  = VBO_ADMIN_URI . 'resources/quill/vik-quill-preconfig-cache' . $cached_preconfig_suffix . '.js';
 		$cached_preconfig_script_ok   = is_file($cached_preconfig_script_path);
 
 		if (!$cached_preconfig_script_ok) {
@@ -1019,14 +1152,15 @@ JS
 	 * @return  string  the necessary HTML to render the visual editor.
 	 * 
 	 * @since   1.15.0 (J) - 1.5.0 (WP)
+	 * @since   1.17.3 (J) - 1.7.3 (WP)  added support to Generative AI text functions.
 	 */
-	public function renderVisualEditor($name, $value, $attrs = array(), $opts = array(), $btns = array())
+	public function renderVisualEditor($name, $value, array $attrs = [], array $opts = [], array $btns = [])
 	{
 		if (empty($name)) {
-			return null;
+			return '';
 		}
 
-		// build the AJAX endpoint for uploading files and to preview the message
+		// build the AJAX endpoints for uploading files, to preview the message and more
 		$upload_endpoint   = VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=upload_media_file');
 		$ajax_preview_mess = VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=mail.preview_visual_editor');
 		$ajax_logo_url     = VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=mail.get_default_logo');
@@ -1046,52 +1180,50 @@ JS
 			$attrs['id'] = 'vik-contentbuilder-tarea-' . $editor_counter;
 		}
 
-		// textarea attributes
-		$ta_attributes = array();
-		foreach ($attrs as $aname => $aval) {
-			if ($aname == 'name') {
-				// skip reserved attribute name
-				continue;
-			}
-			$ta_attributes[] = $aname . '="' . JHtml::fetch('esc_attr', $aval) . '"';
-		}
-
 		// labels for modes and editor
 		$text_html_lbl   = JText::translate('VBO_MODE_TEXTHTML');
 		$visual_mode_lbl = JText::translate('VBO_MODE_VISUAL');
-		JText::script('VBO_CONT_WRAPPER');
-		JText::script('VBO_CONT_WRAPPER_HELP');
 
 		// allowed modes to display the visual editor
-		$allowed_modes = array(
+		$allowed_modes = [
 			'text'         => $text_html_lbl,
 			'visual'       => $visual_mode_lbl,
 			'modal-visual' => $visual_mode_lbl,
-		);
+		];
 
 		// define the default buttons to display for mode switching
-		$modes = array(
+		$modes = [
 			'text'         => $text_html_lbl,
 			'modal-visual' => $visual_mode_lbl,
-		);
+		];
 
 		// overwrite modes to display
-		if (isset($opts['modes']) && is_array($opts['modes']) && count($opts['modes'])) {
+		if (isset($opts['modes']) && is_array($opts['modes']) && $opts['modes']) {
 			// check if the given array is associative, hence inclusive of texts
 			if (array_keys($opts['modes']) != range(0, (count($opts['modes']) - 1))) {
 				// replace modes
 				$modes = $opts['modes'];
 			} else {
 				// only the allowed keys must have been passed
-				$new_modes = array();
+				$new_modes = [];
 				foreach ($opts['modes'] as $mode_type) {
 					if (!isset($allowed_modes[$mode_type])) {
 						continue;
 					}
 					$new_modes[$mode_type] = $allowed_modes[$mode_type];
 				}
-				$modes = count($new_modes) ? $new_modes : $modes;
+				$modes = $new_modes ?: $modes;
 			}
+		}
+
+		// resolve conflicts for both visual modes
+		if (($modes['visual'] ?? '') && ($modes['modal-visual'] ?? '') && $modes['visual'] == $modes['modal-visual']) {
+			$modes['modal-visual'] .= ' <i class="' . VikBookingIcons::i('window-restore') . '"></i>';
+		}
+
+		// ensure the text mode is set
+		if (!isset($modes['text'])) {
+			$modes['text'] = $allowed_modes['text'];
 		}
 
 		// overwrite default mode
@@ -1099,13 +1231,34 @@ JS
 			$def_mode_val = $modes[$opts['def_mode']];
 			unset($modes[$opts['def_mode']]);
 			// sort modes accordingly
-			$modes = array_merge(array($opts['def_mode'] => $def_mode_val), $modes);
+			$modes = array_merge([$opts['def_mode'] => $def_mode_val], $modes);
 			// reset the array pointer
 			reset($modes);
 		}
 
 		// set default mode
 		$default_mode = key($modes);
+
+		// ensure text-area styles are merged or set when not the default mode
+		if ($default_mode != 'text') {
+			if (!($attrs['style'] ?? '')) {
+				// set style attribute to hide the text-area
+				$attrs['style'] = 'display: none;';
+			} else {
+				// append the style instruction to hide the text-area
+				$attrs['style'] .= ' display: none;';
+			}
+		}
+
+		// textarea attributes
+		$ta_attributes = [];
+		foreach ($attrs as $aname => $aval) {
+			if ($aname == 'name') {
+				// skip reserved attribute name
+				continue;
+			}
+			$ta_attributes[] = $aname . '="' . JHtml::fetch('esc_attr', $aval) . '"';
+		}
 
 		// build visual editor JS options
 		$js_editor_opts = [
@@ -1165,17 +1318,23 @@ JS
 			'theme'   => 'snow',
 		];
 
+		// check for Generative AI support through Vik Channel Manager and E4jConnect
+		if (class_exists('VikChannelManager') && defined('VikChannelManagerConfig::AI')) {
+			// add editor button for Gen-AI
+			$js_editor_opts['modules']['toolbar']['container'][] = ['genai'];
+		}
+
 		// build the list of special tags to be added to the editor
-		$special_tags_btns = array();
+		$special_tags_btns = [];
 		foreach ($btns as $tag_val) {
 			$special_tags_btns[] = $tag_val;
 		}
 
-		if (count($special_tags_btns)) {
+		if ($special_tags_btns) {
 			// add custom buttons to the editor to manage special tags
-			$js_editor_opts['modules']['toolbar']['container'][] = array(
-				array('specialtags' => $special_tags_btns)
-			);
+			$js_editor_opts['modules']['toolbar']['container'][] = [
+				['specialtags' => $special_tags_btns]
+			];
 			// append CSS inline styles
 			$editor .= '<style type="text/css">' . "\n";
 			foreach ($special_tags_btns as $tag_val) {
@@ -1209,128 +1368,232 @@ JS
 			$editor .= "\t" . '</div>' . "\n";
 		}
 		$editor .= "\t" . '<div class="vik-contentbuilder-inner">' . "\n";
-		$editor .= "\t\t" . '<textarea name="' . $name . '" data-switch="text" ' . implode(' ', $ta_attributes) . ' style="' . ($default_mode != 'text' ? 'display: none;' : '') . '">' . $safe_value . '</textarea>' . "\n";
-		if (isset($modes['visual'])) {
-			$editor .= "\t\t" . '<div class="vik-contentbuilder-container" data-switch="visual" style="' . ($default_mode != 'visual' ? 'display: none;' : '') . '">' . "\n";
-			$editor .= "\t\t\t" . $html_visual_editor . "\n";
-			$editor .= "\t\t" . '</div>' . "\n";
-		}
-		if (isset($modes['modal-visual'])) {
-			$editor .= "\t\t" . '<div class="vbo-modal-overlay-block vik-contentbuilder-modal" data-switch="modal-visual" data-appendto=".vik-contentbuilder-modal-content" style="' . ($default_mode != 'modal-visual' ? 'display: none;' : '') . '">' . "\n";
-			$editor .= "\t\t\t" . '<a class="vbo-modal-overlay-close" href="javascript: void(0);" onclick="VikContentBuilder.switchMode(this, \'text\');"></a>' . "\n";
-			$editor .= "\t\t\t" . '<div class="vbo-modal-overlay-content vik-contentbuilder-modal-content">' . "\n";
-			$editor .= "\t\t\t\t" . '<div class="vbo-modal-overlay-content-head vik-contentbuilder-modal-head"><span class="vbo-modal-overlay-close-times" onclick="VikContentBuilder.switchMode(this, \'text\');">&times;</span></div>' . "\n";
-			$editor .= "\t\t\t\t" . '<div class="vbo-modal-overlay-content-body vik-contentbuilder-modal-body">' . "\n";
-			$editor .= "\t\t\t\t\t" . (!isset($modes['visual']) ? $html_visual_editor : '') . "\n";
-			$editor .= "\t\t\t\t" . '</div>' . "\n";
-			$editor .= "\t\t\t" . '</div>' . "\n";
-			$editor .= "\t\t" . '</div>' . "\n";
+		foreach ($modes as $key => $val) {
+			if ($key == 'text') {
+				// if text is not the default mode, the text-area will be always hid through the style attribute
+				$editor .= "\t\t" . '<textarea name="' . $name . '" data-switch="text" ' . implode(' ', $ta_attributes) . '>' . $safe_value . '</textarea>' . "\n";
+			} elseif ($key == 'visual') {
+				$editor .= "\t\t" . '<div class="vik-contentbuilder-container" data-switch="visual" style="' . ($default_mode != 'visual' ? 'display: none;' : '') . '">' . "\n";
+				$editor .= "\t\t\t" . '<div class="vik-contentbuilder-editor-wrap">' . "\n";
+				$editor .= "\t\t\t\t" . $html_visual_editor . "\n";
+				$editor .= "\t\t\t" . '</div>' . "\n";
+				$editor .= "\t\t" . '</div>' . "\n";
+			} elseif ($key == 'modal-visual') {
+				$editor .= "\t\t" . '<div class="vik-contentbuilder-modal-container" data-switch="modal-visual" data-container="' . (isset($modes['visual']) ? 'visual' : 'modal-visual') . '" style="display: none;">' . "\n";
+				$editor .= "\t\t\t" . '<div class="vik-contentbuilder-editor-wrap">' . "\n";
+				$editor .= "\t\t\t\t" . (!isset($modes['visual']) ? $html_visual_editor : '') . "\n";
+				$editor .= "\t\t\t" . '</div>' . "\n";
+				$editor .= "\t\t" . '</div>' . "\n";
+			}
 		}
 		$editor .= "\t" . '</div>' . "\n";
 		$editor .= '</div>' . "\n";
 		$editor .= "\n";
-		
+
+		// default prompt for Gen-AI
+		$gen_ai_use_prompt = $opts['gen_ai']['prompt'] ?? null;
+		if (!$gen_ai_use_prompt && ($opts['gen_ai']['customer'] ?? [])) {
+			$guest_name = trim(($opts['gen_ai']['customer']['first_name'] ?? '') . ' ' . ($opts['gen_ai']['customer']['last_name'] ?? ''));
+			if ($guest_name) {
+				// set proper prompt message with the guest name
+				$gen_ai_use_prompt = JText::sprintf('VBO_AI_DISC_WRITER_FN_TEXT_GEN_MESS_EXA', $guest_name);
+				if (!empty($opts['gen_ai']['booking']['lang']) && JFactory::getLanguage()->getTag() != $opts['gen_ai']['booking']['lang']) {
+					// write the message in the guest language
+					$guest_lang = $opts['gen_ai']['booking']['lang'];
+					$known_langs = $this->getKnownLanguages();
+					if ($known_langs[$guest_lang]['nativeName'] ?? '') {
+						$guest_lang = $known_langs[$guest_lang]['nativeName'];
+					}
+					$gen_ai_use_prompt .= ' ' . JText::sprintf('VBO_AI_GEN_MESS_LANG', $guest_lang);
+				}
+			}
+		}
+
+		if (!$gen_ai_use_prompt && !strcasecmp(($opts['gen_ai']['environment'] ?? ''), 'cron')) {
+			// use default prompt for cron messages
+			$gen_ai_use_prompt = JText::translate('VBO_AITOOL_WRITER_CRON_DEF_PROMPT');
+		}
+
+		if ($gen_ai_use_prompt && ($opts['gen_ai']['placeholders'] ?? 0) && $btns) {
+			// add prompt text for using the placeholder tags
+			$placeholders = array_filter($btns, function($tag) {
+				// remove conditional text rule tags
+				return !preg_match('/^\{condition\:\s?.+$/i', $tag);
+			});
+			if ($placeholders) {
+				$gen_ai_use_prompt .= ' ' . JText::translate('VBO_AITOOL_WRITER_USE_PLACEHOLDERS') . "\n" . implode(', ', $placeholders);
+			}
+		}
+
+		// sanitize default prompt
+		$gen_ai_use_prompt = json_encode((string) $gen_ai_use_prompt);
+
 		// add JS script to HTML content
-		$editor .= '<script>' . "\n";
-		$editor .= 'jQuery(function() {
-			var vbo_toast_mailwrapper = null;
-			var visual_editor_handlers = {
-				"specialtags": function(tag) {
-					if (tag) {
-						var cursorPosition = this.quill.getSelection().index;
-						this.quill.insertText(cursorPosition, tag, "specialtag", "vbo-editor-hl-specialtag");
-						cursorPosition += tag.length + 1;
-						this.quill.setSelection(cursorPosition, "silent");
-						this.quill.insertText(cursorPosition, " ");
-						this.quill.setSelection(cursorPosition + 1, "silent");
-						this.quill.deleteText(cursorPosition - 1, 1);
+		$toast_icon = VikBookingIcons::i('minus-square');
+		$editor .= <<<HTML
+<script>
+jQuery(function() {
+	var vbo_toast_mailwrapper = null;
+	var visual_editor_handlers = {
+		specialtags: function(tag) {
+			if (tag) {
+				var cursorPosition = this.quill.getSelection().index;
+				this.quill.insertText(cursorPosition, tag, 'specialtag', 'vbo-editor-hl-specialtag');
+				cursorPosition += tag.length + 1;
+				this.quill.setSelection(cursorPosition, 'silent');
+				this.quill.insertText(cursorPosition, ' ');
+				this.quill.setSelection(cursorPosition + 1, 'silent');
+				this.quill.deleteText(cursorPosition - 1, 1);
+			}
+		},
+		image: function(clicked) {
+			var img_handler = new VikContentBuilderImageHandler(this.quill);
+			img_handler.setEndpoint('$upload_endpoint').present();
+		},
+		mailwrapper: function(clicked) {
+			var range = this.quill.getSelection(true);
+			this.quill.insertText(range.index, "\\n", 'user');
+			this.quill.insertEmbed(range.index + 1, 'mailwrapper', true, 'user');
+			this.quill.setSelection(range.index + 2, 'silent');
+			if (!vbo_toast_mailwrapper) {
+				vbo_toast_mailwrapper = 1;
+				VBOToast.enqueue(new VBOToastMessage({
+					title:  Joomla.JText._('VBO_CONT_WRAPPER'),
+					body:   Joomla.JText._('VBO_CONT_WRAPPER_HELP'),
+					icon:   '$toast_icon',
+					delay:  {
+						min: 6000,
+						max: 20000,
+						tolerance: 4000,
+					},
+					action: () => {
+						VBOToast.dispose(true);
 					}
-				},
-				"image": function(clicked) {
-					var img_handler = new VikContentBuilderImageHandler(this.quill);
-					img_handler.setEndpoint("' . $upload_endpoint . '").present();
-				},
-				"mailwrapper": function(clicked) {
-					var range = this.quill.getSelection(true);
-					this.quill.insertText(range.index, "\n", "user");
-					this.quill.insertEmbed(range.index + 1, "mailwrapper", true, "user");
-					this.quill.setSelection(range.index + 2, "silent");
-					if (!vbo_toast_mailwrapper) {
-						vbo_toast_mailwrapper = 1;
-						VBOToast.enqueue(new VBOToastMessage({
-							title:  Joomla.JText._("VBO_CONT_WRAPPER"),
-							body:   Joomla.JText._("VBO_CONT_WRAPPER_HELP"),
-							icon:   "' . VikBookingIcons::i('minus-square') . '",
-							delay:  {
-								min: 6000,
-								max: 20000,
-								tolerance: 4000,
-							},
-							action: () => {
-								VBOToast.dispose(true);
-							}
-						}));
+				}));
+			}
+		},
+		preview: function(clicked) {
+			VBOCore.doAjax('$ajax_preview_mess', {
+				content: this.quill.root.innerHTML,
+				bid: (typeof window['vbo_current_bid'] !== 'undefined' ? window['vbo_current_bid'] : null)
+			}, (resp) => {
+				var pop_win = window.open('', '', 'width=800, height=600, scrollbars=yes');
+				pop_win.document.body.innerHTML = resp[0];
+			}, (err) => {
+				console.log(err);
+				alert(err.responseText);
+			});
+		},
+		homelogo: function(clicked) {
+			VBOCore.doAjax('$ajax_logo_url', {}, (resp) => {
+				try {
+					this.quill.insertEmbed(this.quill.getSelection().index, 'image', resp.url);
+				} catch(e) {
+					alert('Generic logo image error');
+				}
+			}, (err) => {
+				console.log(err);
+				alert(err.responseText);
+			});
+		},
+		genai: function(clicked) {
+			let visualEditor = this.quill;
+			let cursorPosition = visualEditor.getSelection().index;
+
+			const vboVisualEditorGenaiGetContentFn = (e) => {
+				// check if any data was sent within the event
+				if (e && e.detail?.content) {
+					// set the generated and picked content to editor
+					let ai_content = e.detail.content;
+					if ((e.detail?.type || '') == 'html') {
+						// convert HTML content into Delta for the Visual Editor
+						let delta = visualEditor.clipboard.convert(ai_content);
+						// set (replace) editor HTML content
+						visualEditor.setContents(delta, 'silent');
+					} else {
+						// default to plain text
+						visualEditor.insertText(cursorPosition, ai_content, 'user');
+						cursorPosition += ai_content.length + 1;
+						visualEditor.setSelection(cursorPosition, 'silent');
 					}
-				},
-				"preview": function(clicked) {
-					VBOCore.doAjax("' . $ajax_preview_mess . '", {
-						content: this.quill.root.innerHTML,
-						bid: (typeof window["vbo_current_bid"] !== "undefined" ? window["vbo_current_bid"] : null)
-					}, (resp) => {
-						var pop_win = window.open("", "", "width=800, height=600, scrollbars=yes");
-						pop_win.document.body.innerHTML = resp[0];
-					}, (err) => {
-						console.log(err);
-						alert(err.responseText);
-					});
-				},
-				"homelogo": function(clicked) {
-					VBOCore.doAjax("' . $ajax_logo_url . '", {}, (resp) => {
-						try {
-							this.quill.insertEmbed(this.quill.getSelection().index, "image", resp.url);
-						} catch(e) {
-							alert("Generic logo image error");
-						}
-					}, (err) => {
-						console.log(err);
-						alert(err.responseText);
-					});
 				}
 			};
-			var visual_editor_ext_opts = ' . $editor_opts_str . ';
-			visual_editor_ext_opts["modules"]["toolbar"]["handlers"] = visual_editor_handlers;
-			var visual_editor = new Quill("#' . $editor_id . '", visual_editor_ext_opts);
-			var editor_content = jQuery("textarea#' . $attrs['id'] . '").val();
-			if (editor_content && editor_content.length) {
-				if (editor_content.indexOf("<") >= 0) {
-					// replace special tags
-					editor_content = editor_content.replace(/([^"\']|^)({(?:condition: ?)?[a-z0-9_]{5,64}})([^"\']|$)/g, function(match, before, tag, after) {
-						return before + "<strong class=\"vbo-editor-hl-specialtag\">" + tag + "</strong>" + after;
-					});
-					var editor_delta = visual_editor.clipboard.convert(editor_content);
-					// set editor HTML content
-					visual_editor.setContents(editor_delta, "silent");
-				} else {
-					// set text content
-					visual_editor.setText(editor_content, "silent");
-				}
-			}
-			visual_editor.on("text-change", function(delta, source) {
-				jQuery("textarea#' . $attrs['id'] . '").val(visual_editor.root.innerHTML);
+
+			// register event to receive the Gen-AI content picked
+			document.addEventListener('vbo-ai-tools-writer-content-picked', vboVisualEditorGenaiGetContentFn);
+
+			// register listener to un-register the needed events
+			document.addEventListener('vbo-ai-tools-writer-content-dismissed', function vboVisualEditorGenaiDismissedFn(e) {
+				// un-register the events asynchronously to avoid unexpected behaviors
+				setTimeout(() => {
+					// make sure the same event will not trigger again
+					e.target.removeEventListener(e.type, vboVisualEditorGenaiDismissedFn);
+
+					// unregister the event for getting content data
+					document.removeEventListener('vbo-ai-tools-writer-content-picked', vboVisualEditorGenaiGetContentFn);
+				});
 			});
-			jQuery("textarea#' . $attrs['id'] . '").on("change", function() {
-				var editor_content = jQuery(this).val();
-				var editor_delta = visual_editor.clipboard.convert(editor_content);
-				visual_editor.setContents(editor_delta, "silent");
+
+			// default prompt
+			let writer_prompt = $gen_ai_use_prompt;
+
+			// render modal widget
+			VBOCore.handleDisplayWidgetNotification({
+				widget_id: 'aitools',
+			}, {
+				scope: 'writer',
+				prompt: {
+					message: (writer_prompt || Joomla.JText._('VBO_AITOOL_WRITER_DEF_PROMPT')),
+					submit: 0,
+				},
+				modal_options: {
+					suffix: 'vbo-ai-tools-writer-inner',
+					title: Joomla.JText._('VBO_GEN_CONTENT') + ' - ' + Joomla.JText._('VBO_AI_LABEL_DEF'),
+					lock_scroll: false,
+					dismiss_event: 'vbo-ai-tools-writer-content-picked',
+					dismissed_event: 'vbo-ai-tools-writer-content-dismissed',
+				},
 			});
-			try {
-				// push editor instance to the pool
-				VikContentBuilder.pushEditor(visual_editor);
-			} catch(e) {
-				console.error("Could not push new visual editor instance", e);
-			}
-		});' . "\n";
-		$editor .= '</script>' . "\n";
+		}
+	};
+	var visual_editor_ext_opts = $editor_opts_str;
+	visual_editor_ext_opts['modules']['toolbar']['handlers'] = visual_editor_handlers;
+	var visual_editor = new Quill('#$editor_id', visual_editor_ext_opts);
+	var editor_content = jQuery('textarea#{$attrs['id']}').val();
+	if (editor_content && editor_content.length) {
+		if (editor_content.indexOf('<') >= 0) {
+			// replace special tags
+			editor_content = editor_content.replace(/([^"']|^)({(?:condition: ?)?[a-z0-9_]{5,64}})([^"']|$)/g, function(match, before, tag, after) {
+				return before + '<strong class="vbo-editor-hl-specialtag">' + tag + '</strong>' + after;
+			});
+			var editor_delta = visual_editor.clipboard.convert(editor_content);
+			// set editor HTML content
+			visual_editor.setContents(editor_delta, 'silent');
+		} else {
+			// set text content
+			visual_editor.setText(editor_content, 'silent');
+		}
+	}
+	visual_editor.on('text-change', function(delta, source) {
+		jQuery('textarea#{$attrs['id']}').val(visual_editor.root.innerHTML);
+	});
+	jQuery('textarea#{$attrs['id']}').on('change', function() {
+		var editor_content = jQuery(this).val();
+		var editor_delta = visual_editor.clipboard.convert(editor_content);
+		visual_editor.setContents(editor_delta, 'silent');
+	});
+	try {
+		// push editor instance to the pool
+		VikContentBuilder.pushEditor(visual_editor);
+	} catch(e) {
+		console.error('Could not push new visual editor instance', e);
+	}
+	setTimeout(() => {
+		jQuery('.vik-contentbuilder-switcher-btn-active').trigger('click');
+	});
+});
+</script>
+HTML;
 
 		// return the necessary HTML string to be displayed
 		return $editor;

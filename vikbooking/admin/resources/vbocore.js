@@ -1,6 +1,6 @@
 /**
- * VikBooking Core v1.7.2
- * Copyright (C) 2024 E4J s.r.l. All Rights Reserved.
+ * VikBooking Core v1.7.3
+ * Copyright (C) 2025 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
  */
@@ -192,6 +192,10 @@
 				} else {
 					// launch the failure callback otherwise
 					if (failure !== undefined) {
+						if (err.responseText === 'false') {
+							// make the property empty to rely on others
+							err.responseText = '';
+						}
 						failure(err);
 					}
 				}
@@ -2588,6 +2592,9 @@
 
 			var modal_body = $('<div></div>').addClass('vbo-modal-overlay-content-body vbo-modal-overlay-content-body-scroll');
 			var modal_content_wrapper = $('<div></div>').addClass('vbo-modal-' + options.suffix + '-wrap');
+			if (options.suffix != 'widget_modal') {
+				modal_content_wrapper.addClass('vbo-modal-widget_modal-wrap');
+			}
 			if (typeof options.body === 'string') {
 				modal_content_wrapper.html(options.body);
 			} else {

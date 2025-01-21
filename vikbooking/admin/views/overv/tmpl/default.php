@@ -75,7 +75,7 @@ if ($nowdf == "%d/%m/%Y") {
 } else {
 	$df = 'Y/m/d';
 }
-$currencysymb = VikBooking::getCurrencySymb(true);
+$currencysymb = VikBooking::getCurrencySymb();
 
 $pdebug = VikRequest::getInt('e4j_debug', '', 'request');
 $session = JFactory::getSession();

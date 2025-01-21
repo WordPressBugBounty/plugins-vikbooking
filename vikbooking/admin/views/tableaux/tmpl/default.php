@@ -33,7 +33,7 @@ if ($nowdf == "%d/%m/%Y") {
 }
 $datesep = VikBooking::getDateSeparator(true);
 $juidf = $nowdf == "%d/%m/%Y" ? 'dd/mm/yy' : ($nowdf == "%m/%d/%Y" ? 'mm/dd/yy' : 'yy/mm/dd');
-$currencysymb = VikBooking::getCurrencySymb(true);
+$currencysymb = VikBooking::getCurrencySymb();
 
 $month = VikRequest::getInt('month', 0, 'request');
 $printtableaux = VikRequest::getInt('printtableaux', 0, 'request');

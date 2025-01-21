@@ -79,7 +79,7 @@ class VikbookingViewTableaux extends JViewVikBooking
 
 		// get all occupied dates for these rooms
 		$rooms_busy = [];
-		$q = "SELECT `b`.*,`ob`.`idorder`,`o`.`custdata`,`o`.`status`,`o`.`country`,`oc`.`idcustomer`,`c`.`first_name`,`c`.`last_name`,
+		$q = "SELECT `b`.*,`ob`.`idorder`,`o`.`custdata`,`o`.`status`,`o`.`country`,`o`.`phone`,`oc`.`idcustomer`,`c`.`first_name`,`c`.`last_name`,
 			(SELECT GROUP_CONCAT(`or`.`roomindex` SEPARATOR ';') FROM `#__vikbooking_ordersrooms` AS `or` WHERE `or`.`idorder`=`ob`.`idorder`) AS `indexes`, 
 			(SELECT GROUP_CONCAT(`or`.`adults` SEPARATOR ';') FROM `#__vikbooking_ordersrooms` AS `or` WHERE `or`.`idorder`=`ob`.`idorder`) AS `adults`, 
 			(SELECT GROUP_CONCAT(`or`.`children` SEPARATOR ';') FROM `#__vikbooking_ordersrooms` AS `or` WHERE `or`.`idorder`=`ob`.`idorder`) AS `children`, 

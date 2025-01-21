@@ -11,7 +11,7 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 $vbo_app = VikBooking::getVboApplication();
-$formatvals = VikBooking::getNumberFormatData(true);
+$formatvals = VikBooking::getNumberFormatData();
 $formatparts = explode(':', $formatvals);
 ?>
 <div class="vbo-config-maintab-left">
@@ -25,7 +25,7 @@ $formatparts = explode(':', $formatvals);
 				</div>
 				<div class="vbo-param-container">
 					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGTHREECURSYMB'); ?></div>
-					<div class="vbo-param-setting"><input type="text" name="currencysymb" value="<?php echo JHtml::fetch('esc_attr', VikBooking::getCurrencySymb(true)); ?>" size="10"/></div>
+					<div class="vbo-param-setting"><input type="text" name="currencysymb" value="<?php echo JHtml::fetch('esc_attr', VikBooking::getCurrencySymb()); ?>" size="10"/></div>
 				</div>
 				<div class="vbo-param-container">
 					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGTHREECURCODEPP'); ?></div>

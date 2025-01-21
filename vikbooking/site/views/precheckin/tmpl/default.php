@@ -338,6 +338,7 @@ JText::script('VBO_PRECHECKIN_TOAST_HELP');
 			<div class="vbo-precheckin-submit">
 				<button type="submit" class="btn btn-large vbo-pref-color-btn"><?php echo JText::translate('VBOSUBMITPRECHECKIN'); ?></button>
 			</div>
+			<?php echo JHtml::fetch('form.token'); ?>
 		</form>
 	</div>
 

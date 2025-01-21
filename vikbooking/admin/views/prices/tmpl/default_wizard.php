@@ -55,6 +55,7 @@ $vbo_app = VikBooking::getVboApplication();
 				</div>
 				<input type="hidden" name="task" value="prices" />
 				<input type="hidden" name="wizard" value="1" />
+				<?php echo JHtml::fetch('form.token'); ?>
 			</form>
 		</div>
 	</div>

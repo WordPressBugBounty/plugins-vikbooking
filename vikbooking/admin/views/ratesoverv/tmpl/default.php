@@ -38,12 +38,15 @@ JText::script('VBO_RATES_AND_RESTR');
 JText::script('VBSAVE');
 JText::script('VBANNULLA');
 JText::script('VBAPPLY');
+JText::script('VBNEWRESTRICTIONDFROMRANGE');
+JText::script('VBNEWRESTRICTIONDTORANGE');
 
 $document = JFactory::getDocument();
 
 $vbo_app = VikBooking::getVboApplication();
 $vbo_app->loadSelect2();
 $vbo_app->loadDatePicker();
+$vbo_app->loadDatesRangePicker();
 
 $pdebug = VikRequest::getint('e4j_debug', '', 'request');
 
@@ -942,13 +945,10 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 						<div class="vbo-ratesoverview-period-box-cals" style="display: none;">
 							<div class="vbo-ratesoverview-period-box-cals-inner">
 								<div class="vbo-ratesoverview-period-cal-left">
-									<h4><?php echo JText::translate('VBOROVWSELPERIODFROM'); ?></h4>
+									<h4><?php echo JText::translate('VBOROVWSELPERIODFROM') . ' / ' . JText::translate('VBOROVWSELPERIODTO'); ?></h4>
 									<div class="vbo-period-from" data-idroom="<?php echo $rid; ?>" data-roomname="<?php echo htmlspecialchars($roomrow['name']); ?>"></div>
-									<input type="hidden" class="vbo-period-from-val" value="" />
-								</div>
-								<div class="vbo-ratesoverview-period-cal-right">
-									<h4><?php echo JText::translate('VBOROVWSELPERIODTO'); ?></h4>
 									<div class="vbo-period-to" data-idroom="<?php echo $rid; ?>" data-roomname="<?php echo htmlspecialchars($roomrow['name']); ?>"></div>
+									<input type="hidden" class="vbo-period-from-val" value="" />
 									<input type="hidden" class="vbo-period-to-val" value="" />
 								</div>
 								<div class="vbo-ratesoverview-period-cal-cmd">
@@ -1494,6 +1494,10 @@ function vboDisplayNextDays(btn) {
 }
 
 jQuery(function() {
+
+	/**
+	 * Calendar for start date of every room-rates table.
+	 */
 	jQuery('.vbodatepicker').datepicker({
 		showOn: 'focus',
 		dateFormat: '<?php echo $juidf; ?>',
@@ -1517,73 +1521,115 @@ jQuery(function() {
 			parentform.submit();
 		}
 	});
-	jQuery('#checkindate').datepicker({
+
+	/**
+	 * Dates-Range-Picker calendar for Rates Calculator tool.
+	 */
+	jQuery('#checkindate').vboDatesRangePicker({
+		checkout: '#checkoutdate',
 		showOn: 'focus',
 		dateFormat: 'yy-mm-dd',
 		minDate: '0d',
 		numberOfMonths: 2,
-		onSelect: function(selectedDate) {
-			var nownights = parseInt(jQuery('#vbo-numnights').val());
-			var nowcheckin = jQuery('#checkindate').datepicker('getDate');
-			var nowcheckindate = new Date(nowcheckin.getTime());
-			nowcheckindate.setDate(nowcheckindate.getDate() + nownights);
-			jQuery('#checkoutdate').datepicker( 'option', 'minDate', nowcheckindate );
-			jQuery('#checkoutdate').datepicker( 'setDate', nowcheckindate );
-			vbCalcNights();
-		}
-	});
-	jQuery('#checkoutdate').datepicker({
-		showOn: 'focus',
-		dateFormat: 'yy-mm-dd',
-		minDate: '0d',
-		numberOfMonths: 2,
-		onSelect: function(selectedDate) {
-			if (!jQuery('#checkoutdate').val().length) {
-				return;
-			}
-			vbCalcNights();
-		}
+		onSelect: {
+			checkin: (selectedDate) => {
+				var nownights = parseInt(jQuery('#vbo-numnights').val());
+				var nowcheckin = jQuery('#checkindate').vboDatesRangePicker('getCheckinDate');
+				var nowcheckindate = new Date(nowcheckin.getTime());
+				nowcheckindate.setDate(nowcheckindate.getDate() + nownights);
+				jQuery('#checkindate').vboDatesRangePicker('checkout', 'minDate', nowcheckindate);
+				vbCalcNights();
+			},
+			checkout: (selectedDate) => {
+				if (!jQuery('#checkindate').vboDatesRangePicker('getCheckoutDate')) {
+					return;
+				}
+				vbCalcNights();
+			},
+		},
+		labels: {
+			checkin: Joomla.JText._('VBPICKUPROOM'),
+			checkout: Joomla.JText._('VBRETURNROOM'),
+		},
+		bottomCommands: {
+			clear: Joomla.JText._('VBO_CLEAR_DATES'),
+			close: Joomla.JText._('VBO_CLOSE'),
+			onClear: () => {
+				vbCalcNights();
+			},
+		},
+		environment: {
+			section: 'admin',
+			autoHide: true,
+		},
 	});
 	jQuery('#checkindate-trig, #checkoutdate-trig').click(function() {
-		var jdp = jQuery(this).prev('input.hasDatepicker');
-		if (jdp.length) {
-			jdp.focus();
+		let dp = jQuery(this).prev('input');
+		if (!dp.length) {
+			return;
+		}
+		if (dp.hasClass('hasDatepicker')) {
+			dp.focus();
+		} else if (dp.attr('id') == 'checkoutdate') {
+			jQuery('#checkindate').focus();
 		}
 	});
 	jQuery('#vbo-numnights').on('change keyup', function() {
-		if (!jQuery('#checkindate').length) {
+		if (!jQuery('#checkindate').vboDatesRangePicker('getCheckinDate')) {
 			return;
 		}
 		var nownights = parseInt(jQuery(this).val());
-		var nowcheckin = jQuery('#checkindate').datepicker('getDate');
+		var nowcheckin = jQuery('#checkindate').vboDatesRangePicker('getCheckinDate');
 		var nowcheckindate = new Date(nowcheckin.getTime());
 		nowcheckindate.setDate(nowcheckindate.getDate() + nownights);
-		jQuery('#checkoutdate').datepicker( 'option', 'minDate', nowcheckindate );
-		jQuery('#checkoutdate').datepicker( 'setDate', nowcheckindate );
+		// update checkout date
+		jQuery('#checkindate').vboDatesRangePicker('setCheckoutDate', nowcheckindate);
 	});
-	jQuery('.vbo-period-from').datepicker({
-		dateFormat: '<?php echo $juidf; ?>',
-		minDate: '0d',
-		altField: '.vbo-period-from-val',
-		onSelect: function(selectedDate) {
-			jQuery(this).parent().find('.vbo-period-from-val').val(selectedDate);
-			jQuery(this).closest('.vbo-ratesoverview-period-box-cals').find('.vbo-period-to').datepicker("option", "minDate", selectedDate);
-			vboFormatCalDate(jQuery(this), 'period-from');
-		}
-	});
-	jQuery('.vbo-period-to').datepicker({
-		dateFormat: '<?php echo $juidf; ?>',
-		minDate: '0d',
-		altField: '.vbo-period-to-val',
-		onSelect: function(selectedDate) {
-			jQuery(this).parent().find('.vbo-period-to-val').val(selectedDate);
-			jQuery(this).closest('.vbo-ratesoverview-period-box-cals').find('.vbo-period-from').datepicker("option", "maxDate", selectedDate);
-			vboFormatCalDate(jQuery(this), 'period-to');
-		}
+
+	/**
+	 * Dates-Range-Picker calendar for selecting a period of room dates.
+	 */
+	jQuery('.vbo-period-from').each(function(index, elem) {
+		jQuery(elem).vboDatesRangePicker({
+			checkout: jQuery(elem).closest('.vbo-ratesoverview-period-box-cals').find('.vbo-period-to'),
+			dateFormat: '<?php echo $juidf; ?>',
+			numberOfMonths: 1,
+			minDate: '0d',
+			altFields: {
+				checkin: '.vbo-period-from-val',
+				checkout: '.vbo-period-to-val',
+			},
+			onSelect: {
+				checkin: function(selectedDate) {
+					jQuery(this).parent().find('.vbo-period-from-val').val(selectedDate);
+					vboFormatCalDate(jQuery(this), 'period-from');
+				},
+				checkout: function(selectedDate) {
+					jQuery(this).parent().find('.vbo-period-to-val').val(selectedDate);
+					vboFormatCalDate(jQuery(this), 'period-to');
+				},
+			},
+			labels: {
+				checkin: Joomla.JText._('VBNEWRESTRICTIONDFROMRANGE'),
+				checkout: Joomla.JText._('VBNEWRESTRICTIONDTORANGE'),
+			},
+			environment: {
+				section: 'admin',
+			},
+		});
 	});
 	jQuery('.vbo-ratesoverview-period-box-left, .vbo-ratesoverview-period-box-right').click(function() {
-		jQuery(this).closest('.vbo-ratesoverview-period-boxes').find('.vbo-ratesoverview-period-box-cals').fadeToggle();
+		let calbox = jQuery(this).closest('.vbo-ratesoverview-period-boxes').find('.vbo-ratesoverview-period-box-cals');
+		if (!calbox.is(':visible')) {
+			// unset current dates from DRP, if any
+			calbox.find('.vbo-period-from').vboDatesRangePicker('setDates', []);
+		}
+		calbox.toggle();
 	});
+
+	/**
+	 * Render select2.
+	 */
 	jQuery("#roomsel").select2({
 		allowClear: true
 	});
@@ -2341,7 +2387,7 @@ function showVboDialog() {
 function showVboDialogPeriod() {
 	var format = new Date().format;
 	format = format.replace(new RegExp("/", 'g'), new Date().datesep);
-	jQuery('.vbo-ratesoverview-period-box-cals').fadeOut();
+	jQuery('.vbo-ratesoverview-period-box-cals').hide();
 	jQuery("#rovervw-roomname").html('<?php VikBookingIcons::e('building'); ?> ' + vbolistener.first.roomName);
 	jQuery("#rovervw-rplan").html(vbolistener.first.rplanName);
 	jQuery("#rovervw-closeopen-rplan").html('"'+vbolistener.first.rplanName+'"');
@@ -2772,13 +2818,13 @@ function vboRatesOvervSetRoomOtaRelations(room_id, rplan_id) {
 						if (parseInt(obj_res['rmod_channels'][ota_id]['rmod']) == 1) {
 							alter_op = parseInt(obj_res['rmod_channels'][ota_id]['rmodop']) == 1 ? '+' : '-';
 							alter_amount = obj_res['rmod_channels'][ota_id]['rmodamount'];
-							alter_val = parseInt(obj_res['rmod_channels'][ota_id]['rmodop']) == 1 ? '%' : '*';
+							alter_val = parseInt(obj_res['rmod_channels'][ota_id]['rmodval']) == 1 ? '%' : '*';
 						}
 					} else {
 						// room-level pricing alteration rule
 						alter_op = parseInt(obj_res['rmodop']) == 1 ? '+' : '-';
 						alter_amount = obj_res['rmodamount'] || '0';
-						alter_val = parseInt(obj_res['rmodop']) == 1 ? '%' : '*';
+						alter_val = parseInt(obj_res['rmodval']) == 1 ? '%' : '*';
 					}
 				}
 

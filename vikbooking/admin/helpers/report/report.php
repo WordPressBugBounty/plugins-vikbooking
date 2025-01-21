@@ -1286,6 +1286,7 @@ abstract class VikBookingReport
 
 	/**
 	 * Saves the report custom settings defined.
+	 * The visibility should be public.
 	 * 
 	 * @param 	array 	$data 	The associative list of settings to save.
 	 * @param 	bool 	$merge 	If true, the previous settings will be merged.

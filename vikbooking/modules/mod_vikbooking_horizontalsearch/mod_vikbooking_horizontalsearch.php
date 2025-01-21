@@ -19,6 +19,13 @@ require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'helper.php';
 // module main file
 
 VikBooking::loadFontAwesome();
+if (defined('VBO_SITE_URI') && defined('VIKBOOKING_SOFTWARE_VERSION')) {
+    /**
+     * @wponly  CSS URI differs from Joomla
+     */
+    JFactory::getDocument()->addStyleSheet(VIKBOOKING_SITE_ASSETS_URI.'vikbooking_styles.css', array('version' => VIKBOOKING_SOFTWARE_VERSION), array('id' => 'vbo-style'));
+}
+
 if (method_exists('VikBooking', 'getTracker')) {
 	// invoke the Tracker Class
 	VikBooking::getTracker();

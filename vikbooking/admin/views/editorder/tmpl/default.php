@@ -38,6 +38,8 @@ JText::script('VBSAVE');
 JText::script('VBELIMINA');
 JText::script('VBO_REG_NEW_PAYMENT');
 JText::script('VBO_UPDATE_PAYMENT');
+JText::script('VBSENDSMSACTION');
+JText::script('VBSENDEMAILACTION');
 JText::script('VBO_AI_AUTO_GUEST_REV_EXCLUDE');
 JText::script('VBO_AI_AUTO_GUEST_REV_INCLUDE');
 
@@ -321,7 +323,7 @@ function toggleDiscount(elem) {
 				</div>
 			</div>
 		<?php
-		if (!$printreceipt && count($customer)) {
+		if (!$printreceipt && $customer) {
 		?>
 			<div class="vbo-bookdet-wrap">
 				<div class="vbo-bookdet-head">
@@ -426,7 +428,7 @@ function toggleDiscount(elem) {
 					break;
 				default:
 					$checked_status = JText::translate('VBOCHECKEDSTATUSZERO');
-					if (count($customer) && isset($customer['pax_data']) && !empty($customer['pax_data'])) {
+					if ($customer && isset($customer['pax_data']) && !empty($customer['pax_data'])) {
 						// pre check-in performed via front-end
 						$checked_status = JText::translate('VBOCHECKEDSTATUSPRECHECKIN');
 					}
@@ -1538,7 +1540,7 @@ JS
 							</div>
 						<?php if (!empty($row['custmail'])) : ?>
 							<div class="vbo-bookingdet-btncont">
-								<button type="button" class="btn vbo-config-btn" onclick="vboToggleSendEmail();" style="vertical-align: top;"><?php VikBookingIcons::e('envelope'); ?> <?php echo JText::translate('VBSENDEMAILACTION'); ?></button>
+								<button type="button" class="btn vbo-config-btn" onclick="vboDisplaySendEmail();" style="vertical-align: top;"><?php VikBookingIcons::e('envelope'); ?> <?php echo JText::translate('VBSENDEMAILACTION'); ?></button>
 							</div>
 						<?php endif; ?>
 						</div>
@@ -1564,7 +1566,7 @@ JS
 							</div>
 						<?php if (!empty($row['phone'])) : ?>
 							<div class="vbo-bookingdet-btncont">
-								<button type="button" class="btn vbo-config-btn" onclick="vboToggleSendSMS();" style="vertical-align: top;"><?php VikBookingIcons::e('comment-dots'); ?> <?php echo JText::translate('VBSENDSMSACTION'); ?></button>
+								<button type="button" class="btn vbo-config-btn" onclick="vboDisplaySendSMS();" style="vertical-align: top;"><?php VikBookingIcons::e('comment-dots'); ?> <?php echo JText::translate('VBSENDSMSACTION'); ?></button>
 							</div>
 						<?php endif; ?>
 						</div>
@@ -2238,7 +2240,7 @@ JS
 				if (!$row['closure']) {
 					?>
 					<div class="vbo-bookingdet-admin-entry">
-						<label for="vbo-searchcust"><?php echo JText::translate(count($customer) ? 'VBOASSIGNNEWCUST' : 'VBFILLCUSTFIELDS'); ?></label>
+						<label for="vbo-searchcust"><?php echo JText::translate($customer ? 'VBOASSIGNNEWCUST' : 'VBFILLCUSTFIELDS'); ?></label>
 						<span style="display: block;"><?php echo JText::translate('VBOSEARCHEXISTCUST'); ?></span>
 						<span class="vbo-eorder-assigncust" style="margin-bottom: 1px;">
 							<input type="text" id="vbo-searchcust" autocomplete="off" value="" placeholder="<?php echo JText::translate('VBOSEARCHCUSTBY'); ?>" size="30" style="margin-bottom: 0;" />
@@ -3375,88 +3377,92 @@ foreach ($vbo_modals_html as $modalhtml) {
 	<input type="hidden" name="invnotes" id="invnotes-hid" value="" />
 </form>
 
-<div class="vbo-modal-overlay-block vbo-modal-overlay-block-sms-email">
-	<a class="vbo-modal-overlay-close" href="javascript: void(0);"></a>
-	<div class="vbo-modal-overlay-content vbo-modal-overlay-content-large vbo-modal-overlay-content-sms-email">
+<div class="vbo-editorder-sms-email-send-helper" style="display: none;">
 
-		<div class="vbo-modal-overlay-content-head vbo-modal-overlay-content-sms-email-head">
-			<h3>
-				<span></span>
-				<span class="vbo-modal-overlay-close-times" onclick="vboToggleSendEmail();">&times;</span>
-			</h3>
-		</div>
+	<div class="vbo-editorder-sms-send-wrap">
+		<form action="index.php?option=com_vikbooking" method="post" id="vbo-modal-form-sms">
+			<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
+				<div class="vbo-params-wrap">
+					<div class="vbo-params-container">
 
-		<div class="vbo-modal-overlay-content-body vbo-modal-overlay-content-body-scroll">
-
-			<div id="vbo-overlay-sms-cont" style="display: none;">
-				<h4 style="display: none;"><?php echo JText::translate('VBSENDSMSACTION'); ?>: <span id="smstophone-lbl"><?php echo $row['phone']; ?></span></h4>
-				<form action="index.php?option=com_vikbooking" method="post" id="vbo-modal-form-sms">
-					<div class="vbo-calendar-cfield-entry">
-						<label for="smscont"><?php echo JText::translate('VBSENDSMSCUSTCONT'); ?></label>
-						<span><textarea name="smscont" id="smscont" style="width: 99%; min-width: 99%;max-width: 99%; height: 120px;"></textarea></span>
-					</div>
-					<input type="hidden" name="phone" id="smstophone" value="<?php echo $row['phone']; ?>" />
-					<input type="hidden" name="goto" value="<?php echo urlencode('index.php?option=com_vikbooking&task=editorder&cid[]='.$row['id']); ?>" />
-					<input type="hidden" name="task" value="sendcustomsms" />
-				</form>
-			</div>
-
-			<div id="vbo-overlay-email-cont" style="display: none;">
-				<h4 style="display: none;"><?php echo JText::translate('VBSENDEMAILACTION'); ?>: <span id="emailto-lbl"><?php echo $row['custmail']; ?></span></h4>
-				<form action="index.php?option=com_vikbooking" method="post" enctype="multipart/form-data" id="vbo-modal-form-email">
-					<input type="hidden" name="bid" value="<?php echo $row['id']; ?>" />
-				<?php
-				$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='customemailtpls';";
-				$dbo->setQuery($q);
-				$cur_emtpl = $dbo->loadResult();
-
-				$cur_emtpl = empty($cur_emtpl) ? array() : json_decode($cur_emtpl, true);
-				$cur_emtpl = is_array($cur_emtpl) ? $cur_emtpl : array();
-
-				if ($cur_emtpl) {
-					?>
-					<div class="vbo-calendar-custmail-tpls-wrap">
-						<select id="emtpl-customemail" onchange="vboLoadEmailTpl(this.value);">
-							<option value=""><?php echo JText::translate('VBEMAILCUSTFROMTPL'); ?></option>
-						<?php
-						foreach ($cur_emtpl as $emk => $emv) {
-							?>
-							<optgroup label="<?php echo $emv['emailsubj']; ?>">
-								<option value="<?php echo $emk; ?>"><?php echo JText::translate('VBEMAILCUSTFROMTPLUSE'); ?></option>
-								<option value="rm<?php echo $emk; ?>"><?php echo JText::translate('VBEMAILCUSTFROMTPLRM'); ?></option>
-							</optgroup>
-							<?php
-						}
-						?>
-						</select>
-					</div>
-					<?php
-				}
-
-				/**
-				 * Load all conditional text special tags.
-				 * 
-				 * @since 	1.14 (J) - 1.4.0 (WP)
-				 */
-				$extra_btns = array();
-				$condtext_tags = VikBooking::getConditionalRulesInstance()->getSpecialTags();
-				if ($condtext_tags) {
-					$condtext_tags = array_keys($condtext_tags);
-					foreach ($condtext_tags as $tag) {
-						array_push($extra_btns, '<button type="button" class="btn btn-secondary btn-small vbo-condtext-specialtag-btn" onclick="setSpecialTplTag(\'emailcont\', \'' . $tag . '\');">' . $tag . '</button>');
-					}
-				}
-				//
-				?>
-					<div class="vbo-calendar-cfields-wrap">
-						<div class="vbo-calendar-cfield-entry">
-							<label for="emailsubj"><?php echo JText::translate('VBSENDEMAILCUSTSUBJ'); ?></label>
-							<span><input type="text" name="emailsubj" id="emailsubj" value="" size="30" /></span>
+						<div class="vbo-param-container vbo-param-container-full">
+							<div class="vbo-param-label">
+								<label for="smscont"><?php echo JText::translate('VBSENDSMSCUSTCONT'); ?></label>
+							</div>
+							<div class="vbo-param-setting">
+								<textarea name="smscont" id="smscont" style="width: 99%; min-width: 99%; max-width: 99%; height: 120px;"></textarea>
+							</div>
 						</div>
-						<div class="vbo-calendar-cfield-entry">
-							<label for="emailcont"><?php echo JText::translate('VBSENDEMAILCUSTCONT'); ?></label>
+
+					</div>
+				</div>
+			</div>
+			<input type="hidden" name="phone" id="smstophone" value="<?php echo $row['phone']; ?>" />
+			<input type="hidden" name="goto" value="<?php echo urlencode('index.php?option=com_vikbooking&task=editorder&cid[]='.$row['id']); ?>" />
+			<input type="hidden" name="task" value="sendcustomsms" />
+		</form>
+	</div>
+
+	<div class="vbo-editorder-email-send-wrap">
+		<form action="index.php?option=com_vikbooking" method="post" enctype="multipart/form-data" id="vbo-modal-form-email">
+			<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
+				<div class="vbo-params-wrap">
+                	<div class="vbo-params-container">
+
+					<?php
+					$cur_emtpl = VBOFactory::getConfig()->getArray('customemailtpls', []);
+					if ($cur_emtpl) {
+						?>
+						<div class="vbo-param-container">
+							<div class="vbo-param-setting">
+								<select id="emtpl-customemail" onchange="vboLoadEmailTpl(this.value);">
+									<option value=""><?php echo JText::translate('VBEMAILCUSTFROMTPL'); ?></option>
+								<?php
+								foreach ($cur_emtpl as $emk => $emv) {
+									?>
+									<optgroup label="<?php echo $emv['emailsubj']; ?>">
+										<option value="<?php echo $emk; ?>"><?php echo JText::translate('VBEMAILCUSTFROMTPLUSE'); ?></option>
+										<option value="rm<?php echo $emk; ?>"><?php echo JText::translate('VBEMAILCUSTFROMTPLRM'); ?></option>
+									</optgroup>
+									<?php
+								}
+								?>
+								</select>
+							</div>
+						</div>
+						<?php
+					}
+
+					/**
+					 * Load all conditional text special tags.
+					 * 
+					 * @since 	1.14 (J) - 1.4.0 (WP)
+					 */
+					$extra_btns = [];
+					$condtext_tags = VikBooking::getConditionalRulesInstance()->getSpecialTags();
+					if ($condtext_tags) {
+						$condtext_tags = array_keys($condtext_tags);
+						foreach ($condtext_tags as $tag) {
+							array_push($extra_btns, '<button type="button" class="btn btn-secondary btn-small vbo-condtext-specialtag-btn" onclick="setSpecialTplTag(\'emailcont\', \'' . $tag . '\');">' . $tag . '</button>');
+						}
+					}
+					?>
+						<div class="vbo-param-container vbo-param-container-full">
+							<div class="vbo-param-label">
+								<label for="emailsubj"><?php echo JText::translate('VBSENDEMAILCUSTSUBJ'); ?></label>
+							</div>
+							<div class="vbo-param-setting">
+								<input type="text" name="emailsubj" id="emailsubj" value="" size="30" />
+							</div>
+						</div>
+
+						<div class="vbo-param-container vbo-param-container-full">
+							<div class="vbo-param-label">
+								<label for="emailcont"><?php echo JText::translate('VBSENDEMAILCUSTCONT'); ?></label>
+							</div>
+							<div class="vbo-param-setting">
 							<?php
-							$special_tags_base = array(
+							$special_tags_base = [
 								'{customer_name}',
 								'{booking_id}',
 								'{checkin_date}',
@@ -3471,7 +3477,7 @@ foreach ($vbo_modals_html as $modalhtml) {
 								'{total_paid}',
 								'{remaining_balance}',
 								'{booking_link}',
-							);
+							];
 
 							$special_tags_base_html = '';
 							foreach ($special_tags_base as $sp_tag) {
@@ -3483,18 +3489,23 @@ foreach ($vbo_modals_html as $modalhtml) {
 							 * 
 							 * @since 	1.15.0 (J) - 1.5.0 (WP)
 							 */
-							$tarea_attr = array(
+							$tarea_attr = [
 								'id' => 'emailcont',
 								'rows' => '7',
 								'cols' => '170',
 								'style' => 'width: 99%; min-width: 99%; max-width: 99%; height: 120px; margin-bottom: 1px;',
-							);
-							$editor_opts = array(
-								'modes' => array(
-									'text',
+							];
+							$editor_opts = [
+								'modes' => [
 									'visual',
-								),
-							);
+									'text',
+								],
+								'gen_ai' => [
+									'booking' => $row,
+									'customer' => $customer,
+									'environment' => 'booking',
+								],
+							];
 							$editor_btns = $special_tags_base;
 							if ($condtext_tags) {
 								$editor_btns = array_merge($editor_btns, $condtext_tags);
@@ -3517,90 +3528,118 @@ foreach ($vbo_modals_html as $modalhtml) {
 							// render visual editor
 							echo $vbo_app->renderVisualEditor('emailcont', '', $tarea_attr, $editor_opts, $editor_btns);
 							?>
-							<div class="btn-group pull-left vbo-smstpl-bgroup vbo-custmail-bgroup vik-contentbuilder-textmode-sptags">
-								<?php echo $special_tags_base_html . "\n" . implode("\n", $extra_btns); ?>
+								<div class="btn-group pull-left vbo-smstpl-bgroup vbo-custmail-bgroup vik-contentbuilder-textmode-sptags">
+									<?php echo $special_tags_base_html . "\n" . implode("\n", $extra_btns); ?>
+								</div>
 							</div>
 						</div>
-						<div class="vbo-calendar-cfield-entry">
-							<label for="emailattch"><?php echo JText::translate('VBSENDEMAILCUSTATTCH'); ?></label>
-							<span><input type="file" name="emailattch" id="emailattch" /></span>
+
+						<div class="vbo-param-container vbo-param-container-full">
+							<div class="vbo-param-label">
+								<label for="emailattch"><?php echo JText::translate('VBSENDEMAILCUSTATTCH'); ?></label>
+							</div>
+							<div class="vbo-param-setting">
+								<input type="file" name="emailattch" id="emailattch" />
+							</div>
 						</div>
-						<div class="vbo-calendar-cfield-entry">
-							<label for="emailfrom"><?php echo JText::translate('VBSENDEMAILCUSTFROM'); ?></label>
-							<span><input type="text" name="emailfrom" id="emailfrom" value="<?php echo VikBooking::getSenderMail(); ?>" size="30" /></span>
+
+						<div class="vbo-param-container vbo-param-container-full">
+							<div class="vbo-param-label">
+								<label for="emailfrom"><?php echo JText::translate('VBSENDEMAILCUSTFROM'); ?></label>
+							</div>
+							<div class="vbo-param-setting">
+								<input type="text" name="emailfrom" id="emailfrom" value="<?php echo VikBooking::getSenderMail(); ?>" size="30" />
+							</div>
 						</div>
+
 					</div>
-					<input type="hidden" name="email" id="emailto" value="<?php echo $row['custmail']; ?>" />
-					<input type="hidden" name="goto" value="<?php echo urlencode('index.php?option=com_vikbooking&task=editorder&cid[]='.$row['id']); ?>" />
-					<input type="hidden" name="task" value="sendcustomemail" />
-				</form>
-			</div>
-
-		</div>
-
-		<div class="vbo-modal-overlay-content-footer">
-			<div class="vbo-modal-overlay-content-footer-right">
-				<div id="vbo-modal-footer-sms" style="display: none;">
-					<button type="submit" class="btn vbo-config-btn" onclick="document.getElementById('vbo-modal-form-sms').submit();"><?php VikBookingIcons::e('comment'); ?> <?php echo JText::translate('VBSENDSMSACTION'); ?></button>
-				</div>
-				<div id="vbo-modal-footer-email" style="display: none;">
-					<button type="submit" class="btn vbo-config-btn" onclick="document.getElementById('vbo-modal-form-email').submit();"><?php VikBookingIcons::e('envelope'); ?> <?php echo JText::translate('VBSENDEMAILACTION'); ?></button>
 				</div>
 			</div>
-		</div>
+			<input type="hidden" name="bid" value="<?php echo $row['id']; ?>" />
+			<input type="hidden" name="email" id="emailto" value="<?php echo $row['custmail']; ?>" />
+			<input type="hidden" name="goto" value="<?php echo urlencode('index.php?option=com_vikbooking&task=editorder&cid[]='.$row['id']); ?>" />
+			<input type="hidden" name="task" value="sendcustomemail" />
+		</form>
+	</div>
 
+	<div id="vbo-modal-footer-sms" style="display: none;">
+		<button type="submit" class="btn vbo-config-btn" onclick="document.getElementById('vbo-modal-form-sms').submit();"><?php VikBookingIcons::e('comment'); ?> <?php echo JText::translate('VBSENDSMSACTION'); ?></button>
+	</div>
+	<div id="vbo-modal-footer-email" style="display: none;">
+		<button type="submit" class="btn vbo-config-btn" onclick="document.getElementById('vbo-modal-form-email').submit();"><?php VikBookingIcons::e('envelope'); ?> <?php echo JText::translate('VBSENDEMAILACTION'); ?></button>
 	</div>
 </div>
 
 <script type="text/javascript">
-var vbo_overlay_on = false;
 var vbo_print_only = false;
 if (jQuery.isFunction(jQuery.fn.tooltip)) {
 	jQuery(".hasTooltip").tooltip();
 }
-function vboToggleSendSMS() {
+function vboDisplaySendSMS() {
 	var cur_phone = jQuery("#smstophone").val();
 	var phone_set = jQuery("#custphone").trigger('vboupdatephonenumber').val();
 	if (phone_set.length && phone_set != cur_phone) {
 		jQuery("#smstophone").val(phone_set);
-		jQuery("#smstophone-lbl").text(phone_set);
 	}
 
-	// toggle email/sms contents
-	jQuery("#vbo-overlay-email-cont, #vbo-modal-footer-email").hide();
-	jQuery("#vbo-overlay-sms-cont, #vbo-modal-footer-sms").show();
-	var use_modal_title = jQuery("#vbo-overlay-sms-cont").find('h4').first().html();
-	jQuery('.vbo-modal-overlay-content-sms-email-head').find('h3').find('span').first().html(use_modal_title);
+	// define the modal cancel button
+	let cancel_btn = jQuery('<button></button>')
+		.attr('type', 'button')
+		.addClass('btn')
+		.text(Joomla.JText._('VBANNULLA'))
+		.on('click', function() {
+			VBOCore.emitEvent('vbo-editorder-send-sms-dismiss');
+		});
 
-	jQuery(".vbo-modal-overlay-block-sms-email").fadeToggle(400, function() {
-		if (jQuery(".vbo-modal-overlay-block-sms-email").is(":visible")) {
-			vbo_overlay_on = true;
-		} else {
-			vbo_overlay_on = false;
-		}
+	// display modal for email/sms contents
+	let modal_body = VBOCore.displayModal({
+		suffix: 		'editorder-send-sms',
+		extra_class: 	'vbo-modal-large',
+		lock_scroll:    true,
+		title: 			Joomla.JText._('VBSENDSMSACTION') + ': ' + (phone_set && phone_set != cur_phone ? phone_set : cur_phone),
+		footer_left: 	cancel_btn,
+		footer_right: 	jQuery('#vbo-modal-footer-sms').find('button').clone(),
+		loading_event:  'vbo-editorder-send-sms-loading',
+		dismiss_event:  'vbo-editorder-send-sms-dismiss',
+		onDismiss: 		() => {
+			jQuery('.vbo-editorder-sms-send-wrap').appendTo('.vbo-editorder-sms-email-send-helper');
+		},
 	});
+
+	jQuery('.vbo-editorder-sms-send-wrap').appendTo(modal_body);
 }
-function vboToggleSendEmail() {
+function vboDisplaySendEmail() {
 	var cur_email = jQuery("#emailto").val();
 	var email_set = jQuery("#custmail").val();
 	if (email_set.length && email_set != cur_email) {
 		jQuery("#emailto").val(email_set);
-		jQuery("#emailto-lbl").text(email_set);
 	}
 
-	// toggle email/sms contents
-	jQuery("#vbo-overlay-sms-cont, #vbo-modal-footer-sms").hide();
-	jQuery("#vbo-overlay-email-cont, #vbo-modal-footer-email").show();
-	var use_modal_title = jQuery("#vbo-overlay-email-cont").find('h4').first().html();
-	jQuery('.vbo-modal-overlay-content-sms-email-head').find('h3').find('span').first().html(use_modal_title);
+	// define the modal cancel button
+	let cancel_btn = jQuery('<button></button>')
+		.attr('type', 'button')
+		.addClass('btn')
+		.text(Joomla.JText._('VBANNULLA'))
+		.on('click', function() {
+			VBOCore.emitEvent('vbo-editorder-send-email-dismiss');
+		});
 
-	jQuery(".vbo-modal-overlay-block-sms-email").fadeToggle(400, function() {
-		if (jQuery(".vbo-modal-overlay-block-sms-email").is(":visible")) {
-			vbo_overlay_on = true;
-		} else {
-			vbo_overlay_on = false;
-		}
+	// display modal for email/sms contents
+	let modal_body = VBOCore.displayModal({
+		suffix: 		'editorder-send-email',
+		extra_class: 	'vbo-modal-large',
+		lock_scroll:    true,
+		title: 			Joomla.JText._('VBSENDEMAILACTION') + ': ' + (email_set && email_set != cur_email ? email_set : cur_email),
+		footer_left: 	cancel_btn,
+		footer_right: 	jQuery('#vbo-modal-footer-email').find('button').clone(),
+		loading_event:  'vbo-editorder-send-email-loading',
+		dismiss_event:  'vbo-editorder-send-email-dismiss',
+		onDismiss: 		() => {
+			jQuery('.vbo-editorder-email-send-wrap').appendTo('.vbo-editorder-sms-email-send-helper');
+		},
 	});
+
+	jQuery('.vbo-editorder-email-send-wrap').appendTo(modal_body);
 }
 function vboKeyupEmail(event) {
 	if (event.key && event.key == 'Enter') {
@@ -3736,22 +3775,6 @@ jQuery(function() {
 		}
 	});
 	// Search customer - End
-	jQuery(document).mouseup(function(e) {
-		if (!vbo_overlay_on) {
-			return false;
-		}
-		var vbo_overlay_cont = jQuery(".vbo-modal-overlay-content-sms-email");
-		if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0 && !jQuery(e.target).is('svg')) {
-			jQuery(".vbo-modal-overlay-block-sms-email").fadeOut();
-			vbo_overlay_on = false;
-		}
-	});
-	jQuery(document).keyup(function(e) {
-		if (e.keyCode == 27 && vbo_overlay_on) {
-			jQuery(".vbo-modal-overlay-block-sms-email").fadeOut();
-			vbo_overlay_on = false;
-		}
-	});
 	jQuery(".vbo-bookingdet-tab").click(function() {
 		var newtabrel = jQuery(this).attr('data-vbotab');
 		var oldtabrel = jQuery(".vbo-bookingdet-tab-active").attr('data-vbotab');
@@ -3912,7 +3935,7 @@ function vboLoadEmailTpl(tplind) {
 $pcustomemail = VikRequest::getInt('customemail', '', 'request');
 if ($pcustomemail > 0) {
 	?>
-	vboToggleSendEmail();
+	vboDisplaySendEmail();
 	<?php
 }
 if ($printreceipt) {

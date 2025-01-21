@@ -64,6 +64,7 @@
     --vbo-blue-color-hover: #498fb3;
     --vbo-gold-color: #ccc450;
 	--vbo-purple-color: #b746df;
+    --vbo-ai-color: #8b5fe8;
     
     /* Notification Status */
     --vbo-info-bg: #5488b0;
@@ -89,7 +90,7 @@ body {
     height: auto;
 }
 h2, h3 {
-    color: var(--vbo-config-text-color-light);
+    color: var(--vbo-config-text-color-light) !important;
 }
 .label, .badge {
     background-color: #666;
@@ -283,10 +284,10 @@ input[type="color"]:focus, input[type="date"]:focus, input[type="datetime-local"
     border-left: 1px solid #333 !important;
 }
 .notice, div.error, div.updated {
-    background: var(--vbo-config-bg-color);
-    border-top: 1px solid var(--vbo-light-color-btn);
-    border-right: 1px solid var(--vbo-light-color-btn);
-    border-bottom: 1px solid var(--vbo-light-color-btn);
+    background: var(--vbo-config-bg-color) !important;
+    border-top: 1px solid var(--vbo-light-color-btn) !important;
+    border-right: 1px solid var(--vbo-light-color-btn) !important;
+    border-bottom: 1px solid var(--vbo-light-color-btn) !important;
 }
 .select2-container.select2-container--default .select2-selection--single .select2-selection__rendered {
     color: var(--vbo-config-titles-color-light);
@@ -864,6 +865,10 @@ body.admin .label-warning, .label-warning, .badge-warning {
 #status.navbar-fixed-bottom .btn-toolbar a:hover {
     color: var(--vbo-base-color);
 }
+.vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar-table td:not(.busy).past {
+    background-color: #373737;
+    color: #717171
+}
 
 /* Main Menu */
 .vbo-submenu-wrap li > div .vbo-submenu-item-helper-link .vbo-submenu-item-helper-avatar img {
@@ -1127,7 +1132,7 @@ joomla-toolbar-button .dropdown-menu  {
 .vbo-widget-notifscenter-wrap .vbo-widget-notifscenter-group-active span:not([data-badge-count=""])::after, .vbo-widget-notifscenter-wrap .vbo-widget-notifscenter-group:hover span:not([data-badge-count=""])::after {
 	background: var(--vbo-info-bg);
 }
-.vbo-widget-notifscenter-list .vbo-widget-notifscenter-notif-wrap .vbo-widget-notifscenter-notif-cta .vbo-notifscenter-cta-btn, .aitools-message-addon .btn.vbo-ai-assistant-addon-btn {
+.vbo-widget-notifscenter-list .vbo-widget-notifscenter-notif-wrap .vbo-widget-notifscenter-notif-cta .vbo-notifscenter-cta-btn, .aitools-message-addon .btn.vbo-ai-assistant-addon-btn, .btn.vbo-content-genai {
     background: var(--vbo-config-bg-dark);
     border: 1px solid #999;
 }

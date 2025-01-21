@@ -50,7 +50,7 @@ if ($ord['split_stay']) {
 }
 
 $pgoto = VikRequest::getString('goto', '', 'request');
-$currencysymb = VikBooking::getCurrencySymb(true);
+$currencysymb = VikBooking::getCurrencySymb();
 $nowdf = VikBooking::getDateFormat(true);
 if ($nowdf == "%d/%m/%Y") {
 	$rit = date('d/m/Y', $ord['checkin']);

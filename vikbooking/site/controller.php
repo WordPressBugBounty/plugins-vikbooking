@@ -2983,6 +2983,11 @@ class VikBookingController extends JControllerVikBooking
 	 */
 	public function storeprecheckin()
 	{
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		$dbo 	 = JFactory::getDbo();
 		$app 	 = JFactory::getApplication();
 		$sid 	 = VikRequest::getString('sid', '', 'request');
@@ -2992,28 +2997,24 @@ class VikBookingController extends JControllerVikBooking
 
 		$q = "SELECT `o`.* FROM `#__vikbooking_orders` AS `o` WHERE (`o`.`sid`=" . $dbo->quote($sid) . " OR `o`.`idorderota`=" . $dbo->quote($sid) . ") AND `o`.`ts`=" . $dbo->quote($ts) . " AND `o`.`status`='confirmed';";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$order = $dbo->loadAssoc();
+		if (!$order) {
 			throw new Exception('Booking not found', 404);
 		}
-		$order = $dbo->loadAssoc();
 
-		$orderrooms = array();
 		$q = "SELECT `or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`childrenage`,`or`.`t_first_name`,`or`.`t_last_name`,`or`.`roomindex`,`or`.`pkg_id`,`or`.`pkg_name`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`or`.`otarplan`,`r`.`id` AS `r_reference_id`,`r`.`name`,`r`.`img`,`r`.`idcarat`,`r`.`fromadult`,`r`.`toadult` FROM `#__vikbooking_ordersrooms` AS `or`,`#__vikbooking_rooms` AS `r` WHERE `or`.`idorder`=".(int)$order['id']." AND `or`.`idroom`=`r`.`id` ORDER BY `or`.`id` ASC;";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$orderrooms = $dbo->loadAssocList();
+		if (!$orderrooms) {
 			throw new Exception('No rooms found', 404);
 		}
-		$orderrooms = $dbo->loadAssocList();
 
 		$q = "SELECT * FROM `#__vikbooking_customers_orders` WHERE `idorder`=".(int)$order['id'].";";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$custorder = $dbo->loadAssoc();
+		if (!$custorder) {
 			throw new Exception('No customer found', 404);
 		}
-		$custorder = $dbo->loadAssoc();
 
 		// booking details page
 		$goto = JRoute::rewrite('index.php?option=com_vikbooking&view=booking&sid=' . $order['sid'] . '&ts=' . $order['ts'] . (!empty($pitemid) ? '&Itemid=' . $pitemid : ''), false);
@@ -4051,6 +4052,11 @@ class VikBookingController extends JControllerVikBooking
 	 */
 	public function precheckin_upload_docs()
 	{
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		$dbo 	= JFactory::getDbo();
 		$app 	= JFactory::getApplication();
 		$input  = $app->input;
@@ -4174,7 +4180,7 @@ class VikBookingController extends JControllerVikBooking
 				// always prepend "pre check-in" to the original file name
 				$file['name'] = strtolower($file_prefix . $file['name']);
 				// try to upload the file
-				$result = VikBooking::uploadFileFromRequest($file, $dirpath . $customer->docsfolder, "/(image\/.+)|(application\/(zip|pdf|msword|vnd.*?))|(text\/(plain|markdown|csv))$/i");
+				$result = VikBooking::uploadFileFromRequest($file, $dirpath . $customer->docsfolder, 'png,jpg,jpeg,bmp,heic,zip,rar,pdf,doc,docx,rtf,odt,pages,xls,xlsx,csv,ods,numbers,txt,md');
 				// set a valid URL for the uploaded file
 				$result->url = str_replace(DIRECTORY_SEPARATOR, '/', str_replace(VBO_CUSTOMERS_PATH . DIRECTORY_SEPARATOR, VBO_CUSTOMERS_URI, $result->path));
 				// push uploaded file

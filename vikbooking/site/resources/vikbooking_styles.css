@@ -34,6 +34,7 @@
 	
 	/* Texts */
 	--vbo-text-color: #444;
+	--vbo-middle-text-color: #666;
 	--vbo-light-text-color: #999;
 	--vbo-contrast-text-color: #fff;
 
@@ -2571,7 +2572,11 @@ form .vbselectm {
 #ui-datepicker-div .ui-datepicker-next-hover {
 	right: 2px;
 }
-.ui-datepicker .ui-datepicker-current-day {
+.ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight {
+	background: transparent;
+	border: 0;
+}
+.ui-datepicker-calendar td.checkin-date > *, .ui-datepicker-calendar td.checkout-date > *, .ui-datepicker-calendar td.ui-state-highlight > * {
 	background: var(--vbo-darkblue-color);
 	color: var(--vbo-contrast-text-color);
 }
@@ -5402,15 +5407,13 @@ a.vbo-booking-print-link img {
 	box-sizing: content-box;
 }
 .ui-datepicker-multi-2 .ui-datepicker-group-first {
-	border-right: 1px solid var(--vbo-light-border-color);
 	padding-right: 12px;
 	margin-right: 12px;
 }
 .ui-datepicker table.ui-datepicker-calendar {
 	table-layout: inherit;
 	font-size: 0.75em !important;
-
-	border-spacing: 2px;
+	border-spacing: 0;
 	border-collapse: initial;
 }
 .ui-datepicker-multi .ui-datepicker-group table {
@@ -5426,25 +5429,39 @@ a.vbo-booking-print-link img {
 	width: auto !important;
 	text-align: center;
 	padding: 1px !important;
-	border: 1px solid var(--vbo-light-border-color);
+	border: 0;
 }
 .ui-datepicker table td:hover {
-	border: 1px solid var(--vbo-red-color);
-}
-.ui-datepicker table td.ui-datepicker-unselectable:hover {
 	border: 0;
 }
 .ui-datepicker .ui-datepicker-title {
 	font-size: 18px !important;
 	font-weight: 400 !important;
 }
-.ui-datepicker td span, .ui-datepicker td a {
+.ui-datepicker .ui-datepicker-current-day a {
+	color: var(--vbo-text-color);
+}
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
+	border: 1.5px solid var(--vbo-white-bg-color);
+}
+.ui-datepicker td > *, .ui-datepicker td > *.ui-state-default {
 	font-size: 13px !important;
-	border:0 !important;
-	border-radius: 8px;
-	width: 30px;
-	height: 30px;
-	line-height: 30px !important;
+	text-align: center !important;
+	border-radius: 50% !important;
+	width: 40px;
+	height: 40px;
+	line-height: 40px !important;
+	border: 1.5px solid var(--vbo-white-bg-color);
+}
+.ui-datepicker td.ui-datepicker-unselectable > * {
+	border: 1.5px solid #fff0 !important;
+}
+.ui-datepicker td.ui-datepicker-unselectable > *:hover {
+	color: var(--vbo-text-color);
+}
+.ui-datepicker td span:hover, .ui-datepicker td a:hover {
+	border-color: var(--vbo-darkblue-color);
+	color: var(--vbo-darkblue-color);
 }
 .ui-state-default,
 .ui-widget-content .ui-state-default,
@@ -5452,11 +5469,80 @@ a.vbo-booking-print-link img {
 	background: transparent !important;
 	font-weight: 500 !important;
 }
-
+.ui-datepicker-calendar td.checkin-checkout-inner {
+	opacity: 1 !important;
+}
+.ui-datepicker-calendar td.checkin-checkout-inner, .ui-datepicker-calendar .checkin-date, .ui-datepicker-calendar .checkout-date, .ui-datepicker-calendar .checkout-date.date-will {
+	background: var(--vbo-light-grey-bg-color);
+}
+.ui-datepicker-calendar .checkin-date.without-checkout-date:hover {
+	background-color: var(--vbo-white-bg-color);
+}
+.ui-datepicker-calendar td.checkin-checkout-inner > * {
+	border-color: var(--vbo-light-grey-bg-color);
+}
+.ui-datepicker-calendar .checkin-date {
+	border-top-left-radius: 50%;
+	border-bottom-left-radius: 50%;
+}
+.ui-datepicker-calendar .checkout-date {
+	border-top-right-radius: 50%;
+	border-bottom-right-radius: 50%;
+}
+.ui-datepicker-calendar .date-tooltip {
+	position: relative;
+}
+.ui-datepicker-calendar .date-tooltip:after {
+	display: none;
+	content: attr(data-title);
+	position: absolute;
+	width: 100px;
+	font-size: 12px;
+	top: -25px;
+	left: 50%;
+	transform: translateX(-50%);
+	color: var(--vbo-light-dark-grey-bg-color);
+	background: var(--vbo-white-bg-color);
+	box-shadow: 0 0 3px rgba(0,0,0,.2);
+	padding: 1px;
+}
+.ui-datepicker-calendar .date-tooltip-large:after {
+	width: 180px;
+} 
+.ui-datepicker-calendar .date-tooltip.date-tooltip-firstwday:after {
+	left: 0;
+	transform: translateX(0%);
+}
+.ui-datepicker-calendar .date-tooltip.date-tooltip-lastwday:after {
+	left: auto;
+	transform: translate(0, 0);
+	right: 0;
+}
+.ui-datepicker-calendar .date-tooltip:before {
+	display: none;
+	position: absolute;
+	border: 6px solid transparent;
+	border-top-color: transparent;
+	border-bottom-color: transparent;
+	background: transparent;
+	content: "";
+	border-bottom-color: transparent;
+	border-top-color: var(--vbo-white-bg-color);
+	top: -3px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1;
+}
+.ui-datepicker-calendar .date-tooltip:hover:after, .ui-datepicker-calendar .date-tooltip:hover:before {
+	display: block;
+}
+.ui-datepicker td.checkin-checkout-inner *:hover {
+	background-color: var(--vbo-white-bg-color) !important;
+}
 .ui-state-active,
 .ui-widget-content .ui-state-active,
 .ui-widget-header .ui-state-active {
-	color: var(--vbo-contrast-text-color) !important;
+	color: var(--vbo-light-dark-grey-bg-color) !important;
 }
 .ui-widget-header {
 	background: transparent !important;
@@ -5470,26 +5556,19 @@ a.vbo-booking-print-link img {
 	opacity: 0.2 !important;
 	border: 0;
 }
-.ui-datepicker .ui-datepicker-today {
-	color: var(--vbo-blue-color) !important;
+.ui-state-disabled {
+	pointer-events: auto;
 }
-.ui-datepicker .ui-datepicker-today a {
+.ui-datepicker .ui-datepicker-today {
 	color: var(--vbo-blue-color) !important;
 }
 .ui-datepicker-other-month {
 	background: transparent !important;
 }
-.ui-datepicker td span,
-.ui-datepicker td a {
-	text-align: center !important;
-	font-size: 11px !important;
-	border: 0 !important;
-	border-radius: 8px;
-}
 #ui-datepicker-div {
-	box-shadow: 0 2px 5px 0 rgba(50,54,72,.08);
-	border-radius: 0;
-	padding: 20px;
+	box-shadow: 0 3px 12px 0 rgb(0 0 0 / 0.15);
+	border-radius: 32px;
+	padding: 30px;
 }
 .ui-datepicker .ui-datepicker-header .ui-datepicker-title {
 	font-size: 14px !important;
@@ -5501,28 +5580,100 @@ a.vbo-booking-print-link img {
 .ui-datepicker th {
 	font-size: 10px !important;
 	text-transform: uppercase;
-	color: var(--vbo-text-color) !important;
+	color: var(--vbo-middle-text-color) !important;
 	padding: 10px 0;
+}
+.ui-datepicker-header .ui-corner-all {
+	color: var(--vbo-middle-text-color);
 }
 .ui-datepicker-header .ui-corner-all.ui-state-hover {
 	border-color: var(--vbo-blue-color) !important;
+	color: var(--vbo-blue-color);
 	background: transparent !important;
 }
 .ui-datepicker .ui-datepicker-prev, .ui-datepicker .ui-datepicker-next {
 	width: 34px !important;
 	height: 34px !important;
-	border: 1px solid var(--vbo-input-style);
-	border-radius: 8px;
+	border: 1.5px solid var(--vbo-input-style);
+	border-radius: 50%;
 }
 .ui-datepicker .ui-datepicker-prev, .ui-datepicker .ui-datepicker-next,
 .ui-datepicker .ui-datepicker-prev-hover, .ui-datepicker .ui-datepicker-next-hover {
 	top: -7px !important;
-	border-radius: 8px;
+	border-radius: 50%;
 	cursor: pointer;
 }
 .ui-datepicker .ui-datepicker-prev span, .ui-datepicker .ui-datepicker-next span {
-	top: 17px !important;
+	top: 0 !important;
+	left: 0;
+	margin: 0;
+	background: transparent;
+	position: relative;
+	text-indent: 0;
+	width: 34px;
+	height: 34px;
+	display: inline-block;
+	font-size: 0;
+	text-align: center;
 }
+.ui-datepicker .ui-datepicker-prev span:after, .ui-datepicker .ui-datepicker-next span:after {
+	font-family: "Font Awesome 5 Free", FontAwesomes !important;
+	font-weight: 900;
+	top: 0;
+	position: absolute;
+	width: 34px;
+	height: 34px;
+	line-height: 34px;
+	font-size: 16px;
+}
+.ui-datepicker .ui-datepicker-prev span:after {
+	content: "\f053";
+	left: -1px;
+}
+.ui-datepicker .ui-datepicker-next span:after {
+	content: "\f054";
+	left: 0;
+}
+.ui-datepicker .ui-datepicker-prev {
+	left: 0;
+}
+.ui-datepicker .ui-datepicker-title select {
+	font-size: 14px;
+	border: 1px solid var(--vbo-border-color);
+    padding: 2px 5px;
+    margin: 0 2px;
+}
+.ui-datepicker .ui-state-hover {
+	background-image: none !important;
+}
+.ui-datepicker .ui-state-highlight.date-tooltip {
+	border: 0 !important;
+	background-color: var(--vbo-light-grey-bg-color) !important;
+}
+.vbo-drp-commands-bottom {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	justify-content: end;
+}
+.ui-datepicker .vbo-drp-commands-bottom > div > * {
+	font-weight: 500;
+	font-size: 14px;
+	line-height: initial;
+	padding: 6px 8px;
+	border-radius: 6px;
+}
+.ui-datepicker .vbo-drp-commands-bottom .vbo-drp-command-clear a {
+	color: var(--vbo-middle-text-color);
+	text-decoration: underline;
+}
+.ui-datepicker .vbo-drp-commands-bottom .vbo-drp-command-clear a:hover {
+	background-color: var(--vbo-light-grey-bg-color);
+}
+.ui-datepicker .vbo-drp-commands-bottom .vbo-drp-command-close button {
+	font-size: 14px;
+}
+
 /** Tableaux - Start **/
 .vbo-tableaux-togglefullscreen {
 	background: var(--vbo-blue-color);
@@ -7064,6 +7215,339 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	text-align: right;
 }
 
+/* Start: New Listing Room Details layout */
+.vbo-listing-details-wrap .vikfx-roomdetails-gallery-container {
+	display: grid;
+	gap: 1.25rem;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.vbo-listing-details-wrap .vikfx-gallery-fade-container {
+	aspect-ratio: auto;
+}
+.vbo-listing-details-wrap .vikfx-gallery-fade-container img {
+	object-fit: cover;
+	width: 100%;
+	height: 100%;
+	max-height: 335px;
+  	object-fit: cover;
+	border-radius: 14px;
+}
+.vbo-listing-details-wrap .vikfx-gallery {
+	margin-top: 0;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1.25rem;
+	position: relative;
+}
+.vbo-listing-details-wrap .vikfx-gallery .vbo-listing-details-allphotos {
+	position: absolute;
+	bottom: 20px;
+	right: 20px;
+}
+.vbo-listing-details-wrap .vikfx-gallery .vbo-listing-details-allphotos a {
+	background: #000;
+	color: #FFF !important;
+	text-decoration: none;
+	display: inline-block;
+	padding: 5px 20px;
+	border-radius: 30px;
+	font-size: 18px;
+	font-weight: 500;
+}
+.vbo-listing-details-wrap .vikfx-gallery .vbo-listing-details-allphotos a:hover {
+	background: #222;
+}
+.vbo-listing-details-wrap .vikfx-gallery .vbo-listing-details-allphotos a i {
+	margin-right: 4px;
+}
+.vbo-listing-details-wrap .vikfx-gallery .vbo-listing-details-allphotos a:hover, .vbo-listing-details-wrap .vikfx-gallery .vbo-listing-details-allphotos a:active, .vbo-listing-details-wrap .vikfx-gallery .vbo-listing-details-allphotos a:focus {
+	text-decoration: none;
+}
+.vbo-listing-details-wrap .vikfx-roomdetails-gallery-container .vikfx-gallery > a {
+	margin: 0;
+	display: inline-block;
+	aspect-ratio: 16 / 9;
+	width: 100%;
+}
+.vbo-listing-details-wrap .vikfx-roomdetails-gallery-container .vikfx-gallery > a img {
+	height: 100%;
+	width: 100%;
+	max-width: 100%;
+	max-height: inherit;
+	object-fit: cover;
+	border-radius: 14px;
+}
+
+.vbo-listing-details-wrap .vbo-listing-details-descprice-block {
+	border: 0;
+	margin-top: 40px;
+	background: transparent;
+	column-gap: 70px;
+}
+.vbo-listing-details-wrap .vbo-listing-details-desc-main-container {
+	flex: 1;
+	align-self: flex-start;
+	margin-right: 40px;
+}
+.vbo-listing-details-wrap .vbo-listing-details-desc-cont {
+	padding: 0;
+	font-size: .9em;
+	line-height: 1.65em;
+	float: none;
+	border: 0;
+	width: initial;
+	flex: 1;
+}
+.vbo-listing-details-costroomdet-inner {
+	padding: 0 30px 30px;
+	border-radius: 3px;
+	background: var(--vbo-light-grey-bg-color);
+	border-radius: 14px;
+	position: sticky;
+	top: 10px;
+}
+.vbo-listing-details-costroomdet .vblistroomnamedivprice {
+	padding-bottom: 0;
+}
+.vbo-listing-details-costroomdet .vblistroomnamedivprice .vblistroomname {
+	text-align: left;
+	line-height: 1.5em;
+}
+.vbo-listing-details-costroomdet .vblistroomnamedivprice .vbliststartfromrdet {
+	display: inline-block;
+	text-transform: initial;
+	font-size: 14px;
+	margin-right: 2px;	
+	color: var(--vbo-light-dark-grey-bg-color);
+	font-weight: 500;
+}
+.vbo-listing-details-costroomdet .vblistroomnamedivprice .roomcustcostlabel {
+	font-size: 16px;
+	color: var(--vbo-light-dark-grey-bg-color);
+	font-weight: 500;
+}
+.vbo-listing-details-costroomdet .vblistroomnamedivprice .room_cost {
+	display: inline-block;
+}
+.vbo-listing-details-costroomdet .vbo-seldates-cont-inner .vbo-closing-main {
+	margin-top: 15px;
+	font-size: 14px;
+}
+
+.vbo-listing-details-wrap .vbo-listing-details-desc-cont .vbo-listing-amenities-wrap {
+	border-bottom: 1px solid var(--vbo-grey-bg-color);
+	border-top: 1px solid var(--vbo-grey-bg-color);
+	margin-bottom: 25px;
+	margin-top: 25px;
+	padding-top: 0;
+	padding-bottom: 15px;
+}
+.vbo-listing-details-wrap .vbo-listing-details-desc-cont .vbo-listing-amenities-wrap h4 {
+	font-size: 20px;
+	font-weight: 500;
+	margin-bottom: 15px;
+	padding-top: 15px;
+}
+.vbo-listing-details-wrap .vbo-listing-details-desc-cont .vbo-listing-amenities {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	column-gap: 10px;
+	line-height: 1.5em;
+}
+.vbo-listing-details-wrap .vbo-listing-details-desc-cont .vbo-listing-amenities .vbo-listing-amenity {
+	margin: 0 0 5px;
+}
+.vbo-listing-details-wrap .vbo-listing-details-desc-cont .vbo-listing-amenities .vbo-listing-amenity .vbo-expl {
+	cursor: initial;
+}
+.vbo-listing-details-wrap .vbo-listing-details-desc-cont .vbo-listing-amenities .vbo-listing-amenity i {
+	width: 28px;
+	font-size: 14px;	
+}
+.vbo-listing-details-wrap .vbo-listing-details-desc-cont .vbo-listing-amenities .vbo-listing-amenity span {
+	font-size: 14px;
+}
+
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer {
+	margin-top: 25px;
+	font-size: .9em;
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont h4 {
+	font-size: 20px;
+	font-weight: 500;	
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont .vbselectm {
+	width: 100% !important;
+	border: 2px solid #eee;
+	border-radius: 10px;
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont .vblegendediv {
+	margin-bottom: 3px;
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont .vbcalsblock {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	row-gap: 10px;
+	column-gap: 30px;
+	border-radius: 24px;
+	padding: 20px;	
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont .vbcalsblock .vbcaldivcont {
+	width: 100%;
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont .vbcalsblock .vbcaldivcont table {
+	border-radius: 3px;
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont .vbcalsblock .vbcaldivcont table .vbcaltrmonth td {
+	border: 0;
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont .vbcalsblock .vbcaldivcont table .vbcaldays td {
+	font-weight: 500;
+	padding: 2px 0;
+	font-size: 13px;
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont .vbcalsblock .vbcaldivcont table .vbcaltrmonth td .vbo-rdet-avcal-nav {
+	background: transparent;
+	border: 1px solid var(--vbo-light-dark-grey-bg-color);
+	border-radius: 50%;
+	color: var(--vbo-light-dark-grey-bg-color);
+}
+.vbo-listing-details-wrap .vbo-roomdet-calscontainer-inner .vbo-availcalendars-cont .vbcalsblock .vbcaldivcont table .vbcaltrmonth td .vbo-rdet-avcal-nav:hover {
+	background-color: var(--vbo-light-dark-grey-bg-color);
+	color: var(--vbo-white-bg-color);
+}
+
+.vbo-listing-details-wrap .vbo-listing-details-costroomdet {
+	flex-basis: 35%;
+	width: auto;
+	float: none;
+	position: relative;
+}
+.vbo-listing-details-wrap .vbo-listing-details-costroomdet .vbo-listing-details-costroom-inner {
+	padding: 0 30px 30px;
+	background: var(--vbo-input-style-deactive);
+	border-radius: 16px;
+}
+.vbo-listing-details-wrap .vbo-listing-details-costroomdet .vbo-listing-details-roomnamedivprice {
+	padding-bottom: 0;
+}
+.vbo-listing-details-wrap .vbo-listing-details-costroomdet .vbo-listing-details-roomname {
+	text-align: left;
+	line-height: 1.5em;
+}
+.vbo-listing-details-wrap .vbo-listing-details-costroomdet .vbo-listing-details-startfromrdet {
+	display: inline-block;
+	text-transform: initial;
+	font-size: 14px;
+	margin-right: 2px;
+}
+.vbo-listing-details-wrap .vbo-listing-details-costroomdet .room_cost {
+	display: inline-block;
+}
+.vbo-listing-details-wrap .vbo-listing-details-costroomdet .vbo-seldates-cont {
+	padding-top: 0;
+	margin-bottom: 0;
+}
+.vbo-listing-details-wrap .vbo-listing-details-costroomdet .vbo-seldates-cont h4 {
+	font-size: 14px;
+	font-weight: 500;
+	border-bottom: 0;	
+}
+.vbo-listing-details-wrap .vbo-listing-details-costroomdet .vbo-listing-details-divsearch {
+	display: inline-block;
+	padding: 0;
+	margin-bottom: 0;
+	border: 0;
+	float: none;
+	background-color: transparent;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-inpblock {
+	margin: 0 0 8px;
+    margin-right: 0px;
+	width: calc(50% - 10px);
+	flex-basis: 100%;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-inpblock label {
+	text-align: left;
+	font-weight: 600;
+	font-size: .9em;
+	margin-bottom: 2px;	
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-inpblock .input-group:not([type="checkbox"]) {
+	padding: 4px 10px;
+	background: var(--vbo-white-bg-color);
+	border-radius: 10px;
+	border: 2px solid var(--vbo-grey-bg-color);
+	transition: 0.4s;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-inpblock .input-group:not([type="checkbox"]) > input {
+	flex: 1;
+	border: 0 !important;
+	padding: 0;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-inpblock .input-group:not([type="checkbox"]) > i {
+	border: 0;
+	background: var(--vbo-white-bg-color);
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-num-racblock {
+	flex-basis: 100%;
+	flex-wrap: wrap;
+	display: block;
+	margin: 0;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-num-racblock > div {
+	flex-basis: 100%;
+	margin-right: 0;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-num-racblock .vbo-search-num-aduchild-block {
+	width: 100%;
+	margin-top: 10px;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-num-racblock .vbo-search-num-aduchild-block .vbo-search-num-aduchild-entry {
+	margin-bottom: 5px;	
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-num-racblock .vbo-search-num-aduchild-block .vbo-search-num-aduchild-entry > div:not(.vbo-search-roomnum) {
+	flex: 1;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vb-search-inner div > select, .vbo-listing-details-wrap .vbo-listing-details-divsearch .vb-search-inner span > select, .vbo-listing-details-wrap .vbo-listing-details-divsearch .vb-search-inner .vbo-search-categories select {
+	width: 100% !important;
+	height: 50px !important;
+	padding: 4px 30px 4px 10px;
+	border-radius: 10px;
+	border: 2px solid var(--vbo-grey-bg-color);
+	transition: 0.4s;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch #vbjstotnights {
+	margin: 0;
+	text-align: center;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-submit {
+	width: 100%;
+	margin: 0px;
+}
+.vbo-listing-details-wrap .vbo-listing-details-divsearch .vbo-search-submit .btn {
+	width: 100%;
+	font-size: 0.9em;
+	padding: 14px 20px !important;
+	border-radius: 6px !important;
+	cursor: pointer;
+	font-weight: 600;
+	transition: all 400ms ease-in-out 0s;
+	-moz-transition: all 400ms ease-in-out 0s;
+	-webkit-transition: all 400ms ease-in-out 0s;
+	-o-transition: all 400ms ease-in-out 0s;
+}
+.vbo-listing-details-wrap .vbo-room-details-geo-wrapper {
+	margin-top: 25px;
+	padding-top: 25px;
+	border-top: 1px solid var(--vbo-grey-bg-color);
+}
+.vbo-listing-details-wrap .vbo-room-details-geo-wrapper h4 {
+	font-size: 20px;
+	font-weight: 500;
+	margin-bottom: 15px;	
+}
+/* End: New Listing Room Details layout */
 
 
 /* Start: Toast Message bottom-center positioned */
@@ -7523,6 +8007,25 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	}
 	.vbo-roomupgrade-booked-room-inner .vbo-roomupgrade-solutions-wrap {
 		grid-template-columns: repeat(1, 1fr);
+	}
+	.vbo-listing-details-wrap .vbo-listing-details-descprice-block {
+		flex-wrap: wrap;
+	}
+	.vbo-listing-details-wrap .vbo-listing-details-costroomdet {
+		margin-top: 30px;
+		flex-basis: 100%;
+	}
+	.vbo-listing-details-wrap .vikfx-roomdetails-gallery-container {
+		grid-template-columns: repeat(1, minmax(0, 1fr));
+	}
+	.vbo-listing-details-wrap .vikfx-roomdetails-gallery-container .vikfx-gallery > a {
+		display: none;
+	}
+	.vbo-listing-details-wrap .vikfx-gallery .vbo-listing-details-allphotos {
+		bottom: 40px;
+	}
+	.vbo-listing-details-wrap .vbo-listing-details-descprice-block {
+		margin-top: 10px;
 	}
 }
 @media only screen and (max-width : 780px) {

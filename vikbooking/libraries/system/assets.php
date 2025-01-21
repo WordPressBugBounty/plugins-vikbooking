@@ -73,13 +73,6 @@ class VikBookingAssets
 			$document->addScript(VIKBOOKING_ADMIN_ASSETS_URI . 'vbocore.js', $internalFilesOptions, array('id' => 'vbo-core-script'));
 
 			/**
-			 * Always prepare AJAX requests to pass a CSRF token.
-			 * 
-			 * @since 	1.6.0
-			 */
-			JHtml::fetch('vbohtml.scripts.ajaxcsrf');
-
-			/**
 			 * Include the Toast JS class.
 			 * 
 			 * @since 	1.5.0
@@ -145,6 +138,13 @@ JS
 
 			$document->addStyleSheet(VIKBOOKING_SITE_ASSETS_URI.'vikbooking_custom.css', $internalFilesOptions, array('id' => 'vbo-custom-style'));
 		}
+
+		/**
+		 * Always prepare AJAX requests to pass a CSRF token.
+		 * 
+		 * @since 	1.6.0
+		 */
+		JHtml::fetch('vbohtml.scripts.ajaxcsrf');
 	}
 
 	/**

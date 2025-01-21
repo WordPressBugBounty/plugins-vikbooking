@@ -315,8 +315,8 @@ foreach ($langs as $ltag => $lang) {
 										);
 										$editor_opts = array(
 											'modes' => array(
-												'text',
 												'visual',
+												'text',
 											),
 										);
 										echo $vbo_app->renderVisualEditor($veditor_name, (isset($tn_json_value[$jkey]) ? $tn_json_value[$jkey] : ''), $tarea_attr, $editor_opts);

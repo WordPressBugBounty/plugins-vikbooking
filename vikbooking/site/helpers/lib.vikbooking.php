@@ -608,6 +608,7 @@ class VikBooking
 		// default states
 		$restrictionerrmsg = '';
 		$restrictions_affcount = 0;
+		$minlos_errors_pool = [];
 
 		// check for month-level or range-level restrictions
 		if (array_key_exists($restrcheckin['mon'], $roomrestr)) {
@@ -665,10 +666,10 @@ class VikBooking
 			 * 
 			 * @since 	1.12.1
 			 */
-			$minlos_priority = array(
-				'ok'  => array(),
-				'nok' => array()
-			);
+			$minlos_priority = [
+				'ok'  => [],
+				'nok' => [],
+			];
 
 			/**
 			 * Build a map of CTA/CTD priorities to be compared, to ensure they are regularly applied.
@@ -758,9 +759,12 @@ class VikBooking
 					if ($daysdiff < $restr['minlos']) {
 						$restrictionsvalid = false;
 						$restrictionerrmsg = JText::sprintf('VBRESTRTIPMINLOSEXCEEDEDRANGE', $restr['minlos']);
-						array_push($minlos_priority['nok'], (int)$restr['id']);
+						// push error value
+						array_push($minlos_priority['nok'], (int) $restr['id']);
+						// set error message with related minimum stay
+						$minlos_errors_pool[$restr['minlos']] = $restrictionerrmsg;
 					} else {
-						array_push($minlos_priority['ok'], (int)$restr['id']);
+						array_push($minlos_priority['ok'], (int) $restr['id']);
 					}
 				} elseif ($restr['dfrom'] <= $restrcheckout[0] && ($restr['dto'] + $end_operator) >= $restrcheckout[0] && !empty($restr['ctdd'])) {
 					/**
@@ -795,12 +799,24 @@ class VikBooking
 		}
 
 		// check global restriction of Min LOS for TAC functions in VBO and VCM
-		if (empty($restrictionerrmsg) && count($roomrestr) && $restrictions_affcount <= 0) {
+		if (empty($restrictionerrmsg) && $roomrestr && $restrictions_affcount <= 0) {
 			// check global MinLOS (only in case there are no restrictions affecting these dates or no restrictions at all)
 			$globminlos = self::getDefaultNightsCalendar();
 			if ($globminlos > 1 && $daysdiff < $globminlos) {
 				$restrictionerrmsg = JText::sprintf('VBRESTRERRMINLOSEXCEEDEDRANGE', $globminlos);
 			}
+		}
+
+		/**
+		 * When working with room-level restrictions and different minLOS across multiple apartments,
+		 * we need the display the actually lowest minimum stay among all listings from the errors found.
+		 * 
+		 * @since 	1.17.3 (J) - 1.7.3 (WP)
+		 */
+		if ($restrictionerrmsg && in_array($restrictionerrmsg, $minlos_errors_pool) && count($minlos_errors_pool) > 1) {
+			// make sure to return the error message for the lowest minimum stay
+			$lowest_minlos = min(array_map('intval', array_keys($minlos_errors_pool)));
+			$restrictionerrmsg = $minlos_errors_pool[$lowest_minlos] ?? $restrictionerrmsg;
 		}
 
 		// return the restriction error message string, if anything wrong was found
@@ -889,19 +905,34 @@ class VikBooking
 		return $pkg;
 	}
 	
-	public static function getRoomParam($paramname, $paramstr)
+	/**
+	 * Returns the requested room parameter or default value.
+	 * 
+	 * @param 	string 	$paramname 	The parameter name.
+	 * @param 	mixed 	$params 	The room params string, or json-decoded array/object.
+	 * @param 	mixed 	$def 		The default value to return as fallback.
+	 * 
+	 * @return 	mixed
+	 * 
+	 * @since 	1.17.3 (J) - 1.7.3 (WP)  added 3rd argument $def.
+	 */
+	public static function getRoomParam($paramname, $params, $def = '')
 	{
-		if (empty($paramstr)) {
-			return '';
+		if (empty($params)) {
+			return $def;
 		}
 
-		$paramarr = json_decode($paramstr, true);
-
-		if (is_array($paramarr) && isset($paramarr[$paramname])) {
-			return $paramarr[$paramname];
+		if (is_string($params)) {
+			$params = (array) json_decode($params, true);
+		} elseif (is_object($params)) {
+			$params = (array) $params;
 		}
 
-		return '';
+		if (!is_array($params)) {
+			return $def;
+		}
+
+		return $params[$paramname] ?? $def;
 	}
 
 	public static function filterNightsSeasonsCal($arr_nights) {
@@ -2123,7 +2154,15 @@ class VikBooking
 	
 	public static function showPartlyReserved()
 	{
-		return VBOFactory::getConfig()->getBool('showpartlyreserved', false);
+		static $partlyReserved = null;
+
+		if ($partlyReserved !== null) {
+			return $partlyReserved;
+		}
+
+		$partlyReserved = VBOFactory::getConfig()->getBool('showpartlyreserved', false);
+
+		return $partlyReserved;
 	}
 
 	public static function showStatusCheckinoutOnly()
@@ -2448,17 +2487,18 @@ class VikBooking
 		return false;
 	}
 
-	public static function allowBooking() {
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='allowbooking';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$s = $dbo->loadAssocList();
-			return (intval($s[0]['setting']) == 1 ? true : false);
-		} else {
-			return false;
+	public static function allowBooking()
+	{
+		// cache value in static var
+		static $allowBooking = null;
+
+		if (is_bool($allowBooking)) {
+			return $allowBooking;
 		}
+
+		$allowBooking = (bool) VBOFactory::getConfig()->get('allowbooking');
+
+		return $allowBooking;
 	}
 
 	public static function getDisabledBookingMsg($vbo_tn = null) {
@@ -2679,7 +2719,8 @@ class VikBooking
 		return $currencyName;
 	}
 
-	public static function getCurrencySymb($skipsession = false) {
+	public static function getCurrencySymb()
+	{
 		// cache value in static var
 		static $getCurrencySymb = null;
 
@@ -2687,74 +2728,23 @@ class VikBooking
 			return $getCurrencySymb;
 		}
 
-		$dbo = JFactory::getDbo();
+		$getCurrencySymb = VBOFactory::getConfig()->get('currencysymb', '');
 
-		if ($skipsession) {
-			$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='currencysymb'";
-			$dbo->setQuery($q, 0, 1);
-			$csymb = $dbo->loadResult();
-
-			$getCurrencySymb = $csymb;
-
-			return $csymb;
-		}
-
-		$session = JFactory::getSession();
-		$sval = $session->get('vbgetCurrencySymb', '');
-		if (!empty($sval)) {
-			return $sval;
-		}
-
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='currencysymb'";
-		$dbo->setQuery($q, 0, 1);
-		$csymb = $dbo->loadResult();
-
-		// update session value, cache it and return it
-		$session->set('vbgetCurrencySymb', $csymb);
-		$getCurrencySymb = $csymb;
-
-		return $csymb;
+		return $getCurrencySymb;
 	}
 	
-	public static function getNumberFormatData($skipsession = false) {
+	public static function getNumberFormatData()
+	{
 		// cache value in static var
 		static $getNumberFormatData = null;
 
 		if ($getNumberFormatData) {
 			return $getNumberFormatData;
 		}
-		//
 
-		$dbo = JFactory::getDbo();
-		
-		if ($skipsession) {
-			$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='numberformat'";
-			$dbo->setQuery($q, 0, 1);
-			$dbo->execute();
-			$numfdata = $dbo->loadResult();
+		$getNumberFormatData = VBOFactory::getConfig()->get('numberformat', '');
 
-			// cache value and return it
-			$getNumberFormatData = $numfdata;
-
-			return $numfdata;
-		}
-
-		$session = JFactory::getSession();
-		$sval = $session->get('getNumberFormatData', '');
-		if (!empty($sval)) {
-			return $sval;
-		}
-
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='numberformat'";
-		$dbo->setQuery($q, 0, 1);
-		$dbo->execute();
-		$numfdata = $dbo->loadResult();
-
-		// update session value, cache it and return it
-		$session->set('getNumberFormatData', $numfdata);
-		$getNumberFormatData = $numfdata;
-
-		return $numfdata;
+		return $getNumberFormatData;
 	}
 
 	/**
@@ -2772,30 +2762,15 @@ class VikBooking
 		if ($hideEmptyDecimals !== null) {
 			return $hideEmptyDecimals;
 		}
-		//
 
-		$dbo = JFactory::getDbo();
+		$hideEmptyDecimals = (int) VBOFactory::getConfig()->get('noemptydecimals', '1');
 
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='noemptydecimals';";
-		$dbo->setQuery($q);
-		$hideEmptyDecimals = $dbo->loadResult();
-		if ($hideEmptyDecimals !== null) {
-			$hideEmptyDecimals = (int)$hideEmptyDecimals;
-			return $hideEmptyDecimals;
-		}
-
-		$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('noemptydecimals', '1');";
-		$dbo->setQuery($q);
-		$dbo->execute();
-
-		$hideEmptyDecimals = 1;
-		
 		return $hideEmptyDecimals;
 	}
 
-	public static function numberFormat($num, $skipsession = false)
+	public static function numberFormat($num)
 	{
-		$formatvals = self::getNumberFormatData($skipsession);
+		$formatvals = self::getNumberFormatData();
 		$formatparts = explode(':', $formatvals);
 
 		if ((int)$formatparts[0] > 0 && (floatval($num) - intval($num)) == 0 && self::hideEmptyDecimals()) {
@@ -4154,26 +4129,53 @@ class VikBooking
 		return $say;
 	}
 
-	public static function getRoomCaratOriz($idc, $vbo_tn = null)
+	/**
+	 * Returns a list of the given room amenities string.
+	 * 
+	 * @param 	string 	$amenities 	Room amenities string.
+	 * @param 	?object $vbo_tn 	Optional VBOTranslator.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.17.3 (J) - 1.7.3 (WP)
+	 */
+	public static function loadRoomAmenities($amenities, $vbo_tn = null)
 	{
 		$dbo = JFactory::getDbo();
-		$split = explode(";", $idc);
-		$carat = "";
-		$arr = array();
-		$where = array();
+
+		$split = explode(";", (string) $amenities);
+		$where = [];
 		foreach ($split as $s) {
 			if (!empty($s)) {
-				$where[] = $s;
+				$where[] = (int) $s;
 			}
 		}
+
+		$list = [];
+		$where = array_filter($where);
+
 		if ($where) {
-			$q = "SELECT `c`.* FROM `#__vikbooking_characteristics` AS `c` WHERE `c`.`id` IN (" . implode(",", $where) . ") ORDER BY `c`.`ordering` ASC;";
-			$dbo->setQuery($q);
-			$arr = $dbo->loadAssocList();
-			if ($arr && is_object($vbo_tn)) {
-				$vbo_tn->translateContents($arr, '#__vikbooking_characteristics');
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->select('*')
+					->from($dbo->qn('#__vikbooking_characteristics'))
+					->where($dbo->qn('id') . ' IN (' . implode(', ', $where) . ')')
+					->order($dbo->qn('ordering') . ' ASC')
+			);
+			$list = $dbo->loadAssocList();
+			if ($list && is_object($vbo_tn)) {
+				$vbo_tn->translateContents($list, '#__vikbooking_characteristics');
 			}
 		}
+
+		return $list;
+	}
+
+	public static function getRoomCaratOriz($idc, $vbo_tn = null)
+	{
+		$carat = '';
+		$arr = self::loadRoomAmenities($idc, $vbo_tn = null);
+
 		if ($arr) {
 			$carat .= "<div class=\"vbo-room-carats\">\n";
 			foreach ($arr as $a) {
@@ -4197,6 +4199,7 @@ class VikBooking
 			}
 			$carat .= "</div>\n";
 		}
+
 		return $carat;
 	}
 
@@ -6722,6 +6725,7 @@ class VikBooking
 		$dbo = JFactory::getDbo();
 
 		$one = getdate($from);
+		$two = getdate($to);
 
 		// leap years
 		if (($one['year'] % 4) == 0 && ($one['year'] % 100 != 0 || $one['year'] % 400 == 0)) {
@@ -6735,7 +6739,6 @@ class VikBooking
 		$tomidnightone += intval($one['minutes']) * 60;
 		$sfrom = $from - $baseone - $tomidnightone;
 		$fromdayts = mktime(0, 0, 0, $one['mon'], $one['mday'], $one['year']);
-		$two = getdate($to);
 		$basetwo = mktime(0, 0, 0, 1, 1, $two['year']);
 		$tomidnighttwo = intval($two['hours']) * 3600;
 		$tomidnighttwo += intval($two['minutes']) * 60;
@@ -6781,6 +6784,20 @@ class VikBooking
 		 	($sto < $sfrom ? " OR (`from` = 0 AND `to` >= " . $sto . " AND `to` >= " . $sfrom . ")" : '') .
 			") ORDER BY `#__vikbooking_seasons`.`promo` ASC;";
 
+		/**
+		 * Avoid issues when querying data for a whole year by fetching all records.
+		 * For example, from 2024-12-30 till 2025-12-30 it is more efficient to get all records.
+		 * 
+		 * @since 	1.17.3 (J) - 1.7.3 (WP)
+		 */
+		if ($one['mon'] == $two['mon'] && $one['year'] < $two['year']) {
+			// fetch all records when targeting a whole year of data
+			$q = $dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_seasons'))
+				->order($dbo->qn('promo') . ' ASC');
+		}
+
 		$dbo->setQuery($q);
 		$seasons = $dbo->loadAssocList();
 
@@ -6795,6 +6812,9 @@ class VikBooking
 				}
 				return false;
 			});
+
+			// reset array keys
+			$seasons = array_values($seasons);
 		}
 
 		return $seasons;
@@ -11941,30 +11961,11 @@ class VikBooking
 
 		$finaldest = $dest . $filename . $j . $fileext;
 
-		if ($filters !== '*')
+		// make sure the file extension is supported
+		if (!self::isFileTypeCompatible(basename($finaldest), $filters))
 		{
-			$ext = $file['type'];
-
-			// check if we have a regex
-			if (preg_match("/^[#\/]/", $filters) && preg_match("/[#\/][a-z]*$/", $filters))
-			{
-				if (!preg_match($filters, $ext))
-				{
-					// extension not supported
-					throw new RuntimeException(sprintf('Extension [%s] is not supported', $ext), 400);
-				}
-			}
-			else
-			{
-				// get all supported types
-				$types = array_map('strtolower', array_filter(explode(',', $filters)));
-
-				if (!in_array($ext, $types))
-				{
-					// extension not supported
-					throw new RuntimeException(sprintf('Extension [%s] is not supported', $ext), 400);
-				}
-			}
+			// extension not supported
+			throw new RuntimeException(sprintf('Extension [%s] is not supported', $fileext), 400);
 		}
 		
 		// try to upload the file
@@ -11980,6 +11981,106 @@ class VikBooking
 		$file->path     = $finaldest;
 		
 		return $file;
+	}
+
+	/**
+	 * Helper method used to check whether the given file name
+	 * supports one of the given filters.
+	 *
+	 * @param   mixed   $file     Either the file name or the uploaded file.
+	 * @param   string  $filters  Either a regex or a comma-separated list of supported extensions.
+	 *                            The regex must be inclusive of delimiters.
+	 *
+	 * @return  bool    True if supported, false otherwise.
+	 * 
+	 * @since   1.7.3 (WP) - 1.17.3 (J)
+	 */
+	public static function isFileTypeCompatible($file, $filters)
+	{
+		// make sure the filters query is not empty
+		if (strlen($filters) == 0)
+		{
+			// cannot assert whether the file could be accepted or not
+			return false;
+		}
+
+		// check whether all the files are accepted
+		if ($filters == '*')
+		{
+			return true;
+		}
+
+		// use the file MIME TYPE in case of array
+		if (is_array($file))
+		{
+			$file = $file['type'];
+		}
+
+		// check if we are dealing with a regex
+		if (static::isRegex($filters))
+		{
+			return (bool) preg_match($filters, $file);
+		}
+		
+		// fallback to comma-separated list
+		$types = array_filter(preg_split("/\s*,\s*/", $filters));
+
+		foreach ($types as $t)
+		{
+			// remove initial dot if specified
+			$t = ltrim($t, '.');
+			// escape slashes to avoid breaking the regex
+			$t = preg_replace("/\//", '\/', $t);
+
+			// check if the file ends with the given extension
+			if (preg_match("/{$t}$/i", $file))
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * Checks whether the given string is a structured PCRE regex.
+	 * It simply makes sure that the string owns valid delimiters.
+	 * A delimiter can be any non-alphanumeric, non-backslash,
+	 * non-whitespace character.
+	 *
+	 * @param   string   $str  The string to check.
+	 *
+	 * @return  boolean  True if a regex, false otherwise.
+	 *
+	 * @since   1.7.3 (WP) - 1.17.3 (J)
+	 */
+	public static function isRegex($str)
+	{
+		// first of all make sure the first character is a supported delimiter
+		if (!preg_match("/^([!#$%&'*+,.\/:;=?@^_`|~\-(\[{<\"])/", $str, $match))
+		{
+			// no valid delimiter
+			return false;
+		}
+
+		// get delimiter
+		$d = $match[1];
+
+		// lookup used to check if we should take a different ending delimiter
+		$lookup = array(
+			'{' => '}',
+			'[' => ']',
+			'(' => ')',
+			'<' => '>',
+		);
+
+		if (isset($lookup[$d]))
+		{
+			$d = $lookup[$d];
+		}
+
+		// make sure the regex ends with the delimiter found
+		return (bool) preg_match("/\\{$d}[gimsxU]*$/", $str);
 	}
 
 	/**
@@ -12608,7 +12709,7 @@ class VikBooking
 		$view = VikRequest::getString('view', '', 'request');
 		$pref_colors = self::getPreferredColors();
 		
-		$css_classes = array();
+		$css_classes = [];
 		
 		if (!empty($pref_colors['textcolor'])) {
 			// titles and headings
@@ -12622,10 +12723,7 @@ class VikBooking
 			}
 			// datepicker
 			array_push($css_classes, '.ui-datepicker .ui-datepicker-today {
-				color: ' . $pref_colors['textcolor'] . ' !important;
 				border-color: ' . $pref_colors['textcolor'] . ' !important;
-			}');
-			array_push($css_classes, '.ui-datepicker .ui-datepicker-today a {
 				color: ' . $pref_colors['textcolor'] . ' !important;
 			}');
 			// operators tableaux
@@ -12644,14 +12742,26 @@ class VikBooking
 			// stepbar
 			array_push($css_classes, 'ol.vbo-stepbar li.vbo-step-complete:before { background-color: ' . $pref_colors['bgcolor'] . ' !important; }');
 			// datepicker
-			array_push($css_classes, '.ui-datepicker table td:hover {
-				border-color: ' . $pref_colors['bgcolor'] . ' !important;
-			}');
-			array_push($css_classes, '.ui-datepicker .ui-datepicker-current-day {
+			array_push($css_classes, '.ui-datepicker-calendar td.checkin-date > *, .ui-datepicker-calendar td.checkout-date > *, .ui-datepicker-calendar td.ui-state-highlight > *, .ui-datepicker-calendar td.ui-datepicker-current-day > * {
 				background: ' . $pref_colors['bgcolor'] . ' !important;
+				border-color: ' . $pref_colors['bgcolor'] . ' !important;
 				color: ' . $pref_colors['fontcolor'] . ' !important;
 			}');
+			array_push($css_classes, '.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
+				border-color: ' . $pref_colors['bgcolor'] . ' !important;
+			}');
+			array_push($css_classes, '.ui-datepicker-header .ui-corner-all.ui-state-hover {
+				border-color: ' . $pref_colors['bgcolor'] . ' !important;
+				color: ' . $pref_colors['bgcolor'] . ' !important;
+			}');
 			array_push($css_classes, '.ui-datepicker .ui-datepicker-current-day a {
+				color: ' . $pref_colors['fontcolor'] . ' !important;
+			}');
+			array_push($css_classes, '.ui-datepicker td:not(.ui-state-highlight):not(.ui-datepicker-unselectable):not(.date-will):not(.ui-datepicker-current-day) > *:hover {
+				border-color: ' . $pref_colors['bgcolor'] . ' !important;
+				color: ' . $pref_colors['bgcolor'] . ' !important;
+			}');
+			array_push($css_classes, '.ui-datepicker td.checkin-date a:hover, .ui-datepicker td.checkout-date a:hover, .ui-datepicker-calendar td.ui-datepicker-current-day > *:hover {
 				color: ' . $pref_colors['fontcolor'] . ' !important;
 			}');
 			// operators tableaux
@@ -12669,7 +12779,7 @@ class VikBooking
 			}
 		}
 
-		if (!count($css_classes)) {
+		if (!$css_classes) {
 			return;
 		}
 

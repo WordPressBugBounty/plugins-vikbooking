@@ -1000,6 +1000,15 @@ class VBOModelReservation extends JObject
 			$bookingQ->set($dbo->qn('adminnotes') . ' = ' . $dbo->q(trim($prev_booking['adminnotes'] . "\n" . $options['extra_notes'])));
 		}
 
+		if (($options['custmail'] ?? '') || ($options['customer_email'] ?? '')) {
+			// update guest email address at booking level
+			$set_cust_mail = $options['custmail'] ?? $options['customer_email'] ?? '';
+			if (preg_match("/^[^@]+@[^@]+\.[^@]+$/", $set_cust_mail)) {
+				// email pattern is safe
+				$bookingQ->set($dbo->qn('custmail') . ' = ' . $dbo->q(trim($set_cust_mail)));
+			}
+		}
+
 		// finally, update the booking record
 		try {
 			// make sure something to update was set by using the apposite getter magic method
@@ -1260,6 +1269,269 @@ class VBOModelReservation extends JObject
 					$this->setError(JText::translate('VBCHANNELMANAGERRESULTKO') . (!empty($vcm_err) ? ' - ' . $vcm_err : ''));
 				}
 			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Sets a booking ID to confirmed according to the provided options.
+	 * 
+	 * @param 	array 	$options 	List of details to perform the update.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @since 	1.17.3 (J) - 1.7.3 (WP)
+	 */
+	public function setConfirmed(array $options)
+	{
+		$dbo = JFactory::getDbo();
+
+		// access the current booking details, if any
+		$booking = $this->getBooking();
+
+		// access the current rooms booked, if any
+		$roomBooking  = $this->getRoomBooking();
+
+		// gather modification options
+		$booking_id = $options['booking_id'] ?? $booking['id'] ?? 0;
+
+		if (!$booking_id) {
+			$this->setError('Missing booking ID.');
+			return false;
+		}
+
+		if (!$booking) {
+			// load current booking record if not injected
+			$booking = VikBooking::getBookingInfoFromID($booking_id);
+			if (!$booking) {
+				$this->setError('Booking not found.');
+				return false;
+			}
+		}
+
+		if (!$roomBooking) {
+			// load current rooms booked
+			$roomBooking = VikBooking::loadOrdersRoomsData($booking_id);
+		}
+
+		// make sure the booking status is not already confirmed
+		if (!strcasecmp($booking['status'], 'confirmed')) {
+			$this->setError('Booking is already confirmed.');
+			return false;
+		}
+
+		// memorize the original booking status for VCM in case of OTA booking
+		$original_book_status = null;
+		if (!empty($booking['idorderota']) && !empty($booking['channel'])) {
+			$original_book_status = $booking['status'];
+		}
+
+		// availability helper
+		$av_helper = VikBooking::getAvailabilityInstance(true);
+
+		// room stay dates in case of split stay
+		$room_stay_dates = [];
+		if ($booking['split_stay']) {
+			$room_stay_dates = VBOFactory::getConfig()->getArray('split_stay_' . $booking['id'], []);
+		}
+
+		// make sure all rooms are available for confirmation
+		$turnover_secs = VikBooking::getHoursRoomAvail() * 3600;
+		$realback = $turnover_secs + $booking['checkout'];
+		$allbook  = true;
+		$notavail = [];
+
+		/**
+		 * We need to calculate a minus operator for each room that was booked more than once.
+		 * In case we are confirming a booking for more than one unit of the same room, we need to
+		 * make sure the calculation is made properly, as only one unit of that room could be free.
+		 */
+		$units_minus_oper = [];
+		foreach ($roomBooking as $ind => $or) {
+			if (!isset($units_minus_oper[$or['idroom']])) {
+				$units_minus_oper[$or['idroom']] = -1;
+			}
+			// increase counter
+			$units_minus_oper[$or['idroom']]++;
+			if (!empty($room_stay_dates)) {
+				// split stay rooms never have the same stay dates, but they should also be different rooms
+				$units_minus_oper[$or['idroom']] = 0;
+			}
+		}
+
+		// check availability for each room involved
+		foreach ($roomBooking as $ind => $or) {
+			// determine proper values for this room
+			$room_stay_checkin  = $booking['checkin'];
+			$room_stay_checkout = $booking['checkout'];
+			$room_stay_nights 	= $booking['days'];
+			if ($booking['split_stay'] && $room_stay_dates && isset($room_stay_dates[$ind]) && $room_stay_dates[$ind]['idroom'] == $or['idroom']) {
+				$room_stay_checkin  = $room_stay_dates[$ind]['checkin_ts'] ?: $room_stay_dates[$ind]['checkin'];
+				$room_stay_checkout = $room_stay_dates[$ind]['checkout_ts'] ?: $room_stay_dates[$ind]['checkout'];
+				$room_stay_nights 	= $av_helper->countNightsOfStay($room_stay_checkin, $room_stay_checkout);
+				// inject nights calculated for this room
+				$room_stay_dates[$ind]['nights'] = $room_stay_nights;
+			}
+
+			// get room record
+			$room_record = VikBooking::getRoomInfo($or['idroom']);
+
+			// check if the room is available
+			if (!VikBooking::roomBookable($or['idroom'], (($room_record['units'] ?? 0) - $units_minus_oper[$or['idroom']]), $room_stay_checkin, $room_stay_checkout)) {
+				$allbook = false;
+				$notavail[] = $room_record['name'] ?? '?';
+			}
+		}
+
+		// ensure all rooms involved were available or forced to be
+		if (!$allbook && !($options['force_availability'] ?? false)) {
+			$this->setError(sprintf('Some rooms are no longer available: %s', implode(', ', $notavail)));
+			return false;
+		}
+
+		// occupy the involved rooms on the db
+		foreach ($roomBooking as $ind => $or) {
+			// determine proper values for this room
+			$room_stay_checkin  = $booking['checkin'];
+			$room_stay_checkout = $booking['checkout'];
+			$room_stay_realback = $realback;
+			if ($booking['split_stay'] && $room_stay_dates && isset($room_stay_dates[$ind]) && $room_stay_dates[$ind]['idroom'] == $or['idroom']) {
+				$room_stay_checkin  = $room_stay_dates[$ind]['checkin_ts'] ?: $room_stay_dates[$ind]['checkin'];
+				$room_stay_checkout = $room_stay_dates[$ind]['checkout_ts'] ?: $room_stay_dates[$ind]['checkout'];
+				$room_stay_realback = $turnover_secs + $room_stay_checkout;
+			}
+
+			// build busy record
+			$busy_record = new stdClass;
+			$busy_record->idroom   = (int) $or['idroom'];
+			$busy_record->checkin  = (int) $room_stay_checkin;
+			$busy_record->checkout = (int) $room_stay_checkout;
+			$busy_record->realback = (int) $room_stay_realback;
+
+			// store busy record and obtain the newly created ID
+			$dbo->insertObject('#__vikbooking_busy', $busy_record, 'id');
+			$lid = $busy_record->id ?? 0;
+
+			// build busy relation record
+			$obusy_record = new stdClass;
+			$obusy_record->idorder = (int) $booking['id'];
+			$obusy_record->idbusy  = (int) $lid;
+
+			// store busy relation record
+			$dbo->insertObject('#__vikbooking_ordersbusy', $obusy_record, 'id');
+		}
+
+		// delete temporarily locked records, if any
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->delete($dbo->qn('#__vikbooking_tmplock'))
+				->where($dbo->qn('idorder') . ' = ' . (int) $booking['id'])
+		);
+		$dbo->execute();
+
+		// update booking status (and notes, if any)
+		$q = $dbo->getQuery(true)
+			->update($dbo->qn('#__vikbooking_orders'))
+			->set($dbo->qn('status') . ' = ' . $dbo->q('confirmed'))
+			->where($dbo->qn('id') . ' = ' . (int) $booking['id']);
+		if ($options['extra_notes'] ?? '') {
+			// update administrator notes
+			$q->set($dbo->qn('adminnotes') . ' = ' . $dbo->q(trim($booking['adminnotes'] . "\n" . $options['extra_notes'])));
+		}
+		$dbo->setQuery($q);
+		$dbo->execute();
+
+		// set booking confirmation number
+		$confirmnumber = VikBooking::generateConfirmNumber($booking['id'], true);
+
+		// update booking history
+		$history_obj = VikBooking::getBookingHistoryInstance($booking['id']);
+
+		$now_user  = JFactory::getUser();
+		$caller_id = $now_user->name ? "({$now_user->name})" : '';
+		if ($this->getCaller()) {
+			$caller_id = '(' . $this->getCaller() . ')';
+			if ($this->getHistoryData()) {
+				$history_obj->setExtraData($this->getHistoryData());
+			}
+		}
+
+		// update Booking History
+		$history_obj->store('TC', $caller_id);
+
+		// check if some of the rooms booked have shared calendars
+		VikBooking::updateSharedCalendars($booking['id'], array_column($roomBooking, 'idroom'), $booking['checkin'], $booking['checkout']);
+
+		// assign room specific unit(s)
+		$set_room_indexes = VikBooking::autoRoomUnit();
+		$room_indexes_usemap = [];
+
+		foreach ($roomBooking as $kor => $or) {
+			// determine proper values for this room
+			$room_stay_checkin  = $booking['checkin'];
+			$room_stay_checkout = $booking['checkout'];
+			$room_stay_nights 	= $booking['days'];
+			if ($booking['split_stay'] && $room_stay_dates && isset($room_stay_dates[$kor]) && $room_stay_dates[$kor]['idroom'] == $or['idroom']) {
+				$room_stay_checkin  = $room_stay_dates[$kor]['checkin_ts'] ?: $room_stay_dates[$kor]['checkin'];
+				$room_stay_checkout = $room_stay_dates[$kor]['checkout_ts'] ?: $room_stay_dates[$kor]['checkout'];
+				$room_stay_nights 	= $room_stay_dates[$kor]['nights'];
+			}
+
+			// assign room specific unit
+			if ($set_room_indexes === true) {
+				$room_indexes = VikBooking::getRoomUnitNumsAvailable($booking, $or['idroom']);
+				$use_ind_key = 0;
+				if ($room_indexes) {
+					if (!isset($room_indexes_usemap[$or['idroom']])) {
+						$room_indexes_usemap[$or['idroom']] = $use_ind_key;
+					} else {
+						$use_ind_key = $room_indexes_usemap[$or['idroom']];
+					}
+
+					// update room-reservation record by assigning the room index (unit)
+					$dbo->setQuery(
+						$dbo->getQuery(true)
+							->update($dbo->qn('#__vikbooking_ordersrooms'))
+							->set($dbo->qn('roomindex') . ' = ' . (int) $room_indexes[$use_ind_key])
+							->where($dbo->qn('id') . ' = ' . (int) $or['id'])
+					);
+					$dbo->execute();
+
+					// increase index counter
+					$room_indexes_usemap[$or['idroom']]++;
+				}
+			}
+		}
+
+		// Invoke Channel Manager
+		$vcm_autosync = VikBooking::vcmAutoUpdate();
+		if ($vcm_autosync > 0) {
+			$vcm_obj = VikBooking::getVcmInvoker();
+			$vcm_obj->setOids([$booking['id']])->setSyncType('new')->setOriginalStatuses([$original_book_status]);
+			$sync_result = $vcm_obj->doSync();
+			if ($sync_result === false) {
+				// set error message
+				$vcm_err = $vcm_obj->getError();
+				$this->setError(JText::translate('VBCHANNELMANAGERRESULTKO') . (!empty($vcm_err) ? ' - ' . $vcm_err : ''));
+
+				// return true because the booking was actually confirmed
+				return true;
+			}
+		} elseif (is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'synch.vikbooking.php')) {
+			// set the necessary action to invoke VCM
+			$vcm_sync_url = 'index.php?option=com_vikbooking&task=invoke_vcm&stype=new&cid[]=' . $booking['id'] . '&returl=' . urlencode('index.php?option=com_vikbooking&task=editorder&cid[]=' . $booking['id']);
+
+			$this->setChannelManagerAction(JText::translate('VBCHANNELMANAGERINVOKEASK') . ' <button type="button" class="btn btn-primary" onclick="document.location.href=\'' . $vcm_sync_url . '\';">' . JText::translate('VBCHANNELMANAGERSENDRQ') . '</button>');
+		}
+
+		// check if the guest should be notified via email
+		if ($options['notify'] ?? null) {
+			// send email notification to guest
+			VikBooking::sendBookingEmail($booking['id'], ['guest']);
+
+			// SMS skipping the administrator
+			VikBooking::sendBookingSMS($booking['id'], ['admin']);
 		}
 
 		return true;
@@ -2141,6 +2413,7 @@ class VBOModelReservation extends JObject
 		$valid_statuses = ['confirmed', 'standby'];
 		$status 		= in_array($status, $valid_statuses) ? $status : 'confirmed';
 		$paymentmeth 	= $this->get('id_payment', '');
+		$auto_paymeth   = (bool) $this->get('auto_payment_method', false);
 		$set_total 		= (float) $this->get('_total', 0);
 		$set_taxes 		= (float) $this->get('_total_tax', 0);
 
@@ -2242,6 +2515,12 @@ class VBOModelReservation extends JObject
 		// count total rooms booked
 		$totalrooms = ($set_closed && $status == 'confirmed' ? count($rooms_pool) : ($num_rooms > 1 && $num_rooms <= $room['units'] ? $num_rooms : 1));
 		$totalrooms = !empty($split_stay_data) ? count($split_stay_data) : $totalrooms;
+
+		// attempt to get the default payment method
+		if (!$paymentmeth && ($auto_paymeth || $status == 'standby')) {
+			// get the default payment method, if any
+			$paymentmeth = $this->getDefaultPaymentMethod($auto_paymeth);
+		}
 
 		// prepare booking record
 		$booking = new stdClass;
@@ -2600,5 +2879,49 @@ class VBOModelReservation extends JObject
 		}
 
 		return true;
+	}
+
+	/**
+	 * Attempts to find the default payment method to be assigned to a booking.
+	 * 
+	 * @param 	bool 	$auto 	If true, it was requested to automatically find the best payment method.
+	 * 
+	 * @return 	string 			The payment method string for the reservation "ID=Name", or an empty string.
+	 * 
+	 * @since 	1.17.3 (J) - 1.7.3 (WP)
+	 */
+	protected function getDefaultPaymentMethod($auto = false)
+	{
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_gpayments'))
+				->order($dbo->qn('published') . ' DESC')
+				->order($dbo->qn('ordering') . ' ASC')
+				->order($dbo->qn('setconfirmed') . ' ASC')
+				->order($dbo->qn('name') . ' ASC')
+		);
+
+		$methods = $dbo->loadAssocList();
+
+		if ($auto) {
+			// exclude all the offline or unpublished payment methods
+			$methods = array_filter($methods, function($method) {
+				return !((bool) intval($method['setconfirmed'])) && (bool) intval($method['published']);
+			});
+
+			// reset array keys
+			$methods = array_values($methods);
+		}
+
+		if ($methods) {
+			// default payment method found
+			return sprintf('%s=%s', $methods[0]['id'], $methods[0]['name']);
+		}
+
+		// nothing was found
+		return '';
 	}
 }

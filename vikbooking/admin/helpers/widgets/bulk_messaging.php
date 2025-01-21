@@ -395,6 +395,9 @@ class VikBookingAdminWidgetBulkMessaging extends VikBookingAdminWidget
 		if (VBOPlatformDetection::isJoomla()) {
 			// load assets
 			$this->vbo_app->loadVisualEditorAssets();
+		} else {
+			// load lang defs
+			$this->vbo_app->loadVisualEditorDefinitions();
 		}
 
 		// JS lang defs
@@ -1032,8 +1035,8 @@ class VikBookingAdminWidgetBulkMessaging extends VikBookingAdminWidget
 			],
 			[
 				'modes' => [
-					'text',
 					'visual',
+					'text',
 				],
 			],
 			$editor_btns

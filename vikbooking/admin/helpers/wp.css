@@ -153,15 +153,6 @@ select {
 	border:0;
 	box-shadow: none;
 }
-#ui-datepicker-div {
-	box-shadow: 0 6px 10px rgba(0,0,0,.2);
-}
-.ui-datepicker .ui-datepicker-header {
-	background: var(--vbo-main-bg-color);
-}
-.ui-datepicker th {
-	background: var(--vbo-config-child-bg-color);
-}
 /* disable MOVE cursor for draggable WP items */
 .js .postbox .hndle {
 	cursor: default !important;
@@ -714,11 +705,6 @@ input[type="number"], #vbo-addnumnight, #vbo-numnights, #vbo-numadults, #vbo-num
 }
 .vbo-tableaux-table {
 	border-collapse: collapse;
-}
-
-/* WP5 */
-.vbo-ratesoverview-period-box-cals-inner {
-	z-index: 1;
 }
 
 /*** caret ***/

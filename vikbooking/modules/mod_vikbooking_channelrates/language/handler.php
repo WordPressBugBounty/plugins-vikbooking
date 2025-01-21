@@ -118,10 +118,10 @@ class Mod_VikBooking_ChannelratesLanguageHandler implements JLanguageHandler
 				$result = __('Book Now', 'vikbooking');
 				break;
 			case 'VBMCHECKIN':
-				$result = __('Check-In Date', 'vikbooking');
+				$result = __('Check-in date', 'vikbooking');
 				break;
 			case 'VBMCHECKOUT':
-				$result = __('Check-Out Date', 'vikbooking');
+				$result = __('Check-out date', 'vikbooking');
 				break;
 			case 'VBMFORMROOMSN':
 				$result = __('Rooms', 'vikbooking');

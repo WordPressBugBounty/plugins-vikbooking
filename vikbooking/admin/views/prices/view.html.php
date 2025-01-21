@@ -31,6 +31,9 @@ class VikBookingViewPrices extends JViewVikBooking
 		$rplanbk1 = VikRequest::getInt('rplanbk1', 0, 'request');
 		$rplanbk2 = VikRequest::getInt('rplanbk2', 0, 'request');
 		if ($wizard) {
+			if (!JSession::checkToken()) {
+				throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+			}
 			if ($rplanpub1) {
 				$q = "INSERT INTO `#__vikbooking_prices` (`name`, `idiva`, `breakfast_included`, `free_cancellation`, `minlos`) VALUES (" . $dbo->quote(JText::translate('VBOSTANDARDRATE')) . ", 0,  $rplanbk1, 1, 0);";
 				$dbo->setQuery($q);

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.3
+
+*Release date - 21 January 2025*
+
+- New dates-range picker calendars.
+- New listing layout parameter for room-details shortcode.
+- Gen AI functions for listing contents (E4jConnect CM required).
+- Gen AI Assistant in Visual Editor (E4jConnect CM required).
+- Various Visual Editor improvements.
+- Maintenance controller for performance optimization (large datasets).
+- Multiple security improvements.
+
 ## 1.7.2
 
 *Release date - 18 December 2024*

@@ -81,12 +81,14 @@ class VikBookingAdminWidgetAitools extends VikBookingAdminWidget
 	{
 		$auto_focus = false;
 		$prompt = null;
+		$scope = null;
 
 		// if we are rendering the widget on a modal, register a script to prevent the latter
 		// from dismissing whenever the ESC key is pressed
 		if ($data && $data->isModalRendering()) {
 			$auto_focus = true;
 			$prompt = (array) $this->getOption('prompt', null);
+			$scope = $this->getOption('scope');
 			?>
 <script>
 	(function() {
@@ -119,6 +121,8 @@ class VikBookingAdminWidgetAitools extends VikBookingAdminWidget
 				'auto_focus' => $auto_focus,
 				// default prompt
 				'prompt' => $prompt,
+				// default scope
+				'scope' => $scope,
 				// show widget title (VBO dashboard only)
 				'widget_title' => is_null($data),
 				// widget icon

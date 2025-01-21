@@ -390,7 +390,7 @@ class VikBookingAvailability
 			->order($dbo->qn('avail') . ' DESC')
 			->order($dbo->qn('name') . ' ASC');
 
-		foreach (array_filter(explode(' ', $name)) as $nm_part) {
+		foreach (array_filter(preg_split("/[\s\-_.,]+/", $name)) as $nm_part) {
 			$q->where($dbo->qn('name') . ' LIKE ' . $dbo->q("%{$nm_part}%"));
 		}
 

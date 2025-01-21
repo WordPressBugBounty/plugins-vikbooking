@@ -329,7 +329,7 @@ if ($caller === 'view') {
 	}
 	
 	function isFileSupported(name) {
-		return name.match(/\.(jpe?g|png|gif|bmp|pdf|zip|rar|txt|markdown|md|doc|odt|xls|ods|csv)$/i);
+		return name.match(/\.(jpe?g|png|bmp|heic|pdf|zip|rar|txt|md|docx?|odt|rtf|pages|xlsx?|ods|numbers|csv)$/i);
 	}
 
 	var VBO_DROP_FILES_CAN_REMOVE = false;

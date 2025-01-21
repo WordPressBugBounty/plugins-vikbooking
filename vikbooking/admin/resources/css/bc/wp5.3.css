@@ -103,9 +103,6 @@ i.icon-new::before {
 	padding-top: 8px;
 	display: inline-block;
 }
-.wp-admin #ui-datepicker-div select {
-	padding: 5px 24px 5px 8px !important;
-}
 #vbo-statsform .btn-toolbar .btn-group .wp-calendar-box {
 	padding: 0px 6px;
 }
@@ -117,9 +114,6 @@ i.icon-new::before {
 }
 .wp-admin .ui-datepicker-multi .ui-datepicker-group table {
 	width: 99%;
-}
-.wp-admin .ui-datepicker .ui-datepicker-prev, .wp-admin .ui-datepicker .ui-datepicker-next {
-	top: 7px;
 }
 .vbo-quickres-wrapper #vbspanpeople {
 	display: inline-block;

@@ -1001,13 +1001,33 @@ class VikBookingController extends JControllerVikBooking
 				}
 			}
 		}
-		if (count($scalnights_arr) > 0) {
+		if ($scalnights_arr) {
 			$pseasoncal_nights = implode(', ', $scalnights_arr);
 		} else {
 			$pseasoncal_nights = '';
 			$pseasoncal = 0;
 		}
-		$roomparams = array('lastavail' => $plastavail, 'suggocc' => $psuggocc, 'custprice' => $pcustprice, 'custpricetxt' => $pcustpricetxt, 'custpricesubtxt' => $pcustpricesubtxt, 'reqinfo' => $preqinfo, 'pricecal' => $ppricecal, 'defcalcost' => floatval($pdefcalcost), 'maxminpeople' => $pmaxminpeople, 'seasoncal' => $pseasoncal, 'seasoncal_nights' => $pseasoncal_nights, 'seasoncal_prices' => $pseasoncal_prices, 'seasoncal_restr' => $pseasoncal_restr, 'multi_units' => $pmulti_units, 'custptitle' => $pcustptitle, 'custptitlew' => $pcustptitlew, 'metakeywords' => $pmetakeywords, 'metadescription' => $pmetadescription);
+		$roomparams = [
+			'lastavail' 	   => $plastavail,
+			'suggocc' 		   => $psuggocc,
+			'custprice' 	   => $pcustprice,
+			'custpricetxt' 	   => $pcustpricetxt,
+			'custpricesubtxt'  => $pcustpricesubtxt,
+			'reqinfo' 		   => $preqinfo,
+			'pricecal' 		   => $ppricecal,
+			'defcalcost' 	   => floatval($pdefcalcost),
+			'maxminpeople' 	   => $pmaxminpeople,
+			'seasoncal' 	   => $pseasoncal,
+			'seasoncal_nights' => $pseasoncal_nights,
+			'seasoncal_prices' => $pseasoncal_prices,
+			'seasoncal_restr'  => $pseasoncal_restr,
+			'multi_units' 	   => $pmulti_units,
+			'custptitle' 	   => $pcustptitle,
+			'custptitlew' 	   => $pcustptitlew,
+			'metakeywords' 	   => $pmetakeywords,
+			'metadescription'  => $pmetadescription,
+			'layout_style' 	   => VikRequest::getString('layout_style', 'default', 'request'),
+		];
 		//distinctive features
 		$roomparams['features'] = array();
 		if ($punits > 0) {
@@ -1344,7 +1364,7 @@ class VikBookingController extends JControllerVikBooking
 				}
 			}
 		}
-		if (count($scalnights_arr) > 0) {
+		if ($scalnights_arr) {
 			$pseasoncal_nights = implode(', ', $scalnights_arr);
 		} else {
 			$pseasoncal_nights = '';
@@ -1370,6 +1390,7 @@ class VikBookingController extends JControllerVikBooking
 			'custptitlew' 	   => $pcustptitlew,
 			'metakeywords' 	   => $pmetakeywords,
 			'metadescription'  => $pmetadescription,
+			'layout_style' 	   => VikRequest::getString('layout_style', 'default', 'request'),
 		];
 		//distinctive features
 		$roomparams['features'] = array();
@@ -3719,406 +3740,40 @@ class VikBookingController extends JControllerVikBooking
 
 	public function setordconfirmed()
 	{
-		$dbo = JFactory::getDbo();
 		$app = JFactory::getApplication();
 
+		// the booking ID to confirm
 		$cid = VikRequest::getVar('cid', array(0));
-		$oid = $cid[0];
-
-		$q = "SELECT * FROM `#__vikbooking_orders` WHERE `id`=" . (int)$oid . " AND `status` != 'confirmed';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			$app->redirect("index.php?option=com_vikbooking&task=editorder&cid[]=" . $oid);
-			exit;
-		}
-		$order = $dbo->loadAssoc();
-
-		/**
-		 * Memorize the original booking status for VCM in case of OTA booking.
-		 * 
-		 * @since 	1.14 (J) - 1.4.0 (WP)
-		 */
-		$original_book_status = null;
-		if (!empty($order['idorderota']) && !empty($order['channel'])) {
-			$original_book_status = $order['status'];
-		}
-
-		// availability helper
-		$av_helper = VikBooking::getAvailabilityInstance();
-
-		// room stay dates in case of split stay
-		$room_stay_dates = [];
-		if ($order['split_stay']) {
-			$room_stay_dates = VBOFactory::getConfig()->getArray('split_stay_' . $order['id'], []);
-		}
-
-		$vbo_tn = VikBooking::getTranslator();
-		// check if the language in use is the same as the one used during the checkout
-		if (!empty($order['lang'])) {
-			$lang = JFactory::getLanguage();
-			if ($lang->getTag() != $order['lang']) {
-				$lang->load('com_vikbooking', (VBOPlatformDetection::isWordPress() ? VIKBOOKING_LANG : JPATH_ADMINISTRATOR), $order['lang'], true);
-				if (defined('_JEXEC') && !defined('ABSPATH')) {
-					$lang->load('joomla', JPATH_ADMINISTRATOR, $order['lang'], true);
-				}
-			}
-			if ($vbo_tn->getDefaultLang() != $order['lang']) {
-				// force the translation to start because contents should be translated
-				$vbo_tn::$force_tolang = $order['lang'];
-			}
-		}
-
-		// load order rooms
-		$q = "SELECT `or`.*,`r`.`id` AS `r_reference_id`,`r`.`name`,`r`.`units`,`r`.`fromadult`,`r`.`toadult`,`r`.`params` FROM `#__vikbooking_ordersrooms` AS `or`,`#__vikbooking_rooms` AS `r` WHERE `or`.`idorder`=" . (int)$order['id'] . " AND `or`.`idroom`=`r`.`id` ORDER BY `or`.`id` ASC;";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		$ordersrooms = $dbo->loadAssocList();
-		$vbo_tn->translateContents($ordersrooms, '#__vikbooking_rooms', array('id' => 'r_reference_id'));
-
-		$currencyname = VikBooking::getCurrencyName();
-		$turnover_secs = VikBooking::getHoursRoomAvail() * 3600;
-		$realback = $turnover_secs + $order['checkout'];
-		$allbook = true;
-		$notavail = [];
-
-		/**
-		 * We need to calculate a minus operator for each room that was booked more than once.
-		 * In case we are confirming a booking for more than one unit of the same room, we need to
-		 * make sure the calculation is made properly, as only one unit of that room could be free.
-		 * 
-		 * @since 	1.13 (J) - 1.3.0 (WP)
-		 */
-		$units_minus_oper = [];
-		foreach ($ordersrooms as $ind => $or) {
-			if (!isset($units_minus_oper[$or['idroom']])) {
-				$units_minus_oper[$or['idroom']] = -1;
-			}
-			// increase counter
-			$units_minus_oper[$or['idroom']]++;
-			if (!empty($room_stay_dates)) {
-				// split stay rooms never have the same stay dates, but they should also be different rooms
-				$units_minus_oper[$or['idroom']] = 0;
-			}
-		}
-
-		foreach ($ordersrooms as $ind => $or) {
-			// determine proper values for this room
-			$room_stay_checkin  = $order['checkin'];
-			$room_stay_checkout = $order['checkout'];
-			$room_stay_nights 	= $order['days'];
-			if ($order['split_stay'] && count($room_stay_dates) && isset($room_stay_dates[$ind]) && $room_stay_dates[$ind]['idroom'] == $or['idroom']) {
-				$room_stay_checkin  = !empty($room_stay_dates[$ind]['checkin_ts']) ? $room_stay_dates[$ind]['checkin_ts'] : $room_stay_dates[$ind]['checkin'];
-				$room_stay_checkout = !empty($room_stay_dates[$ind]['checkout_ts']) ? $room_stay_dates[$ind]['checkout_ts'] : $room_stay_dates[$ind]['checkout'];
-				$room_stay_nights 	= $av_helper->countNightsOfStay($room_stay_checkin, $room_stay_checkout);
-				// inject nights calculated for this room
-				$room_stay_dates[$ind]['nights'] = $room_stay_nights;
-			}
-
-			// check if the room is available
-			if (!VikBooking::roomBookable($or['idroom'], ($or['units'] - $units_minus_oper[$or['idroom']]), $room_stay_checkin, $room_stay_checkout)) {
-				$allbook = false;
-				$notavail[] = $or['name']." (".JText::translate('VBMAILADULTS').": ".$or['adults'].($or['children'] > 0 ? " - ".JText::translate('VBMAILCHILDREN').": ".$or['children'] : "").")";
-			}
-		}
-
-		if (!$allbook) {
-			VikError::raiseWarning('', JText::translate('VBERRCONFORDERNOTAVROOM').' '.implode(", ", $notavail).'<br/>'.JText::translate('VBUNABLESETRESCONF'));
-			$app->redirect("index.php?option=com_vikbooking&task=editorder&cid[]=" . $oid);
-			exit;
-		}
-
-		$rooms = [];
-		$tars = [];
-		$arrpeople = [];
-		$is_package = !empty($order['pkg']) ? true : false;
-		$rooms_booked = [];
-		foreach ($ordersrooms as $ind => $or) {
-			// push room booked
-			array_push($rooms_booked, (int)$or['idroom']);
-
-			// determine proper values for this room
-			$room_stay_checkin  = $order['checkin'];
-			$room_stay_checkout = $order['checkout'];
-			$room_stay_realback = $realback;
-			if ($order['split_stay'] && count($room_stay_dates) && isset($room_stay_dates[$ind]) && $room_stay_dates[$ind]['idroom'] == $or['idroom']) {
-				$room_stay_checkin  = !empty($room_stay_dates[$ind]['checkin_ts']) ? $room_stay_dates[$ind]['checkin_ts'] : $room_stay_dates[$ind]['checkin'];
-				$room_stay_checkout = !empty($room_stay_dates[$ind]['checkout_ts']) ? $room_stay_dates[$ind]['checkout_ts'] : $room_stay_dates[$ind]['checkout'];
-				$room_stay_realback = $turnover_secs + $room_stay_checkout;
-			}
-
-			$q = "INSERT INTO `#__vikbooking_busy` (`idroom`,`checkin`,`checkout`,`realback`) VALUES(" . (int)$or['idroom'] . ", " . (int)$room_stay_checkin . ", " . (int)$room_stay_checkout . ", " . (int)$room_stay_realback . ");";
-			$dbo->setQuery($q);
-			$dbo->execute();
-			$lid = $dbo->insertid();
-
-			$q = "INSERT INTO `#__vikbooking_ordersbusy` (`idorder`,`idbusy`) VALUES(" . (int)$oid . ", " . (int)$lid . ");";
-			$dbo->setQuery($q);
-			$dbo->execute();
-		}
-
-		// update status
-		$q = "UPDATE `#__vikbooking_orders` SET `status`='confirmed' WHERE `id`=" . (int)$order['id'] . ";";
-		$dbo->setQuery($q);
-		$dbo->execute();
-
-		// remove any previous temporary locked record
-		$q = "DELETE FROM `#__vikbooking_tmplock` WHERE `idorder`=" . (int)$order['id'] . ";";
-		$dbo->setQuery($q);
-		$dbo->execute();
-
-		// Booking History
-		$now_user = JFactory::getUser();
-		VikBooking::getBookingHistoryInstance()->setBid($order['id'])->store('TC', "({$now_user->name})");
-
-		// check if some of the rooms booked have shared calendars
-		VikBooking::updateSharedCalendars($order['id'], $rooms_booked, $order['checkin'], $order['checkout']);
-
-		// send mail
-		$ftitle = VikBooking::getFrontTitle();
-		$nowts = time();
-		// assign room specific unit
-		$set_room_indexes = VikBooking::autoRoomUnit();
-		$room_indexes_usemap = [];
-
-		foreach ($ordersrooms as $kor => $or) {
-			$num = $kor + 1;
-
-			// determine proper values for this room
-			$room_stay_checkin  = $order['checkin'];
-			$room_stay_checkout = $order['checkout'];
-			$room_stay_nights 	= $order['days'];
-			if ($order['split_stay'] && count($room_stay_dates) && isset($room_stay_dates[$kor]) && $room_stay_dates[$kor]['idroom'] == $or['idroom']) {
-				$room_stay_checkin  = !empty($room_stay_dates[$kor]['checkin_ts']) ? $room_stay_dates[$kor]['checkin_ts'] : $room_stay_dates[$kor]['checkin'];
-				$room_stay_checkout = !empty($room_stay_dates[$kor]['checkout_ts']) ? $room_stay_dates[$kor]['checkout_ts'] : $room_stay_dates[$kor]['checkout'];
-				$room_stay_nights 	= $room_stay_dates[$kor]['nights'];
-			}
-
-			$rooms[$num] = $or;
-			$arrpeople[$num]['adults'] = $or['adults'];
-			$arrpeople[$num]['children'] = $or['children'];
-
-			// assign room specific unit
-			if ($set_room_indexes === true) {
-				$room_indexes = VikBooking::getRoomUnitNumsAvailable($order, $or['r_reference_id']);
-				$use_ind_key = 0;
-				if (count($room_indexes)) {
-					if (!array_key_exists($or['r_reference_id'], $room_indexes_usemap)) {
-						$room_indexes_usemap[$or['r_reference_id']] = $use_ind_key;
-					} else {
-						$use_ind_key = $room_indexes_usemap[$or['r_reference_id']];
-					}
-					$q = "UPDATE `#__vikbooking_ordersrooms` SET `roomindex`=".(int)$room_indexes[$use_ind_key]." WHERE `id`=".(int)$or['id'].";";
-					$dbo->setQuery($q);
-					$dbo->execute();
-					// update rooms references for the customer email sending function
-					$rooms[$num]['roomindex'] = (int)$room_indexes[$use_ind_key];
-					//
-					$room_indexes_usemap[$or['r_reference_id']]++;
-				}
-			}
-
-			if ($is_package === true || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
-				// package or custom cost set from the back-end
-				continue;
-			}
-
-			$q = "SELECT * FROM `#__vikbooking_dispcost` WHERE `id`=" . (int)$or['idtar'] . ";";
-			$dbo->setQuery($q);
-			$dbo->execute();
-			if ($dbo->getNumRows() > 0) {
-				$tar = $dbo->loadAssocList();
-				$tar = VikBooking::applySeasonsRoom($tar, $room_stay_checkin, $room_stay_checkout);
-
-				// different usage
-				$tar = VBORoomHelper::getInstance()->applyOBPRules($tar, $or, $or['adults']);
-
-				$tars[$num] = $tar[0];
-			} else {
-				VikError::raiseWarning('', JText::translate('VBERRNOFAREFOUND'));
-			}
-		}
-
-		$pcheckin = $order['checkin'];
-		$pcheckout = $order['checkout'];
-		$secdiff = $pcheckout - $pcheckin;
-		$daysdiff = $secdiff / 86400;
-		if (is_int($daysdiff)) {
-			if ($daysdiff < 1) {
-				$daysdiff = 1;
-			}
-		} else {
-			if ($daysdiff < 1) {
-				$daysdiff = 1;
-			} else {
-				$sum = floor($daysdiff) * 86400;
-				$newdiff = $secdiff - $sum;
-				$maxhmore = VikBooking::getHoursMoreRb() * 3600;
-				if ($maxhmore >= $newdiff) {
-					$daysdiff = floor($daysdiff);
-				} else {
-					$daysdiff = ceil($daysdiff);
-				}
-			}
-		}
-
-		$isdue = 0;
-		$pricestr = [];
-		$optstr = [];
-		foreach ($ordersrooms as $kor => $or) {
-			$num = $kor + 1;
-
-			// determine proper values for this room
-			$room_stay_checkin  = $order['checkin'];
-			$room_stay_checkout = $order['checkout'];
-			$room_stay_nights 	= $order['days'];
-			if ($order['split_stay'] && count($room_stay_dates) && isset($room_stay_dates[$kor]) && $room_stay_dates[$kor]['idroom'] == $or['idroom']) {
-				$room_stay_checkin  = !empty($room_stay_dates[$kor]['checkin_ts']) ? $room_stay_dates[$kor]['checkin_ts'] : $room_stay_dates[$kor]['checkin'];
-				$room_stay_checkout = !empty($room_stay_dates[$kor]['checkout_ts']) ? $room_stay_dates[$kor]['checkout_ts'] : $room_stay_dates[$kor]['checkout'];
-				$room_stay_nights 	= $room_stay_dates[$kor]['nights'];
-			}
-
-			if ($is_package === true || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
-				// package cost or cust_cost may not be inclusive of taxes if prices tax included is off
-				$calctar = VikBooking::sayPackagePlusIva($or['cust_cost'], $or['cust_idiva']);
-				$isdue += $calctar;
-				$pricestr[$num] = (!empty($or['pkg_name']) ? $or['pkg_name'] : (!empty($or['otarplan']) ? ucwords($or['otarplan']) : JText::translate('VBOROOMCUSTRATEPLAN'))).": ".$calctar." ".$currencyname;
-			} elseif (array_key_exists($num, $tars) && is_array($tars[$num])) {
-				$display_rate = !empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost'];
-				$calctar = VikBooking::sayCostPlusIva($display_rate, $tars[$num]['idprice']);
-				$tars[$num]['calctar'] = $calctar;
-				$isdue += $calctar;
-				$pricestr[$num] = VikBooking::getPriceName($tars[$num]['idprice'], $vbo_tn) . ": " . $calctar . " " . $currencyname . (!empty($tars[$num]['attrdata']) ? "\n" . VikBooking::getPriceAttr($tars[$num]['idprice'], $vbo_tn) . ": " . $tars[$num]['attrdata'] : "");
-			}
-			if (!empty($or['optionals'])) {
-				$stepo = explode(";", $or['optionals']);
-				foreach ($stepo as $roptkey => $oo) {
-					if (empty($oo)) {
-						continue;
-					}
-					$stept = explode(":", $oo);
-					$q = "SELECT * FROM `#__vikbooking_optionals` WHERE `id`=" . $dbo->quote($stept[0]) . ";";
-					$dbo->setQuery($q);
-					$dbo->execute();
-					if (!$dbo->getNumRows()) {
-						continue;
-					}
-					$actopt = $dbo->loadAssocList();
-					$vbo_tn->translateContents($actopt, '#__vikbooking_optionals');
-					$chvar = '';
-					if (!empty($actopt[0]['ageintervals']) && $or['children'] > 0 && strstr($stept[1], '-') != false) {
-						$optagenames = VikBooking::getOptionIntervalsAges($actopt[0]['ageintervals']);
-						$optagepcent = VikBooking::getOptionIntervalsPercentage($actopt[0]['ageintervals']);
-						$optageovrct = VikBooking::getOptionIntervalChildOverrides($actopt[0], $or['adults'], $or['children']);
-						$child_num 	 = VikBooking::getRoomOptionChildNumber($or['optionals'], $actopt[0]['id'], $roptkey, $or['children']);
-						$optagecosts = VikBooking::getOptionIntervalsCosts(isset($optageovrct['ageintervals_child' . ($child_num + 1)]) ? $optageovrct['ageintervals_child' . ($child_num + 1)] : $actopt[0]['ageintervals']);
-						$agestept = explode('-', $stept[1]);
-						$stept[1] = $agestept[0];
-						$chvar = $agestept[1];
-						if (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 1) {
-							//percentage value of the adults tariff
-							if ($is_package === true || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
-								$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
-							} else {
-								$display_rate = !empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost'];
-								$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
-							}
-						} elseif (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 2) {
-							//VBO 1.10 - percentage value of room base cost
-							if ($is_package === true || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
-								$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
-							} else {
-								$display_rate = isset($tars[$num]['room_base_cost']) ? $tars[$num]['room_base_cost'] : (!empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost']);
-								$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
-							}
-						}
-						$actopt[0]['chageintv'] = $chvar;
-						$actopt[0]['name'] .= ' ('.$optagenames[($chvar - 1)].')';
-						$actopt[0]['quan'] = $stept[1];
-						$realcost = (intval($actopt[0]['perday']) == 1 ? (floatval($optagecosts[($chvar - 1)]) * $room_stay_nights * $stept[1]) : (floatval($optagecosts[($chvar - 1)]) * $stept[1]));
-					} else {
-						$actopt[0]['quan'] = $stept[1];
-						// VBO 1.11 - options percentage cost of the room total fee
-						if ($is_package === true || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
-							$deftar_basecosts = $or['cust_cost'];
-						} else {
-							$deftar_basecosts = !empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost'];
-						}
-						$actopt[0]['cost'] = (int)$actopt[0]['pcentroom'] ? ($deftar_basecosts * $actopt[0]['cost'] / 100) : $actopt[0]['cost'];
-						//
-						$realcost = (intval($actopt[0]['perday']) == 1 ? ($actopt[0]['cost'] * $room_stay_nights * $stept[1]) : ($actopt[0]['cost'] * $stept[1]));
-					}
-					if (!empty($actopt[0]['maxprice']) && $actopt[0]['maxprice'] > 0 && $realcost > $actopt[0]['maxprice']) {
-						$realcost = $actopt[0]['maxprice'];
-						if (intval($actopt[0]['hmany']) == 1 && intval($stept[1]) > 1) {
-							$realcost = $actopt[0]['maxprice'] * $stept[1];
-						}
-					}
-					if ($actopt[0]['perperson'] == 1) {
-						$realcost = $realcost * $or['adults'];
-					}
-					$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $actopt[0]['idiva']);
-					$isdue += $tmpopr;
-					$optstr[$num][] = ($stept[1] > 1 ? $stept[1] . " " : "") . $actopt[0]['name'] . ": " . $tmpopr . " " . $currencyname . "\n";
-				}
-			}
-
-			// custom extra costs
-			if (!empty($or['extracosts'])) {
-				$cur_extra_costs = json_decode($or['extracosts'], true);
-				foreach ($cur_extra_costs as $eck => $ecv) {
-					$ecplustax = !empty($ecv['idtax']) ? VikBooking::sayOptionalsPlusIva($ecv['cost'], $ecv['idtax']) : $ecv['cost'];
-					$isdue += $ecplustax;
-					$optstr[$num][] = $ecv['name'] . ": " . $ecplustax . " " . $currencyname."\n";
-				}
-			}
-		}
-
-		// coupon
-		$usedcoupon = false;
-		$origisdue = $isdue;
-		if (strlen($order['coupon']) > 0) {
-			$usedcoupon = true;
-			$expcoupon = explode(";", $order['coupon']);
-			$isdue = $isdue - $expcoupon[1];
-		}
-
-		// make sure to apply any previously refunded amount
-		if ($order['refund'] > 0) {
-			$isdue -= $order['refund'];
-		}
-
-		// ConfirmationNumber
-		$confirmnumber = VikBooking::generateConfirmNumber($order['id'], true);
-
-		$app->enqueueMessage(JText::translate('VBORDERSETASCONF'));
+		$oid = (int) $cid[0];
 
 		// notify the customer unless it was a re-confirmation
-		$pskip = VikRequest::getInt('skip_notification', 0, 'request');
-		if ($pskip < 1) {
-			// send email notification to guest
-			VikBooking::sendBookingEmail($order['id'], array('guest'));
-			
-			// SMS skipping the administrator
-			VikBooking::sendBookingSMS($order['id'], array('admin'));
-		}
+		$pskip = $app->input->getInt('skip_notification', 0);
 
-		// Invoke Channel Manager
-		$vcm_autosync = VikBooking::vcmAutoUpdate();
-		if ($vcm_autosync > 0) {
-			$vcm_obj = VikBooking::getVcmInvoker();
-			$vcm_obj->setOids(array($order['id']))->setSyncType('new')->setOriginalStatuses(array($original_book_status));
-			$sync_result = $vcm_obj->doSync();
-			if ($sync_result === false) {
-				$vcm_err = $vcm_obj->getError();
-				VikError::raiseWarning('', JText::translate('VBCHANNELMANAGERRESULTKO').' <a href="index.php?option=com_vikchannelmanager" target="_blank">'.JText::translate('VBCHANNELMANAGEROPEN').'</a> '.(strlen($vcm_err) > 0 ? '('.$vcm_err.')' : ''));
+		// access the reservation model
+		$model = VBOModelReservation::getInstance();
+
+		// set the booking to confirmed
+		$confirmed = $model->setConfirmed([
+			'booking_id' => $oid,
+			'notify'     => (bool) (!$pskip),
+		]);
+
+		if (!$confirmed) {
+			$error = $model->getError();
+			if (!is_string($error) || !$error) {
+				$error = 'Could not confirm the reservation';
 			}
-		} elseif (file_exists(VCM_SITE_PATH . DIRECTORY_SEPARATOR . "helpers" . DIRECTORY_SEPARATOR . "synch.vikbooking.php")) {
-			$vcm_sync_url = 'index.php?option=com_vikbooking&task=invoke_vcm&stype=new&cid[]='.$order['id'].'&returl='.urlencode('index.php?option=com_vikbooking&task=editorder&cid[]='.$order['id']);
-			VikError::raiseNotice('', JText::translate('VBCHANNELMANAGERINVOKEASK').' <button type="button" class="btn btn-primary" onclick="document.location.href=\''.$vcm_sync_url.'\';">'.JText::translate('VBCHANNELMANAGERSENDRQ').'</button>');
+
+			// enqueue error message
+			$app->enqueueMessage($error, 'error');
+		} else {
+			// enqueue success message
+			$app->enqueueMessage(JText::translate('VBORDERSETASCONF'));
 		}
 
+		// redirect
 		$app->redirect("index.php?option=com_vikbooking&task=editorder&cid[]=" . $oid);
+		$app->close();
 	}
 
 	public function payments() {
@@ -10499,7 +10154,7 @@ class VikBookingController extends JControllerVikBooking
 		 */
 		$result = null;
 		try {
-			$result = VikBooking::uploadFileFromRequest(VikRequest::getVar('snapshot', null, 'files', 'array'), $snap_base_path);
+			$result = VikBooking::uploadFileFromRequest(VikRequest::getVar('snapshot', null, 'files', 'array'), $snap_base_path, 'png,jpg,jpeg');
 		} catch (RuntimeException $e) {
 			echo "e4j.error.Error " . $e->getMessage();
 			exit;
@@ -11058,7 +10713,7 @@ class VikBookingController extends JControllerVikBooking
 		$cstring_search_js .= '
 var vboCust = jQuery(".' . $selector . '");
 var vboCustSelected = null;
-jQuery(window).keydown(function(e) {
+var vboCustomerNavigationFn = (e) => {
 	if (e.which === 40) {
 		if (vboCustSelected) {
 			vboCustSelected.removeClass("' . $selector . '-highligthed");
@@ -11088,7 +10743,12 @@ jQuery(window).keydown(function(e) {
 			vboCustSelected.trigger("click");
 		}
 	}
-});
+};
+jQuery(window).off("keydown", vboCustomerNavigationFn);
+jQuery(window).keydown(vboCustomerNavigationFn);
+document.addEventListener("vbo-search-customers-navigation-dismissed", (e) => {
+	jQuery(window).off("keydown", vboCustomerNavigationFn);
+})
 jQuery(".' . $selector . '").off("hover");
 jQuery(".' . $selector . '").hover(function() {
 	if (vboCustSelected) {
@@ -13693,7 +13353,7 @@ jQuery(".' . $selector . '").hover(function() {
 			$file = $input->files->get('file', array(), 'array');
 
 			// try to upload the file
-			$result = VikBooking::uploadFileFromRequest($file, $dirpath . $customer->docsfolder, "/(image\/.+)|(application\/(zip|rar|pdf|msword|vnd.*?))|(text\/(plain|markdown|csv))$/i");
+			$result = VikBooking::uploadFileFromRequest($file, $dirpath . $customer->docsfolder, 'png,jpg,jpeg,bmp,heic,zip,rar,pdf,doc,docx,rtf,odt,pages,xls,xlsx,csv,ods,numbers,txt,md');
 			$result->status = 1;
 
 			$result->size = JHtml::fetch('number.bytes', filesize($result->path), 'auto', 0);
@@ -15069,9 +14729,10 @@ jQuery(".' . $selector . '").hover(function() {
 
 		// allowed types
 		$type = $input->getString('type', '');
-		$mask = "/(image\/.+)|(application\/(zip|rar|pdf|msword|vnd.*?))|(text\/(plain|markdown|csv))$/i";
-		if ($type == 'image') {
-			$mask = "/(image\/.+)$/i";
+		$mask = 'png,apng,jpg,jpeg,bmp,heic,webp,gif,ico,svg';
+
+		if ($type != 'image') {
+			$mask .= ',zip,rar,pdf,doc,docx,rtf,odt,pages,xls,xlsx,csv,ods,numbers,txt,md';
 		}
 
 		// response object

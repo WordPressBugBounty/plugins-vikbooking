@@ -402,6 +402,13 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 			// load channels (firsr) and accounts (after) for this listing
 			$room_ota_channels = is_object($vcm_logos) && method_exists($vcm_logos, 'getVboRoomLogosMapped') ? $vcm_logos->getVboRoomLogosMapped($rid) : [];
 			$room_ota_accounts = is_object($vcm_logos) && method_exists($vcm_logos, 'getRoomOtaAccounts') ? $vcm_logos->getRoomOtaAccounts() : [];
+			// filter channels not available as accounts (i.e. iCal)
+			if (count($room_ota_channels) != count(($room_ota_accounts[$rid] ?? []))) {
+				$ota_account_names = array_map('strtolower', array_column(($room_ota_accounts[$rid] ?? []), 'channel'));
+				$room_ota_channels = array_filter($room_ota_channels, function($chid) use ($ota_account_names) {
+					return in_array(strtolower($chid), $ota_account_names);
+				}, ARRAY_FILTER_USE_KEY);
+			}
 			if ($room_ota_channels && ($room_ota_accounts[$rid] ?? [])) {
 				$room_ota_relations[$rid] = [
 					'channels' => $room_ota_channels,

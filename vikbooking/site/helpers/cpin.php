@@ -360,6 +360,39 @@ class VikBookingCustomersPin
 	}
 
 	/**
+	 * Counts the number of bookings for the given customer ID.
+	 * 
+	 * @param 	int 	$cust_id 	The VBO customer ID.
+	 * @param 	array 	$options 	Associative list of query options.
+	 * 
+	 * @return 	int 				Number of bookings found.
+	 * 
+	 * @since 	1.17.3 (J) - 1.7.3 (WP)
+	 */
+	public function countCustomerBookings(int $cust_id, array $options = [])
+	{
+		$q = $this->dbo->getQuery(true)
+			->select('COUNT(*)')
+			->from($this->dbo->qn('#__vikbooking_customers_orders', 'co'))
+			->where($this->dbo->qn('co.idcustomer') . ' = ' . $cust_id);
+
+		if ($options['status'] ?? null) {
+			$q->leftJoin($this->dbo->qn('#__vikbooking_orders', 'o') . ' ON ' . $this->dbo->qn('co.idorder') . ' = ' . $this->dbo->qn('o.id'));
+			if (is_array($options['status'])) {
+				// multiple statuses filter
+				$q->where($this->dbo->qn('o.status') . ' IN (' . implode(', ', array_map([$this->dbo, 'q'], $options['status'])) . ')');
+			} else {
+				// single status filter
+				$q->where($this->dbo->qn('o.status') . ' = ' . $this->dbo->q($options['status']));
+			}
+		}
+
+		$this->dbo->setQuery($q);
+
+		return (int) $this->dbo->loadResult();
+	}
+
+	/**
 	 * Checks whether a customer with the same email address already exists
 	 * Returns false or the record of the existing customer
 	 * 

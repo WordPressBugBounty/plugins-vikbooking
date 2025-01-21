@@ -2,7 +2,7 @@
  * @package     VikBooking
  * @subpackage  vik-content-builder
  * @author      Alessio Gaggii - E4J srl
- * @copyright   Copyright (C) 2022 E4J srl. All rights reserved.
+ * @copyright   Copyright (C) 2025 E4J srl. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com - https://e4j.com - https://e4jconnect.com
  */
@@ -12,47 +12,96 @@
  */
 class VikContentBuilder {
 
+	/** @var  array */
 	static editors = new Array;
 
+	/**
+	 * Push the instance of an editor to the pool.
+	 * 
+	 * @param 	object 	editor 	The editor instance.
+	 * 
+	 * @return 	void
+	 */
 	static pushEditor(editor) {
 		this.editors.push(editor);
 	}
 
-	// method for switching between building modes
+	/**
+	 * Switch between building modes.
+	 * 
+	 * @param 	object 	elem 	DOM element object clicked.
+	 * @param 	string 	mode 	Optional mode to switch to.
+	 * 
+	 * @return 	void
+	 */
 	static switchMode(elem, mode) {
-		var btn = jQuery(elem);
+		// determine who triggered the mode switch
+		let btn = jQuery(elem);
 		if (mode) {
 			btn = btn.closest('.vik-contentbuilder-wrapper').find('.vik-contentbuilder-switcher-btn[data-switch="' + mode + '"]');
 		}
-		var switch_to = btn.attr("data-switch");
 
-		btn.parent(".vik-contentbuilder-switcher").find(".vik-contentbuilder-switcher-btn").removeClass("vik-contentbuilder-switcher-btn-active");
-		btn.addClass("vik-contentbuilder-switcher-btn-active");
+		// determine the new building mode to activate
+		let switch_to = btn.attr("data-switch");
 
-		var ed_conts = btn.closest(".vik-contentbuilder-wrapper");
-		ed_conts.find(".vik-contentbuilder-inner [data-switch]").not('[data-switch="' + switch_to + '"]').hide();
+		// toggle active mode button
+		btn.parent('.vik-contentbuilder-switcher').find('.vik-contentbuilder-switcher-btn').removeClass('vik-contentbuilder-switcher-btn-active');
+		btn.addClass('vik-contentbuilder-switcher-btn-active');
 
-		var target = ed_conts.find('.vik-contentbuilder-inner [data-switch="' + switch_to + '"]');
-		if (switch_to.indexOf('visual') >= 0 && !target.find('.vik-contentbuilder-editor-container').length) {
-			// handle multiple visual modes (inline and modal)
-			var append_to_child = target.attr('data-appendto');
-			if (append_to_child) {
-				ed_conts.find('.vik-contentbuilder-editor-container').appendTo(target.find(append_to_child));
-			} else {
-				ed_conts.find('.vik-contentbuilder-editor-container').appendTo(target);
+		// hide any mode content except the wanted one
+		let ed_conts = btn.closest('.vik-contentbuilder-wrapper');
+		ed_conts.find('.vik-contentbuilder-inner [data-switch]').not('[data-switch="' + switch_to + '"]').hide();
+
+		// target building mode content
+		let target = ed_conts.find('.vik-contentbuilder-inner [data-switch="' + switch_to + '"]');
+
+		// determine how to display the requested building mode
+		if (switch_to.indexOf('modal') >= 0) {
+			// modal window
+			let container_id = target.attr('data-container');
+			if (!container_id) {
+				container_id = switch_to;
 			}
-		}
-		target.show();
 
-		// handle text mode special tags
-		var text_mode_tags = jQuery('.vik-contentbuilder-textmode-sptags');
+			// get the proper visual editor container to move and display
+			let editor_container = ed_conts.find('.vik-contentbuilder-inner [data-switch="' + container_id + '"]').find('.vik-contentbuilder-editor-wrap');
+			if (editor_container.length) {
+				// check if we also have an inline visual editor mode
+				let has_inline_ve = ed_conts.find('.vik-contentbuilder-inner [data-switch="visual"]').length;
+
+				// display the modal window with the visual editor
+				let modal_body = VBOCore.displayModal({
+					suffix: 'contentbuilder-' + switch_to,
+					extra_class: 'vbo-modal-rounded vbo-modal-large vbo-modal-nofooter vik-contentbuilder-modal-content',
+					lock_scroll: true,
+					draggable: false,
+					onDismiss: () => {
+						// put back the editor container element on its original position
+						editor_container.appendTo(ed_conts.find('.vik-contentbuilder-inner [data-switch="' + container_id + '"]'));
+						// switch to text mode or inline visual mode
+						VikContentBuilder.switchMode(btn, (has_inline_ve ? 'visual' : 'text'));
+					},
+				});
+
+				// move the editor container element to the body of the modal window
+				editor_container.appendTo(modal_body);
+			} else {
+				// unexpcted markup, fallback to displaying the target
+				target.show();
+			}
+		} else {
+			// show document target element
+			target.show();
+		}
+
+		// handle text mode special tag buttons
+		let text_mode_tags = jQuery('.vik-contentbuilder-textmode-sptags');
 		if (text_mode_tags.length && switch_to.indexOf('text') >= 0) {
 			text_mode_tags.show();
 		} else if (text_mode_tags.length && switch_to.indexOf('visual') >= 0) {
 			text_mode_tags.hide();
 		}
 	}
-
 }
 
 /**
@@ -193,5 +242,4 @@ class VikContentBuilderImageHandler {
 		this.progress_el.remove();
 		this.progress_el = null;
 	}
-
 }

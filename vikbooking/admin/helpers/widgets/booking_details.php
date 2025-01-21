@@ -153,10 +153,13 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 		// get customer information
 		$cpin = VikBooking::getCPinInstance();
 		$customer = $cpin->getCustomerFromBooking($details['id']);
+		$customer_bookings_count = 0;
 		if ($customer && !empty($customer['country'])) {
 			if (is_file(implode(DIRECTORY_SEPARATOR, [VBO_ADMIN_PATH, 'resources', 'countries', $customer['country'] . '.png']))) {
 				$customer['country_img'] = '<img src="' . VBO_ADMIN_URI . 'resources/countries/' . $customer['country'] . '.png' . '" title="' . $customer['country'] . '" class="vbo-country-flag vbo-country-flag-left"/>';
 			}
+			// count customer bookings (any status)
+			$customer_bookings_count = $cpin->countCustomerBookings((int) $customer['id']);
 		}
 
 		// availability helper
@@ -772,6 +775,17 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 						<div class="vbo-params-fieldset-label"><?php echo JText::translate('VBOCUSTOMERDOCUMENTS'); ?></div>
 						<div class="vbo-params-block">
 							<?php
+							if ($customer_bookings_count > 1) {
+								// display badge for returning customer
+								?>
+							<div class="vbo-param-container">
+								<div class="vbo-param-label">
+									<span class="label label-warning"><?php VikBookingIcons::e('certificate'); ?> <?php echo JText::translate('VBO_CONDTEXT_RULE_RETCUST'); ?></span>
+								</div>
+								<div class="vbo-param-setting"></div>
+							</div>
+								<?php
+							}
 							if ($checked_status) {
 								// display the registration status
 								?>

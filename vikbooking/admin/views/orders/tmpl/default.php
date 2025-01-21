@@ -409,7 +409,7 @@ $filters_set = false;
 		</tr>
 	</thead>
 	<?php
-	$currencysymb = VikBooking::getCurrencySymb(true);
+	$currencysymb = VikBooking::getCurrencySymb();
 	$monsmap = array(
 		JText::translate('VBSHORTMONTHONE'),
 		JText::translate('VBSHORTMONTHTWO'),

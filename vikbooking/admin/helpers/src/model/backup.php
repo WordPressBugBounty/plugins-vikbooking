@@ -186,7 +186,7 @@ class VBOModelBackup extends JObject
 			try
 			{
 				// upload archive
-				$resp = VikBooking::uploadFileFromRequest((array)$file, $dest, "/application\/[a-zA-Z0-9\-_.]*\bzip\b/");
+				$resp = VikBooking::uploadFileFromRequest((array)$file, $dest, 'zip');
 			}
 			catch (Exception $e)
 			{

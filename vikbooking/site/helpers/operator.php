@@ -444,6 +444,15 @@ final class VikBookingOperator
 							0 => JText::translate('VBNO'),
 						],
 					],
+					'guestphone' => [
+						'type'    => 'select',
+						'label'   => JText::translate('ORDER_PHONE'),
+						'default' => 0,
+						'options' => [
+							1 => JText::translate('VBYES'),
+							0 => JText::translate('VBNO'),
+						],
+					],
 					'roomextras' => [
 						'type'    => 'select',
 						'label'   => JText::translate('VBPEDITBUSYEXTRACOSTS'),

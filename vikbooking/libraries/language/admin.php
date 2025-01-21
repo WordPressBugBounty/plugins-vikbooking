@@ -570,13 +570,13 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Reservation for', 'vikbooking');
 				break;
 			case 'VBPEDITBUSYFOUR':
-				$result = __('Check-in Date', 'vikbooking');
+				$result = __('Check-in date', 'vikbooking');
 				break;
 			case 'VBPEDITBUSYFIVE':
 				$result = __('At H:M', 'vikbooking');
 				break;
 			case 'VBPEDITBUSYSIX':
-				$result = __('Check-out Date', 'vikbooking');
+				$result = __('Check-out date', 'vikbooking');
 				break;
 			case 'VBPEDITBUSYSEVEN':
 				$result = __('Price Type', 'vikbooking');
@@ -885,10 +885,10 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Rooms Reserved', 'vikbooking');
 				break;
 			case 'VBLIBFOUR':
-				$result = __('Check-in Date', 'vikbooking');
+				$result = __('Check-in date', 'vikbooking');
 				break;
 			case 'VBLIBFIVE':
-				$result = __('Check-out Date', 'vikbooking');
+				$result = __('Check-out date', 'vikbooking');
 				break;
 			case 'VBLIBSIX':
 				$result = __('Total', 'vikbooking');
@@ -906,10 +906,10 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Rooms Booked', 'vikbooking');
 				break;
 			case 'VBLIBELEVEN':
-				$result = __('Check-in Date', 'vikbooking');
+				$result = __('Check-in date', 'vikbooking');
 				break;
 			case 'VBLIBTWELVE':
-				$result = __('Check-out Date', 'vikbooking');
+				$result = __('Check-out date', 'vikbooking');
 				break;
 			case 'VBLIBTENTHREE':
 				$result = __('To see your booking details, visit the following page', 'vikbooking');
@@ -3495,10 +3495,10 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Reservation Date', 'vikbooking');
 				break;
 			case 'VBOFILTERDATEIN':
-				$result = __('Check-in Date', 'vikbooking');
+				$result = __('Check-in date', 'vikbooking');
 				break;
 			case 'VBOFILTERDATEOUT':
-				$result = __('Check-out Date', 'vikbooking');
+				$result = __('Check-out date', 'vikbooking');
 				break;
 			case 'VBOCSVEXPCUSTOMERS':
 				$result = __('CSV Export', 'vikbooking');
@@ -7499,6 +7499,100 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_IDENTITY_DOCUMENT':
 				$result = __('Identity Document', 'vikbooking');
+				break;
+			case 'VBO_MESS_PER_PAGE':
+				$result = __('Messages per page', 'vikbooking');
+				break;
+			case 'VBO_UNREAD_MESSAGES':
+				$result = __('Unread messages', 'vikbooking');
+				break;
+			case 'VBO_AI_LABEL_DEF':
+				// @TRANSLATORS: Operation performed through Artificial Intelligence.
+				$result = _x('AI ✨', 'Operation performed through Artificial Intelligence.', 'vikbooking');
+				break;
+			case 'VBO_PRIORITY_HIGH':
+				// @TRANSLATORS: "High" priority.
+				$result = _x('High', '"High" priority.', 'vikbooking');
+				break;
+			case 'VBO_PRIORITY_MEDIUM':
+				// @TRANSLATORS: "Medium" priority.
+				$result = _x('Medium', '"Medium" priority.', 'vikbooking');
+				break;
+			case 'VBO_PRIORITY_LOW':
+				// @TRANSLATORS: "Low" priority.
+				$result = _x('Low', '"Low" priority.', 'vikbooking');
+				break;
+			case 'VBO_SORT_BY_PRIORITY':
+				$result = __('Sort by priority', 'vikbooking');
+				break;
+			case 'VBO_LISTING':
+				$result = __('Listing', 'vikbooking');
+				break;
+			case 'VBO_GEN_CONTENT':
+				$result = __('Generate content', 'vikbooking');
+				break;
+			case 'VBO_AI_GEN_CONTENT_INFO_HELP':
+				$result = __('Enter the information to help the AI generate a proper content.', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_WRITER_DEF_PROMPT':
+				// @TRANSLATORS: AI Assistant default prompt for generating the content of an email message.
+				$result = _x('Write the body of an email message to welcome a guest that is arriving next weekend.', 'AI Assistant default prompt for generating the content of an email message.', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_WRITER_CONTENT':
+				$result = __('Generated content', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_WRITER_CONTENT_USE':
+				$result = __('Use content', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_WRITER_FN_TEXT_GEN_TITLE':
+				$result = __('Generate contents', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_WRITER_FN_TEXT_GEN_DESCR':
+				$result = __('Generate texts with custom information in plain-text or HTML format for any use.', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_WRITER_FN_TEXT_GEN_REMINDER_SUMM':
+				$result = __('Generate reminder messages.', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_WRITER_FN_TEXT_GEN_REMINDER_EXA':
+				$result = __('Write a check-in reminder message for John Smith for tomorrow, by saying that the door code will be sent via email 1 hour before the arrival time.', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_WRITER_FN_TEXT_GEN_MESS_SUMM':
+				$result = __('Write messages in a precise language.', 'vikbooking');
+				break;
+			case 'VBO_AI_DISC_WRITER_FN_TEXT_GEN_MESS_EXA':
+				// @TRANSLATORS: Write a message for John Smith.
+				$result = _x('Write a message for %s.', 'Write a message for John Smith.', 'vikbooking');
+				break;
+			case 'VBO_AI_GEN_MESS_LANG':
+				// @TRANSLATORS: AI Assistant instruction for generating a message in a specific language.
+				$result = _x('The language of the message should be: %s.', 'AI Assistant instruction for generating a message in a specific language.', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_WRITER_CRON_DEF_PROMPT':
+				$result = __('Write a message for a guest.', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_WRITER_USE_PLACEHOLDERS':
+				$result = __('Use some of the following placeholder tags, if needed.', 'vikbooking');
+				break;
+			case 'VBPICKUPROOM':
+				$result = __('Check-in date', 'vikbooking');
+				break;
+			case 'VBRETURNROOM':
+				$result = __('Check-out date', 'vikbooking');
+				break;
+			case 'VBO_MIN_STAY_NIGHTS':
+				$result = __('Minimum stay: %d nights', 'vikbooking');
+				break;
+			case 'VBO_CLEAR_DATES':
+				$result = __('Clear dates', 'vikbooking');
+				break;
+			case 'VBO_CLOSE':
+				$result = __('Close', 'vikbooking');
+				break;
+			case 'VBO_AMENITIES':
+				$result = __('Amenities', 'vikbooking');
+				break;
+			case 'VBO_OPTIMIZE_DB_RECORDS':
+				$result = __('Optimize database records', 'vikbooking');
 				break;
 		}
 

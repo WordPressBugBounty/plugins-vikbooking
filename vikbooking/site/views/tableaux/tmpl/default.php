@@ -29,6 +29,7 @@ JText::script('VBRETURN');
 JText::script('VBSEARCHRESROOM');
 JText::script('VBOEXTRASERVICES');
 JText::script('VBO_PETS');
+JText::script('ORDER_PHONE');
 
 $nowdf = VikBooking::getDateFormat();
 if ($nowdf == "%d/%m/%Y") {
@@ -508,6 +509,15 @@ foreach ($rooms_busy as $rid => $busy) {
 									$cont_attrs['checkout'] = date(str_replace("/", $datesep, $df).' H:i', $rbook['checkout']);
 
 									/**
+									 * Check if permissions allow to see the guest phone number.
+									 * 
+									 * @since 	1.17.3 (J) - 1.7.3 (WP)
+									 */
+									if (!empty($rbook['phone']) && !empty($operator_perms['guestphone'])) {
+										$cont_attrs['phone'] = $rbook['phone'];
+									}
+
+									/**
 									 * If permissions allow to see extra services, build a list of services included.
 									 * 
 									 * @since 	1.15.0 (J) - 1.5.0 (WP)
@@ -918,6 +928,9 @@ jQuery(function() {
 		//
 		if (attrs.hasOwnProperty('tnominative')) {
 			ovcont += '<div class="vbo-tableaux-bookdet-entry"><span class="vbo-tableaux-bookdet-lbl">' + Joomla.JText._('VBOCUSTOMERNOMINATIVE') + '</span><span class="vbo-tableaux-bookdet-val">'+attrs['tnominative']+'</span></div>';
+		}
+		if (attrs.hasOwnProperty('phone')) {
+			ovcont += '<div class="vbo-tableaux-bookdet-entry"><span class="vbo-tableaux-bookdet-lbl">' + Joomla.JText._('ORDER_PHONE') + '</span><span class="vbo-tableaux-bookdet-val">'+attrs['phone']+'</span></div>';
 		}
 		if (attrs.hasOwnProperty('party')) {
 			var guests = attrs['party'].split(';');

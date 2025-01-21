@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  mod_vikbooking_horizontalsearch
  * @author      Alessio Gaggii - E4J s.r.l
- * @copyright   Copyright (C) 2018 E4J s.r.l. All rights reserved.
+ * @copyright   Copyright (C) 2025 E4J s.r.l. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com
  */
@@ -17,9 +17,12 @@ $is_mobile = VikBooking::detectUserAgent(false, false);
 
 $document = JFactory::getDocument();
 $document->addStyleSheet($baseurl.'modules/mod_vikbooking_horizontalsearch/mod_vikbooking_horizontalsearch.css');
-//load jQuery UI
+// load jQuery UI
 $document->addStyleSheet(VBO_SITE_URI.'resources/jquery-ui.min.css');
 JHtml::fetch('script', VBO_SITE_URI.'resources/jquery-ui.min.js');
+
+// load DRP assets
+VikBooking::getVboApplication()->loadDatesRangePicker(['type' => 'dates_range']);
 
 $timeopst = VikBooking::getTimeOpenStore();
 $restrictions = VikBooking::loadRestrictions();
@@ -94,7 +97,7 @@ if (method_exists($now_lang, 'isRtl')) {
 
 $ldecl = '
 jQuery.noConflict();
-jQuery(function($){'."\n".'
+jQuery(function($) {'."\n".'
 	$.datepicker.regional["vikbookingmod"] = {'."\n".'
 		closeText: "'.JText::translate('VBJQCALDONE').'",'."\n".'
 		prevText: "'.JText::translate('VBJQCALPREV').'",'."\n".'
@@ -129,29 +132,29 @@ var vbrestrctarange, vbrestrctdrange, vbrestrcta, vbrestrctd;';
 $document->addScriptDeclaration($ldecl);
 
 // global restrictions
-$totrestrictions = count($restrictions);
-$wdaysrestrictions = array();
-$wdaystworestrictions = array();
-$wdaysrestrictionsrange = array();
-$wdaysrestrictionsmonths = array();
-$ctarestrictionsrange = array();
-$ctarestrictionsmonths = array();
-$ctdrestrictionsrange = array();
-$ctdrestrictionsmonths = array();
-$monthscomborestr = array();
-$minlosrestrictions = array();
-$minlosrestrictionsrange = array();
-$maxlosrestrictions = array();
-$maxlosrestrictionsrange = array();
-$notmultiplyminlosrestrictions = array();
+$totrestrictions               = count($restrictions);
+$wdaysrestrictions             = [];
+$wdaystworestrictions          = [];
+$wdaysrestrictionsrange        = [];
+$wdaysrestrictionsmonths       = [];
+$ctarestrictionsrange          = [];
+$ctarestrictionsmonths         = [];
+$ctdrestrictionsrange          = [];
+$ctdrestrictionsmonths         = [];
+$monthscomborestr              = [];
+$minlosrestrictions            = [];
+$minlosrestrictionsrange       = [];
+$maxlosrestrictions            = [];
+$maxlosrestrictionsrange       = [];
+$notmultiplyminlosrestrictions = [];
 if ($totrestrictions > 0) {
 	foreach ($restrictions as $rmonth => $restr) {
 		if ($rmonth != 'range') {
 			if (strlen((string)$restr['wday'])) {
-				$wdaysrestrictions[] = "'".($rmonth - 1)."': '".$restr['wday']."'";
+				$wdaysrestrictions[($rmonth - 1)] = $restr['wday'];
 				$wdaysrestrictionsmonths[] = $rmonth;
 				if (strlen((string)$restr['wdaytwo'])) {
-					$wdaystworestrictions[] = "'".($rmonth - 1)."': '".$restr['wdaytwo']."'";
+					$wdaystworestrictions[($rmonth - 1)] = $restr['wdaytwo'];
 					$monthscomborestr[($rmonth - 1)] = VikBooking::parseJsDrangeWdayCombo($restr);
 				}
 			} elseif (!empty($restr['ctad']) || !empty($restr['ctdd'])) {
@@ -165,9 +168,9 @@ if ($totrestrictions > 0) {
 			if ($restr['multiplyminlos'] == 0) {
 				$notmultiplyminlosrestrictions[] = $rmonth;
 			}
-			$minlosrestrictions[] = "'".($rmonth - 1)."': '".$restr['minlos']."'";
+			$minlosrestrictions[($rmonth - 1)] = $restr['minlos'];
 			if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] > $restr['minlos']) {
-				$maxlosrestrictions[] = "'".($rmonth - 1)."': '".$restr['maxlos']."'";
+				$maxlosrestrictions[($rmonth - 1)] = $restr['maxlos'];
 			}
 		} else {
 			foreach ($restr as $kr => $drestr) {
@@ -204,19 +207,19 @@ if ($totrestrictions > 0) {
 	}
 
 	$resdecl = "
-var vbrestrmonthswdays = [".implode(", ", $wdaysrestrictionsmonths)."];
-var vbrestrmonths = [".implode(", ", array_keys($restrictions))."];
-var vbrestrmonthscombojn = JSON.parse('".json_encode($monthscomborestr)."');
-var vbrestrminlos = {".implode(", ", $minlosrestrictions)."};
-var vbrestrminlosrangejn = JSON.parse('".json_encode($minlosrestrictionsrange)."');
-var vbrestrmultiplyminlos = [".implode(", ", $notmultiplyminlosrestrictions)."];
-var vbrestrmaxlos = {".implode(", ", $maxlosrestrictions)."};
-var vbrestrmaxlosrangejn = JSON.parse('".json_encode($maxlosrestrictionsrange)."');
-var vbrestrwdaysrangejn = JSON.parse('".json_encode($wdaysrestrictionsrange)."');
-var vbrestrcta = JSON.parse('".json_encode($ctarestrictionsmonths)."');
-var vbrestrctarange = JSON.parse('".json_encode($ctarestrictionsrange)."');
-var vbrestrctd = JSON.parse('".json_encode($ctdrestrictionsmonths)."');
-var vbrestrctdrange = JSON.parse('".json_encode($ctdrestrictionsrange)."');
+var vbrestrmonthswdays = " . json_encode($wdaysrestrictionsmonths) . ";
+var vbrestrmonths = " . json_encode(array_keys($restrictions)) . ";
+var vbrestrmonthscombojn = " . json_encode($monthscomborestr) . ";
+var vbrestrminlos = " . json_encode((object) $minlosrestrictions) . ";
+var vbrestrminlosrangejn = " . json_encode($minlosrestrictionsrange) . ";
+var vbrestrmultiplyminlos = " . json_encode($notmultiplyminlosrestrictions) . ";
+var vbrestrmaxlos = " . json_encode((object) $maxlosrestrictions) . ";
+var vbrestrmaxlosrangejn = " . json_encode($maxlosrestrictionsrange) . ";
+var vbrestrwdaysrangejn = " . json_encode($wdaysrestrictionsrange) . ";
+var vbrestrcta = " . json_encode($ctarestrictionsmonths) . ";
+var vbrestrctarange = " . json_encode($ctarestrictionsrange) . ";
+var vbrestrctd = " . json_encode($ctdrestrictionsmonths) . ";
+var vbrestrctdrange = " . json_encode($ctdrestrictionsrange) . ";
 var vbcombowdays = {};
 function vbRefreshCheckout".$randid."(darrive) {
 	if (vbFullObject".$randid."(vbcombowdays)) {
@@ -233,8 +236,8 @@ function vbRefreshCheckout".$randid."(darrive) {
 		for(var vbnext in vbtosort) {
 			if (vbtosort.hasOwnProperty(vbnext)) {
 				var vbfirstnextd = new Date(vbtosort[vbnext]);
-				jQuery('#checkoutdatemod".$randid."').datepicker( 'option', 'minDate', vbfirstnextd );
-				jQuery('#checkoutdatemod".$randid."').datepicker( 'setDate', vbfirstnextd );
+				jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'minDate', vbfirstnextd);
+				jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'setcheckoutdate', vbfirstnextd);
 				break;
 			}
 		}
@@ -243,7 +246,7 @@ function vbRefreshCheckout".$randid."(darrive) {
 function vbSetMinCheckoutDatemod".$randid."(selectedDate) {
 	var minlos = ".VikBooking::getDefaultNightsCalendar().";
 	var maxlosrange = 0;
-	var nowcheckin = jQuery('#checkindatemod".$randid."').datepicker('getDate');
+	var nowcheckin = jQuery('#checkindatemod".$randid."').vboDatesRangePicker('getCheckinDate');
 	var nowd = nowcheckin.getDay();
 	var nowcheckindate = new Date(nowcheckin.getTime());
 	vbcombowdays = {};
@@ -278,35 +281,35 @@ function vbSetMinCheckoutDatemod".$randid."(selectedDate) {
 		minlos = parseInt(vbrestrminlos[nowm]);
 	}
 	nowcheckindate.setDate(nowcheckindate.getDate() + minlos);
-	jQuery('#checkoutdatemod".$randid."').datepicker( 'option', 'minDate', nowcheckindate );
+	jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'minDate', nowcheckindate);
+	jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'minStayNights', minlos);
 	if (maxlosrange > 0) {
 		var diffmaxminlos = maxlosrange - minlos;
 		var maxcheckoutdate = new Date(nowcheckindate.getTime());
 		maxcheckoutdate.setDate(maxcheckoutdate.getDate() + diffmaxminlos);
-		jQuery('#checkoutdatemod".$randid."').datepicker( 'option', 'maxDate', maxcheckoutdate );
+		jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'maxDate', maxcheckoutdate);
 	}
 	if (nowm in vbrestrmaxlos) {
 		var diffmaxminlos = parseInt(vbrestrmaxlos[nowm]) - minlos;
 		var maxcheckoutdate = new Date(nowcheckindate.getTime());
 		maxcheckoutdate.setDate(maxcheckoutdate.getDate() + diffmaxminlos);
-		jQuery('#checkoutdatemod".$randid."').datepicker( 'option', 'maxDate', maxcheckoutdate );
+		jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'maxDate', maxcheckoutdate);
 	}
 	if (!vbFullObject".$randid."(vbcombowdays)) {
 		var is_checkout_disabled = false;
-		if (typeof selectedDate !== 'undefined' && typeof jQuery('#checkoutdatemod".$randid."').datepicker('option', 'beforeShowDay') === 'function') {
+		if (typeof selectedDate !== 'undefined' && typeof jQuery('#checkindatemod".$randid."').vboDatesRangePicker('drpoption', 'beforeShowDay.checkout') === 'function') {
 			// let the datepicker validate if the min date to set for check-out is disabled due to CTD rules
-			is_checkout_disabled = !jQuery('#checkoutdatemod".$randid."').datepicker('option', 'beforeShowDay')(nowcheckindate)[0];
+			is_checkout_disabled = !jQuery('#checkindatemod".$randid."').vboDatesRangePicker('drpoption', 'beforeShowDay.checkout')(nowcheckindate)[0];
 		}
 		if (!is_checkout_disabled) {
-			jQuery('#checkoutdatemod".$randid."').datepicker( 'setDate', nowcheckindate );
+			jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'setCheckoutDate', nowcheckindate);
 		} else {
 			setTimeout(() => {
 				// make sure the minimum date just set for the checkout has not populated a CTD date that we do not want
-				var current_out_dt = jQuery('#checkoutdatemod".$randid."').datepicker('getDate');
+				var current_out_dt = jQuery('#checkindatemod".$randid."').vboDatesRangePicker('getCheckoutDate');
 				if (current_out_dt && current_out_dt.getTime() === nowcheckindate.getTime()) {
-					jQuery('#checkoutdatemod".$randid."').datepicker( 'setDate', null );
+					jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'setCheckoutDate', null);
 				}
-				jQuery('#checkoutdatemod".$randid."').focus();
 			}, 100);
 		}
 	} else {
@@ -314,11 +317,11 @@ function vbSetMinCheckoutDatemod".$randid."(selectedDate) {
 	}
 	jQuery('#checkoutdatemod".$randid."').find('.ui-datepicker-current-day').click();
 }";
-		
-	if (count($wdaysrestrictions) > 0 || count($wdaysrestrictionsrange) > 0) {
+
+	if ($wdaysrestrictions || $wdaysrestrictionsrange) {
 		$resdecl .= "
-var vbrestrwdays = {".implode(", ", $wdaysrestrictions)."};
-var vbrestrwdaystwo = {".implode(", ", $wdaystworestrictions)."};
+var vbrestrwdays = " . json_encode((object) $wdaysrestrictions) . ";
+var vbrestrwdaystwo = " . json_encode((object) $wdaystworestrictions) . ";
 function vbIsDayDisabledmod".$randid."(date) {
 	if (!vbIsDayOpenmod".$randid."(date) || !vboValidateCtamod".$randid."(date)) {
 		return [false];
@@ -402,7 +405,7 @@ function vbIsDayDisabledCheckoutmod".$randid."(date) {
 // global closing dates
 $closing_dates = VikBooking::parseJsClosingDates();
 $sdecl = "
-var vbclosingdates = JSON.parse('".json_encode($closing_dates)."');
+var vbclosingdates = " . json_encode($closing_dates) . ";
 function vbCheckClosingDatesInmod".$randid."(date) {
 	if (!vbIsDayOpenmod".$randid."(date) || !vboValidateCtamod".$randid."(date)) {
 		return [false];
@@ -478,12 +481,13 @@ function vboValidateCtdmod".$randid."(date) {
 	return true;
 }
 function vbSetGlobalMinCheckoutDatemod".$randid."() {
-	var nowcheckin = jQuery('#checkindatemod".$randid."').datepicker('getDate');
+	var minlos = ".VikBooking::getDefaultNightsCalendar().";
+	var nowcheckin = jQuery('#checkindatemod".$randid."').vboDatesRangePicker('getCheckinDate');
 	var nowcheckindate = new Date(nowcheckin.getTime());
-	nowcheckindate.setDate(nowcheckindate.getDate() + ".VikBooking::getDefaultNightsCalendar().");
-	jQuery('#checkoutdatemod".$randid."').datepicker( 'option', 'minDate', nowcheckindate );
-	jQuery('#checkoutdatemod".$randid."').datepicker( 'setDate', nowcheckindate );
-	jQuery('#checkoutdatemod".$randid."').find('.ui-datepicker-current-day').click();
+	nowcheckindate.setDate(nowcheckindate.getDate() + minlos);
+	jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'minDate', nowcheckindate);
+	jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'minStayNights', minlos);
+	jQuery('#checkindatemod".$randid."').vboDatesRangePicker('checkout', 'setCheckoutDate', nowcheckindate);
 }
 function vbFormatCalDateMod{$randid}(idc) {
 	var vb_period = document.getElementById((idc == 'from' ? 'inp-checkindatemod{$randid}' : 'inp-checkoutdatemod{$randid}')).value;
@@ -507,46 +511,85 @@ function vbFormatCalDateMod{$randid}(idc) {
 	elcont.find('.vbo-horizsearch-period-mday').text(period_date.getDate());
 	elcont.find('.vbo-horizsearch-period-month').text(vboMapMons{$randid}[period_date.getMonth()]);
 	elcont.find('.vbo-horizsearch-period-year').text(period_date.getFullYear());
-	jQuery('.vbo-horizsearch-dpicker-cont').hide();
+	// jQuery('.vbo-horizsearch-dpicker-cont').hide();
 }
+
 var vboCalVisible{$randid} = false;
 var vboGuestsVisible{$randid} = false;
+
 jQuery(function() {
-	jQuery.datepicker.setDefaults( jQuery.datepicker.regional[ '' ] );
-	jQuery('#checkindatemod".$randid."').datepicker({
-		".($dates_layout_type != 'human' ? "showOn: 'focus'," : '')."
-		".($dates_layout_type == 'human' ? "altField: '#inp-checkindatemod{$randid}',\n" : '')."
-		numberOfMonths: ".($is_mobile ? '1' : '2').",".(count($wdaysrestrictions) > 0 || count($wdaysrestrictionsrange) > 0 ? "\nbeforeShowDay: vbIsDayDisabledmod".$randid.",\n" : "\nbeforeShowDay: vbCheckClosingDatesInmod".$randid.",\n")."
-		onSelect: function( selectedDate ) {
-			".($totrestrictions > 0 ? "vbSetMinCheckoutDatemod".$randid."(selectedDate);" : "vbSetGlobalMinCheckoutDatemod".$randid."();")."
-			vbCalcNightsMod".$randid."();
-			".($dates_layout_type == 'human' ? "vbFormatCalDateMod".$randid."('from');" : '')."
+	// reset regional
+	jQuery.datepicker.setDefaults(jQuery.datepicker.regional['']);
+
+	// start DRP (will be inline in case of human layout)
+	jQuery('#checkindatemod".$randid."').vboDatesRangePicker({
+		checkout: '#checkoutdatemod".$randid."',
+		dateFormat: '{$juidf}',
+		" . ($dates_layout_type != 'human' ? "showOn: 'focus'," : '') . "
+		numberOfMonths: " . ($is_mobile ? '1' : '2') . ",
+		minDate: '" . VikBooking::getMinDaysAdvance() . "d',
+		maxDate: '" . VikBooking::getMaxDateFuture() . "',
+		inlineContainer: '.vbo-horizsearch-dpicker-cont',
+		altFields: {
+			checkin: " . ($dates_layout_type == 'human' ? "'#inp-checkindatemod{$randid}'" : 'null') . ",
+			checkout: " . ($dates_layout_type == 'human' ? "'#inp-checkoutdatemod{$randid}'" : 'null') . ",
+		},
+		beforeShowDay: {
+			checkin: " . ($wdaysrestrictions || $wdaysrestrictionsrange ? "vbIsDayDisabledmod{$randid}" : "vbCheckClosingDatesInmod{$randid}") . ",
+			checkout: " . ($wdaysrestrictions || $wdaysrestrictionsrange ? "vbIsDayDisabledCheckoutmod{$randid}" : "vbCheckClosingDatesOutmod{$randid}") . ",
+		},
+		onSelect: {
+			checkin: (selectedDate) => {
+				" . ($totrestrictions ? "vbSetMinCheckoutDatemod".$randid."(selectedDate);" : "vbSetGlobalMinCheckoutDatemod".$randid."();") . "
+				vbCalcNightsMod".$randid."();
+				" . ($dates_layout_type == 'human' ? "vbFormatCalDateMod".$randid."('from');" : '') . "
+			},
+			checkout: (selectedDate) => {
+				vbCalcNightsMod".$randid."();
+				" . ($dates_layout_type == 'human' ? "vbFormatCalDateMod".$randid."('to');" : '') . "
+				// in case of human layout hide the datepicker container upon selecting the check-out
+				" . ($dates_layout_type == 'human' ? "jQuery('.vbo-horizsearch-dpicker-cont').hide(); jQuery('.vbo-horizsearch-showcalendar').removeClass('vbo-horizsearch-dpicker-cont-active');" : '') . "
+			},
+		},
+		labels: {
+			checkin: Joomla.JText._('VBPICKUPROOM'),
+			checkout: Joomla.JText._('VBRETURNROOM'),
+			minStayNights: (nights) => {
+				return (Joomla.JText._('VBO_MIN_STAY_NIGHTS') + '').replace('%d', nights);
+			},
+		},
+		// bottomCommands not supported with inline datepicker (human layout)
+		bottomCommands: {
+			clear: Joomla.JText._('VBO_CLEAR_DATES'),
+			close: Joomla.JText._('VBO_CLOSE'),
+			onClear: () => {
+				vbCalcNightsMod".$randid."();
+			},
+		},
+	});
+
+	// set proper regional
+	jQuery('#checkindatemod".$randid."').datepicker('option', jQuery.datepicker.regional['vikbookingmod']);
+
+	// register additional triggers (classic layout)
+	jQuery('.vb-cal-img, .vbo-caltrigger').click(function() {
+		let dp = jQuery(this).prev('input');
+		if (!dp.length) {
+			return;
+		}
+		if (dp.hasClass('hasDatepicker')) {
+			dp.focus();
+		} else if (dp.attr('id') == 'checkoutdatemod".$randid."') {
+			jQuery('#checkindatemod".$randid."').focus();
 		}
 	});
-	jQuery('#checkindatemod".$randid."').datepicker( 'option', 'dateFormat', '".$juidf."');
-	jQuery('#checkindatemod".$randid."').datepicker( 'option', 'minDate', '".VikBooking::getMinDaysAdvance()."d');
-	jQuery('#checkindatemod".$randid."').datepicker( 'option', 'maxDate', '".VikBooking::getMaxDateFuture()."');
-	jQuery('#checkoutdatemod".$randid."').datepicker({
-		".($dates_layout_type != 'human' ? "showOn: 'focus'," : '')."
-		".($dates_layout_type == 'human' ? "altField: '#inp-checkoutdatemod{$randid}',\n" : '')."
-		numberOfMonths: ".($is_mobile ? '1' : '2').",".(count($wdaysrestrictions) > 0 || count($wdaysrestrictionsrange) > 0 ? "\nbeforeShowDay: vbIsDayDisabledCheckoutmod".$randid.",\n" : "\nbeforeShowDay: vbCheckClosingDatesOutmod".$randid.",\n")."
-		onSelect: function( selectedDate ) {
-			vbCalcNightsMod".$randid."();
-			".($dates_layout_type == 'human' ? "vbFormatCalDateMod".$randid."('to');" : '')."
-		}
-	});
-	jQuery('#checkoutdatemod".$randid."').datepicker( 'option', 'dateFormat', '".$juidf."');
-	jQuery('#checkoutdatemod".$randid."').datepicker( 'option', 'minDate', '".VikBooking::getMinDaysAdvance()."d');
-	jQuery('#checkindatemod".$randid."').datepicker( 'option', jQuery.datepicker.regional[ 'vikbookingmod' ] );
-	jQuery('#checkoutdatemod".$randid."').datepicker( 'option', jQuery.datepicker.regional[ 'vikbookingmod' ] );
-	jQuery('.vb-cal-img, .vbo-caltrigger').click(function(){
-		var jdp = jQuery(this).prev('input.hasDatepicker');
-		if (jdp.length) {
-			jdp.focus();
-		}
-	});
+
 	jQuery('#vbo-horizsearch-checkin{$randid}, #vbo-horizsearch-checkout{$randid}').click(function() {
 		var childcal = jQuery(this).parent().find('.vbo-horizsearch-dpicker-cont');
+		if (!childcal.hasClass('hasDatepicker') && childcal.hasClass('vbo-horizsearch-dpicker-to')) {
+			// the DRP calendar in human layout requires the check-in container to be displayed
+			childcal = jQuery('#vbo-horizsearch-checkin{$randid}').parent().find('.vbo-horizsearch-dpicker-cont');
+		}
 		if (!childcal.is(':visible')) {
 			jQuery('.vbo-horizsearch-dpicker-cont').hide();
 		}
@@ -721,7 +764,7 @@ if ($needs_inquiry) {
 	$adultsparts[1] = VikBookingWidgetHorizontalSearch::getMaxestGuests('adults');
 	$adultsparts[1] = $adultsparts[1] < $adultsparts[0] ? $adultsparts[0] : $adultsparts[1];
 }
-$adultsel = "<select name=\"adults[]\" onchange=\"vbCountTotGuests".$randid."();\">";
+$adultsel = "<select name=\"adults[]\" id=\"vbo-mhs-adults-" . $randid . "\" onchange=\"vbCountTotGuests" . $randid . "();\">";
 $def_adults = intval($params->get('defadults')) > 1 ? intval($params->get('defadults')) : 0;
 for ($a = $adultsparts[0]; $a <= $adultsparts[1]; $a++) {
 	$adultsel .= "<option value=\"".$a."\"".(($def_adults > 1 && $a == $def_adults) || (intval($adultsparts[0]) < 1 && $a == 1) ? " selected=\"selected\"" : "").">".$a."</option>";
@@ -736,7 +779,7 @@ if ($needs_inquiry) {
 	$childrenparts[1] = VikBookingWidgetHorizontalSearch::getMaxestGuests('children');
 	$childrenparts[1] = $childrenparts[1] < $childrenparts[0] ? $childrenparts[0] : $childrenparts[1];
 }
-$childrensel = "<select name=\"children[]\" onchange=\"vbCountTotGuests".$randid."();\">";
+$childrensel = "<select name=\"children[]\" id=\"vbo-mhs-children-" . $randid . "\" onchange=\"vbCountTotGuests" . $randid . "();\">";
 for ($c = $childrenparts[0]; $c <= $childrenparts[1]; $c++) {
 	$childrensel .= "<option value=\"".$c."\">".$c."</option>";
 }
@@ -797,12 +840,12 @@ if ($dates_layout_type == 'human') {
 						}
 						?>
 							<div class="horsanumdiv">
-								<label class="horsanumlb"><?php echo JText::translate($use_guests_label); ?></label>
+								<label class="horsanumlb" for="vbo-mhs-adults-<?php echo $randid; ?>"><?php echo JText::translate($use_guests_label); ?></label>
 								<span class="horsanumsel"><?php echo $adultsel; ?></span>
 							</div>
 							<?php if ($showchildren): ?>
 							<div class="horscnumdiv">
-								<label class="horscnumlb"><?php echo JText::translate('VBFORMCHILDREN'); ?></label>
+								<label class="horscnumlb" for="vbo-mhs-children-<?php echo $randid; ?>"><?php echo JText::translate('VBFORMCHILDREN'); ?></label>
 								<span class="horscnumsel"><?php echo $childrensel; ?></span>
 							</div>
 							<?php endif; ?>
@@ -830,12 +873,12 @@ if ($dates_layout_type == 'human') {
 				<div class="vbmodhorsearchroomdentrfirst">
 					<?php if (intval($maxsearchnumrooms) > 1): ?><span class="horsrnum"><?php echo JText::translate('VBMFORMNUMROOM'); ?> 1</span><?php endif; ?>
 					<div class="horsanumdiv">
-						<label class="horsanumlb"><?php echo JText::translate($use_guests_label); ?></label>
+						<label class="horsanumlb" for="vbo-mhs-adults-<?php echo $randid; ?>"><?php echo JText::translate($use_guests_label); ?></label>
 						<span class="horsanumsel"><?php echo $adultsel; ?></span>
 					</div>
 					<?php if ($showchildren): ?>
 					<div class="horscnumdiv">
-						<label class="horscnumlb"><?php echo JText::translate('VBFORMCHILDREN'); ?></label>
+						<label class="horscnumlb" for="vbo-mhs-children-<?php echo $randid; ?>"><?php echo JText::translate('VBFORMCHILDREN'); ?></label>
 						<span class="horscnumsel"><?php echo $childrensel; ?></span>
 					</div>
 					<?php endif; ?>
@@ -1021,12 +1064,14 @@ if ($needs_inquiry) {
 		<div class="vbmodhorsearchroomdentr">
 			<span class="horsrnum"><?php echo JText::translate('VBMFORMNUMROOM'); ?> %d</span>
 			<div class="horsanumdiv">
-				<span class="horsanumsel"><?php echo $adultsel; ?></span>
+				<label style="display: none;" for="vbo-mhs-adults-<?php echo $randid; ?>-hid"><?php echo JText::translate($use_guests_label); ?></label>
+				<span class="horsanumsel"><?php echo preg_replace("/\sid=\"([a-z0-9\-]+)\"/i", ' id="$1-hid"', $adultsel); ?></span>
 			<?php
 			if ($showchildren) {
 				?>
 				<div class="horscnumdiv">
-					<span class="horscnumsel"><?php echo $childrensel; ?></span>
+					<label style="display: none;" for="vbo-mhs-children-<?php echo $randid; ?>-hid"><?php echo JText::translate('VBFORMCHILDREN'); ?></label>
+					<span class="horscnumsel"><?php echo preg_replace("/\sid=\"([a-z0-9\-]+)\"/i", ' id="$1-hid"', $childrensel); ?></span>
 				</div>
 				<?php
 			}
@@ -1138,14 +1183,24 @@ function vboModHorSearchBookOnline(formId) {
 function vbAddElementMod<?php echo $randid; ?>() {
 	var ni = document.getElementById('vbmoreroomscontmod<?php echo $randid; ?>');
 	var numi = document.getElementById('vbroomhelpermod<?php echo $randid; ?>');
-	var num = (document.getElementById('vbroomhelpermod<?php echo $randid; ?>').value -1)+ 2;
+	var num = (document.getElementById('vbroomhelpermod<?php echo $randid; ?>').value -1) + 2;
 	numi.value = num;
 	var newdiv = document.createElement('div');
 	var divIdName = 'vb'+num+'racont';
 	newdiv.setAttribute('id', divIdName);
+	// build HTML content to append to new element
 	var new_element_html = document.getElementsByClassName('vbo-modhs-add-element-html')[0].innerHTML;
-	var rp_rgx = new RegExp('%d', 'g');
-	newdiv.innerHTML = new_element_html.replace(rp_rgx, num);
+	// set room number
+	let rp_rgx = new RegExp('%d', 'g');
+	new_element_html = new_element_html.replace(rp_rgx, num);
+	// get rid of label tag (Web Accessibility)
+	let lbl_rgx = new RegExp(/<label\s.+>.+<\/label>/, 'g');
+	new_element_html = new_element_html.replace(lbl_rgx, '');
+	// get rid of any id attribute (Web Accessibility)
+	let idattr_rgx = new RegExp(/id="[^\"]+"/, 'g');
+	new_element_html = new_element_html.replace(idattr_rgx, '');
+	// set HTML content and append element
+	newdiv.innerHTML = new_element_html;
 	ni.appendChild(newdiv);
 }
 
@@ -1199,8 +1254,8 @@ function vbCountTotGuests<?php echo $randid; ?>() {
 }
 
 function vbCalcNightsMod<?php echo $randid; ?>() {
-	var vbcheckin = document.getElementById('checkindatemod<?php echo $randid; ?>').value;
-	var vbcheckout = document.getElementById('checkoutdatemod<?php echo $randid; ?>').value;
+	var vbcheckin = document.getElementById('<?php echo $dates_layout_type == 'human' ? 'inp-' : ''; ?>checkindatemod<?php echo $randid; ?>').value;
+	var vbcheckout = document.getElementById('<?php echo $dates_layout_type == 'human' ? 'inp-' : ''; ?>checkoutdatemod<?php echo $randid; ?>').value;
 	if (vbcheckin.length > 0 && vbcheckout.length > 0) {
 		var vbcheckinp = vbcheckin.split("/");
 		var vbcheckoutp = vbcheckout.split("/");
