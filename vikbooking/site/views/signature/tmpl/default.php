@@ -210,6 +210,7 @@ if ($ptmpl == 'component') {
 	<?php
 }
 ?>
+	<?php echo JHtml::fetch('form.token'); ?>
 </form>
 
 <script type="text/javascript">

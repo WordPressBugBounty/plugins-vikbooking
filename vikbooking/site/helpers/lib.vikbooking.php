@@ -5357,7 +5357,7 @@ class VikBooking
 		 * @since 	1.14 (J) - 1.4.0 (WP)
 		 */
 		self::getConditionalRulesInstance()
-			->set(array('booking', 'rooms'), array($order_info, $rooms))
+			->set(['booking', 'rooms'], [$order_info, $rooms])
 			->parseTokens($parsed);
 
 		// special tokens (tags) replacement
@@ -9253,7 +9253,7 @@ class VikBooking
 		 * @since 	1.14 (J) - 1.4.0 (WP)
 		 */
 		self::getConditionalRulesInstance()
-			->set(array('booking', 'rooms'), array($booking, $booking_rooms))
+			->set(['booking', 'rooms'], [$booking, $booking_rooms])
 			->parseTokens($tpl);
 
 		$vbo_df = self::getDateFormat();
@@ -9328,7 +9328,7 @@ class VikBooking
 		 * @since 	1.14 (J) - 1.4.0 (WP)
 		 */
 		self::getConditionalRulesInstance()
-			->set(array('booking', 'rooms'), array($booking, $booking_rooms))
+			->set(['booking', 'rooms'], [$booking, $booking_rooms])
 			->parseTokens($tpl);
 
 		$vbo_df = self::getDateFormat();
@@ -9617,7 +9617,7 @@ class VikBooking
 		 * @since 	1.14 (J) - 1.4.0 (WP)
 		 */
 		self::getConditionalRulesInstance()
-			->set(array('booking', 'rooms'), array($booking, $booking_rooms))
+			->set(['booking', 'rooms'], [$booking, $booking_rooms])
 			->parseTokens($parsed);
 		//
 
@@ -10725,17 +10725,20 @@ class VikBooking
 		return true;
 	}
 
-	public static function loadCheckinDocTmpl($booking_info = array(), $booking_rooms = array(), $customer = array()) {
+	public static function loadCheckinDocTmpl(array $booking_info = [], array $booking_rooms = [], array $customer = [])
+	{
 		if (!defined('_VIKBOOKINGEXEC')) {
 			define('_VIKBOOKINGEXEC', '1');
 		}
+
 		ob_start();
-		include VBO_SITE_PATH . DIRECTORY_SEPARATOR . "helpers" . DIRECTORY_SEPARATOR . "checkins" . DIRECTORY_SEPARATOR . "checkin_tmpl.php";
+		include VBO_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'checkins' . DIRECTORY_SEPARATOR . 'checkin_tmpl.php';
 		$content = ob_get_contents();
 		ob_end_clean();
-		$default_params = array(
+
+		$default_params = [
 			'show_header' => 0,
-			'header_data' => array(),
+			'header_data' => [],
 			'show_footer' => 0,
 			'pdf_page_orientation' => 'PDF_PAGE_ORIENTATION',
 			'pdf_unit' => 'PDF_UNIT',
@@ -10750,26 +10753,35 @@ class VikBooking
 			'header_font_size' => '10',
 			'body_font_size' => '10',
 			'footer_font_size' => '8'
-		);
+		];
+
 		if (defined('_VIKBOOKING_CHECKIN_PARAMS') && isset($checkin_params) && is_array($checkin_params) && $checkin_params) {
 			$default_params = array_merge($default_params, $checkin_params);
 		}
-		return array($content, $default_params);
+
+		return [$content, $default_params];
 	}
 
-	public static function parseCheckinDocTemplate($checkintpl, $booking, $booking_rooms, $customer) {
-		$parsed = $checkintpl;
+	public static function parseCheckinDocTemplate(string $checkintpl, array $booking, array $booking_rooms, array $customer = [])
+	{
 		$dbo = JFactory::getDbo();
 		$app = JFactory::getApplication();
+
+		// clone string
+		$parsed = $checkintpl;
+
+		$datesep = self::getDateSeparator();
 		$nowdf = self::getDateFormat();
 		if ($nowdf == "%d/%m/%Y") {
-			$df='d/m/Y';
+			$df = 'd/m/Y';
 		} elseif ($nowdf == "%m/%d/%Y") {
-			$df='m/d/Y';
+			$df = 'm/d/Y';
 		} else {
-			$df='Y/m/d';
+			$df = 'Y/m/d';
 		}
-		$datesep = self::getDateSeparator();
+
+		$company_name = self::getFrontTitle();
+		$company_info = self::getInvoiceCompanyInfo();
 		$companylogo = self::getSiteLogo();
 		$uselogo = '';
 		if (!empty($companylogo)) {
@@ -10786,8 +10798,7 @@ class VikBooking
 				$uselogo = '<img src="' . VBO_SITE_URI . 'resources/' . $companylogo . '"/>';
 			}
 		}
-		$company_name = self::getFrontTitle();
-		$company_info = self::getInvoiceCompanyInfo();
+
 		$parsed = str_replace("{company_name}", $company_name, $parsed);
 		$parsed = str_replace("{company_logo}", $uselogo, $parsed);
 		$parsed = str_replace("{company_info}", $company_info, $parsed);
@@ -10795,6 +10806,7 @@ class VikBooking
 		$parsed = str_replace("{checkin_date}", date(str_replace("/", $datesep, $df), $booking['checkin']), $parsed);
 		$parsed = str_replace("{checkout_date}", date(str_replace("/", $datesep, $df), $booking['checkout']), $parsed);
 		$parsed = str_replace("{num_nights}", $booking['days'], $parsed);
+
 		$tot_guests = 0;
 		$tot_adults = 0;
 		$tot_children = 0;
@@ -10806,12 +10818,14 @@ class VikBooking
 		$parsed = str_replace("{tot_guests}", $tot_guests, $parsed);
 		$parsed = str_replace("{tot_adults}", $tot_adults, $parsed);
 		$parsed = str_replace("{tot_children}", $tot_children, $parsed);
-		if (count($customer) && isset($customer['comments'])) {
+		if ($customer && isset($customer['comments'])) {
 			$parsed = str_replace("{checkin_comments}", $customer['comments'], $parsed);
 		}
+
 		$termsconds = self::getTermsConditions();
 		$parsed = str_replace("{terms_and_conditions}", $termsconds, $parsed);
-		//custom fields replace
+
+		// custom fields replacemenet
 		preg_match_all('/\{customfield ([0-9]+)\}/U', $parsed, $cmatches);
 		if (is_array($cmatches[1]) && $cmatches[1]) {
 			$cfids = array();
@@ -10846,7 +10860,13 @@ class VikBooking
 				}
 			}
 		}
-		//end custom fields replace
+
+		/**
+		 * Parse all conditional text rules.
+		 */
+		self::getConditionalRulesInstance()
+			->set(['booking', 'rooms'], [$booking, $booking_rooms])
+			->parseTokens($parsed);
 
 		return $parsed;
 	}

@@ -143,7 +143,7 @@ defined('_VIKBOOKING_CHECKIN_PARAMS') OR define('_VIKBOOKING_CHECKIN_PARAMS', '1
 		?>
 	<table width="100%" border="0" cellspacing="1" cellpadding="2" style="border: 1px solid #000000;">
 		<tr>
-			<td align="left" valign="top" style="border-right: 1px solid #000000;"><strong><?php echo $room['room_name']; ?></strong></td>
+			<td align="left" valign="top" style="border-right: 1px solid #000000;"><strong><?php echo $room['room_name'] ?? $room['name'] ?? ''; ?></strong></td>
 			<td align="center" valign="top" style="border-right: 1px solid #000000;"><strong><?php echo JText::translate('VBEDITORDERADULTS'); ?></strong></td>
 			<td align="center" valign="top"><strong><?php echo JText::translate('VBEDITORDERCHILDREN'); ?></strong></td>
 		</tr>
@@ -153,7 +153,7 @@ defined('_VIKBOOKING_CHECKIN_PARAMS') OR define('_VIKBOOKING_CHECKIN_PARAMS', '1
 			<td align="center" style="border-bottom: 1px solid #000000;"><?php echo $room['children']; ?></td>
 		</tr>
 		<?php
-		if (count($customer) && isset($customer['pax_data'][$k]) && count($customer['pax_data'][$k]) > 0) {
+		if ($customer && is_array(($customer['pax_data'][$k] ?? null)) && $customer['pax_data'][$k]) {
 			?>
 		<tr>
 			<td align="left" valign="top" style="border-right: 1px solid #000000;"><strong><?php echo JText::translate('VBOGUESTSDETAILS'); ?></strong></td>

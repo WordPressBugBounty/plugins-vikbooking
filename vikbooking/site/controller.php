@@ -2421,6 +2421,11 @@ class VikBookingController extends JControllerVikBooking
 
 	public function storesignature()
 	{
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		$sid = VikRequest::getString('sid', '', 'request');
 		$ts = VikRequest::getString('ts', '', 'request');
 		$psignature = VikRequest::getString('signature', '', 'request', VIKREQUEST_ALLOWRAW);

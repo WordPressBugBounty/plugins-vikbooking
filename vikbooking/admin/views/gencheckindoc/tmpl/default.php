@@ -13,8 +13,8 @@ defined('ABSPATH') or die('No script kiddies please!');
 $order = $this->row;
 $customer = $this->customer;
 
-$document = JFactory::getDocument();
-$document->addScript(VBO_SITE_URI.'resources/signature_pad.js');
+VikBooking::getVboApplication()->loadSignaturePad();
+
 $currencysymb = VikBooking::getCurrencySymb();
 $nowdf = VikBooking::getDateFormat(true);
 if ($nowdf == "%d/%m/%Y") {

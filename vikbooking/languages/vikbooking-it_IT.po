@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2025-01-21 00:01+0100\n"
-"PO-Revision-Date: 2025-01-21 00:02+0100\n"
+"POT-Creation-Date: 2025-01-22 03:16+0100\n"
+"PO-Revision-Date: 2025-01-22 03:17+0100\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: it_IT\n"
@@ -13958,6 +13958,14 @@ msgstr "Tutte le foto"
 #: libraries/language/site.php:2084
 msgid "Where you will be"
 msgstr "Dove sarai"
+
+#: libraries/language/site.php:2087
+msgid "View document"
+msgstr "Visualizza documento"
+
+#: libraries/language/site.php:2090
+msgid "Sign document"
+msgstr "Firma documento"
 
 #: libraries/language/system.php:46
 msgid "Error"

@@ -2083,6 +2083,12 @@ class VikBookingLanguageSite implements JLanguageHandler
 			case 'VBO_LISTING_WHERE_YOULLBE':
 				$result = __('Where you will be', 'vikbooking');
 				break;
+			case 'VBO_PRECHECKIN_VIEW_DOCUMENT':
+				$result = __('View document', 'vikbooking');
+				break;
+			case 'VBO_PRECHECKIN_SIGN_DOCUMENT':
+				$result = __('Sign document', 'vikbooking');
+				break;
 		}
 
 		return $result;

@@ -68,7 +68,7 @@ class VikbookingViewSignature extends JViewVikBooking
 		if (VikBooking::loadJquery()) {
 			JHtml::fetch('jquery.framework', true, true);
 		}
-		$document->addScript(VBO_SITE_URI.'resources/signature_pad.js');
+		VikBooking::getVboApplication()->loadSignaturePad();
 		$document->addStyleSheet(VBO_ADMIN_URI.'resources/fonts/vboicomoon.css');
 
 		$this->ord = $row;

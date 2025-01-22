@@ -642,6 +642,8 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 								->setGuestNumber($g)
 								->setGuestData($current_guest)
 								->setRoomIndex($ind)
+								->setBooking($this->row)
+								->setBookingRooms($this->rooms)
 								->setRoomGuests($arrpeople[$num]['adults'], $arrpeople[$num]['children'])
 								->setTotalRooms(count($arrpeople));
 

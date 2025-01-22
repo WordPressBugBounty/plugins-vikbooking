@@ -25,7 +25,7 @@ if ($upgrade_options) {
 	/**
 	 * Include the VBOCore JS class.
 	 */
-	$document->addScript(VBO_ADMIN_URI . 'resources/vbocore.js');
+	VikBooking::getVboApplication()->loadCoreJS();
 
 	// load JS lang strings
 	JText::script('VBO_UPGRADE_ROOMS');

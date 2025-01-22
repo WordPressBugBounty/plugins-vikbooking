@@ -244,4 +244,60 @@ class VBOCheckinPaxfield extends JObject
 
 		return $this;
 	}
+
+	/**
+	 * Gets the current booking record involved.
+	 * 
+	 * @return 	array 	The booking record involved.
+	 * 
+	 * @since 	1.17.4 (J) - 1.7.4 (WP)
+	 */
+	public function getBooking()
+	{
+		return (array) $this->get('booking', []);
+	}
+
+	/**
+	 * Sets the current booking record involved.
+	 * 
+	 * @param 	array 	$booking 	The booking record involved.
+	 * 
+	 * @return 	self
+	 * 
+	 * @since 	1.17.4 (J) - 1.7.4 (WP)
+	 */
+	public function setBooking(array $booking)
+	{
+		$this->set('booking', $booking);
+
+		return $this;
+	}
+
+	/**
+	 * Gets the current booking rooms involved.
+	 * 
+	 * @return 	array 	The booking rooms involved.
+	 * 
+	 * @since 	1.17.4 (J) - 1.7.4 (WP)
+	 */
+	public function getBookingRooms()
+	{
+		return (array) $this->get('booking_rooms', []);
+	}
+
+	/**
+	 * Sets the current booking rooms involved.
+	 * 
+	 * @param 	array 	$booking_rooms 	The booking rooms involved.
+	 * 
+	 * @return 	self
+	 * 
+	 * @since 	1.17.4 (J) - 1.7.4 (WP)
+	 */
+	public function setBookingRooms(array $booking_rooms)
+	{
+		$this->set('booking_rooms', $booking_rooms);
+
+		return $this;
+	}
 }

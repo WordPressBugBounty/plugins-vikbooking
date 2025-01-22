@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.4
+
+*Release date - 22 January 2025*
+
+- JavaScript bug fixing with new dates-range picker calendars.
+- Introduced new guest registration field type signature.
+
 ## 1.7.3
 
 *Release date - 21 January 2025*

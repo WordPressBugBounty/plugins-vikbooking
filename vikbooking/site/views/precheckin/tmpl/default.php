@@ -206,6 +206,8 @@ JText::script('VBO_PRECHECKIN_TOAST_HELP');
 									->setGuestNumber($g)
 									->setGuestData($current_guest)
 									->setRoomIndex($ind)
+									->setBooking($this->order)
+									->setBookingRooms($this->orderrooms)
 									->setRoomGuests($arrpeople[$num]['adults'], $arrpeople[$num]['children'])
 									->setTotalRooms(count($arrpeople));
 

@@ -103,6 +103,9 @@ function vbFullObject(obj) {
 		return obj.hasOwnProperty(jk);
 	}
 }
+
+var vbrestrctarange, vbrestrctdrange, vbrestrcta, vbrestrctd;
+
 JAVASCRIPT;
 
 /**

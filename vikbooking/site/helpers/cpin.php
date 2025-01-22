@@ -338,7 +338,7 @@ class VikBookingCustomersPin
 		if (empty($orderid)) {
 			return [];
 		}
-		$q = "SELECT `idcustomer`, `pax_data` FROM `#__vikbooking_customers_orders` WHERE `idorder`=".(int)$orderid.";";
+		$q = "SELECT `idcustomer`, `signature`, `pax_data` FROM `#__vikbooking_customers_orders` WHERE `idorder`=".(int)$orderid.";";
 		$this->dbo->setQuery($q);
 		$data = $this->dbo->loadAssoc();
 		if (!$data) {
@@ -351,9 +351,16 @@ class VikBookingCustomersPin
 			 * Merge pax_data into the customer array to know whether
 			 * the pre check-in or the registration was performed.
 			 *
-			 * @since 	1.12
+			 * @since 	1.12 (J) - 1.1 (WP)
 			 */
 			$customer['pax_data'] = $data['pax_data'];
+
+			/**
+			 * Merge signature as well.
+			 * 
+			 * @since 	1.17.4 (J) - 1.7.4 (WP)
+			 */
+			$customer['signature'] = $data['signature'];
 		}
 
 		return $customer;

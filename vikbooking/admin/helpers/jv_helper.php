@@ -297,6 +297,63 @@ JS
 	}
 
 	/**
+	 * Loads the assets for setting up the VBOCore JS in the site section.
+	 * 
+	 * @param 	array 	$options 	Associative list of loading options.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.17.4 (J) - 1.7.4 (WP)
+	 */
+	public function loadCoreJS(array $options = [])
+	{
+		static $corejs_loaded = null;
+
+		if ($corejs_loaded) {
+			// loaded flag
+			return;
+		}
+
+		// add script
+		$this->addScript(VBO_ADMIN_URI . 'resources/vbocore.js', ['version' => VIKBOOKING_SOFTWARE_VERSION]);
+
+		if ($options) {
+			$core_options = json_encode((object) $options, JSON_PRETTY_PRINT);
+
+			// add script declaration to document
+			JFactory::getDocument()->addScriptDeclaration(
+<<<JS
+jQuery(function() {
+	VBOCore.setOptions($core_options);
+});
+JS
+			);
+		}
+	}
+
+	/**
+	 * Loads the assets for rendering the signature pad.
+	 * 
+	 * @param 	array 	$options 	Associative list of loading options.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.17.4 (J) - 1.7.4 (WP)
+	 */
+	public function loadSignaturePad(array $options = [])
+	{
+		static $signpad_loaded = null;
+
+		if ($signpad_loaded) {
+			// loaded flag
+			return;
+		}
+
+		// add script
+		$this->addScript(VBO_SITE_URI . 'resources/signature_pad.js', ['version' => VIKBOOKING_SOFTWARE_VERSION]);
+	}
+
+	/**
 	 * Loads the assets solely needed to render the DRP calendar.
 	 * 
 	 * @param 	array 	$options 	Associative list of loading options.
