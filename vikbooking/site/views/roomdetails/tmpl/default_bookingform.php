@@ -66,27 +66,27 @@ $pitemid = VikRequest::getInt('Itemid', '', 'request');
 		<?php
 		if ($paramshowpeople == 1) {
 			?>
-			<div class="vbmaxadultsdet"><span class="vbmaximgdet"><?php VikBookingIcons::e('male'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMADULTS'); ?></span><span class="vbmaxnumberdet"><?php echo $maxadustr; ?></span></div>
+			<div class="vbmaxadultsdet"><span class="vbmaximgdet vbo-rdetails-capacity-icn"><?php VikBookingIcons::e('male'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMADULTS'); ?></span><span class="vbmaxnumberdet"><?php echo $maxadustr; ?></span></div>
 			<?php
 		} elseif ($paramshowpeople == 2) {
 			?>
-			<div class="vbmaxchildrendet"><span class="vbmaximgdet"><?php VikBookingIcons::e('child'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMCHILDREN'); ?></span><span class="vbmaxnumberdet"><?php echo $maxchistr; ?></span></div>
+			<div class="vbmaxchildrendet"><span class="vbmaximgdet vbo-rdetails-capacity-icn"><?php VikBookingIcons::e('child'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMCHILDREN'); ?></span><span class="vbmaxnumberdet"><?php echo $maxchistr; ?></span></div>
 			<?php
 		} elseif ($paramshowpeople == 3) {
 			?>
-			<div class="vbmaxadultsdet"><span class="vbmaximgdet"><?php VikBookingIcons::e('male'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMADULTS'); ?></span><span class="vbmaxnumberdet"><?php echo $maxadustr; ?></span></div>
-			<div class="vbmaxtotdet"><span class="vbmaximgdet"><?php VikBookingIcons::e('users'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBMAXTOTPEOPLE'); ?></span><span class="vbmaxnumberdet"><?php echo $maxtotstr; ?></span></div>
+			<div class="vbmaxadultsdet"><span class="vbmaximgdet vbo-rdetails-capacity-icn"><?php VikBookingIcons::e('male'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMADULTS'); ?></span><span class="vbmaxnumberdet"><?php echo $maxadustr; ?></span></div>
+			<div class="vbmaxtotdet"><span class="vbmaximgdet vbo-rdetails-capacity-icn"><?php VikBookingIcons::e('users'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBMAXTOTPEOPLE'); ?></span><span class="vbmaxnumberdet"><?php echo $maxtotstr; ?></span></div>
 			<?php
 		} elseif ($paramshowpeople == 4) {
 			?>
-			<div class="vbmaxchildrendet"><span class="vbmaximgdet"><?php VikBookingIcons::e('child'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMCHILDREN'); ?></span><span class="vbmaxnumberdet"><?php echo $maxchistr; ?></span></div>
-			<div class="vbmaxtotdet"><span class="vbmaximgdet"><?php VikBookingIcons::e('users'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBMAXTOTPEOPLE'); ?></span><span class="vbmaxnumberdet"><?php echo $maxtotstr; ?></span></div>
+			<div class="vbmaxchildrendet"><span class="vbmaximgdet vbo-rdetails-capacity-icn"><?php VikBookingIcons::e('child'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMCHILDREN'); ?></span><span class="vbmaxnumberdet"><?php echo $maxchistr; ?></span></div>
+			<div class="vbmaxtotdet"><span class="vbmaximgdet vbo-rdetails-capacity-icn"><?php VikBookingIcons::e('users'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBMAXTOTPEOPLE'); ?></span><span class="vbmaxnumberdet"><?php echo $maxtotstr; ?></span></div>
 			<?php
 		} elseif ($paramshowpeople == 5) {
 			?>
-			<div class="vbmaxadultsdet"><span class="vbmaximgdet"><?php VikBookingIcons::e('male'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMADULTS'); ?></span><span class="vbmaxnumberdet"><?php echo $maxadustr; ?></span></div>
-			<div class="vbmaxchildrendet"><span class="vbmaximgdet"><?php VikBookingIcons::e('child'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMCHILDREN'); ?></span><span class="vbmaxnumberdet"><?php echo $maxchistr; ?></span></div>
-			<div class="vbmaxtotdet"><span class="vbmaximgdet"><?php VikBookingIcons::e('users'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBMAXTOTPEOPLE'); ?></span><span class="vbmaxnumberdet"><?php echo $maxtotstr; ?></span></div>
+			<div class="vbmaxadultsdet"><span class="vbmaximgdet vbo-rdetails-capacity-icn"><?php VikBookingIcons::e('male'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMADULTS'); ?></span><span class="vbmaxnumberdet"><?php echo $maxadustr; ?></span></div>
+			<div class="vbmaxchildrendet"><span class="vbmaximgdet vbo-rdetails-capacity-icn"><?php VikBookingIcons::e('child'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBFORMCHILDREN'); ?></span><span class="vbmaxnumberdet"><?php echo $maxchistr; ?></span></div>
+			<div class="vbmaxtotdet"><span class="vbmaximgdet vbo-rdetails-capacity-icn"><?php VikBookingIcons::e('users'); ?></span><span class="vbmaxlabeldet"><?php echo JText::translate('VBMAXTOTPEOPLE'); ?></span><span class="vbmaxnumberdet"><?php echo $maxtotstr; ?></span></div>
 			<?php
 		}
 		?>

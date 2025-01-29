@@ -1064,6 +1064,65 @@ class VikBookingHelper
 					);
 				}, 300);
 			}
+
+			// declare window resize handler for setting the position of sub-menus
+			const subMenuStylesPositioning = () => {
+				// get window width
+				let windowWidth = window.innerWidth;
+
+				// scan all sub-menu entries
+				document.querySelectorAll('.vbo-submenu-wrap').forEach((submenu) => {
+					// remove the class to style the sub-menu "to left"
+					submenu.classList.remove('vbo-submenu-wrap-toleft');
+
+					// get sub-menu width and offset left position values
+					let elemWidth = submenu.offsetWidth;
+					let elemOffLeft = submenu.getBoundingClientRect().left;
+
+					if (elemWidth) {
+						// sub-menu visibility is hidden, but width has been computed
+						if ((elemWidth + elemOffLeft) > windowWidth) {
+							// add "to left" positioning class or the sub-menu would exceed the window
+							submenu.classList.add('vbo-submenu-wrap-toleft');
+						}
+					} else {
+						// on small screens, the sub-menu may be hidden, hence with no width
+						let parentmenu = submenu.closest('.vbo-menu-parent-li');
+
+						// register listener for mouseover event
+						parentmenu.addEventListener('mouseover', (e) => {
+							setTimeout(() => {
+								let now_submenu = e.target.querySelector('.vbo-submenu-wrap');
+								if (!now_submenu) {
+									return;
+								}
+								if ((now_submenu.offsetWidth + now_submenu.getBoundingClientRect().left) > window.innerWidth) {
+									// add "to left" positioning class or the sub-menu would exceed the window
+									now_submenu.classList.add('vbo-submenu-wrap-toleft');
+								}
+							}, 0);
+						});
+
+						// register listener for touchstart event
+						parentmenu.addEventListener('touchstart', (e) => {
+							let limenu = e.target;
+							if (!limenu.matches('.vbo-menu-parent-li')) {
+								limenu = limenu.closest('.vbo-menu-parent-li');
+							}
+							// propagate the mouseover event
+							limenu.dispatchEvent(new Event('mouseover'));
+						});
+					}
+				});
+			};
+
+			// register listener for window resize event
+			window.addEventListener('resize', subMenuStylesPositioning);
+
+			// trigger sub-menus styles positioning function on page load
+			setTimeout(() => {
+				subMenuStylesPositioning();
+			}, 0);
 		});
 		</script>
 		<?php

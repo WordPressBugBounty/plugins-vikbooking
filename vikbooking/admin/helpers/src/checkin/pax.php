@@ -68,7 +68,7 @@ final class VBOCheckinPax
 	 * 
 	 * @since 	1.17.2 (J) - 1.7.2 (WP)
 	 */
-	public static function getPrecheckinFields($type = '', array $def_fields = [])
+	public static function getPrecheckinFields(string $type = '', array $def_fields = [])
 	{
 		// default empty containers
 		$labels = [];
@@ -85,6 +85,36 @@ final class VBOCheckinPax
 		}
 
 		return $paxf_obj->listPrecheckinFields($def_fields);
+	}
+
+	/**
+	 * Invokes a callback on the pax data type driver after the pre-checkin information have been stored or updated.
+	 * 
+	 * @param 	string 	$type 		the pax data type representing the driver.
+	 * @param 	array 	$data 		the guest registration data stored.
+	 * @param 	array 	$booking 	the booking record involved with the guests registration.
+	 * @param 	array 	$customer 	optional customer record associated with the booking.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.17.5 (J) - 1.7.5 (WP)
+	 */
+	public static function callbackPrecheckinDataStored(string $type, array $data, array $booking, array $customer = [])
+	{
+		if (!$type) {
+			// no driver to invoke
+			return;
+		}
+
+		// invoke custom pax fields object
+		$paxf_obj = self::getInstance($type);
+		if (!$paxf_obj) {
+			// requested driver not found
+			return;
+		}
+
+		// let the driver finalize the operation
+		return $paxf_obj->onPrecheckinDataStored($data, $booking, $customer);
 	}
 
 	/**

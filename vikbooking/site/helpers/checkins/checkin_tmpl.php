@@ -168,7 +168,7 @@ defined('_VIKBOOKING_CHECKIN_PARAMS') OR define('_VIKBOOKING_CHECKIN_PARAMS', '1
 				//by default we display the first and last name of each guest (other fields available are: 'country', 'docnum', 'extranotes')
 				//in this cell we display the first name of each guest, one per line
 				?>
-				<span><?php echo $guest['first_name']; ?></span>
+				<span><?php echo $guest['first_name'] ?? ''; ?></span>
 				<?php
 				if ($guest_num < $room['adults']) {
 					echo '<br/>';
@@ -182,7 +182,7 @@ defined('_VIKBOOKING_CHECKIN_PARAMS') OR define('_VIKBOOKING_CHECKIN_PARAMS', '1
 				//by default we display the first and last name of each guest (other fields available are: 'country', 'docnum', 'extranotes')
 				//in this cell we display the last name of each guest, one per line
 				?>
-				<span><?php echo $guest['last_name']; ?></span>
+				<span><?php echo $guest['last_name'] ?? ''; ?></span>
 				<?php
 				if ($guest_num < $room['adults']) {
 					echo '<br/>';

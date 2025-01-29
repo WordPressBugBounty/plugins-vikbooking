@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.5
+
+*Release date - 29 January 2025*
+
+- JavaScript improvements with new dates-range picker calendars.
+- Styling and responsiveness improvements with new dates-range picker calendars.
+- Introduced listings automatic mini-thumbnail for drop down menus.
+- Storing the pre-checkin guests registration data will invoke the pax driver callback.
+
 ## 1.7.4
 
 *Release date - 22 January 2025*

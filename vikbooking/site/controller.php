@@ -3014,6 +3014,9 @@ class VikBookingController extends JControllerVikBooking
 			throw new Exception('No rooms found', 404);
 		}
 
+		// access the customer record
+		$customer = VikBooking::getCPinInstance()->getCustomerFromBooking($order['id']);
+
 		$q = "SELECT * FROM `#__vikbooking_customers_orders` WHERE `idorder`=".(int)$order['id'].";";
 		$dbo->setQuery($q);
 		$custorder = $dbo->loadAssoc();
@@ -3103,6 +3106,18 @@ class VikBookingController extends JControllerVikBooking
 
 		// Booking History
 		VikBooking::getBookingHistoryInstance()->setBid($order['id'])->store('PC');
+
+		/**
+		 * Invoke the callback on the pax registration driver.
+		 * 
+		 * @since 	1.17.5 (J) - 1.7.5 (WP)
+		 */
+		VBOCheckinPax::callbackPrecheckinDataStored(
+			VBOFactory::getConfig()->getString('checkindata', 'basic'),
+			(array) $guests_details,
+			(array) $order,
+			(array) $customer
+		);
 
 		// print success message and redirect
 		$app->enqueueMessage(JText::translate('VBOSUBMITPRECHECKINTNKS'));

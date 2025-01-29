@@ -401,6 +401,18 @@ body #content .btn-warning:hover, body #wpcontent .btn-warning:hover, .vbo-modal
 .select2-container.select2-container--default .select2-selection--single .select2-selection__arrow {
     height: 40px;
 }
+.vbo-sel2-element-img {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	font-weight: 500;
+}
+.vbo-sel2-element-img img {
+	width: 50px;
+	height: 35px;
+	object-fit: cover;
+	border-radius: 6px;
+}
 /*** Chrome Hack for the select ***/
 .selector:not(*:root), select {
 	border: 0 !important;
@@ -2184,6 +2196,9 @@ p.vbroomparamp span {
 	transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 	transition-duration: 500ms;
 	transition-property: opacity,transform;
+}
+.vbo-submenu-wrap.vbo-submenu-wrap-toleft {
+	right: 0;
 }
 @media screen and (min-width: 1012px) {
 	.vbo-submenu-wrap {
@@ -11534,6 +11549,7 @@ i.vbo-icn-img {
 	width: auto !important;
 }
 .ui-datepicker-multi .ui-datepicker-group {
+	background-color: var(--vbo-body-bg-color) !important;
 	width: calc(50% - 13px) !important;
 	box-sizing: content-box;
 }
@@ -11760,6 +11776,7 @@ i.vbo-icn-img {
 	left: 0;
 	margin: 0;
 	background: transparent;
+	background-color: transparent !important;
 	position: relative;
 	text-indent: 0;
 	width: 34px;
@@ -19953,6 +19970,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.vbcalsblock {
 		display: block;
+	}
+	#ui-datepicker-div.ui-widget-content, .ui-datepicker-inline.ui-widget-content {
+		left: 0 !important;
 	}
 }
 @media screen and (max-width : 550px) {

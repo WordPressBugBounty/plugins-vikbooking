@@ -1502,7 +1502,7 @@ jQuery(function() {
 		showOn: 'focus',
 		dateFormat: '<?php echo $juidf; ?>',
 		minDate: '-1y',
-		numberOfMonths: 2,
+		numberOfMonths: 1,
 		changeMonth: true,
 		changeYear: true,
 		yearRange: '<?php echo (date('Y') - 1).':'.(date('Y') + 3); ?>',

@@ -162,7 +162,17 @@ class VboApplication extends VikApplication
 
 	public function loadSelect2()
 	{
-		//load JS + CSS
+		static $st_loaded = null;
+
+		if ($st_loaded) {
+			// loaded flag
+			return;
+		}
+
+		// cache loaded flag
+		$st_loaded = 1;
+
+		// load JS + CSS
 		$document = JFactory::getDocument();
 		$document->addStyleSheet(VBO_ADMIN_URI.'resources/select2.min.css');
 		$this->addScript(VBO_ADMIN_URI.'resources/select2.min.js');
@@ -297,6 +307,140 @@ JS
 	}
 
 	/**
+	 * Renders a select2 component to display elements with thumbnails.
+	 * 
+	 * @param 	array 	$options 	Associative list of dropdown options.
+	 * @param 	array 	$elements 	Associative list of element records.
+	 * 
+	 * @return 	string 				The HTML string necessary to render the dropdown.
+	 * 
+	 * @since 	1.17.5 (J) - 1.7.5 (WP)
+	 */
+	public function renderElementsDropDown(array $options = [], array $elements = [])
+	{
+		if (!$elements && ($options['elements'] ?? '') == 'listings') {
+			// load listing records
+			$elements = VikBooking::getAvailabilityInstance(true)->loadRooms([], 0, true);
+		}
+
+		if (!$elements) {
+			// abort
+			return '';
+		}
+
+		// load select2 assets
+		$this->loadSelect2();
+
+		if (!($options['id'] ?? null)) {
+			// the ID attribute is mandatory
+			$options['id'] = uniqid('ldd_');
+		}
+
+		// build attributes list
+		$attributes = array_merge([
+			'id' => $options['id'],
+		], ($options['attributes'] ?? []));
+
+		// build attributes string
+		$attr_str = implode(' ', array_map(function($name, $value) {
+			return $name . '="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"'; 
+		}, array_keys($attributes), array_values($attributes)));
+
+		// build data sources
+		$data_sources  = [];
+		$base_img_path = implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'resources', 'uploads']) . DIRECTORY_SEPARATOR;
+		$base_img_uri  = VBO_SITE_URI . 'resources/uploads/';
+
+		foreach ($elements as $element) {
+			if (empty($element['id'])) {
+				continue;
+			}
+
+			// element image
+			$element_img_uri = null;
+
+			if (($options['elements'] ?? '') == 'listings') {
+				// check for listing mini-thumbnail
+				if (!empty($element['img']) && is_file($base_img_path . 'mini_' . $element['img'])) {
+					$element_img_uri = $base_img_uri . 'mini_' . $element['img'];
+				}
+			}
+
+			if (!$element_img_uri && ($options['element_def_img_uri'] ?? '')) {
+				// use the provided default element image
+				$element_img_uri = $options['element_def_img_uri'];
+			}
+
+			// build element data source
+			$data_source = [
+				'id'   => $element['id'],
+				'text' => $element['name'] ?? $element['id'],
+				'img'  => $element_img_uri,
+			];
+
+			// check for option selected status
+			if (($options['selected_value'] ?? null) && $options['selected_value'] == $element['id']) {
+				$data_source['selected'] = true;
+			} elseif (is_array($options['selected_values'] ?? null) && in_array($element['id'], $options['selected_values'])) {
+				$data_source['selected'] = true;
+			}
+
+			// check for option disabled status
+			if (($options['disabled_value'] ?? null) && $options['disabled_value'] == $element['id']) {
+				$data_source['disabled'] = true;
+			} elseif (is_array($options['disabled_values'] ?? null) && in_array($element['id'], $options['disabled_values'])) {
+				$data_source['disabled'] = true;
+			}
+
+			// push element data source
+			$data_sources[] = $data_source;
+		}
+
+		// data sources JSON encoded string
+		$data_sources_str = json_encode($data_sources);
+
+		// empty option tag
+		$empty_option = '';
+		if (!($options['attributes']['multiple'] ?? null)) {
+			$empty_option = '<option></option>';
+		}
+
+		// clearing allowed
+		$clearable = (bool) ($options['allow_clear'] ?? 1);
+		$clearable_str = $clearable ? 'true' : 'false';
+
+		// placeholder text
+		$placeholder = json_encode($options['placeholder'] ?? '');
+
+		// build HTML string
+		$html = <<<HTML
+<select {$attr_str}>{$empty_option}</select>
+HTML;
+
+		// add script declaration to document
+		JFactory::getDocument()->addScriptDeclaration(
+<<<JAVASCRIPT
+jQuery(function() {
+	jQuery('select#{$options['id']}').select2({
+		allowClear: $clearable_str,
+		data: $data_sources_str,
+		placeholder: $placeholder,
+		templateResult: (element) => {
+			if (!element.img) {
+				return element.text;
+			}
+			return jQuery('<span class="vbo-sel2-element-img"><img src="' + element.img + '" /> <span>' + element.text + '</span></span>');
+		},
+	});
+});
+JAVASCRIPT
+		);
+
+		// return the HTML string to be displayed
+		return $html;
+	}
+
+	/**
 	 * Loads the assets for setting up the VBOCore JS in the site section.
 	 * 
 	 * @param 	array 	$options 	Associative list of loading options.
@@ -313,6 +457,9 @@ JS
 			// loaded flag
 			return;
 		}
+
+		// cache loaded flag
+		$corejs_loaded = 1;
 
 		// add script
 		$this->addScript(VBO_ADMIN_URI . 'resources/vbocore.js', ['version' => VIKBOOKING_SOFTWARE_VERSION]);
@@ -349,6 +496,9 @@ JS
 			return;
 		}
 
+		// cache loaded flag
+		$signpad_loaded = 1;
+
 		// add script
 		$this->addScript(VBO_SITE_URI . 'resources/signature_pad.js', ['version' => VIKBOOKING_SOFTWARE_VERSION]);
 	}
@@ -370,6 +520,9 @@ JS
 			// loaded flag
 			return;
 		}
+
+		// cache loaded flag
+		$drp_loaded = 1;
 
 		// add DRP script
 		$this->addScript(VBO_SITE_URI . 'resources/datesrangepicker.js', ['version' => VIKBOOKING_SOFTWARE_VERSION]);

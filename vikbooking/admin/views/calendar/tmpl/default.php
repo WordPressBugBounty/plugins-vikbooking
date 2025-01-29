@@ -1226,6 +1226,7 @@ jQuery(function() {
 	jQuery("#checkindate").vboDatesRangePicker({
 		checkout: '#checkoutdate',
 		showOn: "focus",
+		minDate: '-3y',
 		dateFormat: "<?php echo $juidf; ?>",
 		numberOfMonths: 2,
 		responsiveNumMonths: {

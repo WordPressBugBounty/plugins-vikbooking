@@ -1,5 +1,5 @@
 /**
- * VikBooking - DatesRangePicker v1.1.0.
+ * VikBooking - DatesRangePicker v1.2.1.
  * Copyright (C) 2025 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -19,7 +19,7 @@
 	$.fn.vboMultiDatesPicker = function(method) {
 		var mdp_arguments = arguments;
 		var ret = this;
-		var today_date = new Date();
+		var today_date = new Date;
 		var day_zero = new Date(0);
 		var mdp_events = {};
 
@@ -149,13 +149,13 @@
 					}
 				};
 
-				// value have to be extracted before datepicker is initiated
+				// value needs to be extracted before datepicker is initiated
 				if ($this.val()) {
 					var inputDates = $this.val();
 				}
 
 				if (options) {
-					// value have to be extracted before datepicker is initiated
+					// value needs to be extracted before datepicker is initiated
 					if (options.separator) {
 						this.vboMultiDatesPicker.separator = options.separator;
 					}
@@ -170,7 +170,7 @@
 
 					// datepicker init
 					$this.datepicker(options);
-					
+
 					this.vboMultiDatesPicker.minDate = $.datepicker._determineDate(this, options.minDate, null);
 					this.vboMultiDatesPicker.maxDate = $.datepicker._determineDate(this, options.maxDate, null);
 					if (options.addDates) {
@@ -517,7 +517,12 @@
 	 * Allows MDP not to hide everytime a date is picked.
 	 */
 	$(function() {
-		$.vboMultiDatesPicker._hideDatepicker = $.datepicker._hideDatepicker;
+		/**
+		 * Use a constant instead of a property object to break the loop caused
+		 * my modal (AJAX) duplicate rendering.
+		 */
+		// $.vboMultiDatesPicker._hideDatepicker = $.datepicker._hideDatepicker;
+		const vboMultiDatesPicker_hideDatepicker = $.datepicker._hideDatepicker;
 		$.datepicker._hideDatepicker = function() {
 			/**
 			 * Prevent errors with inline datepickers when _curInst is null.
@@ -531,7 +536,7 @@
 			var target = this._curInst.input[0];
 			var mdp = target.vboMultiDatesPicker;
 			if (!mdp || (this._curInst.inline === false && !mdp.changed)) {
-				return $.vboMultiDatesPicker._hideDatepicker.apply(this, arguments);
+				return vboMultiDatesPicker_hideDatepicker.apply(this, arguments);
 			} else {
 				mdp.changed = false;
 				$.datepicker._refreshDatepicker(target);
@@ -588,7 +593,10 @@
 		}
 
 		if (typeof options.minDate === 'undefined') {
-			options.minDate = new Date();
+			options.minDate = new Date;
+		} else {
+			// ensure minDate is an object
+			options.minDate = $(this).vboDatesRangePicker('convertPeriod', options.minDate);
 		}
 
 		const _onSelect = options.onSelect ?? null;
@@ -661,15 +669,19 @@
 
 		const _beforeShowDay = options.beforeShowDay ?? null;
 		options.beforeShowDay = function(date) {
+			// get the DRP configuration
+			let config = $(this).vboDatesRangePicker('drpoption');
+
+			// current dates
 			const pickedDates = $(this).vboMultiDatesPicker('getDates');
 			const isPicked = pickedDates.some(dt => dt == date);
 
 			// in case the date has been selected, use it as min date
 			// in case the date has been deselected, use the first date in the array (config min date if empty selection)
-			let minDate = isPicked ? date : (pickedDates[0] || options.minDate);
+			let minDate = isPicked ? date : (pickedDates[0] || config.minDate);
 			// in case we have 0 or 2 selected dates, ignore the minimum date
 			// in case we have 1 or 3 selected dates, use the new date
-			minDate = pickedDates.length % 2 ? minDate : options.minDate;
+			minDate = pickedDates.length % 2 ? minDate : config.minDate;
 
 			// class identifier to easily select the table cell from a date object
 			const dateIdClass = 'date-' + date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
@@ -686,8 +698,7 @@
 			let knownDate = false;
 
 			if (pickedDates.length > 0) {
-				// get the DRP configuration
-				let config = $(this).vboDatesRangePicker('drpoption');
+				// date format
 				let dateFormat = $(this).datepicker('option', 'dateFormat');
 
 				// get check-in date
@@ -789,7 +800,10 @@
 					let dateFormat = $(checkin).datepicker('option', 'dateFormat') || options.dateFormat;
 					const checkinDate = $.datepicker.parseDate(dateFormat, pickedDates[0]);
 
-					const checkoutDate = new Date();
+					const checkoutDate = new Date;
+					// ensure to set the date to 1 first, in case the month to set does not have this day (i.e Jan 30, Feb 30 not existing)
+					// without doing so, the Date object constructed would get an extra month, and so the date would not be the desired one
+					checkoutDate.setDate(1);
 					checkoutDate.setFullYear($(this).data('year'));
 					checkoutDate.setMonth($(this).data('month'));
 					checkoutDate.setDate($(this).text());
@@ -1050,10 +1064,12 @@
 			// render DRP
 			$.vboDatesRangePicker(that, $(options.checkout), options);
 
+			// threshold for responsiveness
+			let thresholdWidth = options?.responsiveNumMonths?.threshold || 860;
+
 			// handle responsive number of months
 			if (options?.responsiveNumMonths && (options?.numberOfMonths || 1) > 1) {
 				// configure responsive number of months
-				let thresholdWidth = options.responsiveNumMonths?.threshold || 860;
 				options._onResizeWindow = () => {
 					let windowWidth = window.innerWidth;
 					if (windowWidth && windowWidth <= thresholdWidth) {
@@ -1073,6 +1089,25 @@
 
 				// call method on init
 				options._onResizeWindow();
+			}
+
+			// handle input fields focus/blur on mobile devices
+			if (options?.environment?.section === 'admin' && that.is('input[type="text"]')) {
+				// disable input fields focus on small screen resolutions
+				let windowWidth = window.innerWidth;
+				if (windowWidth && windowWidth <= thresholdWidth) {
+					// disable focus on check-in input field
+					that.on('focus', function() {
+						$(this).blur();
+					});
+
+					if ($(options.checkout).is('input[type="text"]')) {
+						// disable focus on check-out input field
+						$(options.checkout).on('focus', function() {
+							$(this).blur();
+						});
+					}
+				}
 			}
 
 			return this;
@@ -1132,7 +1167,7 @@
 				num = num - (num * 2);
 			}
 
-			switch (instructions[2]) {
+			switch ((instructions[2] + '').toLowerCase()) {
 				case 'd':
 					fromDate.setDate(fromDate.getDate() + num);
 					break;
@@ -1417,6 +1452,13 @@
 		 */
 		if (typeof method === 'string' && method.match(/^comparedates$/i)) {
 			return compareDates(options, setvalue);
+		}
+
+		/**
+		 * Converts a period string into a date object.
+		 */
+		if (typeof method === 'string' && method.match(/^convertperiod$/i)) {
+			return convertPeriod(options, setvalue);
 		}
 
 		/**

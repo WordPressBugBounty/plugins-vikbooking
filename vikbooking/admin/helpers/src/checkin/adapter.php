@@ -154,6 +154,24 @@ abstract class VBOCheckinAdapter implements VBOCheckinPaxfields
 	}
 
 	/**
+	 * Invokes a callback for the extended collection type after the pre-checkin
+	 * information have been stored or updated to perform certain actions.
+	 * 
+	 * @param 	array 	$data 		the guest registration data stored.
+	 * @param 	array 	$booking 	the booking record involved with the guests registration.
+	 * @param 	array 	$customer 	optional customer record associated with the booking.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.17.5 (J) - 1.7.5 (WP)
+	 */
+	public function onPrecheckinDataStored(array $data, array $booking, array $customer)
+	{
+		// no actions to be performed by default
+		return;
+	}
+
+	/**
 	 * Composes the field type class name given its type-string.
 	 * 
 	 * @param 	string 	$field_type 	the field type-string identifier.

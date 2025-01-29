@@ -353,7 +353,7 @@ jQuery(document).ready(function() {
 				</div>
 				<div class="vbo-param-container">
 					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGSEARCHDEFNIGHTS'); ?></div>
-					<div class="vbo-param-setting"><input type="number" name="autodefcalnights" value="<?php echo VikBooking::getDefaultNightsCalendar(true); ?>" min="0"/></div>
+					<div class="vbo-param-setting"><input type="number" name="autodefcalnights" value="<?php echo VikBooking::getDefaultNightsCalendar(); ?>" min="0"/></div>
 				</div>
 				<div class="vbo-param-container">
 					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGSEARCHPNUMROOM'); ?></div>

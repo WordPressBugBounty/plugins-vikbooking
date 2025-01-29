@@ -2576,9 +2576,12 @@ form .vbselectm {
 	background: transparent;
 	border: 0;
 }
-.ui-datepicker-calendar td.checkin-date > *, .ui-datepicker-calendar td.checkout-date > *, .ui-datepicker-calendar td.ui-state-highlight > * {
+.ui-datepicker-calendar td.checkin-date > *, .ui-datepicker-calendar td.checkout-date > *, .ui-datepicker-calendar td > *.ui-state-active {
 	background: var(--vbo-darkblue-color);
 	color: var(--vbo-contrast-text-color);
+}
+.ui-datepicker-calendar .ui-state-default.ui-state-highlight {
+	background: transparent;
 }
 .vbo-guests-allowed-policy {
 	margin: 9px 0;
@@ -5460,13 +5463,19 @@ a.vbo-booking-print-link img {
 	color: var(--vbo-text-color);
 }
 .ui-datepicker td span:hover, .ui-datepicker td a:hover {
+	background: transparent;
 	border-color: var(--vbo-darkblue-color);
 	color: var(--vbo-darkblue-color);
 }
-.ui-state-default,
-.ui-widget-content .ui-state-default,
-.ui-widget-header .ui-state-default {
-	background: transparent !important;
+.ui-datepicker td.checkin-date a, .ui-datepicker td.checkout-date a {
+	color: var(--vbo-contrast-text-color) !important;
+	border-color: var(--vbo-light-grey-bg-color);
+}
+.ui-datepicker td.checkin-date a:hover, .ui-datepicker td.checkout-date a:hover {
+	color: var(--vbo-contrast-text-color);
+}
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+	background: transparent;
 	font-weight: 500 !important;
 }
 .ui-datepicker-calendar td.checkin-checkout-inner {
@@ -5480,6 +5489,7 @@ a.vbo-booking-print-link img {
 }
 .ui-datepicker-calendar td.checkin-checkout-inner > * {
 	border-color: var(--vbo-light-grey-bg-color);
+	background: var(--vbo-light-grey-bg-color);
 }
 .ui-datepicker-calendar .checkin-date {
 	border-top-left-radius: 50%;
@@ -5566,6 +5576,7 @@ a.vbo-booking-print-link img {
 	background: transparent !important;
 }
 #ui-datepicker-div {
+	background: var(--vbo-white-bg-color);
 	box-shadow: 0 3px 12px 0 rgb(0 0 0 / 0.15);
 	border-radius: 32px;
 	padding: 30px;
@@ -5605,9 +5616,10 @@ a.vbo-booking-print-link img {
 }
 .ui-datepicker .ui-datepicker-prev span, .ui-datepicker .ui-datepicker-next span {
 	top: 0 !important;
-	left: 0;
-	margin: 0;
-	background: transparent;
+	left: 0 !important;
+	margin: 0 !important;
+	background: transparent !important;
+	background-color: var(--vbo-white-bg-color);
 	position: relative;
 	text-indent: 0;
 	width: 34px;

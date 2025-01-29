@@ -279,14 +279,16 @@ class VikBookingAvailability
 	 * 
 	 * @param 	array 	$ids 	optional list of IDs to load.
 	 * @param 	int 	$max 	optional rooms limit to fetch.
+	 * @param 	bool 	$anew 	true to avoid object caching.
 	 * 
 	 * @return 	array 			the associative list of rooms.
 	 * 
 	 * @since 	1.16.10 (J) - 1.6.10 (WP) added arguments $ids, $max.
+	 * @since 	1.17.5 (J) - 1.7.5 (WP)  added argument $anew.
 	 */
-	public function loadRooms(array $ids = [], $max = 0)
+	public function loadRooms(array $ids = [], $max = 0, $anew = false)
 	{
-		if ($this->all_rooms) {
+		if ($this->all_rooms && !$anew) {
 			// return previously cached array if available
 			return $this->all_rooms;
 		}
@@ -322,7 +324,7 @@ class VikBookingAvailability
 		$room_rows = $dbo->loadAssocList();
 
 		if (!$room_rows) {
-			return $this->all_rooms;
+			return $anew ? [] : $this->all_rooms;
 		}
 
 		if ($this->isFrontBooking()) {
@@ -331,11 +333,17 @@ class VikBookingAvailability
 			$vbo_tn->translateContents($room_rows, '#__vikbooking_rooms');
 		}
 
+		$assoc_rooms = [];
 		foreach ($room_rows as $room) {
-			$this->all_rooms[$room['id']] = $room;
+			$assoc_rooms[$room['id']] = $room;
 		}
 
-		return $this->all_rooms;
+		if (!$anew) {
+			// cache room records
+			$this->all_rooms = $assoc_rooms;
+		}
+
+		return $anew ? $assoc_rooms : $this->all_rooms;
 	}
 
 	/**

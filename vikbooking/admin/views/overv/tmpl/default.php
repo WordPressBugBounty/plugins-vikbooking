@@ -284,7 +284,7 @@ var vboRdayNotes = <?php echo json_encode($this->rdaynotes); ?>;
 				</select>
 			</div>
 		<?php
-		if ($pbmode == 'tags' && count($colortags) > 0) {
+		if ($pbmode == 'tags' && $colortags) {
 			?>
 			<div class="vbo-overview-tagslegend">
 				<span class="vbo-overview-tagslegend-lbl"><?php echo JText::translate('VBOAVOVWBMODETAGSLBL'); ?></span>
@@ -524,9 +524,9 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 					if ($room_tags_view === true && $totfound > 0) {
 						$last_bid = intval(str_replace('-', '', $bids_pool[(count($bids_pool) - 1)]));
 						$binfo = VikBooking::getBookingInfoFromID($last_bid);
-						if (count($binfo) > 0) {
+						if ($binfo) {
 							$bcolortag = VikBooking::applyBookingColorTag($binfo);
-							if (count($bcolortag) > 0) {
+							if ($bcolortag) {
 								$bcolortag['name'] = JText::translate($bcolortag['name']);
 								$dstyle = " style=\"background-color: ".$bcolortag['color']."; color: ".(array_key_exists('fontcolor', $bcolortag) ? $bcolortag['fontcolor'] : '#ffffff').";\" data-lastbid=\"".$last_bid."\"";
 								$astyle = " style=\"color: ".(array_key_exists('fontcolor', $bcolortag) ? $bcolortag['fontcolor'] : '#ffffff').";\"";
@@ -542,6 +542,24 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 								$totfound = 1;
 								$dclass = "vbo-grid-avcell vbo-overv-avcell subroom-busy";
 								$is_checkin = isset($bids_checkins[$bid]) && $bids_checkins[$bid] == $cur_day_key ? true : $is_checkin;
+
+								/**
+								 * In case of mixed room-types (hotels inventory and listings), we allow
+								 * the tags to be applied on sub-units for multi-unit room types.
+								 * 
+								 * @since 	1.17.5 (J) - 1.7.5 (WP)
+								 */
+								if ($tags_view_supported && $binfo = VikBooking::getBookingInfoFromID($bid)) {
+									$bcolortag = VikBooking::applyBookingColorTag($binfo);
+									if ($bcolortag) {
+										$bcolortag['name'] = JText::translate($bcolortag['name']);
+										$dstyle = " style=\"background-color: ".$bcolortag['color']."; color: ".(array_key_exists('fontcolor', $bcolortag) ? $bcolortag['fontcolor'] : '#ffffff').";\" data-lastbid=\"".$bid."\"";
+										$astyle = " style=\"color: ".(array_key_exists('fontcolor', $bcolortag) ? $bcolortag['fontcolor'] : '#ffffff').";\"";
+										$dclass .= ' vbo-hascolortag';
+									}
+								}
+
+								// abort
 								break;
 							}
 						}
@@ -2886,8 +2904,8 @@ function vboOvervBuildFixedTableHeads(tables) {
 	let fixedOffsetTop = platformAdminBar ? platformAdminBar.offsetHeight : 0;
 	if (fixedOffsetTop) {
 		// ensure the responsive mode has got a fixed/absolute positioning
-		let adminBarPosition = platformAdminBar.style.position || '';
-		if (adminBarPosition != 'fixed' && adminBarPosition != 'absolute') {
+		let adminBarPosition = window.getComputedStyle(platformAdminBar).getPropertyValue('position') || platformAdminBar.style.position || '';
+		if (adminBarPosition != 'fixed' && adminBarPosition != 'absolute' && adminBarPosition != 'sticky') {
 			// no fixed admin bar
 			fixedOffsetTop = 0;
 		}

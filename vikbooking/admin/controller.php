@@ -1073,43 +1073,45 @@ class VikBookingController extends JControllerVikBooking
 		jimport('joomla.filesystem.file');
 		$updpath = VBO_SITE_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR;
 
-		if (intval($_FILES['cimg']['error']) == 0 && VikBooking::caniWrite($updpath) && trim($_FILES['cimg']['name'])!="") {
-			if (@is_uploaded_file($_FILES['cimg']['tmp_name'])) {
-				$safename = JFile::makeSafe(str_replace(" ", "_", strtolower($_FILES['cimg']['name'])));
-				if (file_exists($updpath.$safename)) {
-					$j = 1;
-					while (file_exists($updpath.$j.$safename)) {
-						$j++;
-					}
-					$pwhere = $updpath.$j.$safename;
-				} else {
-					$j = "";
-					$pwhere = $updpath.$safename;
+		$picon = "";
+		if (($_FILES['cimg'] ?? null) && !intval($_FILES['cimg']['error']) && VikBooking::caniWrite($updpath) && strlen(trim($_FILES['cimg']['name'])) && @is_uploaded_file($_FILES['cimg']['tmp_name'])) {
+			$safename = JFile::makeSafe(str_replace(' ', '_', strtolower($_FILES['cimg']['name'])));
+			$j = '';
+			$pwhere = $updpath . $safename;
+			if (file_exists($updpath . $safename)) {
+				$j = 1;
+				while (file_exists($updpath . $j . $safename)) {
+					$j++;
 				}
-				if (!getimagesize($_FILES['cimg']['tmp_name']) || !preg_match("/\.(a?png|jpe?g|bmp|gif|ico|webp)\z/i", $safename)) {
-					@unlink($pwhere);
-					$picon = "";
-				} else {
-					VikBooking::uploadFile($_FILES['cimg']['tmp_name'], $pwhere);
-					@chmod($pwhere, 0644);
-					$picon = $j.$safename;
-					if ($pautoresize=="1" && !empty($presizeto)) {
-						$eforj = new vikResizer();
-						$origmod = $eforj->proportionalImage($pwhere, $updpath.'r_'.$j.$safename, $presizeto, $presizeto);
-						if ($origmod) {
-							@unlink($pwhere);
-							$picon = 'r_'.$j.$safename;
-						}
-					}
-				}
-			} else {
-				$picon = "";
+				$pwhere = $updpath . $j . $safename;
 			}
-		} else {
-			$picon = "";
+			if (!getimagesize($_FILES['cimg']['tmp_name']) || !preg_match("/\.(a?png|jpe?g|bmp|gif|ico|webp)\z/i", $safename)) {
+				@unlink($pwhere);
+			} elseif (VikBooking::uploadFile($_FILES['cimg']['tmp_name'], $pwhere)) {
+				$picon = $j . $safename;
+				if ((int) $pautoresize && !empty($presizeto)) {
+					$origmod = (new VikResizer)->proportionalImage($pwhere, $updpath . 'r_' . $j . $safename, $presizeto, $presizeto);
+					if ($origmod) {
+						@unlink($pwhere);
+						$picon = 'r_' . $j . $safename;
+					}
+				}
+				/**
+				 * Create a mini-thumbnail of the room/listing main photo.
+				 * 
+				 * @since 	1.17.5 (J) - 1.7.5 (WP)
+				 */
+				try {
+					// resize the original image
+					(new VikResizer)->proportionalImage($pwhere, $updpath . 'mini_' . $picon, 96, 96);
+				} catch (Throwable $e) {
+					// silently catch any PHP GD error and continue
+				}
+			}
 		}
-		//more images
-		$creativik = new vikResizer();
+
+		// more images
+		$creativik = new VikResizer;
 		$bigsdest = $updpath;
 		$thumbsdest = $updpath;
 		$dest = $updpath;
@@ -1296,6 +1298,7 @@ class VikBookingController extends JControllerVikBooking
 	{
 		$app = JFactory::getApplication();
 		$config = VBOFactory::getConfig();
+		$dbo = JFactory::getDbo();
 
 		$pcname = VikRequest::getString('cname', '', 'request');
 		$pccat = VikRequest::getVar('ccat', array(0));
@@ -1413,6 +1416,18 @@ class VikBookingController extends JControllerVikBooking
 			}
 		}
 
+		// load current room record
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_rooms'))
+				->where($dbo->qn('id') . ' = ' . (int) $pwhereup)
+		);
+		$prevroom = $dbo->loadAssoc();
+		if (!$prevroom) {
+			VBOHttpDocument::getInstance()->close(404, 'Record not found');
+		}
+
 		/**
 		 * Store room geo params information.
 		 * 
@@ -1435,44 +1450,62 @@ class VikBookingController extends JControllerVikBooking
 
 		jimport('joomla.filesystem.file');
 		$updpath = VBO_SITE_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR;
+
 		if (!empty($pcname)) {
-			if (intval($_FILES['cimg']['error']) == 0 && VikBooking::caniWrite($updpath) && trim($_FILES['cimg']['name'])!="") {
-				if (@is_uploaded_file($_FILES['cimg']['tmp_name'])) {
-					$safename = JFile::makeSafe(str_replace(" ", "_", strtolower($_FILES['cimg']['name'])));
-					if (file_exists($updpath.$safename)) {
-						$j = 1;
-						while (file_exists($updpath.$j.$safename)) {
-							$j++;
-						}
-						$pwhere = $updpath.$j.$safename;
-					} else {
-						$j = "";
-						$pwhere = $updpath.$safename;
+
+			$picon = "";
+			if (($_FILES['cimg'] ?? null) && !intval($_FILES['cimg']['error']) && VikBooking::caniWrite($updpath) && strlen(trim($_FILES['cimg']['name'])) && @is_uploaded_file($_FILES['cimg']['tmp_name'])) {
+				$safename = JFile::makeSafe(str_replace(" ", "_", strtolower($_FILES['cimg']['name'])));
+				$j = '';
+				$pwhere = $updpath . $safename;
+				if (file_exists($updpath . $safename)) {
+					$j = 1;
+					while (file_exists($updpath . $j . $safename)) {
+						$j++;
 					}
-					if (!getimagesize($_FILES['cimg']['tmp_name']) || !preg_match("/\.(a?png|jpe?g|bmp|gif|ico|webp)\z/i", $safename)) {
-						@unlink($pwhere);
-						$picon = "";
-					} else {
-						VikBooking::uploadFile($_FILES['cimg']['tmp_name'], $pwhere);
-						@chmod($pwhere, 0644);
-						$picon = $j.$safename;
-						if ($pautoresize == "1" && !empty($presizeto)) {
-							$eforj = new vikResizer();
-							$origmod = $eforj->proportionalImage($pwhere, $updpath.'r_'.$j.$safename, $presizeto, $presizeto);
-							if ($origmod) {
-								@unlink($pwhere);
-								$picon = 'r_'.$j.$safename;
-							}
-						}
-					}
-				} else {
-					$picon = "";
+					$pwhere = $updpath . $j . $safename;
 				}
-			} else {
-				$picon = "";
+				if (!getimagesize($_FILES['cimg']['tmp_name']) || !preg_match("/\.(a?png|jpe?g|bmp|gif|ico|webp)\z/i", $safename)) {
+					@unlink($pwhere);
+				} elseif (VikBooking::uploadFile($_FILES['cimg']['tmp_name'], $pwhere)) {
+					$picon = $j . $safename;
+					if ((int) $pautoresize && !empty($presizeto)) {
+						$origmod = (new VikResizer)->proportionalImage($pwhere, $updpath . 'r_' . $j . $safename, $presizeto, $presizeto);
+						if ($origmod) {
+							@unlink($pwhere);
+							$picon = 'r_' . $j . $safename;
+						}
+					}
+					/**
+					 * Create a mini-thumbnail of the room/listing main photo.
+					 * 
+					 * @since 	1.17.5 (J) - 1.7.5 (WP)
+					 */
+					try {
+						// resize the original image
+						(new VikResizer)->proportionalImage($pwhere, $updpath . 'mini_' . $picon, 96, 96);
+					} catch (Throwable $e) {
+						// silently catch any PHP GD error and continue
+					}
+				}
 			}
-			//more images
-			$creativik = new vikResizer();
+
+			/**
+			 * Create a mini-thumbnail of the current room/listing main photo.
+			 * 
+			 * @since 	1.17.5 (J) - 1.7.5 (WP)
+			 */
+			if (!$picon && !empty($prevroom['img']) && is_file($updpath . $prevroom['img']) && !is_file($updpath . 'mini_' . $prevroom['img'])) {
+				try {
+					// resize the original image
+					(new VikResizer)->proportionalImage($updpath . $prevroom['img'], $updpath . 'mini_' . $prevroom['img'], 96, 96);
+				} catch (Throwable $e) {
+					// silently catch any PHP GD error and continue
+				}
+			}
+
+			// more images
+			$creativik = new VikResizer;
 			$bigsdest = $updpath;
 			$thumbsdest = $updpath;
 			$dest = $updpath;
@@ -1609,7 +1642,7 @@ class VikBookingController extends JControllerVikBooking
 				$pfromchild = 1;
 				$ptochild = 1;
 			}
-			$dbo = JFactory::getDBO();
+
 			//adults charges/discounts
 			$adchdisctouch = false;
 			$q = "SELECT * FROM `#__vikbooking_rooms` WHERE `id`='".$pwhereup."';";
@@ -11734,6 +11767,7 @@ jQuery(".' . $selector . '").hover(function() {
 		 * we try to silently trigger an automatic bulk action before updating the session values.
 		 * 
 		 * @since 	1.17.1 (J) - 1.7.1 (WP)
+		 * @since 	1.17.5 (J) - 1.7.5 (WP)  the "rate_id" property is passed along the auto-bulk data.
 		 */
 		$rates_aligned = false;
 		try {
@@ -11742,6 +11776,7 @@ jQuery(".' . $selector . '").hover(function() {
 					'from_date'    => $pfromdate,
 					'to_date'      => $ptodate,
 					'forced_rooms' => [$pid_room],
+					'rate_id'      => $pid_price,
 					'update'       => 'rates',
 				]);
 			}

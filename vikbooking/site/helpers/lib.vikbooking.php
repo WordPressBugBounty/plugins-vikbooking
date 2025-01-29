@@ -1879,32 +1879,12 @@ class VikBooking
 
 		return $mind;
 	}
-	
-	public static function getDefaultNightsCalendar($skipsession = false) {
-		if ($skipsession) {
-			$dbo = JFactory::getDbo();
-			$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='autodefcalnights';";
-			$dbo->setQuery($q);
-			$dbo->execute();
-			$s = $dbo->loadAssocList();
-			return (int)$s[0]['setting'];
-		} else {
-			$session = JFactory::getSession();
-			$sval = $session->get('vbdefaultNightsCalendar', '');
-			if (!empty($sval)) {
-				return (int)$sval;
-			} else {
-				$dbo = JFactory::getDbo();
-				$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='autodefcalnights';";
-				$dbo->setQuery($q);
-				$dbo->execute();
-				$s = $dbo->loadAssocList();
-				$session->set('vbdefaultNightsCalendar', $s[0]['setting']);
-				return (int)$s[0]['setting'];
-			}
-		}
+
+	public static function getDefaultNightsCalendar()
+	{
+		return VBOFactory::getConfig()->getInt('autodefcalnights', 1);
 	}
-	
+
 	public static function getSearchNumRooms($skipsession = true)
 	{
 		$dbo = JFactory::getDbo();
@@ -4174,7 +4154,7 @@ class VikBooking
 	public static function getRoomCaratOriz($idc, $vbo_tn = null)
 	{
 		$carat = '';
-		$arr = self::loadRoomAmenities($idc, $vbo_tn = null);
+		$arr = self::loadRoomAmenities($idc, $vbo_tn);
 
 		if ($arr) {
 			$carat .= "<div class=\"vbo-room-carats\">\n";
@@ -12788,6 +12768,11 @@ class VikBooking
 			if ($view == 'tableaux') {
 				array_push($css_classes, '.vbo-tableaux-roombooks > div:not(.vbo-tableaux-booking-empty), .vbo-tableaux-togglefullscreen { background-color: ' . $pref_colors['bgcolor'] . ' !important; color: ' . $pref_colors['fontcolor'] . ' !important; }');
 			}
+			// listing capacity room-details
+			array_push($css_classes, '.vbo-rdetails-capacity-icn i {
+				background: ' . $pref_colors['bgcolor'] . ' !important;
+				color: ' . $pref_colors['fontcolor'] . ' !important;
+			}');
 		}
 
 		if (!empty($pref_colors['bgcolorhov']) && !empty($pref_colors['fontcolorhov'])) {
