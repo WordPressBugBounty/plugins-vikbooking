@@ -77,6 +77,7 @@
     --vbo-error-border: #ea6060;
 
     /* VCM Chat Message */
+    --vcm-chat-background: #0b1117;
     --vcm-chat-bubble-host-background: #50575d;
     --vcm-chat-bubble-host-color: #fff;
     --vcm-chat-bubble-guest-background: #3c404c;
@@ -118,6 +119,9 @@ table.table th, table.table td {
 .btn.vbo-btn-black {
     background: var(--vbo-config-bg-dark);
     border: 1px solid #999;
+}
+.vbo-admin-dock-wrapper {
+    background: #30588bc4;
 }
 
 /* Config tabs */
@@ -569,25 +573,35 @@ code, kbd {
 }
 .chat-conversation .chat-message .speech-bubble.received {
     background: #3c404c !important;
+    border-color: #3c404c;
     color: #fff !important;
 }
 .chat-conversation .chat-message .speech-bubble.sent {
-    background: #50575d !important;
+    background: #003f75 !important;
+    color: #fff;
+    border-color: #003f75;
 }
 .chat-input-footer .chat-uploads-bar .chat-attachment {
     background-color: var(--vbo-light-color-btn) !important;
     border-color: var(--vbo-config-border-color) !important;
 }
 .chat-conversation .chat-message .speech-bubble.sent.ai-reply:before {
-    background: #50575d !important;
+    background: #000b15 !important;
+    border-color: #003f75;
 }
 .chat-conversation .chat-message .speech-bubble.sent ~ .reactions {
-    background: #50575d !important;
-    border: 1px solid #898e93 !important;
+    background: #003f75 !important;
+    border: 1px solid #0964b3 !important;
 }
 .chat-conversation .chat-message .speech-bubble.received ~ .reactions {
     background: #3c404c !important;
     border: 1px solid #72757c !important;
+}
+.chat-conversation .chat-message .speech-bubble.sent:not(.is-attachment) a {
+    color: #fff;
+}
+.vbo-w-guestmessages-message-new {
+    background: #283d62; 
 }
 /* VikBooking Telephone */
 .iti__country-list {

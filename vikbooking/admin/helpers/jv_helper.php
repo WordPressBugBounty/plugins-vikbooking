@@ -311,12 +311,13 @@ JS
 	 * 
 	 * @param 	array 	$options 	Associative list of dropdown options.
 	 * @param 	array 	$elements 	Associative list of element records.
+	 * @param 	array 	$groups 	Optional list of element groups to source.
 	 * 
 	 * @return 	string 				The HTML string necessary to render the dropdown.
 	 * 
 	 * @since 	1.17.5 (J) - 1.7.5 (WP)
 	 */
-	public function renderElementsDropDown(array $options = [], array $elements = [])
+	public function renderElementsDropDown(array $options = [], array $elements = [], array $groups = [])
 	{
 		if (!$elements && ($options['elements'] ?? '') == 'listings') {
 			// load listing records
@@ -369,6 +370,9 @@ JS
 			if (!$element_img_uri && ($options['element_def_img_uri'] ?? '')) {
 				// use the provided default element image
 				$element_img_uri = $options['element_def_img_uri'];
+			} elseif (!$element_img_uri && ($element['img_uri'] ?? '')) {
+				// use the provided element image URI
+				$element_img_uri = $element['img_uri'];
 			}
 
 			// build element data source
@@ -394,6 +398,69 @@ JS
 
 			// push element data source
 			$data_sources[] = $data_source;
+		}
+
+		// check for listing category groups
+		if (($options['elements'] ?? '') == 'listings' && ($options['load_categories'] ?? null)) {
+			// load listing categories
+			$categories = VikBooking::getAvailabilityInstance(true)->loadRoomCategories();
+
+			if (count($categories) > 1) {
+				// turn the category IDs into negative
+				$categories = array_map(function($cat) {
+					return [
+						'id'   => ($cat['id'] - ($cat['id'] * 2)),
+						'text' => $cat['name'],
+					];
+				}, $categories);
+
+				// active or disabled listing categories
+				foreach ($categories as &$category) {
+					// check for option selected status
+					if (($options['selected_value'] ?? null) && $options['selected_value'] == $category['id']) {
+						$category['selected'] = true;
+					} elseif (is_array($options['selected_values'] ?? null) && in_array($category['id'], $options['selected_values'])) {
+						$category['selected'] = true;
+					}
+
+					// check for option disabled status
+					if (($options['disabled_value'] ?? null) && $options['disabled_value'] == $category['id']) {
+						$category['disabled'] = true;
+					} elseif (is_array($options['disabled_values'] ?? null) && in_array($category['id'], $options['disabled_values'])) {
+						$category['disabled'] = true;
+					}
+				}
+				unset($category);
+
+				// push listing category groups
+				$groups[] = [
+					'text' => $options['categories_lbl'] ?? 'Filter by category',
+					'elements' => $categories,
+				];
+			}
+		}
+
+		// append groups to source as data elements
+		foreach ($groups as $group) {
+			if (is_object($group)) {
+				// always cast to array
+				$group = (array) $group;
+			}
+
+			if (!is_array($group) || empty($group['text']) || empty($group['elements'])) {
+				continue;
+			}
+
+			// filter out invalid group elements
+			$group['elements'] = array_filter((array) $group['elements'], function($group_element) {
+				return is_array($group_element) && isset($group_element['id']) && isset($group_element['text']);
+			});
+
+			// push group element data source
+			$data_sources[] = [
+				'text' => $group['text'],
+				'children' => $group['elements'],
+			];
 		}
 
 		// data sources JSON encoded string
@@ -1348,6 +1415,13 @@ JS
 			// revert to append JS script declaration to document
 			$doc->addScriptDeclaration($quill_preconfig_script);
 		}
+
+		/**
+		 * Load Context Menu assets.
+		 * 
+		 * @since 	1.17.6 (J) - 1.7.6 (WP)
+		 */
+		$this->loadContextMenuAssets();
 	}
 
 	/**
@@ -1640,10 +1714,30 @@ JS
 
 		// add JS script to HTML content
 		$toast_icon = VikBookingIcons::i('minus-square');
+		$envelope_icon = VikBookingIcons::i('envelope');
+		$booking_icon = VikBookingIcons::i('address-card');
+		$preview_lbl = htmlspecialchars(JText::translate('VBOPREVIEW'));
+		$booking_lbl = htmlspecialchars(JText::translate('VBDASHBOOKINGID'));
 		$editor .= <<<HTML
 <script>
 jQuery(function() {
+
+	const message_preview_fn = (content, bid) => {
+		let use_bid = bid || (typeof window['vbo_current_bid'] !== 'undefined' ? window['vbo_current_bid'] : null);
+		VBOCore.doAjax('$ajax_preview_mess', {
+			content: content,
+			bid: use_bid,
+		}, (resp) => {
+			var pop_win = window.open('', '', 'width=800, height=600, scrollbars=yes');
+			pop_win.document.body.innerHTML = resp[0];
+		}, (err) => {
+			console.log(err);
+			alert(err.responseText);
+		});
+	};
+
 	var vbo_toast_mailwrapper = null;
+
 	var visual_editor_handlers = {
 		specialtags: function(tag) {
 			if (tag) {
@@ -1683,16 +1777,42 @@ jQuery(function() {
 			}
 		},
 		preview: function(clicked) {
-			VBOCore.doAjax('$ajax_preview_mess', {
-				content: this.quill.root.innerHTML,
-				bid: (typeof window['vbo_current_bid'] !== 'undefined' ? window['vbo_current_bid'] : null)
-			}, (resp) => {
-				var pop_win = window.open('', '', 'width=800, height=600, scrollbars=yes');
-				pop_win.document.body.innerHTML = resp[0];
-			}, (err) => {
-				console.log(err);
-				alert(err.responseText);
-			});
+			let content = this.quill.root.innerHTML;
+			try {
+				let preview_btn = this.quill.container.closest('.vik-contentbuilder-editor-wrap').querySelector('button.ql-preview');
+				jQuery(preview_btn).vboContextMenu({
+					placement: 'bottom-right',
+					buttons: [
+						{
+							icon: '$envelope_icon',
+							text: '$preview_lbl',
+							separator: true,
+							action: (root, config) => {
+								message_preview_fn.call(clicked, content);
+								setTimeout(() => {
+									jQuery(preview_btn).vboContextMenu('destroy');
+								}, 500);
+							},
+						},
+						{
+							icon: '$booking_icon',
+							text: '$booking_lbl',
+							action: (root, config) => {
+								let bid = prompt('$preview_lbl - $booking_lbl');
+								message_preview_fn.call(clicked, content, bid);
+								setTimeout(() => {
+									jQuery(preview_btn).vboContextMenu('destroy');
+								}, 500);
+							},
+						},
+					],
+				});
+				jQuery(preview_btn).vboContextMenu('show');
+			} catch(e) {
+				// fallback on regular preview
+				console.error(e);
+				message_preview_fn.call(clicked, content);
+			}
 		},
 		homelogo: function(clicked) {
 			VBOCore.doAjax('$ajax_logo_url', {}, (resp) => {
@@ -1760,6 +1880,8 @@ jQuery(function() {
 					suffix: 'vbo-ai-tools-writer-inner',
 					title: Joomla.JText._('VBO_GEN_CONTENT') + ' - ' + Joomla.JText._('VBO_AI_LABEL_DEF'),
 					lock_scroll: false,
+					enlargeable: false,
+					minimizeable: false,
 					dismiss_event: 'vbo-ai-tools-writer-content-picked',
 					dismissed_event: 'vbo-ai-tools-writer-content-dismissed',
 				},

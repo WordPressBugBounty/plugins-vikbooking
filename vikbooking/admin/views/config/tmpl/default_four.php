@@ -28,11 +28,11 @@ $attachical = VikBooking::attachIcal();
 			</div>
 			<div class="vbo-param-container">
 				<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGFOURLOGO'); ?></div>
-				<div class="vbo-param-setting"><input type="file" name="sitelogo" size="35"/> <?php echo (strlen($sitelogo) > 0 ? '<a href="'.VBO_ADMIN_URI.'resources/'.$sitelogo.'" class="vbomodal" target="_blank">'.$sitelogo.'</a>' : ''); ?></div>
+				<div class="vbo-param-setting"><input type="file" name="sitelogo" size="35"/> <?php echo (strlen($sitelogo) > 0 ? '<a href="'.VBO_ADMIN_URI.'resources/'.$sitelogo.'" class="vbo-modal-link-img" target="_blank">'.$sitelogo.'</a>' : ''); ?></div>
 			</div>
 			<div class="vbo-param-container">
 				<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGLOGOBACKEND'); ?></div>
-				<div class="vbo-param-setting"><input type="file" name="backlogo" size="35"/> <?php echo (strlen($backlogo) > 0 ? '<a href="'.VBO_ADMIN_URI.'resources/'.$backlogo.'" class="vbomodal" target="_blank">'.$backlogo.'</a>' : '<a href="'.VBO_ADMIN_URI.'vikbooking.png" class="vbomodal" target="_blank">vikbooking.png</a>'); ?></div>
+				<div class="vbo-param-setting"><input type="file" name="backlogo" size="35"/> <?php echo (strlen($backlogo) > 0 ? '<a href="'.VBO_ADMIN_URI.'resources/'.$backlogo.'" class="vbo-modal-link-img" target="_blank">'.$backlogo.'</a>' : '<a href="'.VBO_ADMIN_URI.'vikbooking.png" class="vbo-modal-link-img" target="_blank">vikbooking.png</a>'); ?></div>
 			</div>
 			<div class="vbo-param-container">
 				<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGSENDEMAILWHEN'); ?></div>
@@ -52,25 +52,18 @@ $attachical = VikBooking::attachIcal();
 			<div class="vbo-param-container vbo-param-container-full">
 				<div class="vbo-param-label"><?php echo JText::translate('VBOTERMSCONDS'); ?></div>
 				<div class="vbo-param-setting">
-					<?php
-					if (interface_exists('Throwable')) {
-						/**
-						 * With PHP >= 7 supporting throwable exceptions for Fatal Errors
-						 * we try to avoid issues with third party plugins that make use
-						 * of the WP native function get_current_screen().
-						 * 
-						 * @wponly
-						 */
-						try {
-							echo $editor->display( "termsconds", VikBooking::getTermsConditions(), '100%', 350, 70, 20 );
-						} catch (Throwable $t) {
-							echo $t->getMessage() . ' in ' . $t->getFile() . ':' . $t->getLine() . '<br/>';
-						}
-					} else {
-						// we cannot catch Fatal Errors in PHP 5.x
-						echo $editor->display( "termsconds", VikBooking::getTermsConditions(), '100%', 350, 70, 20 );
-					}
-					?>
+				<?php
+				/**
+				 * With PHP >= 7 supporting throwable exceptions for Fatal Errors
+				 * we try to avoid issues with third party plugins that make use
+				 * of the WP native function get_current_screen().
+				 */
+				try {
+					echo $editor->display( "termsconds", VikBooking::getTermsConditions(), '100%', 350, 70, 20 );
+				} catch (Throwable $t) {
+					echo $t->getMessage() . ' in ' . $t->getFile() . ':' . $t->getLine() . '<br/>';
+				}
+				?>
 				</div>
 			</div>
 			<div class="vbo-param-container">
@@ -84,3 +77,35 @@ $attachical = VikBooking::attachIcal();
 		</div>
 	</div>
 </fieldset>
+
+<script type="text/javascript">
+	jQuery(function() {
+		jQuery('.vbo-modal-link-img').click(function(e) {
+			let href = jQuery(this).attr('href');
+			if (!href) {
+				return;
+			}
+
+			e.preventDefault();
+
+			let title = 'Logo';
+			let lbl = jQuery(this).closest('.vbo-param-container').find('.vbo-param-label');
+			if (lbl.length) {
+				title = lbl.text();
+			}
+
+			let img = document.createElement('img');
+			img.setAttribute('src', href);
+
+			let wrap = document.createElement('div');
+			wrap.classList.add('vbo-modal-zoom-image-wrap');
+			wrap.append(img);
+
+			VBOCore.displayModal({
+				extra_class: 'vbo-modal-center-content',
+				title: title,
+				body: wrap,
+			});
+		});
+	});
+</script>

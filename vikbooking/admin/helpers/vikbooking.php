@@ -1123,6 +1123,9 @@ class VikBookingHelper
 			setTimeout(() => {
 				subMenuStylesPositioning();
 			}, 0);
+
+			// populate admin-dock
+			VBOAdminDock.getInstance();
 		});
 		</script>
 		<?php

@@ -136,6 +136,7 @@ foreach ($short_mons as $k => $v) {
 $json_short_wdays = json_encode($short_wdays);
 $json_short_mons = json_encode($short_mons);
 $json_room_ota_rels = json_encode($this->room_ota_relations);
+$json_mini_thumbnails = json_encode(VBORoomHelper::getInstance()->loadMiniThumbnails($all_rooms));
 
 // add to DOM the necessary script declaration
 $document->addScriptDeclaration(
@@ -143,6 +144,7 @@ $document->addScriptDeclaration(
 var vboMapWdays = $json_short_wdays;
 var vboMapMons = $json_short_mons;
 var vboRoomOtaRels = $json_room_ota_rels;
+var vboListingsMiniThumbnails = $json_mini_thumbnails;
 var vbo_currency_symbol = "$currencysymb";
 var vbo_currency_digits = "$currency_digits";
 var vbo_currency_decimals = "$currency_decimals";
@@ -160,10 +162,15 @@ $collapse_status = $cookie->get('vboRovwColl', 0, 'int');
 $room_helper = VBORoomHelper::getInstance();
 
 // derived rate plans data
+$have_derived_rates = [];
 $derived_rates_info = [];
 foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 	if ($rate_plan['derived_id'] && $rate_plan['derived_data']) {
 		$derived_rates_info[$rate_plan['id']] = $rate_plan;
+		if (!in_array($rate_plan['derived_id'], $have_derived_rates)) {
+			// push parent rate to the list
+			$have_derived_rates[] = $rate_plan['derived_id'];
+		}
 	}
 }
 
@@ -235,7 +242,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 					<?php
 					foreach ($all_rooms as $room) {
 						?>
-							<option value="<?php echo $room['id']; ?>"<?php echo $room['id'] == $roomrows[$this->firstroom]['id'] ? ' selected="selected"' : ''; ?>><?php echo $room['name']; ?></option>
+							<option value="<?php echo $room['id']; ?>"<?php echo $room['id'] == ($roomrows[$this->firstroom]['id'] ?? '') ? ' selected="selected"' : ''; ?>><?php echo $room['name']; ?></option>
 						<?php
 					}
 					?>
@@ -258,8 +265,8 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 						</div>
 					</span>
 					<span class="vbo-ratesoverview-entryinline"><span><?php echo JText::translate('VBRATESOVWRATESCALCNUMNIGHTS'); ?></span> <input type="number" id="vbo-numnights" value="1" min="1" max="365" step="1" /></span>
-					<span class="vbo-ratesoverview-entryinline"><span><?php echo JText::translate('VBRATESOVWRATESCALCNUMADULTS'); ?></span> <input type="number" id="vbo-numadults" value="<?php echo $roomrows[$this->firstroom]['fromadult']; ?>" step="1"/></span>
-					<span class="vbo-ratesoverview-entryinline"><span><?php echo JText::translate('VBRATESOVWRATESCALCNUMCHILDREN'); ?></span> <input type="number" id="vbo-numchildren" value="<?php echo $roomrows[$this->firstroom]['fromchild']; ?>" step="1"/></span>
+					<span class="vbo-ratesoverview-entryinline"><span><?php echo JText::translate('VBRATESOVWRATESCALCNUMADULTS'); ?></span> <input type="number" id="vbo-numadults" value="<?php echo ($roomrows[$this->firstroom]['fromadult'] ?? ''); ?>" step="1"/></span>
+					<span class="vbo-ratesoverview-entryinline"><span><?php echo JText::translate('VBRATESOVWRATESCALCNUMCHILDREN'); ?></span> <input type="number" id="vbo-numchildren" value="<?php echo ($roomrows[$this->firstroom]['fromchild'] ?? ''); ?>" step="1"/></span>
 					<span class="vbo-ratesoverview-entryinline"><button type="button" class="btn vbo-config-btn" id="vbo-ratesoverview-calculate"><?php echo JText::translate('VBRATESOVWRATESCALCULATORCALC'); ?></button></span>
 				</div>
 
@@ -480,7 +487,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 						}
 						?>
 						<tr class="vbo-roverviewtablerow" id="vbo-roverw-<?php echo $roomrate['id'].'-'.$roomrate['idroom']; ?>">
-							<td class="vbo-roverv-rplan<?php echo $rplan_minlos || $rplan_haslos ? ' vbo-roverv-rplan-restricted' : ''; ?>" data-defrate="<?php echo $roomrate['cost']; ?>" data-roomname="<?php echo htmlspecialchars($roomrow['name']); ?>">
+							<td class="vbo-roverv-rplan<?php echo $rplan_minlos || $rplan_haslos ? ' vbo-roverv-rplan-restricted' : ''; ?>" data-defrate="<?php echo $roomrate['cost']; ?>" data-roomname="<?php echo htmlspecialchars($roomrow['name']); ?>" data-room-plan="<?php echo $roomrate['idroom'] . '-' . $roomrate['idprice'] ?>" data-has-derived-rates="<?php echo in_array($roomrate['idprice'], $have_derived_rates) ? '1' : '0'; ?>">
 								<span class="vbo-rplan-name<?php echo $derived_str ? ' vbo-rplan-is-derived' : ''; ?>" title="<?php echo $this->escape($derived_str); ?>"><?php echo $derived_icn . $roomrate['name']; ?></span>
 							<?php
 							if ($rplan_minlos || $rplan_haslos) {
@@ -1285,6 +1292,10 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 		<div class="vbo-roverw-setnewrate">
 			<div class="vbo-roverw-setnewrate-title">
 				<h4><?php VikBookingIcons::e('calculator'); ?> <?php echo JText::translate('VBO_RATES_AND_RESTR'); ?></h4>
+				<div class="vbo-roverw-setnewrate-skip-derived vbo-toggle-small vbo-toggle-mini" style="display: none;">
+					<label for="roverw-skip-derived-on" class="vbo-roverw-setnewrate-skip-derived-lbl"><?php echo JText::translate('VBO_SKIP_DERIVED_RPLANS'); ?></label>
+					<?php echo $vbo_app->printYesNoButtons('roverw-skip-derived', JText::translate('VBYES'), JText::translate('VBNO'), 0, 1, 0); ?>
+				</div>
 			</div>
 			<div class="vbo-roverw-flexnew">
 				<div class="vbo-roverw-newrwrap">
@@ -1631,9 +1642,24 @@ jQuery(function() {
 	 * Render select2.
 	 */
 	jQuery("#roomsel").select2({
-		allowClear: true
+		allowClear: true,
+		templateResult: (element) => {
+			if (typeof vboListingsMiniThumbnails !== 'undefined' && vboListingsMiniThumbnails.hasOwnProperty((element.id || 0))) {
+				return jQuery('<span class="vbo-sel2-element-img"><img src="' + vboListingsMiniThumbnails[element.id] + '" /> <span>' + element.text + '</span></span>');
+			} else {
+				return element.text;
+			}
+		},
 	});
-	jQuery("#roomselcalc").select2();
+	jQuery("#roomselcalc").select2({
+		templateResult: (element) => {
+			if (typeof vboListingsMiniThumbnails !== 'undefined' && vboListingsMiniThumbnails.hasOwnProperty((element.id || 0))) {
+				return jQuery('<span class="vbo-sel2-element-img"><img src="' + vboListingsMiniThumbnails[element.id] + '" /> <span>' + element.text + '</span></span>');
+			} else {
+				return element.text;
+			}
+		},
+	});
 });
 <?php
 if ($df == "Y/m/d") {
@@ -2327,6 +2353,18 @@ function showVboDialog() {
 		}
 	}
 
+	// choose whether to suggest to skip derived rate plans
+	let parentPlanRow = jQuery('.vbo-roverv-rplan[data-room-plan="' + vbolistener.first.idroom + '-' + vbolistener.first.rplan + '"][data-has-derived-rates="1"]');
+	if (parentPlanRow.length && parentPlanRow.closest('.vbratesoverviewtable').find('.vbo-roverv-rplan').length > 1) {
+		// parent rate plan selected among multiple room rate plans
+		jQuery('.vbo-roverw-setnewrate-skip-derived').show();
+	} else {
+		// either a derived rate plan selected, or single rate plan available
+		jQuery('.vbo-roverw-setnewrate-skip-derived').hide();
+		// turn off the flag to skip the derived rate plans from being updated
+		jQuery('input[name="roverw-skip-derived"]').prop('checked', false);
+	}
+
 	// populate OTA relations
 	vboRatesOvervSetRoomOtaRelations(vbolistener.first.idroom, vbolistener.first.rplan);
 
@@ -2409,6 +2447,18 @@ function showVboDialogPeriod() {
 		if (allblocksclosed) {
 			jQuery("#rovervw-rplan").html('<span style="color: #f00"><i class="<?php echo VikBookingIcons::i('ban'); ?>"></i> '+vbolistener.first.rplanName+'</span>');
 		}
+	}
+
+	// choose whether to suggest to skip derived rate plans
+	let parentPlanRow = jQuery('.vbo-roverv-rplan[data-room-plan="' + vbolistener.first.idroom + '-' + vbolistener.first.rplan + '"][data-has-derived-rates="1"]');
+	if (parentPlanRow.length && parentPlanRow.closest('.vbratesoverviewtable').find('.vbo-roverv-rplan').length > 1) {
+		// parent rate plan selected among multiple room rate plans
+		jQuery('.vbo-roverw-setnewrate-skip-derived').show();
+	} else {
+		// either a derived rate plan selected, or single rate plan available
+		jQuery('.vbo-roverw-setnewrate-skip-derived').hide();
+		// turn off the flag to skip the derived rate plans from being updated
+		jQuery('input[name="roverw-skip-derived"]').prop('checked', false);
 	}
 
 	// populate OTA relations
@@ -2791,6 +2841,9 @@ function vboRatesOvervSetRoomOtaRelations(room_id, rplan_id) {
 				let ota_wrap = jQuery(elem);
 				let ota_id = ota_wrap.find('.vbo-roverw-setnewrate-vcm-ota-relation-channel').attr('data-otaid');
 				let alter_ota_rates = alter_room_rates && obj_res['channels'] && (obj_res['channels'].includes(ota_id) || obj_res['channels'].includes(parseInt(ota_id)));
+				if (!alter_ota_rates && alter_room_rates && obj_res.hasOwnProperty('rmod_channels') && obj_res['rmod_channels'].hasOwnProperty(ota_id)) {
+					alter_ota_rates = true;
+				}
 
 				// check if the current channel is using a different currency
 				let ota_currency_data = {};
@@ -2953,6 +3006,7 @@ function setNewRates() {
 			todate: vbolistener.last.toDate("yy-mm-dd"),
 			rateclosed: closerplan,
 			ota_pricing: ota_pricing,
+			skip_derived: (jQuery('input[name="roverw-skip-derived"]').prop('checked') ? 1 : 0),
 		},
 		(res) => {
 			if (typeof res === 'string' && res.indexOf('e4j.error') === 0) {

@@ -708,8 +708,12 @@ if ($ord['refund'] > 0) {
  * Channels supporting payout notifications will not allow to pay the outstanding balance unless a payable amount is set.
  * 
  * @since 	1.16.9 (J) - 1.6.9 (WP)
+ * 
+ * Damage deposit configured to be paid separately will not count as a payable remaining balance.
+ * 
+ * @since 	1.17.6 (J) - 1.7.6 (WP)
  */
-$payable = (($ord['totpaid'] > 0.00 && $ord['totpaid'] < $ord['total'] && $ord['paymcount'] > 0) || $ord['payable'] > 0);
+$payable = (($ord['totpaid'] > 0 && ($ord['totpaid'] + ($this->damage_deposit_payment['damagedep_gross'] ?? 0)) < $ord['total'] && $ord['paymcount'] > 0) || $ord['payable'] > 0);
 $ota_will_pay = false;
 if ($payable && !empty($ord['idorderota']) && !empty($ord['channel']) && $ord['cmms'] && ($ord['total'] - $ord['totpaid'] - $ord['cmms']) < 1) {
 	// the difference of the amount paid is equal to the OTA commissions amount
@@ -746,7 +750,7 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 		 * @wponly  the URLs must be routed differently for WP
 		 */
 		$model 	= JModel::getInstance('vikbooking', 'shortcodes', 'admin');
-		$itemid = $model->best(array('booking'), (!empty($ord['lang']) ? $ord['lang'] : null));
+		$itemid = $model->best(['booking'], (!empty($ord['lang']) ? $ord['lang'] : null));
 		if ($itemid) {
 			$return_url = str_replace(JUri::root(), '', $return_url);
 			$error_url = str_replace(JUri::root(), '', $error_url);
@@ -762,7 +766,7 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 	}
 
 	$transaction_name = VikBooking::getPaymentName();
-	$remainingamount = $ord['payable'] > 0 ? $ord['payable'] : ($ord['total'] - $ord['totpaid']);
+	$remainingamount = $ord['payable'] > 0 ? $ord['payable'] : ($ord['total'] - ($ord['totpaid'] + ($this->damage_deposit_payment['damagedep_gross'] ?? 0)));
 	$leave_deposit = 0;
 	$percentdeposit = "";
 
@@ -844,8 +848,19 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 	</div>
 	<?php
 } elseif ($ord['status'] == 'confirmed') {
-	if ($ptmpl != 'component' && $ord['total'] > 0 && $ord['totpaid'] > 0.00 && $ord['totpaid'] < $ord['total']) {
-		$remainingamount = $ord['total'] - $ord['totpaid'];
+	if ($ptmpl != 'component' && $ord['total'] > 0 && $ord['totpaid'] > 0 && $ord['totpaid'] < $ord['total']) {
+		/**
+		 * Calculate the amount paid so far, by considering the damage deposit and its payment.
+		 * 
+		 * @since 	1.17.6 (J) - 1.7.6 (WP)
+		 */
+		$paid_so_far = $ord['totpaid'];
+		if (($this->damage_deposit_payment['damagedep_gross'] ?? 0) > 0 && $this->prev_dd_payments) {
+			$paid_so_far += $this->damage_deposit_payment['damagedep_gross'];
+		}
+
+		// calculate the remainig balance to be paid
+		$remainingamount = $ord['total'] - $paid_so_far;
 		?>
 	<div class="vbo-booking-cost-detail vbo-booking-cost-detail-amountpaid">
 		<div class="vbo-booking-cost-lbl">
@@ -859,7 +874,7 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 		</div>
 	</div>
 		<?php
-		if (!$ota_will_pay) {
+		if (!$ota_will_pay && $remainingamount > 0) {
 			?>
 	<div class="vbo-booking-cost-detail vbo-booking-cost-detail-remainingbalance">
 		<div class="vbo-booking-cost-lbl">
@@ -1033,7 +1048,7 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 		 * @wponly  the URLs must be routed differently for WP
 		 */
 		$model 	= JModel::getInstance('vikbooking', 'shortcodes', 'admin');
-		$itemid = $model->best(array('booking'), (!empty($ord['lang']) ? $ord['lang'] : null));
+		$itemid = $model->best(['booking'], (!empty($ord['lang']) ? $ord['lang'] : null));
 		if ($itemid) {
 			$return_url = str_replace(JUri::root(), '', $return_url);
 			$error_url = str_replace(JUri::root(), '', $error_url);
@@ -1073,19 +1088,36 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 	$array_order['total_to_pay'] = $isdue;
 	$array_order['total_net_price'] = $imp;
 	$array_order['total_tax'] = $tax;
+
+	/**
+	 * Check for damage deposit payment data and eventually deduct payment amounts.
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	if (($this->damage_deposit_payment['payment_window'] ?? []) && ($this->damage_deposit_payment['damagedep_gross'] ?? 0) > 0 && $this->damage_deposit_payment['damagedep_gross'] < $array_order['total_to_pay']) {
+		// damage deposit will have to be paid separately
+		$array_order['total_to_pay'] -= $this->damage_deposit_payment['damagedep_gross'];
+		if (($this->damage_deposit_payment['damagedep_net'] ?? 0) > 0 && $this->damage_deposit_payment['damagedep_net'] < $array_order['total_tax']) {
+			$array_order['total_net_price'] -= $this->damage_deposit_payment['damagedep_net'];
+		}
+		if (($this->damage_deposit_payment['damagedep_tax'] ?? 0) > 0 && $this->damage_deposit_payment['damagedep_tax'] < $array_order['total_tax']) {
+			$array_order['total_tax'] -= $this->damage_deposit_payment['damagedep_tax'];
+		}
+	}
+
 	$totalchanged = false;
 	if ($payment['charge'] > 0.00) {
 		$totalchanged = true;
 		if ($payment['ch_disc'] == 1) {
-			//charge
+			// charge
 			if ($payment['val_pcent'] == 1) {
-				//fixed value
+				// fixed value
 				$array_order['total_net_price'] += $payment['charge'];
 				$array_order['total_tax'] += $payment['charge'];
 				$array_order['total_to_pay'] += $payment['charge'];
 				$newtotaltopay = $array_order['total_to_pay'];
 			} else {
-				//percent value
+				// percent value
 				$percent_net = $array_order['total_net_price'] * $payment['charge'] / 100;
 				$percent_tax = $array_order['total_tax'] * $payment['charge'] / 100;
 				$percent_to_pay = $array_order['total_to_pay'] * $payment['charge'] / 100;
@@ -1095,15 +1127,15 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 				$newtotaltopay = $array_order['total_to_pay'];
 			}
 		} else {
-			//discount
+			// discount
 			if ($payment['val_pcent'] == 1) {
-				//fixed value
+				// fixed value
 				$array_order['total_net_price'] -= $payment['charge'];
 				$array_order['total_tax'] -= $payment['charge'];
 				$array_order['total_to_pay'] -= $payment['charge'];
 				$newtotaltopay = $array_order['total_to_pay'];
 			} else {
-				//percent value
+				// percent value
 				$percent_net = $array_order['total_net_price'] * $payment['charge'] / 100;
 				$percent_tax = $array_order['total_tax'] * $payment['charge'] / 100;
 				$percent_to_pay = $array_order['total_to_pay'] * $payment['charge'] / 100;
@@ -1142,7 +1174,7 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 		$elapsed_redirect_uri = JRoute::rewrite('index.php?option=com_vikbooking&view=booking&sid='.(!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']).'&ts='.$ord['ts'].(!empty($bestitemid) ? '&Itemid='.$bestitemid : (!empty($pitemid) ? '&Itemid='.$pitemid : '')), false);
 	}
 
-	//Auto Removal Minutes
+	// booking auto-removal minutes
 	$minautoremove = VikBooking::getMinutesAutoRemove();
 	$mins_elapsed = floor(($now_info[0] - $ord['ts']) / 60);
 	if ($minautoremove > 0 && $minautoremove < 35791) {
@@ -1269,12 +1301,117 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 }
 
 /**
+ * Check if damage deposit should be paid separately and whether it can be paid right now.
+ * 
+ * @since 	1.17.6 (J) - 1.7.6 (WP)
+ */
+if ($ord['status'] == 'confirmed' && ($this->damage_deposit_payment['damagedep_gross'] ?? 0) > 0 && ($this->damage_deposit_payment['payment_window']['payable'] ?? false) && !$this->prev_dd_payments) {
+	// damage deposit can be paid separately
+	$dd_payment = !empty($this->damage_deposit_payment['payment_window']['pay_id']) ? VikBooking::getPayment($this->damage_deposit_payment['payment_window']['pay_id'], $vbo_tn) : $payment;
+
+	// build transaction URIs
+	if (VBOPlatformDetection::isWordPress()) {
+		$return_url = JUri::root() . "index.php?option=com_vikbooking&view=booking&sid=" . (!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']) . "&ts=" . $ord['ts'];
+		$error_url = JUri::root() . "index.php?option=com_vikbooking&view=booking&sid=" . (!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']) . "&ts=" . $ord['ts'];
+		$notify_url = JUri::root() . "index.php?option=com_vikbooking&task=notifypayment&dd=1&sid=" . (!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']) . "&ts=" . $ord['ts']."&tmpl=component";
+		$model 	= JModel::getInstance('vikbooking', 'shortcodes', 'admin');
+		$itemid = $model->best(['booking'], (!empty($ord['lang']) ? $ord['lang'] : null));
+		if ($itemid) {
+			$return_url = str_replace(JUri::root(), '', $return_url);
+			$error_url = str_replace(JUri::root(), '', $error_url);
+			$notify_url = str_replace(JUri::root(), '', $notify_url);
+			$return_url = JRoute::rewrite($return_url . "&Itemid={$itemid}", false);
+			$error_url = JRoute::rewrite($error_url . "&Itemid={$itemid}", false);
+			$notify_url = JRoute::rewrite($notify_url . "&Itemid={$itemid}", false);
+		}
+	} else {
+		$return_url = VikBooking::externalroute("index.php?option=com_vikbooking&view=booking&sid=" . (!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']) . "&ts=" . $ord['ts'], false, (!empty($bestitemid) ? $bestitemid : null));
+		$error_url = VikBooking::externalroute("index.php?option=com_vikbooking&view=booking&sid=" . (!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']) . "&ts=" . $ord['ts'], false, (!empty($bestitemid) ? $bestitemid : null));
+		$notify_url = VikBooking::externalroute("index.php?option=com_vikbooking&task=notifypayment&dd=1&sid=" . (!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']) . "&ts=" . $ord['ts']."&tmpl=component", false, null);
+	}
+
+	// build payment instructions
+	$array_order = [];
+	$array_order['details'] = $ord;
+	if (empty($array_order['details']['sid']) && !empty($array_order['details']['idorderota']) && !empty($array_order['details']['channel'])) {
+		$array_order['details']['sid'] = $array_order['details']['idorderota'];
+		$ord['sid'] = $ord['idorderota'];
+	}
+	$array_order['customer_email'] = $ord['custmail'];
+	$array_order['account_name'] = VikBooking::getPaypalAcc();
+	$array_order['transaction_currency'] = VikBooking::getCurrencyCodePp();
+	$array_order['rooms_name'] = implode(", ", $roomsnames);
+	$array_order['transaction_name'] = !empty($transaction_name) ? $transaction_name : (JText::translate('VBORDERNUMBER') . ' ' . $ord['id']);
+	$array_order['transaction_name'] .= ' - ' . JText::translate('VBO_DAMAGE_DEPOSIT');
+	$array_order['order_total'] = $this->damage_deposit_payment['damagedep_gross'];
+	$array_order['currency_symb'] = $currencysymb;
+	$array_order['net_price'] = $this->damage_deposit_payment['damagedep_net'];
+	$array_order['tax'] = $this->damage_deposit_payment['damagedep_tax'];
+	$array_order['return_url'] = $return_url;
+	$array_order['error_url'] = $error_url;
+	$array_order['notify_url'] = $notify_url;
+	$array_order['total_to_pay'] = $this->damage_deposit_payment['damagedep_gross'];
+	$array_order['total_net_price'] = $this->damage_deposit_payment['damagedep_net'];
+	$array_order['total_tax'] = $this->damage_deposit_payment['damagedep_tax'];
+	$array_order['leave_deposit'] = 0;
+	$array_order['percentdeposit'] = '';
+	$array_order['payment_info'] = $dd_payment;
+	$array_order = array_merge($ord, $array_order);
+
+	if (is_array($dd_payment) && !empty($dd_payment['note'])) {
+		?>
+<div class="vbvordpaynote">
+		<?php
+		/**
+		 * @wponly 	we need to let WordPress parse the paragraphs in the message.
+		 */
+		if (VBOPlatformDetection::isWordPress()) {
+			echo wpautop($dd_payment['note']);
+		} else {
+			echo $dd_payment['note'];
+		}
+		?>
+</div>
+		<?php
+	}
+	?>
+<div class="vbvordpaybutton vbo-damage-deposit-payment">
+	<?php
+	if (VBOPlatformDetection::isWordPress()) {
+		/**
+		 * @wponly 	The payment gateway is now loaded 
+		 * 			using the apposite dispatcher.
+		 *
+		 * @since 1.0.5
+		 */
+		JLoader::import('adapter.payment.dispatcher');
+
+		$obj = JPaymentDispatcher::getInstance('vikbooking', $dd_payment['file'], $array_order, $dd_payment['params']);
+		// remember to echo the payment
+		echo $obj->showPayment();
+	} else {
+		/**
+		 * @joomlaonly 	The Payment Factory library will invoke the gateway.
+		 * 
+		 * @since 	1.14.3
+		 */
+		require_once VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'payments' . DIRECTORY_SEPARATOR . 'libraries' . DIRECTORY_SEPARATOR . 'factory.php';
+		$obj = VBOPaymentFactory::getPaymentInstance($dd_payment['file'], $array_order, $dd_payment['params']);
+
+		$obj->showPayment();
+	}
+	?>
+</div>
+	<?php
+}
+
+/**
  * Booking review left by the guest
  * 
  * @since  1.13
  */
 $review = VikBooking::getBookingReview($ord);
-if (is_array($review) && count($review)) {
+if (is_array($review) && $review) {
 	$rev_services = VikBooking::guestReviewsServices();
 	$raw_rev_services = array();
 	foreach ($rev_services as $sk => $sn) {
@@ -1682,18 +1819,20 @@ jQuery(function() {
  * If necessary, move the payment form onto the selected position.
  * 
  * @since 	1.14 (J) - 1.4.0 (WP)
+ * @since 	1.17.6 (J) - 1.7.6 (WP) added support for damage deposit payment
  */
-if (is_array($this->payment) && $this->payment['outposition'] != 'bottom') {
+if ((is_array($this->payment) && $this->payment['outposition'] != 'bottom') || (isset($dd_payment) && is_array($dd_payment) && $dd_payment['outposition'] != 'bottom')) {
 	// move the payment window, if available
+	$payment_position = isset($dd_payment) && is_array($dd_payment) && $dd_payment['outposition'] != 'bottom' ? $dd_payment['outposition'] : $this->payment['outposition'];
 	?>
 <script type="text/javascript">
 	
 	jQuery(function() {
 
-		var payment_output = jQuery('.vbvordpaybutton').first(),
-			payment_notes  = jQuery('.vbvordpaynote').first(),
+		var payment_output = jQuery('.vbvordpaybutton'),
+			payment_notes  = jQuery('.vbvordpaynote'),
 			payment_ctimer = jQuery('.vbo-timer-payment').first(),
-			payment_wrappr = jQuery('.vbo-paycontainer-pos-<?php echo $this->payment['outposition']; ?>').first();
+			payment_wrappr = jQuery('.vbo-paycontainer-pos-<?php echo $payment_position; ?>').first();
 
 		if (payment_output.length && payment_wrappr.length) {
 			// display final target

@@ -1571,6 +1571,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		// get all rooms
 		$all_rooms = $av_helper->loadRooms();
 
+		// load room mini thumbnails
+		$mini_thumbnails = VBORoomHelper::getInstance()->loadMiniThumbnails($all_rooms);
+
 		// check pricing tax configuration
 		$prices_vat_included = (int)VikBooking::ivaInclusa();
 
@@ -1807,6 +1810,11 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 			var vbo_currency_digits = "<?php echo $currency_digits; ?>";
 			var vbo_currency_decimals = "<?php echo $currency_decimals; ?>";
 			var vbo_currency_thousands = "<?php echo $currency_thousands; ?>";
+
+			/**
+			 * Room mini thumbnails.
+			 */
+			var vbo_widget_books_cal_mini_thumbs = <?php echo json_encode($mini_thumbnails); ?>;
 
 			/**
 			 * Open the booking details page for the clicked reservation.
@@ -2608,6 +2616,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 							let ota_wrap = jQuery(elem);
 							let ota_id = ota_wrap.find('.vbo-roverw-setnewrate-vcm-ota-relation-channel').attr('data-otaid');
 							let alter_ota_rates = alter_room_rates && obj_res['channels'] && (obj_res['channels'].includes(ota_id) || obj_res['channels'].includes(parseInt(ota_id)));
+							if (!alter_ota_rates && alter_room_rates && obj_res.hasOwnProperty('rmod_channels') && obj_res['rmod_channels'].hasOwnProperty(ota_id)) {
+								alter_ota_rates = true;
+							}
 
 							// check if the current channel is using a different currency
 							let ota_currency_data = {};
@@ -3787,7 +3798,14 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 					jQuery('#<?php echo $wrapper_id; ?>').find('select.vbo-booskcal-roomid').select2({
 						width: "100%",
 						placeholder: "<?php echo htmlspecialchars(VikBooking::strTrimLiteral(JText::translate('VBOREPORTSROOMFILT'))); ?>",
-						allowClear: true
+						allowClear: true,
+						templateResult: (element) => {
+							if (typeof vbo_widget_books_cal_mini_thumbs !== 'undefined' && vbo_widget_books_cal_mini_thumbs.hasOwnProperty((element.id || 0))) {
+								return jQuery('<span class="vbo-sel2-element-img"><img src="' + vbo_widget_books_cal_mini_thumbs[element.id] + '" /> <span>' + element.text + '</span></span>');
+							} else {
+								return element.text;
+							}
+						},
 					});
 				}
 

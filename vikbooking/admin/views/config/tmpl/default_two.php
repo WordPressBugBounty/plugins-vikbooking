@@ -86,6 +86,7 @@ $formatparts = explode(':', $formatvals);
 
 <?php
 $dep_overrides = VikBooking::getDepositOverrides(true);
+$pay_total = VikBooking::payTotal();
 ?>
 <div class="vbo-info-overlay-block">
 	<a class="vbo-info-overlay-close" href="javascript: void(0);"></a>
@@ -99,13 +100,13 @@ $dep_overrides = VikBooking::getDepositOverrides(true);
 			<div class="vbo-params-container">
 				<div class="vbo-param-container">
 					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGTWOTHREE'); ?></div>
-					<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('paytotal', JText::translate('VBYES'), JText::translate('VBNO'), (VikBooking::payTotal() ? 'yes' : 0), 'yes', 0); ?></div>
+					<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('paytotal', JText::translate('VBYES'), JText::translate('VBNO'), ($pay_total ? 'yes' : 0), 'yes', 0, 'vboTogglePayDeposit();'); ?></div>
 				</div>
-				<div class="vbo-param-container">
+				<div class="vbo-param-container" data-related="paytotal" style="<?php echo $pay_total ? 'display: none;' : ''; ?>">
 					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGTWOFOUR'); ?></div>
 					<div class="vbo-param-setting"><input type="number" name="payaccpercent" value="<?php echo VikBooking::getAccPerCent(); ?>" min="0"/> <select id="typedeposit" name="typedeposit"><option value="pcent">%</option><option value="fixed"<?php echo (VikBooking::getTypeDeposit(true) == "fixed" ? ' selected="selected"' : ''); ?>><?php echo VikBooking::getCurrencySymb(); ?></option></select></div>
 				</div>
-				<div class="vbo-param-container">
+				<div class="vbo-param-container" data-related="paytotal" style="<?php echo $pay_total ? 'display: none;' : ''; ?>">
 					<div class="vbo-param-label"><?php echo JText::translate('VBOCONFDEPOSITOVRDS'); ?></div>
 					<div class="vbo-param-setting">
 						<input type="hidden" id="depoverrides" name="depoverrides" value="<?php echo htmlspecialchars($dep_overrides); ?>"/>
@@ -113,15 +114,19 @@ $dep_overrides = VikBooking::getDepositOverrides(true);
 						<button type="button" class="btn" onclick="vboDisplayDepositOverrides();"><i class="vboicn-pencil2 icn-nomargin"></i></button>
 					</div>
 				</div>
-				<div class="vbo-param-container">
+				<div class="vbo-param-container" data-related="paytotal" style="<?php echo $pay_total ? 'display: none;' : ''; ?>">
 					<div class="vbo-param-label"><?php echo JText::translate('VBOCONFDEPONLYIFDADV'); ?></div>
 					<div class="vbo-param-setting"><input type="number" style="max-width: 60px;" name="depifdaysadv" min="0" value="<?php echo VikBooking::getDepositIfDays(); ?>"/></div>
 				</div>
-				<div class="vbo-param-container">
+				<div class="vbo-param-container" data-related="paytotal" style="<?php echo $pay_total ? 'display: none;' : ''; ?>">
+					<div class="vbo-param-label"><?php echo JText::translate('VBO_CONF_DEP_BALANCE_NDAYS'); ?></div>
+					<div class="vbo-param-setting"><input type="number" style="max-width: 60px;" name="depbalancedays" min="-14" value="<?php echo VBOFactory::getConfig()->get('depbalancedays'); ?>"/></div>
+				</div>
+				<div class="vbo-param-container" data-related="paytotal" style="<?php echo $pay_total ? 'display: none;' : ''; ?>">
 					<div class="vbo-param-label"><?php echo JText::translate('VBOCONFDEPCUSTCHOICE'); ?></div>
 					<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('depcustchoice', JText::translate('VBYES'), JText::translate('VBNO'), (VikBooking::depositCustomerChoice() ? 'yes' : 0), 'yes', 0); ?></div>
 				</div>
-				<div class="vbo-param-container">
+				<div class="vbo-param-container" data-related="paytotal" style="<?php echo $pay_total ? 'display: none;' : ''; ?>">
 					<div class="vbo-param-label"><?php echo $vbo_app->createPopover(array('title' => JText::translate('VBOCONFNODEPNONREFUND'), 'content' => JText::translate('VBOCONFNODEPNONREFUNDHELP'))); ?> <?php echo JText::translate('VBOCONFNODEPNONREFUND'); ?></div>
 					<div class="vbo-param-setting"><?php echo $vbo_app->printYesNoButtons('nodepnonrefund', JText::translate('VBYES'), JText::translate('VBNO'), (int)VikBooking::noDepositForNonRefund(), 1, 0); ?></div>
 				</div>
@@ -138,7 +143,7 @@ var vbo_depovr_defs = {
 	"add": "<?php echo addslashes(JText::translate('VBCONFIGCLOSINGDATEADD')); ?>",
 	"apply": "<?php echo addslashes(JText::translate('VBAPPLY')); ?>"
 }
-jQuery(document).ready(function() {
+jQuery(function() {
 	vboPopulateDepositOverrides();
 	jQuery(document).mouseup(function(e) {
 		if (!vbo_overlay_on) {
@@ -245,5 +250,12 @@ function vboApplyDepositeOverrides() {
 	jQuery('#depoverrides').val(JSON.stringify(respval));
 	vboHideDepositOverrides();
 	vboPopulateDepositOverrides();
+}
+function vboTogglePayDeposit() {
+	if (jQuery('input[name="paytotal"]').prop('checked')) {
+		jQuery('.vbo-param-container[data-related="paytotal"]').css('display', 'none');
+	} else {
+		jQuery('.vbo-param-container[data-related="paytotal"]').css('display', '');
+	}
 }
 </script>

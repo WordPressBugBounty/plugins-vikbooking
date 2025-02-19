@@ -38,18 +38,19 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 	/**
 	 * Tells whether children should be registered.
 	 * 
-	 * @override 		this driver requires children to be registered (back-end only).
+	 * @override 		this driver requires children to be registered.
 	 * 
 	 * @param 	bool 	$precheckin 	true if requested for front-end pre check-in.
 	 * 
 	 * @return 	bool    true to also register the children.
 	 * 
 	 * @since 	1.16.3 (J) - 1.6.3 (WP) added $precheckin argument.
+	 * @since 	1.17.6 (J) - 1.7.6 (WP) children are always registered.
 	 */
 	public function registerChildren($precheckin = false)
 	{
-		// children are registered only during back-end guests check-in
-		return $precheckin ? false : true;
+		// children are registered during both back-end and pre-check-in
+		return true;
 	}
 
 	/**

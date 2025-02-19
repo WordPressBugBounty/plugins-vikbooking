@@ -1,5 +1,5 @@
 /**
- * VikBooking - DatesRangePicker v1.2.1.
+ * VikBooking - DatesRangePicker v1.2.2.
  * Copyright (C) 2025 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -562,6 +562,16 @@
 
 		if (!checkin || !checkout || !checkin.length || !checkout.length) {
 			throw new Error('Invalid vboDatesRangePicker check-in/check-out selectors.');
+		}
+
+		// ensure the current jQuery version is supported (v1.x is NOT supported)
+		let jq_version = $.fn.jquery || '3';
+		if (typeof jq_version === 'string' && jq_version.substring(0, 1) === '1') {
+			// fallback to regular datepicker
+			$(checkin).datepicker(options);
+			$(checkout).datepicker(options);
+			// abort
+			throw new Error('Unsupported jQuery version');
 		}
 
 		if (typeof options !== 'object') {

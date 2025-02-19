@@ -13,7 +13,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 /**
  * Helper class to render specific param types.
  * 
- * @since 	1.16.9 (J) - 1.6.9 (WP)
+ * @since   1.16.9 (J) - 1.6.9 (WP)
  */
 final class VBOParamsRendering
 {
@@ -302,6 +302,30 @@ JS
                     }
                 }
                 $html .= '</select>' . "\n";
+                break;
+            case 'listings':
+                // build attributes list
+                $element_id = 'vik-select-' . static::$instance_counter . '-' . preg_replace("/[^A-Z0-9]+/i", '', $param_name);
+                $elements_attr = [
+                    'name' => $this->inputName . '[' . $param_name . ']',
+                ];
+                if ($param_config['multiple'] ?? null) {
+                    $elements_attr['multiple'] = 'multiple';
+                }
+                $custom_attr = (array) ($param_config['attributes'] ?? []);
+                unset($custom_attr['id'], $custom_attr['name']);
+                $elements_attr = array_merge($elements_attr, $custom_attr);
+
+                // obtain the necessary HTML code for rendering
+                $html .= VikBooking::getVboApplication()->renderElementsDropDown([
+                    'id'              => $element_id,
+                    'elements'        => 'listings',
+                    'placeholder'     => ($param_config['asset_options']['placeholder'] ?? null),
+                    'allow_clear'     => ($param_config['asset_options']['allowClear'] ?? $param_config['asset_options']['allow_clear'] ?? null),
+                    'attributes'      => $elements_attr,
+                    'selected_value'  => (is_scalar($this->settings[$param_name] ?? null) ? $this->settings[$param_name] : (is_scalar($default_paramv ?? null) ? $default_paramv : null)),
+                    'selected_values' => (is_array($this->settings[$param_name] ?? null) ? $this->settings[$param_name] : (is_array($default_paramv ?? null) ? $default_paramv : null)),
+                ]);
                 break;
             case 'password':
                 $html .= '<div class="btn-wrapper input-append">';

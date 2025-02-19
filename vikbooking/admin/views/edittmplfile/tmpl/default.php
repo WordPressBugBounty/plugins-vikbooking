@@ -10,42 +10,62 @@
 
 defined('ABSPATH') or die('No script kiddies please!');
 
-$fpath = $this->fpath;
+/**
+ * Determine whether we are rendering the template through AJAX.
+ * 
+ * @since 	1.17.6 (J) - 1.7.6 (WP)
+ */
+$is_ajax = JFactory::getApplication()->input->getBool('ajax', false);
 
 $editor = JEditor::getInstance('codemirror');
 $fcode = '';
-$fp = !empty($fpath) ? fopen($fpath, "rb") : false;
-if (empty($fpath) || $fp === false) {
+$fp = !empty($this->fpath) ? fopen($this->fpath, "rb") : false;
+if (empty($this->fpath) || $fp === false) {
 	?>
 	<p class="err"><?php echo JText::translate('VBOTMPLFILENOTREAD'); ?></p>
 	<?php
 } else {
+	// read file bytes in chunks
 	while (!feof($fp)) {
 		$fcode .= fread($fp, 8192);
 	}
 	fclose($fp);
-?>
+
+	if ($is_ajax) {
+		?>
+		<p class="vbo-path-tmpl-file no-margin-top"><?php echo $this->fpath; ?></p>
+		<div class="vbo-codemirror-modal-container">
+		<?php
+		/**
+		 * With PHP >= 7 supporting throwable exceptions for Fatal Errors
+		 * we try to avoid issues with third party plugins that make use
+		 * of the WP native function get_current_screen().
+		 */
+		try {
+			echo $editor->display("cont", $fcode, '100%', 300, 70, 20, $buttons = false, $id = "vik_editor_cont", $asset = null, $author = null, $params = ['syntax' => 'php']);
+		} catch (Throwable $t) {
+			echo $t->getMessage() . ' in ' . $t->getFile() . ':' . $t->getLine() . '<br/>';
+		}
+		?>
+		</div>
+		<?php
+	} else {
+		// regular rendering
+		?>
 <form name="adminForm" id="adminForm" action="index.php" method="post">
 	<fieldset class="adminform">
 		<legend class="adminlegend"><?php echo JText::translate('VBOEDITTMPLFILE'); ?></legend>
-		<p class="vbo-path-tmpl-file"><?php echo $fpath; ?></p>
+		<p class="vbo-path-tmpl-file"><?php echo $this->fpath; ?></p>
 		<?php
-		if (interface_exists('Throwable')) {
-			/**
-			 * With PHP >= 7 supporting throwable exceptions for Fatal Errors
-			 * we try to avoid issues with third party plugins that make use
-			 * of the WP native function get_current_screen().
-			 * 
-			 * @wponly
-			 */
-			try {
-				echo $editor->display("cont", $fcode, '100%', 300, 70, 20, $buttons = false, $id = "vik_editor_cont", $asset = null, $author = null, $params = ['syntax' => 'php']);
-			} catch (Throwable $t) {
-				echo $t->getMessage() . ' in ' . $t->getFile() . ':' . $t->getLine() . '<br/>';
-			}
-		} else {
-			// we cannot catch Fatal Errors in PHP 5.x
+		/**
+		 * With PHP >= 7 supporting throwable exceptions for Fatal Errors
+		 * we try to avoid issues with third party plugins that make use
+		 * of the WP native function get_current_screen().
+		 */
+		try {
 			echo $editor->display("cont", $fcode, '100%', 300, 70, 20, $buttons = false, $id = "vik_editor_cont", $asset = null, $author = null, $params = ['syntax' => 'php']);
+		} catch (Throwable $t) {
+			echo $t->getMessage() . ' in ' . $t->getFile() . ':' . $t->getLine() . '<br/>';
 		}
 		?>
 		<br clear="all" />
@@ -53,7 +73,7 @@ if (empty($fpath) || $fp === false) {
 			<button type="button" class="btn btn-success" onclick="vboSubmitTmplFile(this);"><?php echo JText::translate('VBOSAVETMPLFILE'); ?></button>
 		</p>
 	</fieldset>
-	<input type="hidden" name="path" value="<?php echo $fpath; ?>">
+	<input type="hidden" name="path" value="<?php echo $this->escape($this->fpath); ?>">
 	<input type="hidden" name="option" value="com_vikbooking" />
 	<input type="hidden" name="task" value="savetmplfile" />
 	<?php echo JHtml::fetch('form.token'); ?>
@@ -62,8 +82,8 @@ if (empty($fpath) || $fp === false) {
 <script type="text/javascript">
 	function vboSubmitTmplFile(elem) {
 		/**
-		 * @wponly 	the real textarea may not update with the new codemirror content
-		 * 			and so we force the update of the textarea before submitting the form.
+		 * On some CMSs, the real textarea may not update with the new codemirror content
+		 * and so we force the update of the textarea before submitting the form.
 		 */
 		try {
 			Joomla.editors.instances['vik_editor_cont'].element.codemirror.save();
@@ -74,4 +94,5 @@ if (empty($fpath) || $fp === false) {
 	}
 </script>
 <?php
+	}
 }

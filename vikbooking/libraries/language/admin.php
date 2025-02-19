@@ -276,13 +276,13 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Settings Saved. Click the button Renew Session to apply the new configuration settings immediately.', 'vikbooking');
 				break;
 			case 'VBPAYMENTSAVED':
-				$result = __('Payment Method Saved', 'vikbooking');
+				$result = __('Payment method saved', 'vikbooking');
 				break;
 			case 'ERRINVFILEPAYMENT':
 				$result = __('File Class is already used in another payment method', 'vikbooking');
 				break;
 			case 'VBPAYMENTUPDATED':
-				$result = __('Payment Method Updated', 'vikbooking');
+				$result = __('Payment method updated', 'vikbooking');
 				break;
 			case 'VBRENTALORD':
 				$result = __('Reservation', 'vikbooking');
@@ -1056,7 +1056,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('No', 'vikbooking');
 				break;
 			case 'VBLIBPAYNAME':
-				$result = __('Payment Method', 'vikbooking');
+				$result = __('Payment method', 'vikbooking');
 				break;
 			case 'VBNEWPAYMENTEIGHT':
 				$result = __('Auto-Set Booking Confirmed', 'vikbooking');
@@ -1167,7 +1167,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Special Prices', 'vikbooking');
 				break;
 			case 'VBMENUTENEIGHT':
-				$result = __('Payment Methods', 'vikbooking');
+				$result = __('Payment methods', 'vikbooking');
 				break;
 			case 'VBMENUTENNINE':
 				$result = __('Availability Overview', 'vikbooking');
@@ -1797,7 +1797,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Customer eMail', 'vikbooking');
 				break;
 			case 'VBCSVPAYMENTMETHOD':
-				$result = __('Payment Method', 'vikbooking');
+				$result = __('Payment method', 'vikbooking');
 				break;
 			case 'VBCSVORDIDCONFNUMB':
 				$result = __('ID - Confirmation Number', 'vikbooking');
@@ -2685,7 +2685,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Types of Price', 'vikbooking');
 				break;
 			case 'VBOXMLTRANSLATEPAYMENTS':
-				$result = __('Payment Methods', 'vikbooking');
+				$result = __('Payment methods', 'vikbooking');
 				break;
 			case 'VBOXMLTRANSLATECFIELDS':
 				$result = __('Custom Fields', 'vikbooking');
@@ -7593,6 +7593,42 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_OPTIMIZE_DB_RECORDS':
 				$result = __('Optimize database records', 'vikbooking');
+				break;
+			case 'VBO_NO_MORE_MESSAGES':
+				$result = __('There are no more messages.', 'vikbooking');
+				break;
+			case 'VBO_CONF_DEP_BALANCE_NDAYS':
+				$result = __('Remaining balance shall be paid n days before arrival', 'vikbooking');
+				break;
+			case 'VBO_PAYMENT':
+				$result = __('Payment', 'vikbooking');
+				break;
+			case 'VBO_PAY_WITH_ROOM':
+				$result = __('Payment with room reservation', 'vikbooking');
+				break;
+			case 'VBO_PAY_SEPARATELY':
+				$result = __('Separate payment', 'vikbooking');
+				break;
+			case 'VBO_PAYMENT_WINDOW':
+				$result = __('Payment window', 'vikbooking');
+				break;
+			case 'VBO_DAYS_BEFORE_CHECKIN':
+				$result = __('Days before check-in', 'vikbooking');
+				break;
+			case 'VBO_DD_RES_MAX_LOS':
+				$result = __('Maximum booking nights', 'vikbooking');
+				break;
+			case 'VBO_DD_RES_MAX_LOS_HELP':
+				$result = __('If the booking nights exceed the limit, payment will be requested together with the room reservation.', 'vikbooking');
+				break;
+			case 'VBO_USE_DEFAULT':
+				$result = __('Use default', 'vikbooking');
+				break;
+			case 'VBO_NEW_MESSAGES':
+				$result = __('There are new messages.', 'vikbooking');
+				break;
+			case 'VBO_SKIP_DERIVED_RPLANS':
+				$result = __('Skip derived rate plans', 'vikbooking');
 				break;
 		}
 

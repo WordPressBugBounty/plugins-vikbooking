@@ -66,7 +66,7 @@ class VikBookingViewCalendar extends JViewVikBooking
 			$app->close();
 		}
 
-		$q = "SELECT `id`,`name`,`units` FROM `#__vikbooking_rooms` ORDER BY `#__vikbooking_rooms`.`name` ASC;";
+		$q = "SELECT `id`,`name`,`img`,`units` FROM `#__vikbooking_rooms` ORDER BY `#__vikbooking_rooms`.`name` ASC;";
 		$dbo->setQuery($q);
 		$allc = $dbo->loadAssocList();
 

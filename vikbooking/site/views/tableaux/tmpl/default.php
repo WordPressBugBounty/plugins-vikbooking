@@ -193,6 +193,7 @@ foreach ($rooms_busy as $rid => $busy) {
 		</span>
 		<!-- use .vbo-operator-tool-breadcrumb-step-current to define a previous breadcrump-step, not the home, not the current -->
 		<span class="vbo-operator-tool-breadcrumb vbo-operator-tool-breadcrumb-step vbo-operator-tool-breadcrumb-step-current">
+			<?php VikBookingIcons::e('stream'); ?>
 			<span class="vbo-operator-tool-breadcrumb-name"><?php echo VikBooking::getOperatorInstance()->getToolName('tableaux'); ?></span>
 		</span>
 	</div>

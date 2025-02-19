@@ -416,10 +416,10 @@ class TACVBO
 				}
 			}
 		}
-		
+
 		// children ages charge
 		$children_sums = [];
-		
+
 		// sum charges/discounts per occupancy for each room party
 		foreach ($arrpeople as $roomnumb => $party) {
 			// charges/discounts per adults occupancy
@@ -428,25 +428,59 @@ class TACVBO
 				if ($children_charges) {
 					$children_sums[$r] += $children_charges['total'];
 				}
+
 				$diffusageprice = VikBooking::loadAdultsDiff($r, $party['adults']);
+				$rplan_obp_overrides = [];
+
 				// Occupancy Override - Special Price may be setting a charge/discount for this occupancy while default price had no occupancy pricing
-				if (!is_array($diffusageprice)) {
+				if (!$diffusageprice) {
 					foreach ($rates as $kpr => $vpr) {
-						if (array_key_exists('occupancy_ovr', $vpr) && array_key_exists($party['adults'], $vpr['occupancy_ovr']) && strlen($vpr['occupancy_ovr'][$party['adults']]['value'])) {
-							$diffusageprice = $vpr['occupancy_ovr'][$party['adults']];
-							break;
+						if (isset($vpr['occupancy_ovr'][$party['adults']]) && strlen((string) $vpr['occupancy_ovr'][$party['adults']]['value'])) {
+							if (!$diffusageprice) {
+								// set the first OBP override rule found
+								$diffusageprice = $vpr['occupancy_ovr'][$party['adults']];
+							}
+							// set the OBP override rule at rate-plan level
+							$rplan_obp_overrides[$vpr['idprice']] = $diffusageprice;
 						}
 					}
 					reset($rates);
 				}
-				if (is_array($diffusageprice)) {
+
+				if ($diffusageprice) {
+					/**
+					 * OBP offsets can be overridden at rate-plan-level, while OBP offsets are regularly defined at room-level.
+					 * In case we detect OBP overrides only for some rate plans, we try to apply them on the proper rate plans.
+					 * 
+					 * @since 	1.17.6 (J) - 1.7.6 (WP)
+					 */
+					$rplan_level_obp_overrides = ($rplan_obp_overrides && count($rates) != count($rplan_obp_overrides));
+					$null_obp_override = [
+						$party['adults'] => [
+							'chdisc'   => 1,
+							'valpcent' => 1,
+							'pernight' => 0,
+							'value'    => 0,
+						],
+					];
+
+					// apply OBP rules
 					foreach ($rates as $kpr => $vpr) {
 						if ($roomnumb == 1) {
 							$arr_rates[$r][$kpr]['costbeforeoccupancy'] = (float) $arr_rates[$r][$kpr]['cost'];
 						}
 						// Occupancy Override
-						if (array_key_exists('occupancy_ovr', $vpr) && array_key_exists($party['adults'], $vpr['occupancy_ovr']) && strlen($vpr['occupancy_ovr'][$party['adults']]['value'])) {
-							$diffusageprice = $vpr['occupancy_ovr'][$party['adults']];
+						if (isset($vpr['occupancy_ovr'][$party['adults']]) && strlen((string) $vpr['occupancy_ovr'][$party['adults']]['value'])) {
+							if ($rplan_level_obp_overrides && !($rplan_obp_overrides[$vpr['idprice']] ?? null)) {
+								// apply a null OBP override for this rate plan ID
+								$diffusageprice = $null_obp_override;
+							} else {
+								// apply the OBP override rules
+								$diffusageprice = $vpr['occupancy_ovr'][$party['adults']];
+							}
+						} elseif ($rplan_level_obp_overrides && !($rplan_obp_overrides[$vpr['idprice']] ?? null)) {
+							// apply a null OBP override for this rate plan ID
+							$diffusageprice = $null_obp_override;
 						}
 						$arr_rates[$r][$kpr]['diffusage'] = $party['adults'];
 						if ($diffusageprice['chdisc'] == 1) {
@@ -486,7 +520,7 @@ class TACVBO
 		}
 
 		// if the rooms are given to a party of multiple rooms, multiply the basic rates per room per number of rooms
-		for($i = 2; $i <= $args['num_rooms']; $i++) {
+		for ($i = 2; $i <= $args['num_rooms']; $i++) {
 			foreach ($arr_rates as $r => $rates) {
 				foreach ($rates as $kpr => $vpr) {
 					$arr_rates[$r][$kpr]['cost'] += $arr_rates[$r][$kpr]['costbeforeoccupancy'];

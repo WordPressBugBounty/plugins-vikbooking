@@ -46,8 +46,7 @@ class VikbookingViewOperators extends JViewVikBooking
 
 		// turn the permissions into an associative (or empty) array
 		if ($operator) {
-			$operator['perms'] = !empty($operator['perms']) ? json_decode($operator['perms'], true) : [];
-			$operator['perms'] = is_array($operator['perms']) ? $operator['perms'] : [];
+			$operator['perms'] = !empty($operator['perms']) ? ((array) json_decode($operator['perms'], true)) : [];
 		}
 
 		$this->operator = $operator;

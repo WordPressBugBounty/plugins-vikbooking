@@ -2375,7 +2375,7 @@ JS
 						$channelparts = explode('_', $row['channel']);
 						// check if this is a meta search channel
 						$is_meta_search = false;
-						if (preg_match("/(customer).*[0-9]$/", $channelparts[0]) || !strcasecmp($channelparts[0], 'googlehotel') || !strcasecmp($channelparts[0], 'trivago')) {
+						if (preg_match("/(customer).*[0-9]$/", $channelparts[0]) || !strcasecmp($channelparts[0], 'googlehotel') || !strcasecmp($channelparts[0], 'googlevr') || !strcasecmp($channelparts[0], 'trivago')) {
 							$is_meta_search = empty($row['idorderota']);
 						}
 						if ($is_meta_search) {

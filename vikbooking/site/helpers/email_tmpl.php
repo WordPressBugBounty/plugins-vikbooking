@@ -31,7 +31,7 @@ defined('_VIKBOOKINGEXEC') OR die('Restricted Area');
  * {order_deposit} - Deposit string formatted
  * {order_total_paid} - Amount paid formatted
  * {order_link} - HTML link to the booking details page in the front-end
- * {booking_url} - Raw URL string to the booking details page in the front-end
+ * {booking_url} - {booking_link} - Raw URL string to the booking details page in the front-end
  * {footer_emailtext} - Can be set from the Configuration page
  * {customfield 2} - Will be replaced with the Custom Field of ID 2 (Last Name by default - you can use any ID)
  *

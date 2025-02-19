@@ -3,7 +3,7 @@ Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
 Tested up to: 6.7
-Stable tag: 1.7.5
+Stable tag: 1.7.6
 Requires PHP: 7.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -128,6 +128,19 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 13. Browser (web push) notifications will turn your device into a real-time updated system.
 
 == Changelog ==
+
+= 1.7.6 =
+*Release date - 19 February 2025*
+
+* Admin-widgets rendered in modal windows can be minimized or enlarged.
+* Introducing the admin-dock bar for the minimized admin-widgets.
+* New inbox-style layout for the admin-widget "Guest Messages" with infinite scroll loading.
+* Options of type damage deposit allow to configure a payment window and payment method.
+* Various improvements to the rates overview page and pricing update features.
+* Various improvements to the operator tools framework.
+* Introducing the new operator tool "Guest Messaging" (E4jConnect CM required).
+* Various improvements to the listing-style layout of the front-end page "Room Details".
+* Visual editor improvements for Cron Jobs to preview the message for a specific booking ID.
 
 = 1.7.5 =
 *Release date - 29 January 2025*

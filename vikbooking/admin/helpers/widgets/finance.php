@@ -1338,7 +1338,13 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						delay: 350,
 						url: "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.rooms_search'); ?>",
 						dataType: 'json',
-					}
+					},
+					templateResult: (element) => {
+						if (!element.img) {
+							return element.text;
+						}
+						return jQuery('<span class="vbo-sel2-element-img"><img src="' + element.img + '" /> <span>' + element.text + '</span></span>');
+					},
 				});
 
 				// when document is ready, load stats for this widget's instance

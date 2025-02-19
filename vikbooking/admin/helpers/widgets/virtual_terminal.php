@@ -1071,41 +1071,12 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 	 */
 	protected function getPaymentProcessor(array $booking, array $card = [])
 	{
-		$processor = null;
-		$payment   = [];
-
-		if (!empty($booking['idpayment'])) {
-			$payment = VikBooking::getPayment($booking['idpayment']);
+		try {
+			$processor = VBOModelReservation::getInstance($booking, true)->getPaymentProcessor($card);
+		} catch (Exception $e) {
+			$processor = null;
 		}
 
-		if ($card) {
-			// inject CC details for the payment processor
-			$booking['card'] = $card;
-		}
-
-		if ($payment && VBOPlatformDetection::isWordPress()) {
-			/**
-			 * @wponly 	The payment gateway is loaded 
-			 * 			through the apposite dispatcher.
-			 */
-			JLoader::import('adapter.payment.dispatcher');
-			$processor = JPaymentDispatcher::getInstance('vikbooking', $payment['file'], $booking, $payment['params']);
-		} elseif ($payment && VBOPlatformDetection::isJoomla()) {
-			/**
-			 * @joomlaonly 	The Payment Factory library will invoke the gateway.
-			 */
-			require_once VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'payments' . DIRECTORY_SEPARATOR . 'libraries' . DIRECTORY_SEPARATOR . 'factory.php';
-			$processor = VBOPaymentFactory::getPaymentInstance($payment['file'], $booking, $payment['params']);
-		}
-
-		if ($processor && method_exists($processor, 'isDirectChargeSupported') && $processor->isDirectChargeSupported()) {
-			// set payment method flag loaded
-			$this->payment_method = $payment;
-
-			// return the valid payment processor instance
-			return $processor;
-		}
-
-		return null;
+		return $processor;
 	}
 }

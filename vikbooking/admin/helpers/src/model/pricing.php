@@ -242,20 +242,21 @@ class VBOModelPricing extends JObject
 		$dbo = JFactory::getDbo();
 
 		// expected and supported properties binded
-		$from_date   = (string) $this->get('from_date', '');
-		$to_date     = (string) $this->get('to_date', '');
-		$id_room     = (int) $this->get('id_room', 0);
-		$id_price    = (int) $this->get('id_price', 0);
-		$rplan_name  = $this->get('rplan_name', '');
-		$rate        = (float) $this->get('rate', 0);
-		$min_los     = (int) $this->get('min_los', 0);
-		$max_los     = (int) $this->get('max_los', 0);
-		$cta_wdays   = (array) $this->get('cta_wdays', []);
-		$ctd_wdays   = (array) $this->get('ctd_wdays', []);
-		$upd_otas    = (bool) $this->get('update_otas', true);
-		$close_rplan = (bool) $this->get('close_rate_plan', false);
-		$merge_restr = (bool) $this->get('merge_restrictions', true);
-		$ota_pricing = (array) $this->get('ota_pricing', []);
+		$from_date    = (string) $this->get('from_date', '');
+		$to_date      = (string) $this->get('to_date', '');
+		$id_room      = (int) $this->get('id_room', 0);
+		$id_price     = (int) $this->get('id_price', 0);
+		$rplan_name   = $this->get('rplan_name', '');
+		$rate         = (float) $this->get('rate', 0);
+		$min_los      = (int) $this->get('min_los', 0);
+		$max_los      = (int) $this->get('max_los', 0);
+		$cta_wdays    = (array) $this->get('cta_wdays', []);
+		$ctd_wdays    = (array) $this->get('ctd_wdays', []);
+		$upd_otas     = (bool) $this->get('update_otas', true);
+		$close_rplan  = (bool) $this->get('close_rate_plan', false);
+		$merge_restr  = (bool) $this->get('merge_restrictions', true);
+		$ota_pricing  = (array) $this->get('ota_pricing', []);
+		$skip_derived = (bool) $this->get('skip_derived', false);
 
 		if (!$from_date || !$to_date) {
 			// must be in Y-m-d format
@@ -282,10 +283,10 @@ class VBOModelPricing extends JObject
 		// access the availability helper
 		$av_helper = VikBooking::getAvailabilityInstance(true);
 
-		if (!$id_price) {
-			// load all rate plans
-			$all_rate_plans = $av_helper->loadRatePlans();
+		// load all rate plans
+		$all_rate_plans = $av_helper->loadRatePlans(true);
 
+		if (!$id_price) {
 			// use the first rate plan ID after the automatic sorting
 			foreach ($all_rate_plans as $all_rate_plan) {
 				$id_price = $all_rate_plan['id'];
@@ -311,7 +312,7 @@ class VBOModelPricing extends JObject
 		}
 
 		// load the eventually involved derived rate plans from the given rate ID
-		$derived_rate_plans = $av_helper->getDerivedRatePlans($id_price);
+		$derived_rate_plans = $skip_derived ? [] : $av_helper->getDerivedRatePlans($id_price);
 
 		// build the list of rate plans involved by adding the requested one
 		$rate_plans_pool = [
@@ -965,10 +966,17 @@ class VBOModelPricing extends JObject
 						// check the channels mapped for this room and add what was not found in the Bulk Rates Cache, if anything
 						foreach ($node['channels'] as $idchannel => $ch_data) {
 							if (!isset($node['pushdata']['rplans'][$idchannel])) {
-								// this channel was not found in the Bulk Rates Cache. Read data from ota mapping pricing
-								$ota_mapping_pricing = json_decode($ch_data['otapricing'], true);
+								// this channel was not found in the Bulk Rates Cache
+								$ota_mapping_pricing = (array) json_decode($ch_data['otapricing'], true);
+
+								if (defined('VikChannelManagerConfig::EXPEDIA') && $idchannel == VikChannelManagerConfig::EXPEDIA) {
+									// make sure to sort the Expedia rate plans accordingly
+									$ota_mapping_pricing = VikChannelManager::sortExpediaChannelPricing($ota_mapping_pricing);
+								}
+
+								// read data from ota mapping pricing
 								$ch_rplan_id = '';
-								if (is_array($ota_mapping_pricing) && isset($ota_mapping_pricing['RatePlan'])) {
+								if (isset($ota_mapping_pricing['RatePlan'])) {
 									foreach ($ota_mapping_pricing['RatePlan'] as $rpkey => $rpv) {
 										// get the first key (rate plan ID) of the RatePlan array from OTA Pricing
 										$ch_rplan_id = $rpkey;
@@ -976,20 +984,35 @@ class VBOModelPricing extends JObject
 									}
 								}
 
+								// build a list of OTAs NOT supporting rate plans
+								$ota_single_rplan = [];
+								if (defined('VikChannelManagerConfig::AIRBNBAPI')) {
+									$ota_single_rplan[] = VikChannelManagerConfig::AIRBNBAPI;
+								}
+								if (defined('VikChannelManagerConfig::VRBOAPI')) {
+									$ota_single_rplan[] = VikChannelManagerConfig::VRBOAPI;
+								}
+
 								// prevent channel from being updated if not directly involved
+								$vbo_single_rplan   = count($all_rate_plans) === 1;
 								$is_secondary_rplan = $this->guessOTASecondaryRatePlan($idchannel, $roomrates, ($bulk_rates_cache[$id_room] ?? []));
-								$is_mapped_rplan    = $this->isOTARatePlanMapped($idchannel, $roomrates, ($bulk_rates_cache[$id_room] ?? []));
 								$is_google_platform = defined('VikChannelManagerConfig::GOOGLEHOTEL') && $idchannel == VikChannelManagerConfig::GOOGLEHOTEL;
 								$is_google_platform = $is_google_platform || (defined('VikChannelManagerConfig::GOOGLEVR') && $idchannel == VikChannelManagerConfig::GOOGLEVR);
 
-								// prevent Airbnb from being updated if not for the main rate plan only
-								if (defined('VikChannelManagerConfig::AIRBNBAPI') && $idchannel == VikChannelManagerConfig::AIRBNBAPI) {
-									if ($rplan_info['is_derived'] || $is_secondary_rplan) {
+								/**
+								 * No bulk rates cache found for this channel, room and rate plan.
+								 * We prevent channels like Airbnb from being updated if not for the
+								 * main rate plan only, otherwise we attempt to process the request.
+								 * 
+								 * @since 	1.17.6 (J) - 1.7.6 (WP)
+								 */
+								if (in_array($idchannel, $ota_single_rplan)) {
+									if (($rplan_info['is_derived'] || $is_secondary_rplan) && !$vbo_single_rplan) {
 										// skip this channel from updating a derived/secondary rate plan that would not exist
 										$ch_rplan_id = '';
 									}
-								} elseif (!$is_google_platform && !$is_mapped_rplan) {
-									// no bulk rates cache found for this channel, room and rate plan
+								} elseif (!$is_google_platform && $rplan_info['is_derived'] && !$vbo_single_rplan) {
+									// derived rate plans will always require bulk rates cache information, unless it's Google
 									$ch_rplan_id = '';
 								}
 

@@ -1,5 +1,5 @@
 /**
- * VikBooking Core v1.7.3
+ * VikBooking Core v1.7.6
  * Copyright (C) 2025 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -2183,6 +2183,7 @@
 			// define unique modal event names to avoid conflicts
 			let dismiss_event = 'vbo-dismiss-widget-modal' + modal_js_id;
 			let loading_event = 'vbo-loading-widget-modal' + modal_js_id;
+			let resize_event  = 'vbo-resize-widget-modal' + modal_js_id;
 
 			// define the modal options
 			let modal_options = {
@@ -2192,6 +2193,9 @@
 				body_prepend: 	 true,
 				lock_scroll: 	 true,
 				draggable: 	 	 true,
+				enlargeable:     true,
+				minimizeable:    VBOCore.options.is_vbo,
+				resize_event:    resize_event,
 				dismiss_event:   dismiss_event,
 				loading_event:   loading_event,
 				loading_body:    VBOCore.options.default_loading_body,
@@ -2229,18 +2233,38 @@
 						widget_modal
 							.closest('.vbo-modal-overlay-content')
 							.find('.vbo-modal-overlay-content-head-title')
-							.text(data._modalTitle + ' - ' + details['name']);
+							.text(data._modalTitle + ' - ' + details.name);
 					}
+
+					// check if this widget returned a particular modal setup
+					if (details?.modal) {
+						if (details.modal?.add_class) {
+							// add custom modal class
+							widget_modal
+								.closest('.vbo-modal-overlay-content')
+								.addClass(details.modal.add_class);
+
+							// fire the "resize" event with a delay to support the CSS transition
+							setTimeout(() => {
+								VBOCore.emitEvent(resize_event, {
+									content: widget_modal,
+								});
+							}, 400);
+						}
+					}
+
+					// set data for widget details
+					widget_modal.data('details', JSON.stringify(details));
 
 					// register admin menu action
 					try {
 						// work on Local Storage to register the widget data
 						VBOCore.registerAdminMenuAction({
-							name:    details['name'],
+							name:    details.name,
 							href:    'JavaScript: void(0);',
 							widget:  widget_id,
-							icon:    details['icon'],
-							style:   details['style'],
+							icon:    details.icon,
+							style:   details.style,
 						}, 'widgets');
 					} catch(e) {
 						console.error(e);
@@ -2407,11 +2431,12 @@
 		/**
 		 * Helper method used to display a modal window dinamycally.
 		 *
-		 * @param 	object 	options 	The options to render the modal.
+		 * @param   object  options     The options to render the modal.
+		 * @param   object  bindDetails Optional data to bind to the modal content.
 		 *
-		 * @return 	object 				The modal content element wrapper.
+		 * @return  object              The modal content element wrapper.
 		 */
-		static displayModal(options) {
+		static displayModal(options, bindDetails) {
 			var def_options = {
 				suffix: 	     (Math.floor(Math.random() * 100000)) + '',
 				extra_class:     null,
@@ -2421,50 +2446,66 @@
 				body_prepend:    false,
 				lock_scroll:     false,
 				draggable: 		 false,
+				enlargeable:     false,
+				minimizeable:    false,
 				footer_left:     null,
 				footer_right:    null,
+				resize_event:    null,
 				dismiss_event:   null,
 				dismissed_event: null,
 				onDismiss: 	     null,
+				onMinimize:      null,
+				onRestore:       null,
 				loading_event:   null,
 				loading_body:    VBOCore.options.default_loading_body,
 				event_data: 	 null,
 			};
 
+			if (options.event_data && typeof options.event_data === 'object') {
+				// get rid of possible cyclic object references
+				options.event_data = Object.assign({}, options.event_data);
+			}
+
 			// merge default options with given options
 			options = Object.assign(def_options, options);
 
+			// create the modal destroy function
+			const modal_destroy_fn = (e) => {
+				// invoke callback for onDismiss
+				if (typeof options.onDismiss === 'function') {
+					options.onDismiss.call(custom_modal, e);
+				}
+
+				// check if modal did register to the loading event
+				if (options.loading_event) {
+					// we can now un-register from the loading event until a new modal is displayed and will register to it again
+					document.removeEventListener(options.loading_event, modal_handle_loading_event_fn);
+				}
+
+				// check if we should fire the given modal dismissed event
+				if (options.dismissed_event) {
+					VBOCore.emitEvent(options.dismissed_event, options.event_data);
+				}
+
+				// check if body scroll lock should be removed
+				if (options.lock_scroll) {
+					$('body').removeClass('vbo-modal-lock-scroll');
+				}
+
+				// remove modal from DOM
+				custom_modal.remove();
+			};
+
 			// create the modal dismiss function
-			var modal_dismiss_fn = (e) => {
+			const modal_dismiss_fn = (e) => {
 				custom_modal.fadeOut(400, () => {
-					// invoke callback for onDismiss
-					if (typeof options.onDismiss === 'function') {
-						options.onDismiss.call(custom_modal, e);
-					}
-
-					// check if modal did register to the loading event
-					if (options.loading_event) {
-						// we can now un-register from the loading event until a new modal is displayed and will register to it again
-						document.removeEventListener(options.loading_event, modal_handle_loading_event_fn);
-					}
-
-					// check if we should fire the given modal dismissed event
-					if (options.dismissed_event) {
-						VBOCore.emitEvent(options.dismissed_event, options.event_data);
-					}
-
-					// check if body scroll lock should be removed
-					if (options.lock_scroll) {
-						$('body').removeClass('vbo-modal-lock-scroll');
-					}
-
-					// remove modal from DOM
-					custom_modal.remove();
+					// destroy the modal
+					modal_destroy_fn.call(custom_modal, e);
 				});
 			};
 
 			// create the modal loading event handler function
-			var modal_handle_loading_event_fn = (e) => {
+			const modal_handle_loading_event_fn = (e) => {
 				// toggle modal loading
 				if ($('.vbo-modal-overlay-content-backdrop').length) {
 					// hide loading
@@ -2486,11 +2527,66 @@
 				modal_content.prepend(modal_loading);
 			};
 
+			// create the modal enlarge (toggle) function
+			const modal_enlarge_fn = (e) => {
+				// toggle modal fullscreen class
+				modal_content.toggleClass('vbo-modal-fullscreen');
+
+				// check if modal did register a resize event
+				if (options.resize_event) {
+					// fire the requested event with a delay to support the CSS transition
+					setTimeout(() => {
+						VBOCore.emitEvent(options.resize_event, {
+							content: modal_content,
+						});
+					}, 400);
+				}
+			};
+
+			// create the modal minimize function
+			const modal_minimize_fn = (e) => {
+				// invoke callback for onMinimize
+				if (typeof options.onMinimize === 'function') {
+					options.onMinimize.call(custom_modal, e);
+				}
+
+				// start minimizing animation
+				custom_modal.addClass('vbo-minimizing');
+				modal_content.addClass('vbo-minimizing');
+
+				// access the modal body details data, if any
+				let details_data = modal_content_wrapper.data('details');
+				try {
+					if (details_data && typeof details_data === 'string') {
+						details_data = JSON.parse(details_data);
+					}
+				} catch(e) {
+					details_data = {};
+				}
+
+				// register delayed partial-distruction
+				setTimeout(() => {
+					// hide modal
+					custom_modal.hide();
+
+					// check if body scroll lock should be removed
+					if (options.lock_scroll) {
+						$('body').removeClass('vbo-modal-lock-scroll');
+					}
+
+					// add the minimized widget to dock
+					VBOCore.getAdminDock().addWidget(details_data, options, modal_content_wrapper, modal_destroy_fn);
+
+					// remove modal from DOM without firing the dismiss events (do not destroy the modal)
+					custom_modal.remove();
+				}, 400);
+			};
+
 			// start the modal position variables
 			var modal_pos_x = 0, modal_pos_y = 0;
 
 			// create the modal drag-start (mousedown) event handler function
-			var modal_dragstart_fn = (e) => {
+			const modal_dragstart_fn = (e) => {
 				e = e || window.event;
 				e.preventDefault();
 
@@ -2499,7 +2595,7 @@
 					return;
 				}
 
-				if (e.target) {
+				if (e.target && !e.target.matches('.vbo-modal-overlay-cmd')) {
 					e.target.style.cursor = 'move';
 				}
 
@@ -2513,10 +2609,10 @@
 			};
 
 			// create the modal drag-stop (mouseup) event handler function
-			var modal_dragstop_fn = (e) => {
+			const modal_dragstop_fn = (e) => {
 				e = e || window.event;
 
-				if (e.target) {
+				if (e.target && !e.target.matches('.vbo-modal-overlay-cmd')) {
 					e.target.style.cursor = 'auto';
 				}
 
@@ -2532,7 +2628,7 @@
 			};
 
 			// create the modal drag-move (mousemove) event handler function
-			var modal_dragmove_fn = (e) => {
+			const modal_dragmove_fn = (e) => {
 				e = e || window.event;
 				e.preventDefault();
 
@@ -2561,24 +2657,43 @@
 			};
 
 			// build modal content
-			var custom_modal = $('<div></div>').addClass('vbo-modal-overlay-block vbo-modal-overlay-' + options.suffix).css('display', 'block');
+			const custom_modal = $('<div></div>').addClass('vbo-modal-overlay-block vbo-modal-overlay-' + options.suffix).css('display', 'block');
 			var modal_dismiss = $('<a></a>').addClass('vbo-modal-overlay-close');
 			modal_dismiss.on('click', modal_dismiss_fn);
 			custom_modal.append(modal_dismiss);
 
-			var modal_content = $('<div></div>').addClass('vbo-modal-overlay-content vbo-modal-overlay-content-' + options.suffix);
+			const modal_content = $('<div></div>').addClass('vbo-modal-overlay-content vbo-modal-overlay-content-' + options.suffix);
 			if (options.extra_class && typeof options.extra_class === 'string') {
 				modal_content.addClass(options.extra_class);
 			}
 
-			var modal_head = $('<div></div>').addClass('vbo-modal-overlay-content-head');
-			var modal_head_close = $('<span></span>').addClass('vbo-modal-overlay-close-times').html('&times;');
-			modal_head_close.on('click', modal_dismiss_fn);
+			// modal head and title
+			const modal_head = $('<div></div>').addClass('vbo-modal-overlay-content-head');
 			if (options.title) {
 				let modal_title = $('<span></span>').addClass('vbo-modal-overlay-content-head-title').html(options.title);
 				modal_head.append(modal_title);
+			} else {
+				modal_head.addClass('vbo-modal-head-no-title');
 			}
-			modal_head.append(modal_head_close);
+			// modal head commands
+			var modal_head_cmds = $('<span></span>').addClass('vbo-modal-overlay-cmds');
+			var modal_head_close = $('<span></span>').addClass('vbo-modal-overlay-cmd vbo-modal-overlay-close-times').html('&times;');
+			modal_head_close.on('click', modal_dismiss_fn);
+			modal_head_cmds.append(modal_head_close);
+			if (options.enlargeable) {
+				var modal_head_enlarge = $('<span></span>').addClass('vbo-modal-overlay-cmd vbo-modal-overlay-cmd-enlarge').html('&square;');
+				modal_head_enlarge.on('click', modal_enlarge_fn);
+				modal_head_cmds.append(modal_head_enlarge);
+				modal_head.on('dblclick', modal_enlarge_fn);
+			}
+			if (options.minimizeable && options.event_data) {
+				// set up the minimize command
+				var modal_head_minimize = $('<span></span>').addClass('vbo-modal-overlay-cmd vbo-modal-overlay-cmd-minimize').html('&minus;');
+				modal_head_minimize.on('click', modal_minimize_fn);
+				modal_head_cmds.append(modal_head_minimize);
+			}
+			// set commands
+			modal_head.append(modal_head_cmds);
 
 			// check if the modal head should be draggable
 			if (options.draggable) {
@@ -2590,8 +2705,8 @@
 				modal_head.on('mousedown', modal_dragstart_fn);
 			}
 
-			var modal_body = $('<div></div>').addClass('vbo-modal-overlay-content-body vbo-modal-overlay-content-body-scroll');
-			var modal_content_wrapper = $('<div></div>').addClass('vbo-modal-' + options.suffix + '-wrap');
+			const modal_body = $('<div></div>').addClass('vbo-modal-overlay-content-body vbo-modal-overlay-content-body-scroll');
+			const modal_content_wrapper = $('<div></div>').addClass('vbo-modal-' + options.suffix + '-wrap');
 			if (options.suffix != 'widget_modal') {
 				modal_content_wrapper.addClass('vbo-modal-widget_modal-wrap');
 			}
@@ -2603,15 +2718,15 @@
 			modal_body.append(modal_content_wrapper);
 
 			// modal footer
-			var modal_footer = null;
+			let modal_footer = null;
 			if (options.footer_left || options.footer_right) {
 				modal_footer = $('<div></div>').addClass('vbo-modal-overlay-content-footer');
 				if (options.footer_left) {
-					var modal_footer_left = $('<div></div>').addClass('vbo-modal-overlay-content-footer-left').append(options.footer_left);
+					let modal_footer_left = $('<div></div>').addClass('vbo-modal-overlay-content-footer-left').append(options.footer_left);
 					modal_footer.append(modal_footer_left);
 				}
 				if (options.footer_right) {
-					var modal_footer_right = $('<div></div>').addClass('vbo-modal-overlay-content-footer-right').append(options.footer_right);
+					let modal_footer_right = $('<div></div>').addClass('vbo-modal-overlay-content-footer-right').append(options.footer_right);
 					modal_footer.append(modal_footer_right);
 				}
 
@@ -2686,6 +2801,15 @@
 			// check if scroll should be locked on the whole page body for a "sticky" modal
 			if (options.lock_scroll) {
 				$('body').addClass('vbo-modal-lock-scroll');
+			}
+
+			if (typeof bindDetails === 'object') {
+				try {
+					// bind widget details data
+					modal_content_wrapper.data('details', JSON.stringify(bindDetails));
+				} catch(e) {
+					// do nothing
+				}
 			}
 
 			// return the content wrapper element of the new modal
@@ -2798,6 +2922,7 @@
 
 				localStorage.setItem(keyName, value);
 			} catch(e) {
+				console.error(e);
 				return false;
 			}
 
@@ -3052,10 +3177,19 @@
 		 * 
 		 * @param 	object 	options The currency options.
 		 * 
-		 * @return 	VBOCurrency	
+		 * @return 	VBOCurrency
 		 */
 		static getCurrency(options) {
 			return VBOCurrency.getInstance(options);
+		}
+
+		/**
+		 * Proxy to access the VBOAdminDock object.
+		 * 
+		 * @return 	VBOAdminDock
+		 */
+		static getAdminDock() {
+			return VBOAdminDock.getInstance();
 		}
 	}
 
@@ -3424,6 +3558,451 @@
 
 			// do multiplication and go back to decimal
 			return (Math.round(a) * Math.round(b)) / Math.pow(10, this.digits * 2);
+		}
+	}
+
+	w['VBOAdminDock'] = class VBOAdminDock {
+		/**
+		 * Singleton entry-point.
+		 * 
+		 * @see construct()
+		 */
+		static getInstance(options) {
+			if (typeof VBOAdminDock.instance === 'undefined') {
+				VBOAdminDock.instance = new VBOAdminDock(options);
+			}
+
+			return VBOAdminDock.instance;
+		}
+
+		/**
+		 * Class constructor.
+		 * 
+		 * @param  object  options  The admin dock options object.
+		 */
+		constructor(options) {
+			// set options
+			this.setOptions(options);
+
+			// start empty dock elements property
+			this._elements = [];
+
+			// set dock storage identifier property
+			this._storageId = 'vikbooking.admin_dock.elements';
+
+			// set event name for updating the dock element badge counters
+			this._updateBadgeEv = 'vbo-admin-dock-update-badge';
+
+			// build dock node
+			this.buildDockNode();
+
+			// load dock elements
+			this.loadDockElements();
+		}
+
+		/**
+		 * Sets the options.
+		 * 
+		 * @param  object  options  The dock options object.
+		 * 
+		 * @see    construct()
+		 */
+		setOptions(options) {
+			if (options === undefined) {
+				options = {};
+			}
+
+			// default options
+			let defaultOptions = {
+				dockDisplayStyle: 'flex',
+			};
+
+			// set options
+			this._options = Object.assign(defaultOptions, options);
+		}
+
+		/**
+		 * Gets the current dock options.
+		 * 
+		 * @return 	object
+		 */
+		getOptions() {
+			let options = {};
+
+			Object.keys(this._options).forEach((option) => {
+				if (this._options.hasOwnProperty(option)) {
+					options[option] = this._options[option];
+				}
+			});
+
+			return options;
+		}
+
+		/**
+		 * Builds the admin dock and adds it to the DOM.
+		 * 
+		 * @return 	HTMLElement
+		 */
+		buildDockNode() {
+			if (this._dock) {
+				return;
+			}
+
+			// create element
+			this._dock = document.createElement('div');
+			this._dock.classList.add('vbo-admin-dock-wrapper');
+
+			// listen to the event for updating the element badge counters
+			document.addEventListener(this._updateBadgeEv, this.updateElementsBadgeCounter);
+
+			// append element to body
+			document.querySelector('body').appendChild(this._dock);
+
+			return this._dock;
+		}
+
+		/**
+		 * Returns the admin dock node.
+		 * 
+		 * @return 	HTMLElement
+		 */
+		getDockNode() {
+			return this._dock || this.buildDockNode();
+		}
+
+		/**
+		 * Removes a given element index from the dock and saves on local storage.
+		 * This method should be called after having removed the element from DOM.
+		 * 
+		 * @param 	number 	index 	The element's array index to remove.
+		 * 
+		 * @return 	bool 			True if the localStorage was updated or false.
+		 */
+		removeDockElement(index) {
+			// splice the elements list
+			this._elements.splice(index, 1);
+
+			if (!this._elements.length) {
+				// hide the dock
+				this.hideDock();
+			} else {
+				// reset dock element indexes
+				let dom_elements = this.getDockNode().querySelectorAll('.vbo-admin-dock-element');
+				this._elements.forEach((element, new_index) => {
+					let widget_id = element.id;
+					if (!dom_elements[new_index] || dom_elements[new_index].getAttribute('data-id') != widget_id) {
+						return;
+					}
+					dom_elements[new_index].setAttribute('data-index', new_index);
+				});
+			}
+
+			// update dock elements on localStorage
+			let updated = VBOCore.storageSetItem(this._storageId, this._elements);
+
+			return updated;
+		}
+
+		/**
+		 * Builds a dock element node.
+		 * 
+		 * @param   object       details    The element details.
+		 * @param   object       data 	    The element data.
+		 * @param   number       index      The element index number.
+		 * @param   HTMLElement  body       Optional widget modal body to restore.
+		 * @param   function     destroyFn  Optional dismiss callback.
+		 * 
+		 * @return  HTMLElement
+		 */
+		buildDockElement(details, data, index, body, destroyFn) {
+			if (!details?.id) {
+				throw new Error('Unknown widget id');
+			}
+
+			const widgetId = details.id;
+
+			const element = document.createElement('div');
+			element.classList.add('vbo-admin-dock-element');
+			element.setAttribute('data-id', widgetId);
+			element.setAttribute('data-index', index);
+			element.setAttribute('data-badge-count', '');
+
+			let content = document.createElement('div');
+			content.classList.add('vbo-admin-dock-element-cont');
+			content.addEventListener('click', (e) => {
+				// get content target
+				let target = e.target;
+				if (!target.matches('.vbo-admin-dock-element-cont')) {
+					target = target.closest('.vbo-admin-dock-element-cont');
+				}
+
+				// reset badge count
+				target.closest('.vbo-admin-dock-element').setAttribute('data-badge-count', '');
+
+				// get widget data, if any
+				let widgetData = data?.event_data?._options || data || {};
+
+				// get modal body if NOT from localStorage
+				let prevBody = target.querySelector('.vbo-admin-dock-element-modalbody');
+
+				if (!Object.keys(widgetData).length && prevBody && prevBody.children && prevBody.children[0]) {
+					// unset dock-minimized attribute
+					prevBody.children[0].setAttribute('data-dock-minimized', 0);
+
+					// restore admin widget body previously minimized
+					let prevTitle = data?.title || '';
+					let nameSuffix = ' - ' + (details?.name || '');
+					let modalRestore = {
+						title: prevTitle + (prevTitle.indexOf(nameSuffix) < 0 ? nameSuffix : ''),
+						body: prevBody.children[0],
+					};
+
+					if (details?.modal?.add_class && data?.extra_class && (data.extra_class + '').indexOf((details.modal.add_class) + '') < 0) {
+						// restore widget custom class
+						modalRestore.extra_class = data.extra_class + ' ' + details.modal.add_class;
+					}
+
+					// display modal with previous content and details to bind
+					let restoredBody = VBOCore.displayModal(
+						Object.assign(data, modalRestore),
+						Object.assign({}, details)
+					);
+
+					try {
+						if (typeof data?.onRestore === 'function') {
+							// call the restoring function from the original modal
+							data.onRestore.call(restoredBody, e);
+						}
+
+						// always emit the native restoring event for the current widget
+						VBOCore.emitEvent('vbo-admin-dock-restore-' + widgetId, {
+							data: data?.event_data || {},
+						});
+					} catch(e) {
+						// do nothing
+					}
+				} else {
+					// re-render admin widget from scratch
+					VBOCore.handleDisplayWidgetNotification({
+						widget_id: widgetId,
+					}, widgetData);
+				}
+
+				// remove element from DOM
+				let elementIndex = element.getAttribute('data-index');
+				element.remove();
+
+				// remove element index from dock
+				this.removeDockElement(elementIndex);
+			});
+
+			let content_icon = document.createElement('span');
+			content_icon.classList.add('vbo-admin-dock-element-icn');
+			if (details?.style) {
+				content_icon.classList.add('vbo-admin-widget-style-' + details.style);
+			}
+			if (details?.icon) {
+				content_icon.innerHTML = details.icon;
+			}
+
+			if (body) {
+				// create hidden node
+				let modal_body = document.createElement('div');
+				modal_body.classList.add('vbo-admin-dock-element-modalbody');
+				modal_body.style.display = 'none';
+
+				try {
+					// move modal body to hidden node
+					modal_body.append((body[0] || body));
+
+					// set dock-minimized attribute
+					(body[0] || body).setAttribute('data-dock-minimized', 1);
+				} catch(e) {
+					// do nothing
+				}
+
+				// append hidden node to content
+				content.appendChild(modal_body);
+			}
+
+			let content_name = document.createElement('span');
+			content_name.classList.add('vbo-admin-dock-element-name');
+			content_name.innerText = details?.name || '';
+
+			let dismiss = document.createElement('span');
+			dismiss.classList.add('vbo-admin-dock-element-dismiss');
+			dismiss.innerHTML = '&times;';
+			dismiss.addEventListener('click', (e) => {
+				try {
+					if (typeof destroyFn === 'function') {
+						// destroy the original modal by firing any dismiss event
+						destroyFn.call(body, e);
+					}
+				} catch(e) {
+					// do nothing
+				}
+
+				// remove element from DOM
+				let elementIndex = element.getAttribute('data-index');
+				element.remove();
+
+				// remove element index from dock
+				this.removeDockElement(elementIndex);
+			});
+
+			// append to content
+			content.appendChild(content_icon);
+			content.appendChild(content_name);
+
+			// append content to element
+			element.appendChild(content);
+
+			// append dismiss to element
+			element.appendChild(dismiss);
+
+			// return the HTMLElement object
+			return element;
+		}
+
+		/**
+		 * Adds a widget to the dock.
+		 * 
+		 * @param  object       details    The widget details.
+		 * @param  object       data 	   The widget restoring data.
+		 * @param  HTMLElement  body       Optional widget modal body to restore.
+		 * @param  function     destroyFn  Optional dismiss callback.
+		 */
+		addWidget(details, data, body, destroyFn, restoreFn) {
+			if (!VBOCore.options.widget_ajax_uri) {
+				throw new Error('Wrong environment');
+			}
+
+			if (typeof details !== 'object') {
+				details = {};
+			}
+
+			if (!details?.id) {
+				throw new Error('Unknown widget id');
+			}
+
+			// add element to dock in the DOM at first
+			this.getDockNode().appendChild(
+				this.buildDockElement(details, data, this._elements.length, body, destroyFn)
+			);
+
+			// push dock element after it was added to the DOM
+			this._elements.push({
+				id: details.id,
+				details: Object.assign({}, details),
+				data: Object.assign({}, (data?.event_data?._options || {})),
+			});
+
+			// ensure dock is visible
+			this.showDock();
+
+			// update dock elements on localStorage at last
+			VBOCore.storageSetItem(this._storageId, this._elements);
+		}
+
+		/**
+		 * Returns the current dock elements.
+		 * 
+		 * @return   Array
+		 */
+		getElements() {
+			return this._elements;
+		}
+
+		/**
+		 * Loads dock elements from localStorage and populates them, if any.
+		 */
+		loadDockElements() {
+			let storageElements = VBOCore.storageGetItem(this._storageId) || [];
+
+			try {
+				if (typeof storageElements === 'string') {
+					storageElements = JSON.parse(storageElements);
+				}
+			} catch(e) {
+				storageElements = [];
+			}
+
+			if (Array.isArray(storageElements)) {
+				// set current elements
+				this._elements = storageElements;
+			}
+
+			if (this._elements.length) {
+				// populate dock elements
+				this.populateDockElements();
+
+				// show the dock
+				this.showDock();
+			} else {
+				// hide the dock
+				this.hideDock();
+			}
+		}
+
+		/**
+		 * Populates the current dock elements.
+		 */
+		populateDockElements() {
+			const dockNode = this.getDockNode();
+
+			// empty the dock
+			dockNode.innerHTML = '';
+
+			// scan all elements
+			this._elements.forEach((element, index) => {
+				// add element to dock in the DOM at first
+				dockNode.appendChild(
+					this.buildDockElement(element?.details, element?.data, index)
+				);
+			});
+		}
+
+		/**
+		 * Hides the dock node.
+		 */
+		hideDock() {
+			this.getDockNode().style.display = 'none';
+		}
+
+		/**
+		 * Shows the dock node.
+		 */
+		showDock() {
+			if (!this.getDockNode().checkVisibility()) {
+				this.getDockNode().style.display = this._options.dockDisplayStyle;
+			}
+		}
+
+		/**
+		 * Event callback fired to update the element(s) badge counter.
+		 */
+		updateElementsBadgeCounter(e) {
+			if (!e || !e.detail || !e.detail?.widgetId) {
+				return;
+			}
+
+			let elements = VBOAdminDock.getInstance().getElements();
+
+			if (!elements.length) {
+				return;
+			}
+
+			let widgetId = e.detail.widgetId;
+			let badgeCount = parseInt(e.detail?.badgeCount || 0);
+			let badgeValue = badgeCount > 0 ? badgeCount : '';
+
+			elements.forEach((element) => {
+				if (element.id == widgetId) {
+					document.querySelectorAll('.vbo-admin-dock-element[data-id="' + widgetId + '"]').forEach((elNode) => {
+						elNode.setAttribute('data-badge-count', badgeValue);
+					});
+				}
+			});
 		}
 	}
 

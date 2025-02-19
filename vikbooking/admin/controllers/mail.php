@@ -49,6 +49,7 @@ class VikBookingControllerMail extends JControllerAdmin
 			->where($dbo->qn('closure') . ' = 0');
 
 		if (!empty($bid)) {
+			$q->clear('where');
 			$q->where($dbo->qn('id') . ' = ' . $bid);
 		}
 
@@ -57,6 +58,7 @@ class VikBookingControllerMail extends JControllerAdmin
 		$dbo->setQuery($q, 0, 1);
 		$booking = $dbo->loadAssoc();
 
+		$booking_rooms = [];
 		if ($booking) {
 			$booking_rooms = VikBooking::loadOrdersRoomsData($booking['id']);
 			// inject properties for parsing the conditional text rules later
@@ -76,6 +78,11 @@ class VikBookingControllerMail extends JControllerAdmin
 
 		// prepare the final email content
 		$mail_content = VBOFactory::getPlatform()->getMailer()->prepare($mail_data);
+
+		if ($booking) {
+			// apply a common replacement method for the special tags
+			$mail_content = VBOMailParser::replaceSpecialTags($mail_content, $booking, $booking_rooms);
+		}
 
 		// send JSON response to output
 		VBOHttpDocument::getInstance($app)->json([$mail_content]);

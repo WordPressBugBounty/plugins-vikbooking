@@ -1659,6 +1659,7 @@ class VBOModelReservation extends JObject
 	 * @throws 	Exception
 	 * 
 	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 * @since 	1.17.6 (J) - 1.7.6 (WP) added "tn_metadata" details.
 	 */
 	public function getPaymentProcessor(array $card = [])
 	{
@@ -1685,6 +1686,20 @@ class VBOModelReservation extends JObject
 			// inject CC details for the payment processor
 			$booking['card'] = $card;
 		}
+
+		// get the booking customer record, if any
+		$customer = $this->getCustomer();
+		if (!$customer) {
+			$customer = VikBooking::getCPinInstance()->getCustomerFromBooking($booking['id']);
+		}
+
+		// build and inject transaction metadata
+		$booking['tn_metadata'] = [
+			'booking_id'     => $booking['id'],
+			'source'         => (($booking['channel'] ?? '') ?: 'Website'),
+			'ota_booking_id' => (($booking['idorderota'] ?? '') ?: ''),
+			'guest_name'     => implode(' ', array_filter([($customer['first_name'] ?? ''), ($customer['last_name'] ?? '')])),
+		];
 
 		if (VBOPlatformDetection::isWordPress()) {
 			/**

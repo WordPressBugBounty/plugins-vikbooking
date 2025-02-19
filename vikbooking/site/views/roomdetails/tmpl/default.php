@@ -76,11 +76,6 @@ jQuery(function() {
 			window["vikfxgallery"].open();
 		}
 	});
-	jQuery(".vikfx-gallery-next-image").click(function() {
-		if (typeof window["vikfxgallery"] !== "undefined") {
-			window["vikfxgallery"].open();
-		}
-	});
 });';
 	$document->addScriptDeclaration($vikfx);
 }

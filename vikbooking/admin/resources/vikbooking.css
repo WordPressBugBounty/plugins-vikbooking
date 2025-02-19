@@ -88,6 +88,7 @@
 	--vbo-success-txt: #097900;
 
 	/* VCM Chat Message */
+	--vcm-chat-background: #fafcfe;
 	--vcm-chat-bubble-host-background: #2293f4;
 	--vcm-chat-bubble-host-color: #fff;
 	--vcm-chat-bubble-guest-background: #e5e5ea;
@@ -387,10 +388,17 @@ body #content .btn-warning:hover, body #wpcontent .btn-warning:hover, .vbo-modal
 .select2-container.select2-container--default .select2-selection--single .select2-selection__rendered {
     line-height: 38px;
 }
+.select2-container--open.select2-container--default .select2-results__option {
+	border-radius: 4px;
+}
 .select2-container--open.select2-container--default .select2-results__option[aria-selected="true"] {
 	background-color: var(--vbo-config-bg-color);
 	color: var(--vbo-base-color);
 	border: 1px solid var(--vbo-base-color);
+	background: var(--vbo-light-blue);
+}
+.select2-container--open.select2-container--default .select2-results__option[aria-selected="true"]:hover {
+	background: transparent;
 }
 .select2-container.select2-container--default .select2-selection--single {
 	background-color: var(--vbo-input-style);
@@ -3685,8 +3693,16 @@ tr.vbo-seasons-calendar-seasonrow td:nth-child(n+2) {
 	box-sizing: border-box;
 	border-radius: 15px;
 }
+.vbo-roverw-setnewrate .vbo-roverw-setnewrate-title {
+	display: flex;
+	margin-bottom: 6px;	
+}
+.vbo-roverw-setnewrate .vbo-roverw-setnewrate-title .vbo-roverw-setnewrate-skip-derived {
+	margin-left: auto;
+}
 .vbo-roverw-setnewrate .vbo-roverw-flexnew {
 	display: flex;
+	flex-wrap: wrap;
 	margin-bottom: 10px;
 	gap: 10px;
 }
@@ -3801,7 +3817,7 @@ label.vbo-roverw-setnewrate-currency, label.vbo-roverw-setnewrestr-lbl {
 	text-align: center;
 }
 .vbo-modal-overlay-content-body-scroll {
-	height: calc(100% - 150px);
+	height: calc(100% - 180px);
 	overflow: hidden;
 	overflow-y: scroll;
 }
@@ -5214,6 +5230,12 @@ label.vbo-timeline-label {
 	margin-top: 2px;
 	/* word-break: break-word; */
 }
+.vbo-tooltip.vbo-tooltip-right::before,
+.vbo-tooltip.vbo-tooltip-right::after {
+	top: 50%;
+	left: 100%;
+	transform: translate(8px, -50%);
+}
 /* Tooltip - End **/
 
 .vbo-dashboard-firstsetup-container {
@@ -5358,6 +5380,9 @@ label.vbo-timeline-label {
 	display: inline-block;
 	width: 100%;
 	box-sizing: border-box;
+}
+.vbo-modal-head-no-border .vbo-admin-widget-head {
+	border-bottom: 0;
 }
 .vbo-admin-widget-head .btn-toolbar {
 	margin: 10px 15px 10px 10px;
@@ -5587,7 +5612,7 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	border-bottom: 1px solid var(--vbo-basic-btn);
 	cursor: pointer;
 }
-.vbo-dashboard-guests-latest .vbo-dashboard-guest-activity:hover {
+.vbo-dashboard-guests-latest .vbo-dashboard-guest-activity:hover, .vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-message.vbo-inbox-active-message {
 	background: var(--vbo-light-color-btn);
 }
 .vbo-dashboard-guests-latest .vbo-dashboard-guest-activity:last-child {
@@ -5617,21 +5642,13 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	background: var(--vbo-config-bg-dark);
 	color: var(--vbo-contrast-text-color);
 }
-.vbo-w-guestmessages-wrapmodal .vbo-dashboard-guest-messages-list {
+.vbo-w-guestmessages-wrapmodal .vbo-w-guestmessages-list-container {
+	border: 1px solid var(--vbo-basic-btn);
+	border-radius: 6px;
 	margin-top: 5px;
 }
-.vbo-w-guestmessages-wrapmodal .vbo-dashboard-guest-messages-list .vbo-w-guestmessages-message {
-	border: 1px solid var(--vbo-basic-btn);
-	border-top: 0;
-}
-.vbo-w-guestmessages-wrapmodal .vbo-dashboard-guest-messages-list .vbo-w-guestmessages-message:first-child {
-	border-top: 1px solid var(--vbo-basic-btn);
-	border-top-left-radius: 6px;
-	border-top-right-radius: 6px;
-}
-.vbo-w-guestmessages-wrapmodal .vbo-dashboard-guest-messages-list .vbo-w-guestmessages-message-last {
-	border-bottom-left-radius: 6px;
-	border-bottom-right-radius: 6px;
+.vbo-w-guestmessages-wrapmodal .vbo-w-guestmessages-list-container .vbo-w-guestmessages-message.vbo-w-guestmessages-message-last {
+	border-bottom: 0;
 }
 .vbo-dashboard-guest-activity-avatar-icon {
 	width: 40px;
@@ -5700,10 +5717,10 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	display: flex;
 }
 .chat-input-footer .textarea-input #chat-ask-ai-btn {
-	color: var(--vbo-base-color) !important;
+	color: var(--vbo-ai-color) !important;
 }
 .chat-input-footer .textarea-input #chat-ask-ai-btn:hover {
-	color: var(--vbo-base-color-hover) !important;
+	color: var(--vbo-purple-color) !important;
 }
 .vbo-w-guestmessages-message-staydates {
 	font-size: 12px;
@@ -5729,13 +5746,14 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	border-radius: 50%;
 }
 .vbo-w-guestmessages-message-listings {
+	display: inline-block;
 	overflow: hidden;
 	white-space: nowrap;
 	max-width: 200px;
 	text-overflow: ellipsis;
 }
 .vbo-w-guestmessages-message-new {
-	background: var(--vbo-toolbar-bg-color);
+	background: #dce8fd;
 }
 .vbo-w-guestmessages-message-new .vbo-w-guestmessages-message-gtitle .message-new {
 	color: var(--vbo-base-color);
@@ -5780,6 +5798,99 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 .vbo-w-guestmessages-message-aipriority-icn.low {
 	color: var(--vbo-blue-color);
 }
+.vbo-w-guestmessages-inboxstyle .vbo-dashboard-guest-messages-inner {
+	display: flex;
+	gap: 5px;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-list-container {
+	width: 35%;
+	overflow-x: hidden;
+	overflow-y: scroll;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-dashboard-guest-messages-list .vbo-guestactivitywidget-commands {
+	display: none;
+}
+/*
+ * Because we are removing the scroll from the modal, we have to force the 100% height to all parents.
+ */
+.vbo-modal-nofooter.vbo-modal-body-no-scroll .vbo-modal-overlay-content-body-scroll .vbo-modal-widget_modal-wrap, 
+.vbo-modal-nofooter.vbo-modal-body-no-scroll .vbo-modal-overlay-content-body-scroll .vbo-admin-widget-wrapper,
+.vbo-modal-nofooter.vbo-modal-body-no-scroll .vbo-modal-overlay-content-body-scroll .vbo-w-guestmessages-inboxstyle,
+.vbo-modal-nofooter.vbo-modal-body-no-scroll .vbo-modal-overlay-content-body-scroll .vbo-w-guestmessages-inboxstyle .vbo-dashboard-guest-messages-inner {
+	height: 100%;	
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat {
+	flex: 1;
+	border: 1px solid var(--vbo-basic-btn);
+	background-color: var(--vcm-chat-background);
+	border-radius: 6px;
+	margin-top: 5px;
+	height: calc(100% - 53px);
+}
+.vbo-dashboard-guests-latest.vbo-w-guestmessages-wrapmodal:not(.vbo-w-guestmessages-inboxstyle) .vbo-w-guestmessages-inboxstyle-chat {
+	display: none;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head {
+	display: inline-block;
+	vertical-align: middle;
+	width: 100%;
+	border-bottom: 1px solid var(--vbo-basic-btn);
+	background-color: var(--vbo-config-bg-color);
+	border-top-left-radius: 6px;
+	border-top-right-radius: 6px;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head > span {
+	display: flex;
+	align-items: center;
+	padding: 10px 4px 8px 10px;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head .vbo-modal-wguestmessages-chat-guestavatar {
+	margin-right: 10px;
+	display: inline-block;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head .vbo-modal-wguestmessages-chat-guestavatar img {
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+	border-radius: 50%;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head .vbo-modal-wguestmessages-chat-guestname {
+	display: inline-block;
+	margin-right: 10px;	
+	font-weight: 600;
+	font-size: 16px;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head .vbo-modal-wguestmessages-chat-info-booking {
+	display: block;
+	margin-top: 4px;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-body {
+	padding: 10px 15px;
+	height: 100%;
+}
+.vbo-modal-nofooter.vbo-modal-body-no-scroll .vbo-w-guestmessages-inboxstyle .chat-border-layout {
+	height: 100%;
+	min-height: initial;
+}
+.vbo-modal-nofooter.vbo-modal-body-no-scroll .vbo-w-guestmessages-inboxstyle .chat-border-layout .chat-messages-panel {
+	height: 100%;
+	position: relative;
+}
+.vbo-modal-nofooter.vbo-modal-body-no-scroll .vbo-w-guestmessages-inboxstyle .chat-threads-panel + .chat-messages-panel .chat-conversation {
+	height: calc(100% - 152px);
+}
+.vbo-w-guestmessages-inboxstyle-chat-loading {
+	text-align: center;
+	padding: 50px;
+	font-size: 24px;
+	opacity: .5;	
+}
+.vbo-modal-nofooter.vbo-modal-body-no-scroll .vbo-w-guestmessages-inboxstyle  .chat-input-footer {
+	position: absolute;
+    bottom: 90px;
+    width: 100%;
+    z-index: 9999;	
+}
 .vbo-bookings-status-separator {
 	margin-top: 5px;
 	text-align: center;
@@ -5787,11 +5898,19 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 .vbo-modal-nofooter .vbo-modal-overlay-content-body-scroll {
 	height: calc(100% - 100px);
 }
+.vbo-modal-nofooter.vbo-modal-body-no-scroll .vbo-modal-overlay-content-body-scroll {
+	height: calc(100% - 82px);
+	overflow-y: hidden;
+}
+.vbo-modal-overlay-wguestmessages-chat .vbo-modal-overlay-content.vbo-modal-overlay-content-wguestmessages-chat {
+	background-color: var(--vcm-chat-background);
+}
 .vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head {
 	display: flex;
 	padding: 12px 20px 6px;
 	background: transparent;
 	border-bottom: 1px solid var(--vbo-config-border-color);
+	background-color: var(--vbo-config-bg-color);
 }
 .vbo-modal-wguestmessages-chat-wrap {
 	height: 100%;
@@ -5806,14 +5925,14 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	height: 100%;
 	max-height: unset;
 }
-.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head > span:first-child:not(.vbo-modal-overlay-close-times) {
+.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head > span:first-child:not(.vbo-modal-overlay-cmds) {
 	flex: 1;
 }
-.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head > span:first-child:not(.vbo-modal-overlay-close-times) span {
+.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head > span:first-child:not(.vbo-modal-overlay-cmds) span {
 	display: inline-block;
 	vertical-align: middle;
 }
-.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head > span:first-child:not(.vbo-modal-overlay-close-times) span.vbo-modal-wguestmessages-chat-info-booking {
+.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head > span:first-child:not(.vbo-modal-overlay-cmds) span.vbo-modal-wguestmessages-chat-info-booking {
 	display: block;
 }
 .vbo-modal-wguestmessages-chat-info-booking .vbo-w-guestmessages-message-staydates {
@@ -5837,7 +5956,7 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	object-fit: cover;
 	border-radius: 50%;
 } 
-.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head .vbo-modal-overlay-close-times {
+.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head .vbo-modal-overlay-cmd {
 	margin-left: auto;
 	align-self: center;
 }
@@ -7251,6 +7370,7 @@ textarea.vbo-textarea-copyable {
 }
 .vbo-params-block > .vbo-param-container:only-child {
 	margin-bottom: 0;
+	margin-top: 10px;
 }
 .vbo-admin-container .vbo-params-block-nested .vbo-param-nested-nested {
 	background: var(--vbo-config-bg-color);
@@ -9992,6 +10112,39 @@ span.vbo-overview-subroom-toggle-active i {
 	padding: 15px;
 	background: var(--vbo-config-child-bg-color);
 }
+.vbo-bookingdet-noteslogs-cont .chat-border-layout {
+	gap: 6px;
+}
+.vbo-bookingdet-noteslogs-cont .vbo-extra-panel .chat-threads-panel {
+	border: 1px solid var(--vbo-basic-btn);
+	border-radius: 6px;
+}
+.vbo-bookingdet-noteslogs-cont .chat-threads-list li {
+	padding: 10px 12px;	
+}
+.vbo-bookingdet-noteslogs-cont .chat-threads-list li.active {
+	background-color: #edf4ff;
+	border-color: #c3d7ea;	
+}
+.vbo-bookingdet-noteslogs-cont .chat-threads-list .thread-record .thread-details .thread-heading .thread-recipient {
+	font-size: 14px;
+	font-weight: bold;	
+}
+.vbo-bookingdet-noteslogs-cont .chat-threads-list .thread-record .thread-details .thread-heading .thread-datetime {
+	color: var(--vbo-config-text-color-light);	
+}
+.vbo-bookingdet-noteslogs-cont .chat-threads-list .thread-record .thread-details .thread-message {
+	font-size: 13px;
+}
+.vbo-bookingdet-noteslogs-cont .chat-threads-list .thread-record .thread-details .thread-message .thread-content {
+	opacity: .9;
+}
+.vbo-bookingdet-noteslogs-cont .chat-border-layout .chat-messages-panel {
+	border: 1px solid var(--vbo-basic-btn);
+	border-radius: 6px;
+	padding: 10px;
+	background-color: var(--vcm-chat-background);
+}
 .vbo-booking-history-firstrow, .vbo-booking-takings-firstrow {
 	font-size: .9em;
 	text-transform: uppercase;
@@ -12110,7 +12263,7 @@ i.vbo-icn-img {
 	margin-bottom: 0;
 }
 .vbo-admin-container .vbo-param-container .vbo-param-setting .vbo-param-setting-block .vbo-room-img-modal,
-#pt4 .vbo-admin-container .vbo-param-container .vbo-param-setting input[type="file"] + .vbomodal {
+#pt4 .vbo-admin-container .vbo-param-container .vbo-param-setting input[type="file"] + .vbomodal, .vbo-modal-link-img {
 	background: var(--vbo-main-bg-color);
 	padding: 10px 15px;
 	border-radius: 2px;
@@ -12125,13 +12278,13 @@ i.vbo-icn-img {
 	vertical-align: top;
 }
 .vbo-admin-container .vbo-param-container .vbo-param-setting .vbo-param-setting-block .vbo-room-img-modal:hover,
-#pt4 .vbo-admin-container .vbo-param-container .vbo-param-setting input[type="file"] + .vbomodal:hover {
+#pt4 .vbo-admin-container .vbo-param-container .vbo-param-setting input[type="file"] + .vbomodal:hover, .vbo-modal-link-img:hover {
 	color: var(--vbo-base-color);
 	border-color: var(--vbo-base-color);
 	background-color: var(--vbo-config-bg-color);
 }
 .vbo-admin-container .vbo-param-container .vbo-param-setting .vbo-param-setting-block .vbo-room-img-modal:active,
-#pt4 .vbo-admin-container .vbo-param-container .vbo-param-setting input[type="file"] + .vbomodal:active {
+#pt4 .vbo-admin-container .vbo-param-container .vbo-param-setting input[type="file"] + .vbomodal:active, .vbo-modal-link-img:active {
 	background-color: var(--vbo-config-child-bg-color);
 }
 .vbo-admin-container .vbo-param-container .vbo-param-setting .vbo-param-setting-block .vbo-room-img-modal i {
@@ -14026,6 +14179,7 @@ table.adminform div.input-append {
 	background-color: var(--vbo-config-bg-color);
 	box-shadow: 0px 0px 10px rgba(0,0,0, .5);
 	overflow: auto;
+	transition: width 0.4s, height 0.4s;
 	-webkit-font-smoothing: antialiased;
 }
 .vbo-modal-overlay-block .vik-contentbuilder-modal-content {
@@ -14036,6 +14190,13 @@ table.adminform div.input-append {
 .vbo-modal-overlay-block .vik-contentbuilder-modal-content.vik-contentbuilder-modal-fullscreen {
 	width: 100%;
 	height: 100%;
+}
+.vbo-modal-overlay-block .vbo-modal-center-content {
+	text-align: center;
+}
+.vbo-modal-overlay-block .vbo-modal-center-content .vbo-modal-overlay-content-head {
+	font-size: 16px;
+	text-align: left;
 }
 .vik-contentbuilder-textmode-sptags {
 	float: none;
@@ -14062,8 +14223,21 @@ table.adminform div.input-append {
 	max-width: 70%;
 	height: auto;
 }
+.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-fullscreen {
+	width: 98%;
+	height: 96%;
+}
 .vbo-modal-tooltip .vbo-modal-overlay-content-body {
 	padding: 20px;
+}
+.vbo-modal-overlay-content-body .CodeMirror {
+    height: 65vh;
+}
+.CodeMirror-wrap pre {
+	word-break: break-word !important;
+}
+.vbo-path-tmpl-file.no-margin-top {
+	margin-top: 0;
 }
 .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-rounded {
 	border-radius: 20px;
@@ -14093,7 +14267,7 @@ table.adminform div.input-append {
 .vbo-modal-overlay-content-ratesoverv-newratesrestr .vbo-modal-overlay-content-backdrop .vbo-modal-overlay-content-backdrop-body i {
 	font-size: 100px;
 }
-.vbo-modal-overlay-content-head {
+.vbo-modal-overlay-content-head:not(.vbo-modal-head-no-title) {
 	padding: 20px;
 	background: var(--vbo-config-child-bg-color);
 }
@@ -14101,7 +14275,7 @@ table.adminform div.input-append {
 	margin-right: 5px;
 	color: var(--vbo-config-titles-color-light);
 }
-.vbo-modal-overlay-close-times {
+.vbo-modal-overlay-close-times, .vbo-modal-overlay-cmds > span {
 	float: right;
 	font-size: 20px;
 	cursor: pointer;
@@ -14111,8 +14285,12 @@ table.adminform div.input-append {
 	margin-top: -10px;
 	display: inline-block;
 }
-.vbo-modal-overlay-close-times:hover {
+.vbo-modal-overlay-close-times:hover, .vbo-modal-overlay-cmds > span:hover {
 	color: #619dca;
+}
+.vbo-modal-overlay-content-head.vbo-modal-head-no-title .vbo-modal-overlay-close-times {
+	margin-top: 5px;
+	margin-right: 10px;
 }
 .vik-contentbuilder-modal-content .vbo-modal-overlay-content-head {
 	background: var(--vbo-config-bg-color);
@@ -14154,7 +14332,6 @@ table.adminform div.input-append {
 }
 .vbo-modal-overlay-content-zoom-image .vbo-modal-overlay-content-head {
 	font-size: 16px;
-	font-weight: bold;
 }
 .vbo-modal-overlay-content-zoom-image .vbo-modal-overlay-content-body-scroll {
 	text-align: center;
@@ -14162,13 +14339,13 @@ table.adminform div.input-append {
 	height: calc(100% - 78.2px);
 	position: relative;
 }
-.vbo-modal-overlay-content-zoom-image .vbo-modal-overlay-content-body-scroll .vbo-modal-zoom-image-wrap {
+.vbo-modal-overlay-content-body-scroll .vbo-modal-zoom-image-wrap {
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
 	position: absolute;
 }
-.vbo-modal-overlay-content-zoom-image .vbo-modal-overlay-content-body-scroll img {
+.vbo-modal-overlay-content-body-scroll .vbo-modal-zoom-image-wrap img {
 	border-radius: 6px;
 	box-shadow: 0 0 10px rgba(0,0,0,.4);
 	max-width: 80%;
@@ -14182,45 +14359,83 @@ table.adminform div.input-append {
 { 
 	.vbo-modal-overlay-content {
 		-webkit-animation-name: VikfadeInUp;
-		  animation-name: VikfadeInUp;
+		animation-name: VikfadeInUp;
 	
 		-webkit-animation-duration: .5s;
 		animation-duration: .5s;
 		-webkit-animation-fill-mode: both;
 		animation-fill-mode: both;
 	}
+
+	.vbo-modal-overlay-content.vbo-minimizing {
+		-webkit-animation-name: VikfadeOutDown;
+		animation-name: VikfadeOutDown;
+	
+		-webkit-animation-duration: .4s;
+		animation-duration: .4s;
+		-webkit-animation-fill-mode: both;
+		animation-fill-mode: both;
+	}
+}
+
+@-webkit-keyframes VikfadeInUp {
+	from {
+		opacity: 0;
+		-webkit-transform: translate3d(-50%, -20%, 0);
+		transform: translate3d(-50%, -20%, 0);
+	}
+
+	to {
+		opacity: 1;
+		-webkit-transform: translate3d(-50%, -50%, 0);
+		transform: translate3d(-50%, -50%, 0);
+	}
+}
+
+@keyframes VikfadeInUp {
+	from {
+		opacity: 0;
+		-webkit-transform: translate3d(-50%, -20%, 0);
+		transform: translate3d(-50%, -20%, 0);
+	}
+
+	to {
+		opacity: 1;
+		-webkit-transform: translate3d(-50%, -50%, 0);
+		transform: translate3d(-50%, -50%, 0);
+	}
+}
+
+@-webkit-keyframes VikfadeOutDown {
+	from {
+		opacity: 1;
+		-webkit-transform: translate3d(-50%, -50%, 0);
+		transform: translate3d(-50%, -50%, 0);
+	}
+
+	to {
+		opacity: 0.3;
+		-webkit-transform: translate3d(-50%, -20%, 0);
+		transform: translate3d(-50%, -20%, 0);
+	}
+}
+
+@keyframes VikfadeOutDown {
+	from {
+		opacity: 1;
+		-webkit-transform: translate3d(-50%, -50%, 0);
+		transform: translate3d(-50%, -50%, 0);
+	}
+
+	to {
+		opacity: 0.3;
+		-webkit-transform: translate3d(-50%, -20%, 0);
+		transform: translate3d(-50%, -20%, 0);
+	}
 }
 
 .vbo-optionals-dmgdepbcom-trigger {
 	white-space: nowrap;
-}
-
-@-webkit-keyframes VikfadeInUp {
-  from {
-    opacity: 0;
-    -webkit-transform: translate3d(-50%, -20%, 0);
-    transform: translate3d(-50%, -20%, 0);
-  }
-
-  to {
-    opacity: 1;
-    -webkit-transform: translate3d(-50%, -50%, 0);
-    transform: translate3d(-50%, -50%, 0);
-  }
-}
-
-@keyframes VikfadeInUp {
-  from {
-    opacity: 0;
-    -webkit-transform: translate3d(-50%, -20%, 0);
-    transform: translate3d(-50%, -20%, 0);
-  }
-
-  to {
-    opacity: 1;
-    -webkit-transform: translate3d(-50%, -50%, 0);
-    transform: translate3d(-50%, -50%, 0);
-  }
 }
 
 .vbo-modal-overlay-content-servsearch .vbo-modal-servsearch-form-wrap .vbo-modal-servsearch-results {
@@ -14330,6 +14545,81 @@ table.adminform div.input-append {
 }
 .vbo-modal-overlay-content-body .vbo-modal-guestmisconduct-addnew-save, .vbo-modal-overlay-content-body .vbo-modal-bcomdmgdeposit-addnew-save {
 	margin-top: 15px;
+}
+
+/* Admin Dock */
+.vbo-admin-dock-wrapper {
+	position: fixed;
+	bottom: 8px;
+	left: 50%;
+	transform: translate(-50%, 0);
+	text-align: center;
+	background: #00142dc4;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	padding: 6px;
+  	border-radius: 40px;
+	gap: 6px;
+	z-index: 1;
+}
+.vbo-admin-dock-element {
+	background-color: var(--vbo-config-bg-color);
+	color: var(--vbo-body-text-color);
+	border-radius: 36px;
+	padding: 4px 6px 4px 4px;
+	position: relative;
+	display: flex;
+	align-items: center;	
+}
+.vbo-admin-dock-element-cont {
+	cursor: pointer;
+	display: inline-block;
+	white-space: nowrap;
+}
+.vbo-admin-dock-element-name {
+	font-size: 12px;
+	font-weight: 500;
+	margin-right: 4px;	
+}
+.vbo-admin-dock-element-icn {
+	border-radius: 50%;
+	object-fit: cover;
+	margin-right: 4px;
+	width: 24px;
+	height: 24px;
+	line-height: 24px;
+	display: inline-block;
+	color: var(--vbo-contrast-text-color);
+}
+.vbo-admin-dock-element-dismiss {
+	cursor: pointer;
+	color: var(--vbo-config-text-color-light);
+	font-size: 12px;
+	margin-left: 6px;
+	display: inline-block;
+}
+.vbo-admin-dock-element-dismiss:hover {
+	color: var(--vbo-error-border);
+}
+.vbo-admin-dock-element:not([data-badge-count=""]):after {
+	font-weight: 500;
+	content: attr(data-badge-count);	
+	background: var(--vbo-red-color);
+	color: var(--vbo-contrast-text-color);
+	height: 18px;
+	border: 1px solid #00142d;
+	text-align: center;
+	position: absolute;
+	top: -14px;
+	left: 50%;
+	transform: translate(-50%, 0);
+	font-size: 11px;
+	line-height: 18px;
+	border-radius: 6px;
+	padding: 0px 4px;
+	z-index: 10;
 }
 
 /* Content Builder */
@@ -14765,6 +15055,22 @@ table.adminform div.input-append {
 }
 .vbo-toggle-small .vik-iostoggle-wrap input.vik-iostoggle-elem + label {
 	height: 26px;
+}
+.vbo-toggle-mini .vik-iostoggle-wrap input.vik-iostoggle-elem + label {
+	height: 20px;
+	width: 36px;
+}
+.vbo-toggle-mini .vik-iostoggle-wrap input.vik-iostoggle-elem + label:before {
+	height: 20px;
+	width: 36px;
+}
+.vbo-toggle-mini .vik-iostoggle-wrap input.vik-iostoggle-elem + label:after {
+	height: 14px;
+	width: 14px;
+	top: 3px;
+}
+.vbo-toggle-mini input.vik-iostoggle-elem:checked + label:after {
+	left: 19px;	
 }
 .vbo-admin-widgets-commands-info {
 	font-weight: bold;

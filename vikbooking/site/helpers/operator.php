@@ -296,6 +296,71 @@ final class VikBookingOperator
 	}
 
 	/**
+	 * Builds the URI to render the provided operator tool.
+	 * 
+	 * @param 	string 	$tool 		The operator tool identifier.
+	 * @param 	int 	$itemid 	The optional page/item ID.
+	 * 
+	 * @return 	string 				The routed operator tool URI.
+	 * 
+	 * @since 	1.17.6 (WP) - 1.7.6 (WP)
+	 */
+	public function getToolUri(string $tool, int $itemid = 0)
+	{
+		// build URI to current tool
+		return JRoute::rewrite(
+			sprintf(
+				'index.php?option=com_vikbooking&view=operators&tool=%s&Itemid=%d',
+				$tool,
+				($itemid ?: JFactory::getApplication()->input->getInt('Itemid', 0))
+			)
+		);
+	}
+
+	/**
+	 * Authorizes the currently logged operator to access the given tool.
+	 * 
+	 * @param 	string 	$tool 	The operator tool identifier.
+	 * 
+	 * @return 	array 			List of operator-tool data including:
+	 * 							- The operator record accessing the tool.
+	 * 							- The operator-tool permissions registry.
+	 * 							- The base URI for rendering the tool.
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.6 (WP) - 1.7.6 (WP)
+	 */
+	public function authOperatorToolData(string $tool)
+	{
+		// attempt to get the current operator
+		$operator = $this->getOperatorAccount();
+
+		if (!$operator) {
+			throw new Exception('Operator authentication required.', 401);
+		}
+
+		// get tool data
+		$tool_data = $this->getToolData($tool);
+
+		if (!$tool_data) {
+			// tool is unknown
+			throw new Exception(sprintf('Operator tool not found (%s)', $tool), 404);
+		}
+
+		if (!$this->checkPermissions($operator, $tool)) {
+			// no permission to access this tool
+			throw new Exception(sprintf('Not enough permissions to access the tool (%s)', $tool), 403);
+		}
+
+		return [
+			$operator,
+			new JObject(($operator['perms'] ?: [])),
+			$this->getToolUri($tool),
+		];
+	}
+
+	/**
 	 * Returns the data for the given tool identifier.
 	 * 
 	 * @param 	string 	$tool 	The tool identifier.
@@ -394,27 +459,11 @@ final class VikBookingOperator
 			return $this->toolPermissionTypes;
 		}
 
-		$dbo = JFactory::getDbo();
-
-		// fetch all rooms
-		$dbo->setQuery(
-			$dbo->getQuery(true)
-				->select([$dbo->qn('id'), $dbo->qn('name')])
-				->from($dbo->qn('#__vikbooking_rooms'))
-				->order($dbo->qn('avail') . ' DESC')
-				->order($dbo->qn('name') . ' ASC')
-		);
-
-		$rooms = [];
-
-		foreach ($dbo->loadAssocList() as $room) {
-			$rooms[$room['id']] = $room['name'];
-		}
-
 		// build the default tool permission types
 		$this->toolPermissionTypes = [
 			'tableaux' => [
 				'name'        => JText::translate('VBOOPERPERMTABLEAUX'),
+				'icon'        => '<i class="' . VikBookingIcons::i('stream') . '"></i>',
 				'permissions' => [
 					'days'  => [
 						'type'    => 'number',
@@ -426,15 +475,13 @@ final class VikBookingOperator
 						'default' => 14,
 					],
 					'rooms' => [
-						'type'     => 'select',
+						'type'     => 'listings',
 						'label'    => JText::translate('VBOPERMTBLXROOMS'),
 						'multiple' => true,
-						'assets'   => true,
 						'asset_options' => [
-                            'placeholder' => JText::translate('VBCOUPONALLVEHICLES'),
-                            'allowClear'  => true,
-                        ],
-						'options' => $rooms,
+							'placeholder' => JText::translate('VBCOUPONALLVEHICLES'),
+							'allowClear'  => true,
+						],
 					],
 					'guestname' => [
 						'type'    => 'select',
@@ -467,17 +514,36 @@ final class VikBookingOperator
 			],
 			'finance' => [
 				'name'        => JText::translate('VBO_W_FINANCE_TITLE'),
+				'icon'        => '<i class="' . VikBookingIcons::i('piggy-bank') . '"></i>',
 				'permissions' => [
 					'rooms' => [
-						'type'     => 'select',
+						'type'     => 'listings',
 						'label'    => JText::translate('VBOPERMTBLXROOMS'),
 						'multiple' => true,
-						'assets'   => true,
 						'asset_options' => [
-                            'placeholder' => JText::translate('VBCOUPONALLVEHICLES'),
-                            'allowClear'  => true,
-                        ],
-						'options' => $rooms,
+							'placeholder' => JText::translate('VBCOUPONALLVEHICLES'),
+							'allowClear'  => true,
+						],
+					],
+				],
+				// this native tool is rendered through a layout thanks to a callback
+				'rendering_type' => 'layout',
+				'rendering_callback' => function ($tool, $operator, $permissions, $tool_uri) {
+					VikBooking::getOperatorInstance()->renderNativeToolLayout($tool, $operator, $permissions, $tool_uri);
+				},
+			],
+			'guest_messaging' => [
+				'name'        => JText::translate('VBO_W_GUESTMESSAGES_TITLE'),
+				'icon'        => '<i class="' . VikBookingIcons::i('comment-dots') . '"></i>',
+				'permissions' => [
+					'rooms' => [
+						'type'     => 'listings',
+						'label'    => JText::translate('VBOPERMTBLXROOMS'),
+						'multiple' => true,
+						'asset_options' => [
+							'placeholder' => JText::translate('VBCOUPONALLVEHICLES'),
+							'allowClear'  => true,
+						],
 					],
 				],
 				// this native tool is rendered through a layout thanks to a callback

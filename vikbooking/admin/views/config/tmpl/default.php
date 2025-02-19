@@ -11,7 +11,6 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 $vbo_app = VikBooking::getVboApplication();
-$vbo_app->prepareModalBox();
 
 // JS lang def
 JText::script('VBCONFIGFLUSHSESSIONCONF')

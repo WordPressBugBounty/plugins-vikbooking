@@ -150,6 +150,7 @@ jQuery(document).ready(function() {
 			$preferrer = VikRequest::getString('referrer', '', 'request');
 			foreach ($this->referrers as $r) {
 				$say_referrer = !strcasecmp($r['referrer'], 'googlehotel') ? 'Google Hotel' : $r['referrer'];
+				$say_referrer = !strcasecmp($say_referrer, 'googlevr') ? 'Google VR' : $say_referrer;
 				$say_referrer = strpos($say_referrer, 'http') === false ? ucwords($say_referrer) : $say_referrer;
 				?>
 				<option value="<?php echo $r['referrer']; ?>"<?php echo $r['referrer'] == $preferrer ? ' selected="selected"' : ''; ?>><?php echo $say_referrer; ?></option>

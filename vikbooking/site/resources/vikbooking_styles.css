@@ -37,6 +37,7 @@
 	--vbo-middle-text-color: #666;
 	--vbo-light-text-color: #999;
 	--vbo-contrast-text-color: #fff;
+	---vbo-body-text-color: #444;
 
 	/* Input Style */
 	--vbo-input-style: #fff;
@@ -233,6 +234,59 @@ a:focus {
 	line-height:1.6em;
 	margin:0 10px 0 0;
 	font-size:13px;
+}
+
+.vbo-badge, .vbo-label {
+	display: inline-block;
+	text-decoration: none;
+	padding: 4px 6px;
+	font-size: 11px;
+	line-height: 14px;
+	font-weight: bold;
+	border-radius: 20px;
+	color: var(---vbo-body-text-color);
+	vertical-align: baseline;
+	white-space: nowrap;
+	background-color: var(--vbo-light-border-color);
+}
+.vbo-badge:hover, .vbo-label:hover {
+	text-decoration: none;
+	background-color: var(--vbo-border-color);
+}
+.vbo-label {
+	border-radius: 6px;
+}
+.vbo-badge.badge-success, .vbo-label.label-success {
+	background-color: #c9f4c9;
+	color: #097900;
+}
+.vbo-badge.badge-success:hover, .vbo-label.label-success:hover {
+	background-color: #428242;
+	color: #fff;
+}
+.vbo-badge.badge-danger, .vbo-label.label-danger {
+	background-color: #ffd1d1;
+	color: #800;
+}
+.vbo-badge.badge-danger:hover, .vbo-label.label-danger:hover {
+	background-color: #e61717;
+	color: #fff;
+}
+.vbo-badge.badge-warning, .vbo-label.label-warning {
+	background-color: #ffead6;
+	color: #f38321;
+}
+.vbo-badge.badge-warning:hover, .vbo-label.label-warning:hover {
+	background-color: #ad6704;
+	color: #fff;
+}
+.vbo-badge.badge-info, .vbo-label.label-info {
+	background-color: #bdd7e3;
+	color: #13438e;
+}
+.vbo-badge.badge-info:hover, .vbo-label.label-info:hover {
+	background-color: #498fb3;
+	color: #fff;
 }
 
 .vbvordudata p {
@@ -1570,17 +1624,31 @@ a:focus {
 	padding-bottom: 15px;
 	padding-top: 20px;
 }
+.vbo-oconfirm-choosedeposit-inner {
+    display: flex;
+    flex-wrap: wrap;	
+}
 .vbo-oconfirm-choosedeposit-inner > div {
-	display: inline-block;
+	display: flex;
+	column-gap: 15px;
 	padding: 15px 10px;
 	border: 2px solid var(--vbo-light-border-color);
 	margin: 5px;
 	border-radius: 6px;
 	position: relative;
 }
-.vbo-oconfirm-choosedeposit-inner > div > label {
-	margin-left: 5px;
+.vbo-oconfirm-choosedeposit-inner .vbo-oconfirm-choosedeposit-block label {
+	margin-left: 0;
 	margin-bottom: 0;
+	padding: 0;
+}
+.vbo-oconfirm-choosedeposit-paydeposit-inner {
+	display: flex;
+	flex-wrap: wrap;
+    flex-direction: column;
+}
+.vbo-oconfirm-choosedeposit-paydeposit-balance {
+	font-size: .8em;	
 }
 .vbcheckinloc .vbcheckinlocname, .vbcheckoutloc .vbcheckoutlocname {
 	display:block;
@@ -6394,7 +6462,8 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	margin-bottom: 0;
 }
 .vbo-booking-chat-inner .chat-conversation .chat-message .speech-bubble.sent {
-	background: var(--vbo-blue-color); 
+	background: var(--vbo-blue-color);
+	color: #fff;
 }
 .vbo-booking-chat-inner .chat-conversation .chat-message .speech-bubble {
 	font-size: 16px;
@@ -7561,6 +7630,301 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 }
 /* End: New Listing Room Details layout */
 
+/* Start: the new Operator Guest Messages */
+.vbo-optool-gmessaging-inner {
+	display: flex;
+	gap: 5px;	
+}
+.vbo-optool-gmessaging-list-container {
+	width: 35%;
+	overflow-x: hidden;
+	overflow-y: scroll;
+	border: 1px solid var(--vbo-light-border-color);
+	border-radius: 6px;
+	margin-top: 5px;
+	max-height: 594px;
+}
+p.info[data-new-messages="1"] {
+	display: table;
+	margin: 10px auto;
+	padding: 4px 15px !important;
+	border-radius: 20px;
+	font-size: 16px;
+	position: relative;
+}
+p.info[data-new-messages="1"] a {
+	text-decoration: none;
+	color: var(--vbo-blue-color);
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message {
+	display: flex;
+	padding: 10px 15px;
+	border-bottom: 1px solid var(--vbo-light-border-color);
+	cursor: pointer;	
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message:hover {
+	background-color: #c6dfff;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message.vbo-optool-gmessaging-message-new {
+	position: relative;
+	background-color: #caebf4;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message.vbo-optool-gmessaging-message-new:after {
+	content: "";
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background-color: #3fdddd;
+	position: absolute;
+	top: 50%;
+	right: -6px;
+	transform: translate(0, -50%);
+	z-index: 999999;
+	border: 1.4px solid #fff;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message:last-child {
+	border-bottom: 0;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message.vbo-optool-gmessaging-message-active {
+	background-color: #ddebff;
+}
+.vbo-optool-gmessaging-message-avatar {
+	width: 40px;
+	margin-right: 15px;
+	position: relative;
+}
+.vbo-optool-gmessaging-message-avatar img {
+	max-width: 100%;
+	border-radius: 50%;
+	object-fit: cover;	
+}
+.vbo-optool-gmessaging-message-avatar-icon {
+	width: 40px;
+	text-align: center;
+	height: 40px;
+	line-height: 36px !important;
+	border: 1px solid var(--vbo-border-color);
+	border-radius: 50%;
+	background: var(--vbo-light-grey-bg-color);
+	font-size: 14px;	
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content {
+	flex: 1;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-head {
+	display: flex;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-details {
+	margin-bottom: 5px;
+	flex: 1;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-details .vbo-optool-gmessaging-message-guestname {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-details .label.message-unreplied {
+	background: var(--vbo-base-color);
+	font-size: 12px;
+	margin: 0 0 0 5px;
+	color: var(--vbo-contrast-text-color);
+	font-weight: 500;
+	padding: 3px 6px;
+	border-radius: 4px;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-details .label.message-unreplied:hover {
+	background-color: var(--vbo-base-color-hover);
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-date {
+	margin-left: auto;
+	font-size: 12px;
+	text-align: right;
+	line-height: 1.2em;
+	opacity: .8;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-date span {
+	display: block;
+}
+.vbo-optool-gmessaging-message-content-details .vbo-optool-gmessaging-message-bookinginfo {
+	line-height: 1.2em;
+}
+.vbo-optool-gmessaging-message-staydates {
+	font-size: 12px;
+	color: var(--vbo-middle-text-color);
+	display: inline-block;
+	margin-left: 10px;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-msg {
+	opacity: .8;
+	font-size: 14px;
+}
+.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-msg p {
+	line-height: 1.5em;
+}
+.vbo-optool-gmessaging-inner .vbo-optool-gmessaging-inboxstyle-chat {
+	flex: 1;
+	border: 1px solid var(--vbo-light-border-color);
+	background-color: #fafcfe;
+	border-radius: 6px;
+	margin-top: 5px;
+	display: flex;
+	flex-direction: column;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .vbo-optool-gmessaging-inboxstyle-chat-head {
+	display: inline-block;
+	vertical-align: middle;
+	width: 100%;
+	border-bottom: 1px solid var(--vbo-light-border-color);
+	background-color: var(--vbo-white-bg-color);
+	border-top-left-radius: 6px;
+	border-top-right-radius: 6px;	
+	min-height: 78px;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .vbo-optool-gmessaging-inboxstyle-chat-head > div {
+	display: flex;
+	align-items: flex-start;
+	padding: 10px 4px 8px 10px;	
+}
+.vbo-optool-gmessaging-inboxstyle-chat .vbo-modal-wguestmessages-chat-info .vbo-optool-gmessaging-inboxstyle-chat-head-info-gname {
+	display: inline-block;
+	margin-right: 10px;
+	font-weight: 600;
+	font-size: 16px;	
+}
+.vbo-optool-gmessaging-inboxstyle-chat-head-details {
+	line-height: 1.2em;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .vbo-optool-gmessaging-inboxstyle-chat-head-summary {
+	display: block;
+	margin-top: 4px;	
+}
+.vbo-optool-gmessaging-inboxstyle-chat .vbo-optool-gmessaging-message-listings {
+	display: inline-block;
+	overflow: hidden;
+	white-space: nowrap;
+	max-width: 200px;
+	text-overflow: ellipsis;
+	font-size: 12px;
+	color: var(--vbo-middle-text-color);
+	margin-left: 10px;
+	margin-right: 5px;
+	vertical-align: middle;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .vbo-optool-gmessaging-inboxstyle-chat-body {
+	padding: 10px 15px;
+	flex: 1;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .vbo-w-guestmessages-message-staydates {
+	display: inline-block;
+	vertical-align: middle;
+	line-height: 1em;	
+}
+.vbo-optool-gmessaging-inboxstyle-chat .vbo-optool-gmessaging-inboxstyle-chat-head-info-gname {
+	display: inline-block;
+	margin-right: 10px;
+	font-weight: 600;
+	font-size: 16px;
+}
+.vbo-optool-gmessaging-inboxstyle-chat button.chat-translate-msg {
+	background: transparent !important;
+	color: initial !important;
+	font-size: 12px;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .chat-conversation .chat-datetime-separator {
+	font-size: 14px;
+}
+.vbo-optool-gmessaging-inboxstyle-chat button.chat-translate-msg:hover, .vbo-optool-gmessaging-inboxstyle-chat button.chat-translate-msg:active, .vbo-optool-gmessaging-inboxstyle-chat button.chat-translate-msg:focus {
+	text-decoration: none;
+	border: 0;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .chat-conversation .chat-message .speech-bubble {
+	font-size: 16px;
+	line-height: 1.5em;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .chat-border-layout .chat-messages-panel {
+	padding-bottom: 10px;	
+}
+.vbo-optool-gmessaging-inboxstyle-chat .chat-border-layout .chat-messages-panel {
+	height: calc(572px - 91px);
+	padding-bottom: 10px;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .chat-conversation {
+	max-height: 430px;
+}
+.vbo-optool-gmessaging-inboxstyle-chat .vbo-optool-gmessaging-chat-loading {
+	text-align: center;
+	padding: 50px;
+	font-size: 24px;
+	opacity: .5;	
+}
+/* Skeleton */
+.vbo-skeleton-loading {
+	position: relative;
+	overflow: hidden;
+	background-color: #DDDBDD;
+	display: inline-block;
+}
+.vbo-skeleton-loading:after {
+	position: absolute;	
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.2) 20%, rgba(255, 255, 255, 0.5) 60%, rgba(255, 255, 255, 0));
+    animation: shimmer 2s infinite;
+    content: '';
+}
+.vbo-optool-gmessaging-guest-activity-skeleton {
+	display: flex;
+	padding: 10px 15px;
+	border-bottom: 1px solid var(--vbo-light-border-color);
+	cursor: pointer;	
+}
+.vbo-optool-gmessaging-guest-activity-skeleton .vbo-optool-gmessaging-guest-activity-content {
+	flex: 1;
+}
+.vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading-avatar, .vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading-avatar:after {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	object-fit: cover;
+	margin-right: 15px;
+}
+.vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading-title, .vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading-title:after {
+	width: 150px;
+	height: 15px;
+}
+.vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading-subtitle, .vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading-subtitle:after {
+	width: 50px;
+	height: 11px;
+}
+.vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading-content, .vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading-content:after {
+	width: 100%;
+	height: 22px;
+}
+.vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading {
+	position: relative;
+	overflow: hidden;
+	display: inline-block;	
+}
+.vbo-optool-gmessaging-guest-activity-skeleton .vbo-skeleton-loading:after {
+	position: absolute;	
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+    content: '';	
+}
+@keyframes shimmer {
+	100% {
+		transform: translateX(100%);
+	}
+}
+/* End: the new Operator Guest Messages */
+
 
 /* Start: Toast Message bottom-center positioned */
 .vbo-toast-message {
@@ -8039,6 +8403,15 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	.vbo-listing-details-wrap .vbo-listing-details-descprice-block {
 		margin-top: 10px;
 	}
+	.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-date, .vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-msg, .vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-avatar {
+		display: none;
+	}
+	.vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-details .vbo-optool-gmessaging-message-guestname {
+		line-height: 1.5em;
+	}
+	.chat-conversation .chat-message .speech-bubble {
+		max-width: 78%;
+	}
 }
 @media only screen and (max-width : 780px) {
 	.vbvordroominfo-multi > div {
@@ -8169,6 +8542,9 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	}
 	.vbo-offline-cc-row-group-cardpan .vbo-offline-cc-row-cardtype {
 		flex-basis: 160px;
+	}
+	.vbo-optool-gmessaging-inboxstyle-chat .vbo-optool-gmessaging-message-avatar {
+		display: none;
 	}
 }
 @media only screen and (max-width : 700px) {

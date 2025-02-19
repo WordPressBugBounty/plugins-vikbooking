@@ -60,6 +60,15 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 	protected $vcm_exists = true;
 
 	/**
+	 * List of new guest messages detected.
+	 * 
+	 * @var 	array
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	protected $new_guest_messages = [];
+
+	/**
 	 * Class constructor will define the widget name and identifier.
 	 */
 	public function __construct()
@@ -242,12 +251,50 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 						if ($guestmess_notifications) {
 							$notifications = array_merge($notifications, $guestmess_notifications);
 						}
+
+						// set the new guest message
+						$this->new_guest_messages[] = [
+							'id'  => $watch_next->message_id,
+							'bid' => $watch_next->message_bid,
+						];
 					}
 				}
 			}
 		}
 
 		return [$watch_next, $notifications];
+	}
+
+	/**
+	 * Checks for new events to be dispatched by using the previous preloaded watch-data.
+	 * This method is called after getNotifications(), so we avoid querying the DB.
+	 * 
+	 * @param 	VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
+	 * 
+	 * @return 	array 						list of event objects to dispatch, if any.
+	 * 
+	 * @see 	preload()
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	public function getNotificationEvents(VBONotificationWatchdata $watch_data = null)
+	{
+		if (!$this->new_guest_messages) {
+			return [];
+		}
+
+		// return the notification events to dispatch
+		return [
+			// propagate the new guest messages
+			'vbo-new-guest-messages' => [
+				'messages' => $this->new_guest_messages,
+			],
+			// update the admin-dock badge count, if widget available
+			'vbo-admin-dock-update-badge' => [
+				'widgetId'   => 'guest_messages',
+				'badgeCount' => count($this->new_guest_messages),
+			],
+		];
 	}
 
 	/**

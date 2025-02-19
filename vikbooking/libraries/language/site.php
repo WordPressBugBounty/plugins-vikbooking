@@ -992,9 +992,6 @@ class VikBookingLanguageSite implements JLanguageHandler
 			case 'VBORDERSTATUSCANCELLED':
 				$result = __('Cancelled', 'vikbooking');
 				break;
-			case 'VBCANCELLED':
-				$result = __('Cancelled', 'vikbooking');
-				break;
 			case 'VBSEARCHBUTTON':
 				$result = __('Search', 'vikbooking');
 				break;
@@ -2088,6 +2085,54 @@ class VikBookingLanguageSite implements JLanguageHandler
 				break;
 			case 'VBO_PRECHECKIN_SIGN_DOCUMENT':
 				$result = __('Sign document', 'vikbooking');
+				break;
+			case 'VBO_PAY_BALANCE_NDAYS':
+				$result = __('Remaining balance to be paid %d days before arrival.', 'vikbooking');
+				break;
+			case 'VBO_PAY_BALANCE_ONARRIVAL':
+				$result = __('Remaining balance to be paid upon arrival.', 'vikbooking');
+				break;
+			case 'VBO_DAMAGE_DEPOSIT':
+				$result = __('Damage deposit', 'vikbooking');
+				break;
+			case 'VBO_W_GUESTMESSAGES_TITLE':
+				$result = __('Guest Messages', 'vikbooking');
+				break;
+			case 'VBTODAY':
+				$result = __('Today', 'vikbooking');
+				break;
+			case 'VBOCHECKEDSTATUSIN':
+				$result = __('Checked-in', 'vikbooking');
+				break;
+			case 'VBOCHECKEDSTATUSOUT':
+				$result = __('Checked-out', 'vikbooking');
+				break;
+			case 'VBOCHECKEDSTATUSNOS':
+				$result = __('No Show', 'vikbooking');
+				break;
+			case 'VBCONFIRMED':
+				$result = __('Confirmed', 'vikbooking');
+				break;
+			case 'VBSTANDBY':
+				$result = __('Standby', 'vikbooking');
+				break;
+			case 'VBCANCELLED':
+				$result = __('Cancelled', 'vikbooking');
+				break;
+			case 'VBO_REPLY':
+				$result = __('Reply', 'vikbooking');
+				break;
+			case 'VBO_NO_MORE_MESSAGES':
+				$result = __('There are no more messages.', 'vikbooking');
+				break;
+			case 'VBO_NO_REPLY_NEEDED':
+				$result = __('No reply needed', 'vikbooking');
+				break;
+			case 'VBO_WANT_PROCEED':
+				$result = __('Do you want to proceed?', 'vikbooking');
+				break;
+			case 'VBO_NEW_MESSAGES':
+				$result = __('There are new messages.', 'vikbooking');
 				break;
 		}
 

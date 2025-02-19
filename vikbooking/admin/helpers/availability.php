@@ -271,7 +271,67 @@ class VikBookingAvailability
 			default:
 				return 'Unknown error code.';
 		}
-		
+	}
+
+	/**
+	 * Returns a list of room IDs from the given category IDs.
+	 * 
+	 * @param 	array 	$category_ids 	List of category IDs to filter.
+	 * 
+	 * @return 	array 	List of involved and unique room IDs.
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	public function filterRoomCategories(array $category_ids)
+	{
+		$category_ids = array_filter(array_map('abs', array_map('intval', $category_ids)));
+
+		if (!$category_ids) {
+			return [];
+		}
+
+		$dbo = JFactory::getDbo();
+
+		$q = $dbo->getQuery(true)
+			->select($dbo->qn('id'))
+			->from($dbo->qn('#__vikbooking_rooms'));
+
+		foreach ($category_ids as $cat_id) {
+			$q->where([
+				$dbo->qn('idcat') . ' = ' . $dbo->q($cat_id . ';'),
+				$dbo->qn('idcat') . ' LIKE ' . $dbo->q($cat_id . ';%'),
+				$dbo->qn('idcat') . ' LIKE ' . $dbo->q('%;' . $cat_id . ';%'),
+				$dbo->qn('idcat') . ' LIKE ' . $dbo->q('%;' . $cat_id . ';'),
+			], 'OR');
+		}
+
+		$dbo->setQuery($q);
+
+		return array_values(array_unique($dbo->loadColumn()));
+	}
+
+	/**
+	 * Loads a list of room categories.
+	 * 
+	 * @return 	array 	The associative list of categories.
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	public function loadRoomCategories()
+	{
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select([
+					$dbo->qn('id'),
+					$dbo->qn('name'),
+				])
+				->from($dbo->qn('#__vikbooking_categories'))
+				->order($dbo->qn('name') . ' ASC')
+		);
+
+		return $dbo->loadAssocList();
 	}
 
 	/**
@@ -411,11 +471,15 @@ class VikBookingAvailability
 	/**
 	 * Loads all rate plans in VBO and maps them into an associative array.
 	 * 
+	 * @param 	bool 	$no_cache 	True to avoid internal caching.
+	 * 
 	 * @return 	array 	the associative list of rate plans.
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP) added $no_cache argument.
 	 */
-	public function loadRatePlans()
+	public function loadRatePlans($no_cache = false)
 	{
-		if ($this->all_rplans) {
+		if (!$no_cache && $this->all_rplans) {
 			// return previously cached array if available
 			return $this->all_rplans;
 		}
@@ -451,7 +515,9 @@ class VikBookingAvailability
 		// sort rate plans
 		$rate_plans = VikBooking::sortRatePlans($rate_plans, true);
 
-		$this->all_rplans = $rate_plans;
+		if (!$no_cache) {
+			$this->all_rplans = $rate_plans;
+		}
 
 		return $rate_plans;
 	}

@@ -1236,6 +1236,7 @@ class VikBooking
 	 * @since 	1.11.2 (J) - 1.1.2 (WP)
 	 * @since 	1.16.0 (J) - 1.6.0 (WP) the method can also be used to require the chat handler.
 	 * @since 	1.16.4 (J) - 1.6.4 (WP) preloading widgets on WP when VCM is inactive is prevented.
+	 * @since 	1.17.6 (J) - 1.7.6 (WP) empty signature arguments will only require the dependencies.
 	 */
 	public static function getVcmChatInstance($oid, $channel = null)
 	{
@@ -1261,6 +1262,11 @@ class VikBooking
 
 		// always require main file of the abstract class even if arguments are empty/invalid
 		require_once $vcm_messaging_helper;
+
+		if (empty($oid) && empty($channel)) {
+			// do not proceed in order to save resources
+			return null;
+		}
 
 		// return the instance of the class for this channel handler
 		return VCMChatHandler::getInstance($oid, $channel);
@@ -13084,7 +13090,7 @@ class VikBooking
 			}
 
 			// check for derived rate plan
-			if (!empty($rate_plan['derived_id']) && !empty($rate_plan['derived_data'])) {
+			if (!empty($rate_plan['derived_id'])) {
 				// derived rates should go last
 				$sort_score -= 2;
 			} else {

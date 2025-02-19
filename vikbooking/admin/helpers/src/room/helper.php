@@ -489,6 +489,7 @@ final class VBORoomHelper extends JObject
 				$dbo->qn('r.cost'),
 				$dbo->qn('p.name'),
 				$dbo->qn('p.minlos'),
+				$dbo->qn('p.derived_id'),
 			])
 			->from($dbo->qn('#__vikbooking_dispcost', 'r'))
 			->leftJoin($dbo->qn('#__vikbooking_prices', 'p') . ' ON ' . $dbo->qn('r.idprice') . ' = ' . $dbo->qn('p.id'))
@@ -524,9 +525,11 @@ final class VBORoomHelper extends JObject
 			}
 
 			$room_rate_plans[] = [
-				'id'   => $rplan->idprice,
-				'name' => $rplan->name,
-				'cost' => $rplan->cost,
+				'id'         => $rplan->idprice,
+				'name'       => $rplan->name,
+				'cost'       => $rplan->cost,
+				'minlos'     => $rplan->minlos,
+				'derived_id' => $rplan->derived_id,
 			];
 		}
 
@@ -535,5 +538,241 @@ final class VBORoomHelper extends JObject
 		}
 
 		return $room_rate_plans;
+	}
+
+	/**
+	 * Calculates if the provided booking information require a split payment for the damage deposit.
+	 * 
+	 * @param 	array 	$booking 		The booking record data.
+	 * @param 	array 	$booking_rooms 	The rooms booking list.
+	 * 
+	 * @return 	array 					Associative list of damage deposit details.
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	public function getDamageDepositSplitPayment(array $booking, array $booking_rooms)
+	{
+		// load all option records of type damage deposit
+		$dbo = JFactory::getDbo();
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_optionals'))
+				->where($dbo->qn('forcesel') . ' = 1')
+				->where($dbo->qn('oparams') . ' LIKE ' . $dbo->q('%' . str_replace(['{', '}'], '', json_encode(['damagedep' => 1])) . '%'))
+		);
+		$dd_records = $dbo->loadAssocList();
+
+		// scan all records for validation, if any
+		foreach ($dd_records as &$dd_record) {
+			// make sure to decode the option params
+			$dd_record['oparams'] = (array) json_decode($dd_record['oparams'], true);
+
+			if (empty($dd_record['oparams']['damagedep_settings']['paywhen'])) {
+				// no separate payment defined
+				unset($dd_record);
+				continue;
+			}
+
+			// validate maximum nights of stay
+			if (!empty($dd_record['oparams']['damagedep_settings']['bmaxlos']) && ($booking['days'] ?? 1) > $dd_record['oparams']['damagedep_settings']['bmaxlos']) {
+				// limit exceeded
+				unset($dd_record);
+				continue;
+			}
+
+			// validate payment method ID
+			if (empty($dd_record['oparams']['damagedep_settings']['payid']) && empty($booking['idpayment'])) {
+				// no payment method defined anywhere
+				unset($dd_record);
+				continue;
+			}
+
+			// calculate and set the payment window values
+			$dd_record['payment_window'] = [];
+			if (!strlen((string) $dd_record['oparams']['damagedep_settings']['paywind'])) {
+				// payable from today (always)
+				$dd_record['payment_window']['payment_from_dt'] = date('Y-m-d');
+				$dd_record['payment_window']['payable'] = true;
+			} elseif (empty($dd_record['oparams']['damagedep_settings']['paywind'])) {
+				// payable from the check-in day
+				$dd_record['payment_window']['payment_from_dt'] = date('Y-m-d', $booking['checkin']);
+				$dd_record['payment_window']['payable'] = strtotime($dd_record['payment_window']['payment_from_dt']) <= strtotime(date('Y-m-d'));
+			} else {
+				// calculate the payable date
+				$window_days = (int) $dd_record['oparams']['damagedep_settings']['paywind'];
+				$dd_record['payment_window']['payment_from_dt'] = date('Y-m-d', strtotime(sprintf('-%d days', $window_days), $booking['checkin']));
+				$dd_record['payment_window']['payable'] = strtotime($dd_record['payment_window']['payment_from_dt']) <= strtotime(date('Y-m-d'));
+			}
+
+			// check if a custom payment method should be used
+			if (!empty($dd_record['oparams']['damagedep_settings']['payid'])) {
+				$dd_record['payment_window']['pay_id'] = $dd_record['oparams']['damagedep_settings']['payid'];
+			}
+
+			// ensure damage deposit amount was not paid already
+			if (empty($booking['idorderota']) && !empty($booking['totpaid']) && $booking['totpaid'] >= ($booking['total'] ?? 0)) {
+				// payment window not available because damage deposit already paid
+				$dd_record['payment_window'] = [];
+			}
+		}
+
+		// unset last reference
+		unset($dd_record);
+
+		if (!$dd_records) {
+			// unable to proceed
+			return [];
+		}
+
+		// always reset array keys
+		$dd_records = array_values($dd_records);
+
+		// list of damage deposit option IDs
+		$dd_record_ids = array_column($dd_records, 'id');
+
+		// room reservation IDs affected
+		$room_reservation_dd = [];
+
+		// collect all damage deposit options from the booked rooms
+		$rooms_dd_data = [];
+		foreach ($booking_rooms as $or) {
+			if (empty($or['optionals'])) {
+				continue;
+			}
+
+			$stepo = array_filter(explode(";", $or['optionals']));
+			foreach ($stepo as $roptkey => $one) {
+				$stept = explode(":", $one);
+				if (in_array($stept[0], $dd_record_ids)) {
+					// push damage deposit ID and room record
+					$rooms_dd_data[] = [
+						'dd_id' => $stept[0],
+						'rr'    => $or,
+					];
+
+					// push room reservation ID
+					$room_reservation_dd[] = $or['idroom'] ?? 0;
+				}
+			}
+		}
+
+		if (!$rooms_dd_data) {
+			// no damage deposit options were booked
+			return [];
+		}
+
+		// get the unique array
+		$rooms_dd_unique = array_values(array_unique(array_column($rooms_dd_data, 'dd_id')));
+
+		// turn the records into an associative list
+		$dd_records_assoc = [];
+		foreach ($dd_records as $dd_record) {
+			$dd_records_assoc[$dd_record['id']] = $dd_record;
+		}
+
+		// calculate amounts and damage deposit payment window
+		$tot_dd_amount_gross = 0;
+		$tot_dd_amount_net = 0;
+		$tot_dd_amount_tax = 0;
+		$payment_window = [];
+
+		foreach ($rooms_dd_data as $room_dd_data) {
+			$opt_id = $room_dd_data['dd_id'];
+			if (!($dd_records_assoc[$opt_id] ?? [])) {
+				continue;
+			}
+
+			// calculate damage deposit price
+			$dd_price = (float) $dd_records_assoc[$opt_id]['cost'];
+			if (!empty($dd_records_assoc[$opt_id]['pcentroom'])) {
+				// percent cost of the room reservation
+				$room_cost = ($room_dd_data['rr']['room_cost'] ?? 0) ?: ($room_dd_data['rr']['cust_cost'] ?? 0) ?: 0;
+				$dd_price = $room_cost * $dd_price / 100;
+			}
+
+			if ($dd_price <= 0) {
+				// invalid damage deposit cost
+				continue;
+			}
+
+			if ($dd_records_assoc[$opt_id]['perday'] == 1) {
+				// cost per night
+				$dd_price = $dd_price * ($booking['days'] ?? 1);
+			}
+
+			if (($dd_records_assoc[$opt_id]['maxprice'] ?? 0) > 0 && $dd_price > $dd_records_assoc[$opt_id]['maxprice']) {
+				// maximum cost
+				$dd_price = (float) $dd_records_assoc[$opt_id]['maxprice'];
+			}
+
+			if ($dd_records_assoc[$opt_id]['perperson'] == 1) {
+				// cost per person
+				$dd_price = $dd_price * ((int) $room_dd_data['rr']['adults']);
+			}
+
+			if ($dd_price <= 0) {
+				// invalid damage deposit cost
+				continue;
+			}
+
+			// calculate taxes, if any
+			$dd_amount_gross = VikBooking::sayOptionalsPlusIva($dd_price, $dd_records_assoc[$opt_id]['idiva']);
+			$dd_amount_net = VikBooking::sayOptionalsMinusIva($dd_price, $dd_records_assoc[$opt_id]['idiva']);
+			$dd_amount_tax = $dd_amount_gross - $dd_amount_net;
+
+			// increase global values
+			$tot_dd_amount_gross += $dd_amount_gross;
+			$tot_dd_amount_net += $dd_amount_net;
+			$tot_dd_amount_tax += $dd_amount_tax;
+
+			// update payment window (one for all option records)
+			$payment_window = (array) $dd_records_assoc[$opt_id]['payment_window'];
+		}
+
+		if (!$tot_dd_amount_gross) {
+			// no compliant damage deposit option found for separate payment
+			return [];
+		}
+
+		return [
+			'damagedep_gross' => $tot_dd_amount_gross,
+			'damagedep_net'   => $tot_dd_amount_net,
+			'damagedep_tax'   => $tot_dd_amount_tax,
+			'payment_window'  => $payment_window,
+			'damagedep_rids'  => $room_reservation_dd,
+		];
+	}
+
+	/**
+	 * Given a list of room records, returns an associative list
+	 * of room IDs and corresponding mini thumbnail URLs, if any.
+	 * 
+	 * @param 	array 	$rooms 	List of room records.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	public function loadMiniThumbnails(array $rooms, string $def_uri = '')
+	{
+		$mini_thumbnails = [];
+
+		$base_img_path = implode(DIRECTORY_SEPARATOR, [VBO_SITE_PATH, 'resources', 'uploads']) . DIRECTORY_SEPARATOR;
+		$base_img_uri  = VBO_SITE_URI . 'resources/uploads/';
+
+		foreach ($rooms as $room) {
+			if (empty($room['id'])) {
+				continue;
+			}
+
+			if (!empty($room['img']) && is_file($base_img_path . 'mini_' . $room['img'])) {
+				$mini_thumbnails[$room['id']] = $base_img_uri . 'mini_' . $room['img'];
+			} elseif ($def_uri) {
+				$mini_thumbnails[$room['id']] = $def_uri;
+			}
+		}
+
+		return $mini_thumbnails;
 	}
 }

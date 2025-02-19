@@ -485,6 +485,24 @@ if (empty($rows)) {
 			});
 		});
 
+		/**
+		 * Mini thumbnails background generation.
+		 */
+		setTimeout(() => {
+			VBOCore.doAjax(
+				"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=listings.check_mini_thumbnails'); ?>",
+				{},
+				(result) => {
+					if (typeof result === 'object') {
+						console.info('Mini thumbnails processed (' + result.processed + ') and generated (' + result.generated + ').');
+					}
+				},
+				(error) => {
+					console.error(error);
+				}
+			);
+		}, 1000);
+
 	});
 </script>
 <?php

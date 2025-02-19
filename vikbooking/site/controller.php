@@ -1728,7 +1728,10 @@ class VikBookingController extends JControllerVikBooking
 	
 	public function notifypayment()
 	{
+		$app = JFactory::getApplication();
 		$dbo = JFactory::getDbo();
+
+		$session = JFactory::getSession();
 
 		$config = VBOFactory::getConfig();
 		$av_helper = VikBooking::getAvailabilityInstance();
@@ -1763,15 +1766,13 @@ class VikBookingController extends JControllerVikBooking
 			}
 		}
 
+		// load booking details
 		$q = "SELECT * FROM `#__vikbooking_orders` WHERE (`sid`=" . $dbo->quote($psid) . " OR `idorderota`=" . $dbo->quote($psid) . ") AND `ts`=" . $dbo->quote($pts);
 		$dbo->setQuery($q, 0, 1);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$row = $dbo->loadAssoc();
+		if (!$row) {
 			VBOHttpDocument::getInstance()->close(404, 'Booking not found');
 		}
-
-		// load booking details
-		$row = $dbo->loadAssoc();
 
 		// check if the language in use is the same as the one used during the checkout
 		if (!empty($row['lang'])) {
@@ -1866,6 +1867,27 @@ class VikBookingController extends JControllerVikBooking
 		$row['order_rooms'] = $orderrooms;
 		$row['fares'] = $tars;
 
+		// invoke the payment method class
+		$exppay = explode('=', ($row['idpayment'] ?? ''));
+		$payment = VikBooking::getPayment($exppay[0], $vbo_tn);
+
+		/**
+		 * Scan the booking and related rooms for damage deposit payment data.
+		 * 
+		 * @since 	1.17.6 (J) - 1.7.6 (WP)
+		 */
+		$damage_deposit_payment = VBORoomHelper::getInstance()->getDamageDepositSplitPayment($row, $orderrooms);
+
+		if ($app->input->getBool('dd') && !empty($damage_deposit_payment['payment_window']['pay_id'])) {
+			// load the proper payment driver
+			$payment = VikBooking::getPayment($damage_deposit_payment['payment_window']['pay_id']) ?: $payment;
+		}
+
+		if (!$payment) {
+			VBOHttpDocument::getInstance()->close(500, 'Could not load payment processor for validation.');
+		}
+
+		// calculate booking totals
 		$isdue = 0;
 		$tot_taxes = 0;
 		$tot_city_taxes = 0;
@@ -2011,10 +2033,6 @@ class VikBookingController extends JControllerVikBooking
 			$isdue = $isdue - $expcoupon[1];
 		}
 
-		// invoke the payment method class
-		$exppay = explode('=', $row['idpayment']);
-		$payment = VikBooking::getPayment($exppay[0], $vbo_tn);
-
 		if (empty($row['sid']) && !empty($row['idorderota']) && !empty($row['channel'])) {
 			$row['sid'] = $row['idorderota'];
 		}
@@ -2029,7 +2047,7 @@ class VikBookingController extends JControllerVikBooking
 			JLoader::import('adapter.payment.dispatcher');
 			$return_url = JUri::root() . "index.php?option=com_vikbooking&view=booking&sid=" . (!empty($row['idorderota']) && !empty($row['channel']) ? $row['idorderota'] : $row['sid']) . "&ts=" . $row['ts'];
 			$error_url = JUri::root() . "index.php?option=com_vikbooking&view=booking&sid=" . (!empty($row['idorderota']) && !empty($row['channel']) ? $row['idorderota'] : $row['sid']) . "&ts=" . $row['ts'];
-			$notify_url = JUri::root() . "index.php?option=com_vikbooking&task=notifypayment&sid=" . (!empty($row['idorderota']) && !empty($row['channel']) ? $row['idorderota'] : $row['sid']) . "&ts=" . $row['ts']."&tmpl=component";
+			$notify_url = JUri::root() . "index.php?option=com_vikbooking&task=notifypayment" . ($app->input->getBool('dd') ? '&dd=1' : '') . "&sid=" . (!empty($row['idorderota']) && !empty($row['channel']) ? $row['idorderota'] : $row['sid']) . "&ts=" . $row['ts'] . "&tmpl=component";
 			$model 	= JModel::getInstance('vikbooking', 'shortcodes', 'admin');
 			$itemid = $model->best(array('booking'), (!empty($row['lang']) ? $row['lang'] : null));
 			$extra_data = [];
@@ -2062,7 +2080,7 @@ class VikBookingController extends JControllerVikBooking
 			$extra_data = array(
 				'return_url' => VikBooking::externalroute("index.php?option=com_vikbooking&view=booking&sid=" . (!empty($row['idorderota']) && !empty($row['channel']) ? $row['idorderota'] : $row['sid']) . "&ts=" . $row['ts'], false, (!empty($bestitemid) ? $bestitemid : null)),
 				'error_url'  => VikBooking::externalroute("index.php?option=com_vikbooking&view=booking&sid=" . (!empty($row['idorderota']) && !empty($row['channel']) ? $row['idorderota'] : $row['sid']) . "&ts=" . $row['ts'], false, (!empty($bestitemid) ? $bestitemid : null)),
-				'notify_url' => VikBooking::externalroute("index.php?option=com_vikbooking&task=notifypayment&sid=" . (!empty($row['idorderota']) && !empty($row['channel']) ? $row['idorderota'] : $row['sid']) . "&ts=" . $row['ts']."&tmpl=component", false, null),
+				'notify_url' => VikBooking::externalroute("index.php?option=com_vikbooking&task=notifypayment" . ($app->input->getBool('dd') ? '&dd=1' : '') . "&sid=" . (!empty($row['idorderota']) && !empty($row['channel']) ? $row['idorderota'] : $row['sid']) . "&ts=" . $row['ts'] . "&tmpl=component", false, null),
 			);
 			$extra_data['transaction_currency'] = VikBooking::getCurrencyCodePp();
 
@@ -2097,6 +2115,7 @@ class VikBookingController extends JControllerVikBooking
 		if ($array_result['verified'] == 1) {
 			// valid payment
 			$shouldpay = $isdue;
+
 			if ($payment['charge'] > 0.00) {
 				if ($payment['ch_disc'] == 1) {
 					// charge
@@ -2120,9 +2139,10 @@ class VikBookingController extends JControllerVikBooking
 					}
 				}
 			}
-			//deposit may be skipped by customer choice
+
+			// deposit may be skipped by customer choice
 			$shouldpay_befdep = $shouldpay;
-			//
+
 			if (!VikBooking::payTotal()) {
 				$percentdeposit = VikBooking::getAccPerCent();
 				if ($percentdeposit > 0) {
@@ -2133,24 +2153,26 @@ class VikBookingController extends JControllerVikBooking
 					}
 				}
 			}
-			//check if the total amount paid is the same as the order total
+
+			// check if a damage deposit was allowed to be paid
+			$shouldpay_dd = $damage_deposit_payment['damagedep_gross'] ?? 0;
+			$shouldpay_befdd = $shouldpay - $shouldpay_dd;
+
+			// check if the total amount paid is the same as the order total
 			if (isset($array_result['tot_paid'])) {
 				$shouldpay = round($shouldpay, 2);
 				$shouldpay_befdep = round($shouldpay_befdep, 2);
 				$totreceived = round($array_result['tot_paid'], 2);
-				if ($shouldpay != $totreceived && $shouldpay_befdep != $totreceived && $row['paymcount'] == 0) {
-					//the amount paid is different than the order total
-					//fares might have changed or the deposit might be different
-					//Sending just an email to the admin that will check
+				if ($shouldpay != $totreceived && $shouldpay_befdep != $totreceived && $shouldpay_befdd != $totreceived && $shouldpay_dd != $totreceived && $row['paymcount'] == 0) {
+					// the amount paid is different than the order total
+					// fares might have changed or the deposit might be different
+					// Sending just an email to the admin that will check
 					$vbo_app = VikBooking::getVboApplication();
 					$adsendermail = VikBooking::getSenderMail();
 					$vbo_app->sendMail($adsendermail, $adsendermail, $recipient_mail, $adsendermail, JText::translate('VBTOTPAYMENTINVALID'), JText::sprintf('VBTOTPAYMENTINVALIDTXT', $row['id'], $totreceived." (".$array_result['tot_paid'].")", $shouldpay), false);
 				}
-				/**
-				 * We store the amount paid before applying the charge for the transaction.
-				 * 
-				 * @since 	1.3.0
-				 */
+
+				// amount paid should be stored as exclusive of transaction fees/discounts
 				if ($payment['charge'] > 0.00) {
 					if ($payment['ch_disc'] == 1) {
 						// charge
@@ -2237,7 +2259,6 @@ class VikBookingController extends JControllerVikBooking
 			if ($set_room_indexes === true) {
 				$q = "SELECT `id`,`idroom`,`roomindex` FROM `#__vikbooking_ordersrooms` WHERE `idorder`=".(int)$row['id'].";";
 				$dbo->setQuery($q);
-				$dbo->execute();
 				$orooms = $dbo->loadAssocList();
 				foreach ($orooms as $oroom) {
 					if (!empty($oroom['roomindex'])) {
@@ -2310,20 +2331,21 @@ class VikBookingController extends JControllerVikBooking
 			 * @since 	1.14 (J) - 1.4.0 (WP)
 			 * @since 	1.16.2 (J) - 1.6.2 (WP) we attempt to always store the amount paid with this transaction.
 			 * @since 	1.16.9 (J) - 1.6.9 (WP) we attempt to store the amount of payment processing fees for the transaction.
+			 * @since 	1.17.6 (J) - 1.7.6 (WP) added support to separate payment for damage deposit.
 			 */
 			$tn_data = $array_result['transaction'] ?? null;
 			if (isset($array_result['tot_paid']) && $array_result['tot_paid']) {
 				// check event data payload to store
 				if (is_array($tn_data)) {
 					// set key
-					$tn_data['amount_paid'] = (float)$array_result['tot_paid'];
+					$tn_data['amount_paid'] = (float) $array_result['tot_paid'];
 				} elseif (is_object($tn_data)) {
 					// set property
-					$tn_data->amount_paid = (float)$array_result['tot_paid'];
+					$tn_data->amount_paid = (float) $array_result['tot_paid'];
 				} elseif (!$tn_data) {
 					// build an array (we add the payment name because we know there is no other transaction data)
 					$tn_data = [
-						'amount_paid' 	 => (float)$array_result['tot_paid'],
+						'amount_paid' 	 => (float) $array_result['tot_paid'],
 						'payment_method' => $payment['name'],
 					];
 				}
@@ -2332,11 +2354,20 @@ class VikBookingController extends JControllerVikBooking
 				// check event data payload to store
 				if (is_array($tn_data)) {
 					// set key
-					$tn_data['processing_fees'] = (float)$array_result['tot_fees'];
+					$tn_data['processing_fees'] = (float) $array_result['tot_fees'];
 				} elseif (is_object($tn_data)) {
 					// set property
-					$tn_data->processing_fees = (float)$array_result['tot_fees'];
+					$tn_data->processing_fees = (float) $array_result['tot_fees'];
 				}
+			}
+			if ($app->input->getBool('dd') && ($damage_deposit_payment['damagedep_gross'] ?? null)) {
+				if ($tn_data) {
+					$tn_data = (array) $tn_data;
+				} else {
+					$tn_data = [];
+				}
+				// damage deposit may be authorized without an amount paid returned
+				$tn_data['damage_deposit'] = (float) $damage_deposit_payment['damagedep_gross'];
 			}
 
 			// Booking History
@@ -2348,7 +2379,6 @@ class VikBookingController extends JControllerVikBooking
 				$vcm = new SynchVikBooking($row['id']);
 				$vcm->setPushType('new')->sendRequest();
 			}
-			$session = JFactory::getSession();
 			$vcmchanneldata = $session->get('vcmChannelData', '');
 			if (!empty($vcmchanneldata)) {
 				$session->set('vcmChannelData', '');
@@ -2373,7 +2403,7 @@ class VikBookingController extends JControllerVikBooking
 			}
 		}
 	}
-	
+
 	public function currencyconverter()
 	{
 		$session = JFactory::getSession();

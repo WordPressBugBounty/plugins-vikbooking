@@ -432,6 +432,27 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 						<?php
 					}
 
+					/**
+					 * Attempt to build the front-site booking link.
+					 * 
+					 * @since 	1.17.6 (J) - 1.7.6 (WP)
+					 */
+					$use_sid = empty($details['sid']) && !empty($details['idorderota']) ? $details['idorderota'] : $details['sid'];
+					$bestitemid  = VikBooking::findProperItemIdType(['booking'], (!empty($details['lang']) ? $details['lang'] : null));
+					$lang_suffix = $bestitemid && !empty($details['lang']) ? '&lang=' . $details['lang'] : '';
+					$book_link 	 = VikBooking::externalroute("index.php?option=com_vikbooking&view=booking&sid=" . $use_sid . "&ts=" . $details['ts'] . $lang_suffix, false, (!empty($bestitemid) ? $bestitemid : null));
+					// access the model for shortening URLs
+					$model = VBOModelShortenurl::getInstance($onlyRouted = true)->setBooking($details);
+					$short_url = $model->getShortUrl($book_link);
+					?>
+						<div class="vbo-param-container">
+							<div class="vbo-param-label"><?php echo JText::translate('VBO_CRONJOB_WEBHOOK_TYPE_URL_OPTION'); ?></div>
+							<div class="vbo-param-setting">
+								<a href="<?php echo $short_url; ?>" target="_blank"><?php echo $short_url; ?></a>
+							</div>
+						</div>
+					<?php
+
 					if ($tot_unread_messages) {
 						?>
 						<div class="vbo-param-container">

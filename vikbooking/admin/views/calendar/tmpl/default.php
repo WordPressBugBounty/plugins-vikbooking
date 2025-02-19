@@ -690,6 +690,7 @@ var customers_search_vals = "";
 var prev_tareat = null;
 var booknowmade = false;
 var vbo_quickres_has_custdetails = false;
+var vboListingsMiniThumbnails = <?php echo json_encode(VBORoomHelper::getInstance()->loadMiniThumbnails($allc)); ?>;
 
 function vbCloseRoom() {
 	var ckbox = jQuery('input[name="setclosed"]');
@@ -1132,9 +1133,28 @@ jQuery(function() {
 		return true;
 	});
 
-	jQuery("#vbo-calendar-changeroom").select2();
+	jQuery("#vbo-calendar-changeroom").select2({
+		templateResult: (element) => {
+			if (typeof vboListingsMiniThumbnails !== 'undefined' && vboListingsMiniThumbnails.hasOwnProperty((element.id || 0))) {
+				return jQuery('<span class="vbo-sel2-element-img"><img src="' + vboListingsMiniThumbnails[element.id] + '" /> <span>' + element.text + '</span></span>');
+			} else {
+				return element.text;
+			}
+		},
+	});
+
 	if (jQuery("#vbo-calendar-closeall").length) {
-		jQuery("#vbo-calendar-closeall").select2({placeholder: "- " + Joomla.JText._('VBOCALCLOSEOTHERROOMS') + " -", width: "300px"});
+		jQuery("#vbo-calendar-closeall").select2({
+			placeholder: "- " + Joomla.JText._('VBOCALCLOSEOTHERROOMS') + " -",
+			width: "300px",
+			templateResult: (element) => {
+				if (typeof vboListingsMiniThumbnails !== 'undefined' && vboListingsMiniThumbnails.hasOwnProperty((element.id || 0))) {
+					return jQuery('<span class="vbo-sel2-element-img"><img src="' + vboListingsMiniThumbnails[element.id] + '" /> <span>' + element.text + '</span></span>');
+				} else {
+					return element.text;
+				}
+			},
+		});
 	}
 
 	jQuery("#vbo-sel-numrooms, #vbo-sel-adults").change(function() {

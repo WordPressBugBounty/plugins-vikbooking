@@ -12,16 +12,17 @@ defined('ABSPATH') or die('No script kiddies please!');
 
 $vbo_app = VikBooking::getVboApplication();
 
+JText::script('VBOCONFIGEDITTMPLFILE');
+JText::script('VBOSAVETMPLFILE');
+JText::script('VBANNULLA');
+JText::script('VBOPREVIEW');
+
 if (VBOPlatformDetection::isWordPress() && function_exists('wp_enqueue_code_editor')) {
 	/**
-	 * @wponly - cannot load iFrame with FancyBox, so we use the BS's Modal
 	 * WP >= 4.9.0
 	 */
-	wp_enqueue_code_editor(array('type' => 'php'));
+	wp_enqueue_code_editor(['type' => 'php']);
 }
-
-echo $vbo_app->getJmodalScript($suffix = 'VboTplfiles', $hide_js = "VBOCore.emitEvent('vbo-dismiss-modal-tmplfile');");
-echo $vbo_app->getJmodalHtml('VboTplfiles', JText::translate('VBOCONFIGEDITTMPLFILE'));
 
 $editor = JEditor::getInstance(JFactory::getApplication()->get('editor'));
 $document = JFactory::getDocument();
@@ -36,7 +37,7 @@ $themesel = '<select name="theme">';
 $themesel .= '<option value="default">default</option>';
 $themes = glob(VBO_SITE_PATH.DS.'themes'.DS.'*');
 $acttheme = VikBooking::getTheme();
-if (count($themes) > 0) {
+if ($themes) {
 	$strip = VBO_SITE_PATH.DS.'themes'.DS;
 	foreach ($themes as $th) {
 		if (is_dir($th)) {
@@ -374,16 +375,143 @@ function vboHex(x) {
 
 jQuery(function() {
 
-	jQuery(".vbo-edit-tmpl").click(function() {
-		var vbo_tmpl_path = jQuery(this).attr("data-tmpl-path");
-		var vbo_prew_path = jQuery(this).attr("data-prew-path");
+	jQuery('.vbo-edit-tmpl').click(function() {
+		let vbo_tmpl_path = jQuery(this).attr('data-tmpl-path');
+		let vbo_prew_path = jQuery(this).attr('data-prew-path');
 		if (!vbo_tmpl_path && !vbo_prew_path) {
 			return;
 		}
-		var basetask = !vbo_tmpl_path ? 'tmplfileprew' : 'edittmplfile';
-		var basepath = !vbo_tmpl_path ? vbo_prew_path : vbo_tmpl_path;
-		// we use the BS's Modal to open the template files editing page
-		vboOpenJModalVboTplfiles('VboTplfiles', "index.php?option=com_vikbooking&task=" + basetask + "&path=" + basepath + "&tmpl=component");
+		let basetask = !vbo_tmpl_path ? 'tmplfileprew' : 'edittmplfile';
+		let basepath = !vbo_tmpl_path ? vbo_prew_path : vbo_tmpl_path;
+		let base_ajax = '<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=edittmplfile'); ?>';
+		let ajax_uri = base_ajax.replace('edittmplfile', basetask);
+
+		// define the modal cancel button
+		let cancel_btn = jQuery('<button></button>')
+			.attr('type', 'button')
+			.addClass('btn')
+			.text(Joomla.JText._('VBANNULLA'))
+			.on('click', () => {
+				VBOCore.emitEvent('vbo-edit-tmplfile-dismiss');
+			});
+
+		let apply_btn = jQuery('<button></button>')
+			.attr('type', 'button')
+			.addClass('btn btn-success')
+			.text(Joomla.JText._('VBOSAVETMPLFILE'))
+			.on('click', () => {
+				// start loading
+				VBOCore.emitEvent('vbo-edit-tmplfile-loading');
+
+				/**
+				 * On some CMSs, the real textarea may not update with the new codemirror content
+				 * and so we force the update of the textarea before submitting the form.
+				 */
+				try {
+					let is_wp = <?php echo VBOPlatformDetection::isWordPress() ? 'true' : 'false'; ?>;
+					if (is_wp) {
+						Joomla.editors.instances['vik_editor_cont'].element.codemirror.save();
+					} else {
+						Joomla.editors.instances['vik_editor_cont'].save();
+					}
+				} catch (err) {
+					console.error(err);
+				}
+
+				// get the content from the editor
+				let editor_element = document.querySelector('[name="cont"]');
+				let editor_content = editor_element ? editor_element.value : '';
+
+				if (!editor_content) {
+					alert('No source code found');
+					return false;
+				}
+
+				VBOCore.doAjax(
+					"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=savetmplfile'); ?>",
+					{
+						path: basepath,
+						ajax: 1,
+						cont: editor_content,
+					},
+					(response) => {
+						// stop loading
+						VBOCore.emitEvent('vbo-edit-tmplfile-loading');
+
+						let message = 'Success!';
+						try {
+							let data = typeof response === 'string' ? JSON.parse(response) : response;
+							message = data.message;
+						} catch(e) {
+							// do nothing
+						}
+
+						VBOToast.enqueue(new VBOToastMessage({
+							body:   message,
+							icon:   '<?php echo VikBookingIcons::i('check-circle'); ?>',
+							status: VBOToast.SUCCESS_STATUS,
+							action: () => {
+								VBOToast.dispose(true);
+							},
+						}));
+					},
+					(error) => {
+						// stop loading
+						VBOCore.emitEvent('vbo-edit-tmplfile-loading');
+						alert(error.responseText);
+					}
+				);
+			});
+
+		let modal_body = VBOCore.displayModal({
+			extra_class: 'vbo-modal-large' + (!vbo_tmpl_path ? ' vbo-modal-nofooter' : ''),
+			lock_scroll: true,
+			// prepend to body to let the toast br visible as z-index
+			body_prepend: true,
+			title: (vbo_tmpl_path ? Joomla.JText._('VBOCONFIGEDITTMPLFILE') : Joomla.JText._('VBOPREVIEW')),
+			dismiss_event: 'vbo-edit-tmplfile-dismiss',
+			loading_event: 'vbo-edit-tmplfile-loading',
+			footer_left: (vbo_tmpl_path ? cancel_btn : null),
+			footer_right: (vbo_tmpl_path ? apply_btn : null),
+			onDismiss: () => {
+				VBOCore.emitEvent('vbo-dismiss-modal-tmplfile');
+			},
+		});
+
+		// start loading
+		VBOCore.emitEvent('vbo-edit-tmplfile-loading');
+
+		// make the AJAX request to obtain the modal body
+		VBOCore.doAjax(
+			ajax_uri,
+			{
+				path: basepath,
+				ajax: 1,
+				tmpl: 'component',
+			},
+			(response) => {
+				// stop loading
+				VBOCore.emitEvent('vbo-edit-tmplfile-loading');
+
+				let html = response;
+
+				try {
+					html = typeof response === 'string' ? JSON.parse(response) : response;
+					html = html[0];
+				} catch(e) {
+					// do nothing
+				}
+
+				modal_body.append(html);
+			},
+			(error) => {
+				// stop loading
+				VBOCore.emitEvent('vbo-edit-tmplfile-loading');
+				// log and display error
+				console.error(error);
+				alert(error.responseText);
+			}
+		);
 	});
 
 	jQuery(".vbo-colortag-add").click(function() {

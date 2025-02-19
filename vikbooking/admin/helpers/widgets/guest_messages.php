@@ -2,8 +2,8 @@
 /**
  * @package     VikBooking
  * @subpackage  com_vikbooking
- * @author      Alessio Gaggii - e4j - Extensionsforjoomla.com
- * @copyright   Copyright (C) 2018 e4j - Extensionsforjoomla.com. All rights reserved.
+ * @author      Alessio Gaggii - E4J srl
+ * @copyright   Copyright (C) 2025 E4J srl. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com
  */
@@ -51,6 +51,26 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 	 * @var 	bool
 	 */
 	protected $vcm_exists = true;
+
+	/**
+	 * The distance threshold in pixels between the current scroll
+	 * position and the end of the list for triggering the loading
+	 * of a next page within an infinite scroll mechanism.
+	 *
+	 * @var 	int
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	protected $px_distance_threshold = 140;
+
+	/**
+	 * Number of minimum messages per page when using the inbox-style (modal only).
+	 * 
+	 * @var 	int
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	protected $inbox_messages_per_page = 12;
 
 	/**
 	 * Class constructor will define the widget name and identifier.
@@ -132,6 +152,24 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			JText::script('VBOSIGNATURECLEAR');
 			JText::script('VBODASHSEARCHKEYS');
 		}
+	}
+
+	/**
+	 * @inheritDoc
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	public function getWidgetDetails()
+	{
+		// get common widget details from parent abstract class
+		$details = parent::getWidgetDetails();
+
+		// append the modal rendering information
+		$details['modal'] = [
+			'add_class' => 'vbo-modal-large',
+		];
+
+		return $details;
 	}
 
 	/**
@@ -262,7 +300,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 
 		if (!$latest_messages) {
 			?>
-			<p class="info"><?php echo JText::translate('VBO_NO_RECORDS_FOUND'); ?></p>
+			<p class="info" data-no-messages="1" style="<?php echo $offset > 0 ? 'text-align: center;' : ''; ?>"><?php echo $offset > 0 ? JText::translate('VBO_NO_MORE_MESSAGES') : JText::translate('VBO_NO_RECORDS_FOUND'); ?></p>
 			<?php
 		}
 
@@ -339,7 +377,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					}
 					?>
 					<div class="vbo-w-guestmessages-message-aipriority">
-						<span class="vbo-w-guestmessages-message-aipriority-icn <?php echo $priority_class; ?> vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', $priority_value); ?>"><?php VikBookingIcons::e($priority_icon, $priority_class); ?></span>
+						<span class="vbo-w-guestmessages-message-aipriority-icn <?php echo $priority_class; ?> vbo-tooltip vbo-tooltip-right" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', $priority_value); ?>"><?php VikBookingIcons::e($priority_icon, $priority_class); ?></span>
 					</div>
 					<?php
 				}
@@ -518,7 +556,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		<script type="text/javascript">
 			setTimeout(() => {
 				vboWidgetGuestMessagesOpenChat('<?php echo $bubble_convo; ?>');
-			}, 300);
+			}, 400);
 		</script>
 			<?php
 		}
@@ -567,7 +605,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			// do nothing
 		}
 
-		if (!count($latest_messages) || $latest_messages[0]->last_updated == $latest_dt) {
+		if (!$latest_messages || $latest_messages[0]->last_updated == $latest_dt) {
 			// no newest messages found
 			echo '0';
 			return;
@@ -604,7 +642,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			$channelparts = explode('_', $booking['channel']);
 			// check if this is a meta search channel
 			$is_meta_search = false;
-			if (preg_match("/(customer).*[0-9]$/", $channelparts[0]) || !strcasecmp($channelparts[0], 'googlehotel') || !strcasecmp($channelparts[0], 'trivago')) {
+			if (preg_match("/(customer).*[0-9]$/", $channelparts[0]) || !strcasecmp($channelparts[0], 'googlehotel') || !strcasecmp($channelparts[0], 'googlevr') || !strcasecmp($channelparts[0], 'trivago')) {
 				$is_meta_search = empty($booking['idorderota']);
 			}
 			if ($is_meta_search) {
@@ -739,6 +777,12 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				$this->messages_per_page = (int) $this->widgetSettings->limpage;
 			}
 
+			// when modal rendering, we expect to adopt the inbox-style by default unless in small screens
+			if ($this->messages_per_page < $this->inbox_messages_per_page) {
+				// in order to facilitate the infinite scroll, we use the minimum number of messages per page
+				$this->messages_per_page = $this->inbox_messages_per_page;
+			}
+
 			// check for limit filter injected
 			$limpage_filter = (int) $this->options()->get('limpage', 0);
 			if ($limpage_filter > 0) {
@@ -773,30 +817,33 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			</div>
 			<div id="<?php echo $wrapper_id; ?>" class="vbo-dashboard-guests-latest<?php echo $wrap_extra_class; ?>" data-offset="0" data-length="<?php echo $this->messages_per_page; ?>" data-eventsid="<?php echo $js_intvals_id; ?>" data-latestdt="">
 				<div class="vbo-dashboard-guest-messages-inner">
-					<div class="vbo-dashboard-guest-messages-list">
-					<?php
-					for ($i = 0; $i < $this->messages_per_page; $i++) {
-						?>
-						<div class="vbo-dashboard-guest-activity vbo-dashboard-guest-activity-skeleton">
-							<div class="vbo-dashboard-guest-activity-avatar">
-								<div class="vbo-skeleton-loading vbo-skeleton-loading-avatar"></div>
-							</div>
-							<div class="vbo-dashboard-guest-activity-content">
-								<div class="vbo-dashboard-guest-activity-content-head">
-									<div class="vbo-skeleton-loading vbo-skeleton-loading-title"></div>
-								</div>
-								<div class="vbo-dashboard-guest-activity-content-subhead">
-									<div class="vbo-skeleton-loading vbo-skeleton-loading-subtitle"></div>
-								</div>
-								<div class="vbo-dashboard-guest-activity-content-info-msg">
-									<div class="vbo-skeleton-loading vbo-skeleton-loading-content"></div>
-								</div>
-							</div>
-						</div>
+					<div class="vbo-w-guestmessages-list-container">
+						<div class="vbo-dashboard-guest-messages-list">
 						<?php
-					}
-					?>
+						for ($i = 0; $i < $this->messages_per_page; $i++) {
+							?>
+							<div class="vbo-dashboard-guest-activity vbo-dashboard-guest-activity-skeleton">
+								<div class="vbo-dashboard-guest-activity-avatar">
+									<div class="vbo-skeleton-loading vbo-skeleton-loading-avatar"></div>
+								</div>
+								<div class="vbo-dashboard-guest-activity-content">
+									<div class="vbo-dashboard-guest-activity-content-head">
+										<div class="vbo-skeleton-loading vbo-skeleton-loading-title"></div>
+									</div>
+									<div class="vbo-dashboard-guest-activity-content-subhead">
+										<div class="vbo-skeleton-loading vbo-skeleton-loading-subtitle"></div>
+									</div>
+									<div class="vbo-dashboard-guest-activity-content-info-msg">
+										<div class="vbo-skeleton-loading vbo-skeleton-loading-content"></div>
+									</div>
+								</div>
+							</div>
+							<?php
+						}
+						?>
+						</div>
 					</div>
+					<div class="vbo-w-guestmessages-inboxstyle-chat"></div>
 				</div>
 				<div class="vbo-widget-guest-messages-filters-hidden" style="display: none;">
 					<div class="vbo-widget-guest-messages-filters-wrap">
@@ -937,6 +984,9 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					return false;
 				}
 
+				// determine the messages rendering method
+				var mess_rendering_meth = widget_instance.hasClass('vbo-w-guestmessages-inboxstyle') ? 'inbox' : 'paging';
+
 				// define unique modal event name to avoid conflicts
 				var eventsid = widget_instance.attr('data-eventsid') || (Math.floor(Math.random() * 100000));
 				var modal_dismiss_event = 'dismiss-modal-wguestmessages-search' + eventsid;
@@ -989,7 +1039,24 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								return;
 							}
 
+							// determine if we are resetting the widget
+							let is_resetting = false;
+
 							if (commands['applyfilters']) {
+								if (mess_rendering_meth == 'inbox') {
+									// turn flag on
+									is_resetting = true;
+									// empty messages list
+									widget_instance.find('.vbo-dashboard-guest-messages-list').html('');
+									// destroy any previous chat instance
+									widget_instance.find('.vbo-w-guestmessages-inboxstyle-chat').html('');
+									if (typeof VCMChat !== 'undefined') {
+										VCMChat.getInstance().destroy();
+									}
+									// destroy inifite scroll events
+									vboWidgetGuestMessagesDestroyInfiniteScroll(wrapper);
+								}
+
 								// display filters applied label
 								jQuery('#' + wrapper + '-filters').show();
 								// reset offset to 0
@@ -997,10 +1064,24 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								// show loading skeletons
 								vboWidgetGuestMessagesSkeletons(commands['wrapper']);
 								// reload guest messages for this widget's instance with filters set
-								vboWidgetGuestMessagesLoad(commands['wrapper'], null);
+								vboWidgetGuestMessagesLoad(commands['wrapper'], null, is_resetting);
 							}
 
 							if (commands['clearfilters']) {
+								if (mess_rendering_meth == 'inbox') {
+									// turn flag on
+									is_resetting = true;
+									// empty messages list
+									widget_instance.find('.vbo-dashboard-guest-messages-list').html('');
+									// destroy any previous chat instance
+									widget_instance.find('.vbo-w-guestmessages-inboxstyle-chat').html('');
+									if (typeof VCMChat !== 'undefined') {
+										VCMChat.getInstance().destroy();
+									}
+									// destroy inifite scroll events
+									vboWidgetGuestMessagesDestroyInfiniteScroll(wrapper);
+								}
+
 								// clear filters
 								widget_instance.find('.vbo-widget-guest-messages-filters-wrap').find('input[type="text"]').val('');
 								widget_instance.find('.vbo-widget-guest-messages-filters-wrap').find('input[type="number"]').val('');
@@ -1013,7 +1094,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								// show loading skeletons
 								vboWidgetGuestMessagesSkeletons(commands['wrapper']);
 								// reload guest messages for this widget's instance with filters cleared
-								vboWidgetGuestMessagesLoad(commands['wrapper'], null);
+								vboWidgetGuestMessagesLoad(commands['wrapper'], null, is_resetting);
 							}
 						} catch(e) {
 							// abort
@@ -1041,8 +1122,27 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					}
 				}
 
+				// set active message class only on the clicked message
+				jQuery('.vbo-w-guestmessages-message').removeClass('vbo-inbox-active-message');
+				message_el.addClass('vbo-inbox-active-message');
+
+				// get widget's main block and chat container
+				var message_block = message_el.closest('.vbo-dashboard-guests-latest');
+				var chat_inline_container = message_block.find('.vbo-w-guestmessages-inboxstyle-chat');
+
+				// determine the chat rendering method (modal or inline)
+				var chat_rendering_meth = message_block.hasClass('vbo-w-guestmessages-inboxstyle') ? 'inline' : 'modal';
+
+				// destroy any previous chat instance
+				if (typeof VCMChat !== 'undefined') {
+					VCMChat.getInstance().destroy();
+				}
+
+				// always empty chat container
+				chat_inline_container.html('');
+
 				// modal events unique id to avoid conflicts
-				var eventsid = message_el.closest('.vbo-dashboard-guests-latest').attr('data-eventsid') || (Math.floor(Math.random() * 100000));
+				var eventsid = message_block.attr('data-eventsid') || (Math.floor(Math.random() * 100000));
 
 				// define unique modal event names to avoid conflicts
 				var modal_dismiss_event = 'dismiss-modal-wguestmessages-chat' + eventsid;
@@ -1051,7 +1151,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				// check for multiple instances of this widget, maybe because of clicked notifications while another instance was displayed
 				if (jQuery('.vbo-w-guestmessages-message[data-idorder="' + id + '"]').length > 1) {
 					// multiple instances found
-					if (message_el.closest('.vbo-dashboard-guests-latest').attr('data-eventsid')) {
+					if (message_block.attr('data-eventsid')) {
 						// dismiss the previous modal and keep using the same event id to ensure a de-registration of the modal events
 						VBOCore.emitEvent(modal_dismiss_event);
 					} else {
@@ -1127,11 +1227,24 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 										return false;
 									}
 
-									// emit the event to close (dismiss) the modal
-									VBOCore.emitEvent(modal_dismiss_event);
+									if (chat_rendering_meth == 'modal') {
+										// emit the event to close (dismiss) the modal
+										VBOCore.emitEvent(modal_dismiss_event);
 
-									// reload the widget
-									vboWidgetGuestMessagesLoad(message_el.closest('.vbo-dashboard-guests-latest').attr('id'));
+										// reload the widget
+										vboWidgetGuestMessagesLoad(message_block.attr('id'));
+									} else {
+										// update data attribute for toggle without destroying the chat
+										if (message_el.attr('data-noreply-needed') == 1) {
+											message_el.attr('data-noreply-needed', 0);
+											no_reply_needed_el.removeClass('label-danger');
+											// remove the reply button
+											message_el.find('.message-unreplied').remove();
+										} else {
+											message_el.attr('data-noreply-needed', 1);
+											no_reply_needed_el.addClass('label-danger');
+										}
+									}
 								} catch(err) {
 									console.error('could not parse JSON response', err, response);
 								}
@@ -1156,27 +1269,40 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				chat_head_title_wrap.append(chat_head_title_top);
 				chat_head_title_wrap.append(chat_head_title_bot);
 
+				// finalize title
 				chat_head_title.append(chat_head_title_wrap);
 
-				// display modal
-				var chat_modal_body = VBOCore.displayModal({
-					suffix: 'wguestmessages-chat',
-					extra_class: 'vbo-modal-rounded vbo-modal-tall vbo-modal-nofooter',
-					title: chat_head_title,
-					draggable: true,
-					dismiss_event: modal_dismiss_event,
-					onDismiss: () => {
-						if (typeof VCMChat !== 'undefined') {
-							VCMChat.getInstance().destroy();
-						}
-					},
-					loading_event: modal_loading_event,
-				});
+				if (chat_rendering_meth == 'modal') {
+					// display modal
+					var chat_modal_body = VBOCore.displayModal({
+						suffix: 'wguestmessages-chat',
+						extra_class: 'vbo-modal-rounded vbo-modal-tall vbo-modal-nofooter',
+						title: chat_head_title,
+						draggable: true,
+						dismiss_event: modal_dismiss_event,
+						onDismiss: () => {
+							if (typeof VCMChat !== 'undefined') {
+								VCMChat.getInstance().destroy();
+							}
+						},
+						loading_event: modal_loading_event,
+					});
 
-				// start loading
-				VBOCore.emitEvent(modal_loading_event);
+					// start loading
+					VBOCore.emitEvent(modal_loading_event);
+				} else {
+					// append head to chat container
+					let chat_inline_head = jQuery('<div></div>').addClass('vbo-w-guestmessages-inboxstyle-chat-head');
+					chat_inline_head.append(chat_head_title);
+					chat_inline_container.append(chat_inline_head);
 
-				// perform the request to render the chat in the apposite modal wrapper
+					// set inline loading body
+					let chat_inline_loading = jQuery('<div></div>').addClass('vbo-w-guestmessages-inboxstyle-chat-loading');
+					chat_inline_loading.html('<?php VikBookingIcons::e('circle-notch', 'fa-spin fa-fw'); ?>');
+					chat_inline_container.append(chat_inline_loading);
+				}
+
+				// perform the request to render the chat in the apposite modal or inline wrapper
 				var call_method = 'renderChat';
 
 				VBOCore.doAjax(
@@ -1188,8 +1314,13 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						tmpl: "component"
 					},
 					(response) => {
-						// stop loading
-						VBOCore.emitEvent(modal_loading_event);
+						if (chat_rendering_meth == 'modal') {
+							// stop loading
+							VBOCore.emitEvent(modal_loading_event);
+						} else {
+							// unset inline loading body
+							chat_inline_container.find('.vbo-w-guestmessages-inboxstyle-chat-loading').remove();
+						}
 
 						try {
 							var obj_res = typeof response === 'string' ? JSON.parse(response) : response;
@@ -1198,8 +1329,14 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								return false;
 							}
 
-							// append HTML code to render the chat
-							chat_modal_body.html(obj_res[call_method]);
+							// append HTML code to render the chat to the apposite container
+							if (chat_rendering_meth == 'modal') {
+								chat_modal_body.html(obj_res[call_method]);
+							} else {
+								let chat_inline_body = jQuery('<div></div>').addClass('vbo-w-guestmessages-inboxstyle-chat-body');
+								chat_inline_body.html(obj_res[call_method]);
+								chat_inline_container.append(chat_inline_body);
+							}
 
 							// register scroll to bottom with a small delay
 							setTimeout(() => {
@@ -1212,9 +1349,15 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						}
 					},
 					(error) => {
-						// stop loading
-						VBOCore.emitEvent(modal_loading_event);
-						// display error
+						if (chat_rendering_meth == 'modal') {
+							// stop loading
+							VBOCore.emitEvent(modal_loading_event);
+						} else {
+							// empty inline chat container
+							chat_inline_container.html('');
+						}
+
+						// log and display error
 						console.error(error);
 						alert(error.responseText);
 					}
@@ -1261,14 +1404,29 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			/**
 			 * Display the loading skeletons.
 			 */
-			function vboWidgetGuestMessagesSkeletons(wrapper) {
-				var widget_instance = jQuery('#' + wrapper);
+			function vboWidgetGuestMessagesSkeletons(wrapper, howmany) {
+				let widget_instance = jQuery('#' + wrapper);
 				if (!widget_instance.length) {
 					return false;
 				}
-				widget_instance.find('.vbo-dashboard-guest-messages-list').html('');
-				for (var i = 0; i < <?php echo $this->messages_per_page; ?>; i++) {
-					var skeleton = '';
+
+				// number of skeletons to build
+				let numSkeletons = <?php echo $this->messages_per_page; ?>;
+				if (howmany && !isNaN(howmany) && howmany > 0) {
+					numSkeletons = howmany;
+				}
+
+				// determine the messages rendering method
+				var mess_rendering_meth = widget_instance.hasClass('vbo-w-guestmessages-inboxstyle') ? 'inbox' : 'paging';
+
+				if (mess_rendering_meth != 'inbox') {
+					// empty the current messages list
+					widget_instance.find('.vbo-dashboard-guest-messages-list').html('');
+				}
+
+				for (let i = 0; i < numSkeletons; i++) {
+					// build skeleton element
+					let skeleton = '';
 					skeleton += '<div class="vbo-dashboard-guest-activity vbo-dashboard-guest-activity-skeleton">';
 					skeleton += '	<div class="vbo-dashboard-guest-activity-avatar">';
 					skeleton += '		<div class="vbo-skeleton-loading vbo-skeleton-loading-avatar"></div>';
@@ -1285,15 +1443,16 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					skeleton += '		</div>';
 					skeleton += '	</div>';
 					skeleton += '</div>';
-					// append skeleton
-					jQuery(skeleton).appendTo(widget_instance.find('.vbo-dashboard-guest-messages-list'));
+
+					// append skeleton element to the messages list
+					widget_instance.find('.vbo-dashboard-guest-messages-list').append(skeleton);
 				}
 			}
 
 			/**
 			 * Perform the request to load the latest messages.
 			 */
-			function vboWidgetGuestMessagesLoad(wrapper, bid_convo) {
+			function vboWidgetGuestMessagesLoad(wrapper, bid_convo, resetting) {
 				var widget_instance = jQuery('#' + wrapper);
 				if (!widget_instance.length) {
 					return false;
@@ -1301,6 +1460,9 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 
 				var current_offset  = parseInt(widget_instance.attr('data-offset'));
 				var length_per_page = parseInt(widget_instance.attr('data-length'));
+
+				// determine the messages rendering method (paging or inbox, where "inbox" will likely never be on the first loading)
+				var mess_rendering_meth = widget_instance.hasClass('vbo-w-guestmessages-inboxstyle') ? 'inbox' : 'paging';
 
 				// build search filter values
 				var filters = {
@@ -1321,6 +1483,11 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					// set new limit
 					widget_instance.attr('data-length', limpage);
 				}
+
+				// access the current messages list
+				let messagesList = document
+					.querySelector('#' + wrapper)
+					.querySelector('.vbo-w-guestmessages-list-container');
 
 				// the widget method to call
 				var call_method = 'loadMessages';
@@ -1347,8 +1514,37 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								return false;
 							}
 
-							// replace HTML with new messages
-							widget_instance.find('.vbo-dashboard-guest-messages-list').html(obj_res[call_method]['html']);
+							if (mess_rendering_meth == 'inbox' && parseInt(current_offset) > 0) {
+								// inbox style should get rid of non-needed elements and append the new messages
+								widget_instance.find('.vbo-guestactivitywidget-commands').remove();
+								widget_instance.find('.vbo-dashboard-guest-messages-list').find('.vbo-dashboard-guest-activity-skeleton').remove();
+								widget_instance.find('.vbo-dashboard-guest-messages-list').find('.info[data-no-messages="1"]').remove();
+								widget_instance.find('.vbo-dashboard-guest-messages-list').append(obj_res[call_method]['html']);
+								if (parseInt(obj_res[call_method]['tot_messages']) > 0) {
+									// move the class to the new last guest message
+									widget_instance.find('.vbo-w-guestmessages-message.vbo-w-guestmessages-message-last').removeClass('vbo-w-guestmessages-message-last');
+									widget_instance.find('.vbo-w-guestmessages-message').last().addClass('vbo-w-guestmessages-message-last');
+								}
+							} else {
+								// replace HTML with new messages
+								widget_instance.find('.vbo-dashboard-guest-messages-list').html(obj_res[call_method]['html']);
+							}
+
+							if (mess_rendering_meth == 'inbox') {
+								if (!messagesList.pageLoading && parseInt(current_offset) > 0) {
+									// inbox style with messages not loaded through infinite scroll
+									// on a page after the first, may indicate that we are on a very
+									// long screen (high height) that did not detect the scrolling of
+									// the messages list to be needed, so we trigger the resize event
+									VBOCore.emitEvent('vbo-resize-widget-modal<?php echo $js_intvals_id; ?>');
+								} else if (resetting) {
+									// applying or cancelling filters may require to re-configure the infinite scroll events
+									VBOCore.emitEvent('vbo-resize-widget-modal<?php echo $js_intvals_id; ?>');
+								}
+
+								// always turn custom property off for the page loading
+								messagesList.pageLoading = false;
+							}
 
 							// check if latest datetime is set
 							if (obj_res[call_method]['latest_dt']) {
@@ -1356,15 +1552,20 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 							}
 
 							// check results
-							if (!isNaN(obj_res[call_method]['tot_messages']) && parseInt(obj_res[call_method]['tot_messages']) < 1) {
+							if (parseInt(obj_res[call_method]['tot_messages']) < 1) {
 								// no results can indicate the offset is invalid or too high
 								if (!isNaN(current_offset) && parseInt(current_offset) > 0) {
-									// reset offset to 0
-									widget_instance.attr('data-offset', 0);
-									// show loading skeletons
-									vboWidgetGuestMessagesSkeletons(wrapper);
-									// reload the first page
-									vboWidgetGuestMessagesLoad(wrapper);
+									if (mess_rendering_meth == 'inbox') {
+										// inbox style should simply destroy the infinite scroll
+										vboWidgetGuestMessagesDestroyInfiniteScroll(wrapper);
+									} else {
+										// reset offset to 0
+										widget_instance.attr('data-offset', 0);
+										// show loading skeletons
+										vboWidgetGuestMessagesSkeletons(wrapper);
+										// reload the first page
+										vboWidgetGuestMessagesLoad(wrapper);
+									}
 								}
 							} else {
 								if (bid_convo) {
@@ -1382,9 +1583,17 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						}
 					},
 					(error) => {
+						// display and log the error
+						alert(error.responseText);
+						console.error(error);
+
+						if (mess_rendering_meth == 'inbox') {
+							// turn custom property off for the page loading
+							messagesList.pageLoading = false;
+						}
+
 						// remove the skeleton loading
 						widget_instance.find('.vbo-dashboard-guest-messages-list').find('.vbo-dashboard-guest-activity-skeleton').remove();
-						console.error(error);
 					}
 				);
 			}
@@ -1404,8 +1613,13 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				// steps per type
 				var steps = parseInt(widget_instance.attr('data-length'));
 
-				// show loading skeletons
-				vboWidgetGuestMessagesSkeletons(wrapper);
+				// determine the messages rendering method (paging or inbox, where "inbox" will likely never be on the first loading)
+				var mess_rendering_meth = widget_instance.hasClass('vbo-w-guestmessages-inboxstyle') ? 'inbox' : 'paging';
+
+				if (mess_rendering_meth != 'inbox') {
+					// show loading skeletons only when in chat "modal" style
+					vboWidgetGuestMessagesSkeletons(wrapper);
+				}
 
 				// check direction and update offset for next nav
 				if (direction > 0) {
@@ -1423,7 +1637,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			}
 
 			/**
-			 * Watch periodically if there are new messages to be displayed.
+			 * Watch periodically if there are new messages to be displayed (inline rendering only).
 			 */
 			function vboWidgetGuestMessagesWatch(wrapper) {
 				var widget_instance = jQuery('#' + wrapper);
@@ -1435,6 +1649,9 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				if (!latest_dt || !latest_dt.length) {
 					return false;
 				}
+
+				// determine the messages rendering method (paging or inbox, where "inbox" will likely never be on the first loading)
+				var mess_rendering_meth = widget_instance.hasClass('vbo-w-guestmessages-inboxstyle') ? 'inbox' : 'paging';
 
 				// the widget method to call
 				var call_method = 'watchMessages';
@@ -1455,17 +1672,25 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								console.error('Unexpected JSON response', obj_res);
 								return false;
 							}
+
 							// response will contain the number of new messages
 							if (isNaN(obj_res[call_method]) || parseInt(obj_res[call_method]) < 1) {
 								// do nothing
 								return;
 							}
-							// new messages found, reset the offset and re-load the first page
-							widget_instance.attr('data-offset', 0);
-							// show loading skeletons
-							vboWidgetGuestMessagesSkeletons(wrapper);
-							// reload the first page
-							vboWidgetGuestMessagesLoad(wrapper);
+
+							if (mess_rendering_meth == 'inbox') {
+								// do nothing when inbox-style, hence in a modal window, because this interval
+								// will not run and new messages are taken from the apposite events dispatched
+								// this statement should never verify
+							} else {
+								// new messages found, reset the offset and re-load the first page
+								widget_instance.attr('data-offset', 0);
+								// show loading skeletons
+								vboWidgetGuestMessagesSkeletons(wrapper);
+								// reload the first page
+								vboWidgetGuestMessagesLoad(wrapper);
+							}
 						} catch(err) {
 							console.error('could not parse JSON response', err, response);
 						}
@@ -1475,6 +1700,140 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						console.error(error);
 					}
 				);
+			}
+
+			/**
+			 * Reloads chat messages when using inbox-style.
+			 */
+			function vboWidgetGuestMessagesReloadInbox(wrapper) {
+				let widget_instance = jQuery('#' + wrapper);
+				if (!widget_instance.length) {
+					return false;
+				}
+
+				// check if the admin was typing a reply message
+				let is_typing = false;
+				try {
+					let reply_message = jQuery(VCMChat.getInstance().data.element.inputBox).find('textarea').val();
+					if (reply_message) {
+						// turn flag on
+						is_typing = true;
+					}
+				} catch(e) {
+					// do nothing
+				}
+
+				if (is_typing) {
+					console.info('New messages not reloaded because the administrator is typing a reply to a guest message.');
+					return false;
+				}
+
+				// destroy inifite scroll events
+				vboWidgetGuestMessagesDestroyInfiniteScroll(wrapper);
+				// empty messages list
+				widget_instance.find('.vbo-dashboard-guest-messages-list').html('');
+				// reset offset to 0
+				widget_instance.attr('data-offset', 0);
+				// show loading skeletons
+				vboWidgetGuestMessagesSkeletons(wrapper);
+				// reload guest messages for this widget's instance
+				vboWidgetGuestMessagesLoad(wrapper, null, true);
+				// restore infinite scroll loading, if needed
+				VBOCore.emitEvent('vbo-resize-widget-modal<?php echo $js_intvals_id; ?>');
+			}
+
+			/**
+			 * Destroys the infinite scroll loading when using inbox-style.
+			 */
+			function vboWidgetGuestMessagesDestroyInfiniteScroll(wrapper) {
+				let messagesList = document
+					.querySelector('#' + wrapper)
+					.querySelector('.vbo-w-guestmessages-list-container');
+
+				// un-register infinite scroll event handler
+				messagesList
+					.removeEventListener('scroll', vboWidgetGuestMessagesInfiniteScroll);
+			}
+
+			/**
+			 * Setups the infinite scroll loading when using inbox-style.
+			 */
+			function vboWidgetGuestMessagesSetupInfiniteScroll(wrapper) {
+				let messagesList = document
+					.querySelector('#' + wrapper)
+					.querySelector('.vbo-w-guestmessages-list-container');
+
+				// get wrapper dimensions
+				let listViewHeight = messagesList.offsetHeight;
+				let listGlobHeight = messagesList.scrollHeight;
+
+				if (listViewHeight >= listGlobHeight) {
+					// no scrolling detected, show manual loading of the next page
+					document
+						.querySelector('#' + wrapper)
+						.querySelector('.vbo-guestactivitywidget-commands')
+						.style
+						.display = 'block';
+
+					return;
+				}
+
+				// inject custom property to identify the wrapper ID
+				messagesList.wrapperId = wrapper;
+
+				// register infinite scroll event handler
+				messagesList
+					.addEventListener('scroll', vboWidgetGuestMessagesInfiniteScroll);
+			}
+
+			/**
+			 * Infinite scroll event handler when using inbox-style.
+			 */
+			function vboWidgetGuestMessagesInfiniteScroll(e) {
+				// access the injected wrapper ID property
+				let wrapper = e.currentTarget.wrapperId;
+
+				if (!wrapper) {
+					return;
+				}
+
+				// register throttling callback
+				VBOCore.throttleTimer(() => {
+					// access the current messages list
+					let messagesList = document
+						.querySelector('#' + wrapper)
+						.querySelector('.vbo-w-guestmessages-list-container');
+
+					// make sure the loading of a next page isn't running
+					if (messagesList.pageLoading) {
+						// abort
+						return;
+					}
+
+					// get wrapper dimensions
+					let listViewHeight = messagesList.offsetHeight;
+					let listGlobHeight = messagesList.scrollHeight;
+					let listScrollTop  = messagesList.scrollTop;
+
+					if (!listScrollTop || listViewHeight >= listGlobHeight) {
+						// no scrolling detected at all
+						return;
+					}
+
+					// calculate missing distance to the end of the list
+					let listEndDistance = listGlobHeight - (listViewHeight + listScrollTop);
+
+					if (listEndDistance < <?php echo $this->px_distance_threshold; ?>) {
+						// inject custom property to identify a next page is loading
+						messagesList.pageLoading = true;
+
+						// show that we are loading more messages
+						vboWidgetGuestMessagesSkeletons(wrapper, 3);
+
+						// load the next page of messages
+						vboWidgetGuestMessagesNavigate(wrapper, 1);
+					}
+				}, 500);
 			}
 
 			/**
@@ -1532,11 +1891,6 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					jQuery('#vbmessagingdiv').html('<p class="info"><?php echo JHtml::fetch('esc_attr', JText::translate('VBO_W_GUESTMESSAGES_TITLE')); ?> - <?php echo JHtml::fetch('esc_attr', JText::translate('VBO_MULTITASK_PANEL')); ?></p>');
 				}
 
-				// set interval for loading new messages automatically
-				var watch_intv = setInterval(function() {
-					vboWidgetGuestMessagesWatch('<?php echo $wrapper_id; ?>');
-				}, 60000);
-
 				// render datepicker calendar for dates navigation
 				jQuery('#<?php echo $wrapper_id; ?>').find('.vbo-widget-guest-messages-fromdt, .vbo-widget-guest-messages-todt').datepicker({
 					maxDate: "+1d",
@@ -1564,19 +1918,126 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					}
 				});
 
+				// register callback function for the widget "resize" event (modal only)
+				const resize_fn = (e) => {
+					let inboxStyleThreshold = 1000;
+
+					let modalContent = e?.detail?.content ? (e?.detail?.content[0] || e?.detail?.content || null) : null;
+					if (!modalContent || !modalContent.matches('#<?php echo $wrapper_id; ?>')) {
+						modalContent = document.querySelector('#<?php echo $wrapper_id; ?>');
+					}
+
+					// always attempt to destroy infinite scroll
+					vboWidgetGuestMessagesDestroyInfiniteScroll('<?php echo $wrapper_id; ?>');
+
+					let overlayContent = modalContent.closest('.vbo-modal-overlay-content');
+					let outerBody = modalContent.closest('.vbo-modal-overlay-content-body');
+					if (!overlayContent || !outerBody) {
+						// widget may be minimized on the admin-dock
+						return;
+					}
+
+					// get messages list container
+					let listContainer = modalContent.querySelector('.vbo-w-guestmessages-list-container');
+
+					if (modalContent.offsetWidth > inboxStyleThreshold) {
+						// enable inbox-style
+						modalContent.classList.add('vbo-w-guestmessages-inboxstyle');
+						overlayContent.classList.add('vbo-modal-body-no-scroll');
+						// calculate the messages list container height to allow y-scrolling
+						listContainer.style.height = (outerBody.offsetHeight - (listContainer.offsetTop - outerBody.offsetTop) - 4) + 'px';
+						// set head-no-border class
+						outerBody.classList.add('vbo-modal-head-no-border');
+						// setup infinite scroll
+						vboWidgetGuestMessagesSetupInfiniteScroll('<?php echo $wrapper_id; ?>');
+					} else {
+						// disable inbox-style
+						modalContent.classList.remove('vbo-w-guestmessages-inboxstyle');
+						overlayContent.classList.remove('vbo-modal-body-no-scroll');
+						// reset the messages list container height property
+						listContainer.style.height = 'initial';
+						// reset head-no-border class
+						outerBody.classList.remove('vbo-modal-head-no-border');
+					}
+				};
+
+				// register callback for the new guest messages event (modal only)
+				const new_messages_fn = (e) => {
+					if (!e || !e.detail || !e.detail?.messages) {
+						return;
+					}
+
+					let modalContent = document.querySelector('#<?php echo $wrapper_id; ?>');
+					if (!modalContent || !Array.isArray(e.detail.messages) || !e.detail.messages.length) {
+						return;
+					}
+
+					let modalWrap = modalContent.closest('.vbo-modal-widget_modal-wrap');
+					if (!modalWrap) {
+						return;
+					}
+
+					// check if the widget is minimized
+					if (modalWrap.getAttribute('data-dock-minimized') == 1) {
+						// register self-destructive event for reloading the inbox upon widget restoring from admin-dock
+						document.addEventListener('vbo-admin-dock-restore-<?php echo $this->getIdentifier(); ?>', function vboWidgetGuestMessagesRestoreNReload(e) {
+							// make sure the same event won't propagate again
+							e.target.removeEventListener(e.type, vboWidgetGuestMessagesRestoreNReload);
+
+							// reload chat messages
+							vboWidgetGuestMessagesReloadInbox('<?php echo $wrapper_id; ?>');
+						});
+					} else {
+						// reload chat messages
+						vboWidgetGuestMessagesReloadInbox('<?php echo $wrapper_id; ?>');
+					}
+				};
+
 			<?php
 			if ($js_intvals_id) {
-				// widget can be dismissed through the modal
+				// widget can be dismissed or "resized" through the modal
 				?>
 				document.addEventListener(VBOCore.widget_modal_dismissed + '<?php echo $js_intvals_id; ?>', (e) => {
-					// clear interval for notifications
-					clearInterval(watch_intv);
+					if (typeof watch_intv !== 'undefined') {
+						// clear interval for notifications
+						clearInterval(watch_intv);
+					}
 
 					if (jQuery('#vbmessagingdiv').length) {
 						// reload the page for the previously removed chat in the editorder page
 						location.reload();
 					}
+
+					// get rid of widget resizing events
+					document.removeEventListener('vbo-resize-widget-modal<?php echo $js_intvals_id; ?>', resize_fn);
+					document.removeEventListener('vbo-admin-dock-restore-<?php echo $this->getIdentifier(); ?>', resize_fn);
+					window.removeEventListener('resize', resize_fn);
+
+					// get rid of new guest messages event
+					document.removeEventListener('vbo-new-guest-messages', new_messages_fn);
+
+					// if there was an inline chat, destroy it
+					if (typeof VCMChat !== 'undefined') {
+						VCMChat.getInstance().destroy();
+					}
 				});
+
+				// register widget resizing events
+				document.addEventListener('vbo-resize-widget-modal<?php echo $js_intvals_id; ?>', resize_fn);
+				document.addEventListener('vbo-admin-dock-restore-<?php echo $this->getIdentifier(); ?>', resize_fn);
+				window.addEventListener('resize', resize_fn);
+
+				/**
+				 * Subscribe to the event emitted when new guest messages are received.
+				 */
+				document.addEventListener('vbo-new-guest-messages', new_messages_fn);
+				<?php
+			} else {
+				// set interval for loading new messages automatically (only when not modal rendering)
+				?>
+				const watch_intv = setInterval(function() {
+					vboWidgetGuestMessagesWatch('<?php echo $wrapper_id; ?>');
+				}, 60000);
 				<?php
 			}
 			?>

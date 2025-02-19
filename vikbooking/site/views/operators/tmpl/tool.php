@@ -25,7 +25,7 @@ if (!$tool_data) {
 
 if (!$oper_obj->checkPermissions($this->operator, $this->tool)) {
 	// no permission to access this tool
-	VBOHttpDocument::getInstance()->close(403, sprintf('Not enough permissions to access the tool(%s)', $this->tool));
+	VBOHttpDocument::getInstance()->close(403, sprintf('Not enough permissions to access the tool (%s)', $this->tool));
 }
 
 /**
@@ -44,6 +44,9 @@ $tool_uri = JRoute::rewrite(
 	)
 );
 
+// tool icon
+$tool_icon = ($tool_data['icon'] ?? '') ?: '<i class="' . VikBookingIcons::i('cube') . '"></i>';
+
 ?>
 <div class="vbo-operator-tool-container">
 	<div class="vbo-operator-tool-breadcrumbs">
@@ -56,6 +59,7 @@ $tool_uri = JRoute::rewrite(
 		</span>
 		<!-- use .vbo-operator-tool-breadcrumb-step-current to define a previous breadcrump-step, not the home, not the current -->
 		<span class="vbo-operator-tool-breadcrumb vbo-operator-tool-breadcrumb-step vbo-operator-tool-breadcrumb-step-current">
+			<?php echo $tool_icon; ?>
 			<span class="vbo-operator-tool-breadcrumb-name"><?php echo $oper_obj->getToolName($this->tool); ?></span>
 		</span>
 	</div>

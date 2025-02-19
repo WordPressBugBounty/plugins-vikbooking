@@ -8218,6 +8218,7 @@ class VikBookingController extends JControllerVikBooking
 		$config->set('depifdaysadv', $pdepifdaysadv);
 		$config->set('nodepnonrefund', $pnodepnonrefund);
 		$config->set('depcustchoice', $pdepcustchoice);
+		$config->set('depbalancedays', $app->input->getInt('depbalancedays', null));
 
 		$psendemailwhen = VikRequest::getInt('sendemailwhen', '', 'request');
 		$psendemailwhen = $psendemailwhen > 1 ? 2 : 1;
@@ -8461,13 +8462,28 @@ class VikBookingController extends JControllerVikBooking
 		$app->close();
 	}
 
-	public function savetmplfile() {
+	public function savetmplfile()
+	{
+		$app = JFactory::getApplication();
+
 		if (!JSession::checkToken()) {
-			throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
 		}
+
+		if (!JFactory::getUser()->authorise('core.vbo.global', 'com_vikbooking')) {
+			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
+		}
+
 		$fpath = VikRequest::getString('path', '', 'request', VIKREQUEST_ALLOWRAW);
 		$pcont = VikRequest::getString('cont', '', 'request', VIKREQUEST_ALLOWRAW);
-		$mainframe = JFactory::getApplication();
+		$pajax = VikRequest::getInt('ajax', 0, 'request');
+
+		// default status
+		$result = [
+			'status'  => 0,
+			'message' => 'Generic error',
+		];
+
 		$exists = file_exists($fpath) ? true : false;
 		if (!$exists) {
 			$fpath = urldecode($fpath);
@@ -8475,10 +8491,14 @@ class VikBookingController extends JControllerVikBooking
 		$fpath = file_exists($fpath) ? $fpath : '';
 		if (!empty($fpath)) {
 			$fp = fopen($fpath, 'wb');
-			$byt = (int)fwrite($fp, $pcont);
+			$byt = (int) fwrite($fp, $pcont);
 			fclose($fp);
 			if ($byt > 0) {
-				$mainframe->enqueueMessage(JText::translate('VBOUPDTMPLFILEOK'));
+				// success
+				$result = [
+					'status'  => 1,
+					'message' => JText::translate('VBOUPDTMPLFILEOK'),
+				];
 
 				if (VBOPlatformDetection::isWordPress()) {
 					/**
@@ -8487,14 +8507,36 @@ class VikBookingController extends JControllerVikBooking
 					VikBookingUpdateManager::storeTemplateContent($fpath, $pcont);
 				}
 			} else {
-				VikError::raiseWarning('', JText::translate('VBOUPDTMPLFILENOBYTES'));
+				// error
+				$result = [
+					'status'  => 0,
+					'message' => JText::translate('VBOUPDTMPLFILENOBYTES'),
+				];
 			}
 		} else {
-			VikError::raiseWarning('', JText::translate('VBOUPDTMPLFILEERR'));
+			// error
+			$result = [
+				'status'  => 0,
+				'message' => JText::translate('VBOUPDTMPLFILEERR'),
+			];
 		}
-		$mainframe->redirect("index.php?option=com_vikbooking&task=edittmplfile&path=".$fpath."&tmpl=component");
 
-		exit;
+		if ($pajax) {
+			if ($result['status']) {
+				VBOHttpDocument::getInstance($app)->json($result);
+			} else {
+				VBOHttpDocument::getInstance($app)->close(500, $result['message']);
+			}
+		} else {
+			if ($result['status']) {
+				$app->enqueueMessage($result['message']);
+			} else {
+				VikError::raiseWarning('', $result['message']);
+			}
+		}
+
+		$app->redirect("index.php?option=com_vikbooking&task=edittmplfile&path=".$fpath."&tmpl=component");
+		$app->close();
 	}
 
 	public function edittmplfile() {
@@ -9072,16 +9114,18 @@ class VikBookingController extends JControllerVikBooking
 			// check-in and check-out times should not be equal or both empty
 			$custom_checkinout = 0;
 		}
+		$damagedep_settings = $damagedep ? ((array) $app->input->get('damagedep_settings', [], 'array')) : [];
 		$oparams = [
-			'minguestsnum' 	    => $minguestsnum,
-			'mingueststype'     => $mingueststype,
-			'maxguestsnum' 	    => $maxguestsnum,
-			'maxgueststype'     => $maxgueststype,
-			'damagedep' 	    => $damagedep,
-			'pet_fee' 		    => $pet_fee,
-			'custom_checkinout' => $custom_checkinout,
-			'set_checkin' 		=> $set_checkin,
-			'set_checkout' 		=> $set_checkout,
+			'minguestsnum' 	     => $minguestsnum,
+			'mingueststype'      => $mingueststype,
+			'maxguestsnum' 	     => $maxguestsnum,
+			'maxgueststype'      => $maxgueststype,
+			'damagedep' 	     => $damagedep,
+			'damagedep_settings' => $damagedep_settings,
+			'pet_fee' 		     => $pet_fee,
+			'custom_checkinout'  => $custom_checkinout,
+			'set_checkin' 		 => $set_checkin,
+			'set_checkout' 		 => $set_checkout,
 		];
 		/**
 		 * We fetch the previous params to merge them with the new ones 
@@ -9337,16 +9381,18 @@ class VikBookingController extends JControllerVikBooking
 			// check-in and check-out times should not be equal or both empty
 			$custom_checkinout = 0;
 		}
+		$damagedep_settings = $damagedep ? ((array) $app->input->get('damagedep_settings', [], 'array')) : [];
 		$oparams = [
-			'minguestsnum' 	    => $minguestsnum,
-			'mingueststype'     => $mingueststype,
-			'maxguestsnum' 	    => $maxguestsnum,
-			'maxgueststype'     => $maxgueststype,
-			'damagedep' 	    => $damagedep,
-			'pet_fee' 		    => $pet_fee,
-			'custom_checkinout' => $custom_checkinout,
-			'set_checkin' 		=> $set_checkin,
-			'set_checkout' 		=> $set_checkout,
+			'minguestsnum' 	     => $minguestsnum,
+			'mingueststype'      => $mingueststype,
+			'maxguestsnum' 	     => $maxguestsnum,
+			'maxgueststype'      => $maxgueststype,
+			'damagedep' 	     => $damagedep,
+			'damagedep_settings' => $damagedep_settings,
+			'pet_fee' 		     => $pet_fee,
+			'custom_checkinout'  => $custom_checkinout,
+			'set_checkin' 		 => $set_checkin,
+			'set_checkout' 		 => $set_checkout,
 		];
 		if (!empty($poptname)) {
 			if (intval($_FILES['optimg']['error']) == 0 && VikBooking::caniWrite(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR) && trim($_FILES['optimg']['name'])!="") {
@@ -9887,7 +9933,7 @@ class VikBookingController extends JControllerVikBooking
 			'abort' => 'File upload aborted',
 			'image_resize' => 'Failed to resize image',
 			'vbo_type' => 'The file type cannot be accepted',
-			'vbo_jupload' => 'The upload has failed. Check the Joomla Configuration',
+			'vbo_jupload' => 'The upload has failed. Check your CMS settings and permissions',
 			'vbo_perm' => 'Error moving the uploaded files. Check your permissions'
 		);
 
@@ -14117,6 +14163,95 @@ jQuery(".' . $selector . '").hover(function() {
 	}
 
 	/**
+	 * Hidden task to (re-)run the update queries from a given plugin version.
+	 * Useful to ensure the database structure is up-to-date and no update queries went lost.
+	 * 
+	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 */
+	public function run_update_queries()
+	{
+		$app = JFactory::getApplication();
+		$dbo = JFactory::getDbo();
+
+		$from_version = $app->input->getString('from_version');
+
+		if (empty($from_version)) {
+			VBOHttpDocument::getInstance()->close(400, 'Missing from version value.');
+		}
+
+		// determine the SQL updates directory path
+		$sql_updates_path = '';
+		if (VBOPlatformDetection::isWordPress()) {
+			$sql_updates_path = implode(DIRECTORY_SEPARATOR, [VIKBOOKING_BASE, 'sql', 'update', 'mysql']);
+		} else {
+			$sql_updates_path = implode(DIRECTORY_SEPARATOR, [VBO_ADMIN_PATH, 'sql', 'updates', 'mysql']);
+		}
+
+		if (!$sql_updates_path || !is_dir($sql_updates_path)) {
+			VBOHttpDocument::getInstance()->close(500, 'Could not find SQL updates path.');
+		}
+
+		// read all SQL update files
+		$sql_update_files = JFolder::files($sql_updates_path, '\.sql', $recurse = false, $full = true);
+
+		// filter SQL files with just the valid ones
+		$sql_update_files = array_filter($sql_update_files, function($sql_update_file) use ($from_version) {
+			$file_version = basename($sql_update_file, '.sql');
+			return version_compare($file_version, $from_version, '>=');
+		});
+
+		if (!$sql_update_files) {
+			VBOHttpDocument::getInstance()->close(500, sprintf('Could not find any suitable SQL update file from version %s.', $from_version));
+		}
+
+		$sql_update_files = array_values($sql_update_files);
+		$success_queries = 0;
+
+		foreach ($sql_update_files as $file) {
+			$handle = fopen($file, 'r');
+
+			$bytes = '';
+			while (!feof($handle)) {
+				$bytes .= fread($handle, 8192);
+			}
+
+			fclose($handle);
+
+			if (VBOPlatformDetection::isWordPress()) {
+				$queries_list = JDatabaseHelper::splitSql($bytes);
+			} else {
+				try {
+					$queries_list = Joomla\Database\DatabaseDriver::splitSql($bytes);
+				} catch(Throwable $e) {
+					$app->enqueueMessage(sprintf('Error splitting queries: %s', $e->getMessage()), 'error');
+					$queries_list = [];
+				}
+			}
+
+			foreach ($queries_list as $q) {
+				try {
+					$dbo->setQuery($q);
+					$result = $dbo->execute();
+				} catch (Exception $e) {
+					$result = false;
+					$app->enqueueMessage(sprintf('Error executing query: %s', $e->getMessage()), 'warning');
+				}
+
+				if ($result) {
+					$success_queries++;
+				}
+			}
+		}
+
+		if ($success_queries) {
+			$app->enqueueMessage(sprintf('Successful queries: %d', $success_queries), 'success');
+		}
+
+		// send response to output
+		echo '<pre>'.print_r($sql_update_files, true).'</pre><br/>';
+	}
+
+	/**
 	 * Loads a specific admin widget ID and executes the requested method.
 	 * Useful for loading a newly added widget, or to execute custom methods.
 	 * 
@@ -14637,13 +14772,12 @@ jQuery(".' . $selector . '").hover(function() {
 
 		$q = "SELECT * FROM `#__vikbooking_orders` WHERE `id`=" . $bid . " AND `status`!='standby';";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() < 1) {
+		$row = $dbo->loadAssoc();
+		if (!$row) {
 			VikError::raiseWarning('', 'Booking not found');
 			$app->redirect('index.php?option=com_vikbooking');
 			exit;
 		}
-		$row = $dbo->loadAssoc();
 
 		// get booking history instance
 		$history_obj = VikBooking::getBookingHistoryInstance();
@@ -14675,12 +14809,22 @@ jQuery(".' . $selector . '").hover(function() {
 		// push the transaction currency information
 		$row['transaction_currency'] = VikBooking::getCurrencyCodePp();
 
-		/**
-		 * @wponly 	The payment gateway is loaded 
-		 * 			through the apposite dispatcher.
-		 */
-		JLoader::import('adapter.payment.dispatcher');
-		$obj = JPaymentDispatcher::getInstance('vikbooking', $payment['file'], $row, $payment['params']);
+		if (VBOPlatformDetection::isWordPress()) {
+			/**
+			 * @wponly 	The payment gateway is loaded 
+			 * 			through the apposite dispatcher.
+			 */
+			JLoader::import('adapter.payment.dispatcher');
+			$obj = JPaymentDispatcher::getInstance('vikbooking', $payment['file'], $row, $payment['params']);
+		} else {
+			/**
+			 * @joomlaonly 	The Payment Factory library will invoke the gateway.
+			 * 
+			 * @since 	1.14.3
+			 */
+			require_once VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'payments' . DIRECTORY_SEPARATOR . 'libraries' . DIRECTORY_SEPARATOR . 'factory.php';
+			$obj = VBOPaymentFactory::getPaymentInstance($payment['file'], $row, $payment['params']);
+		}
 
 		if (!method_exists($obj, 'isRefundSupported') || !$obj->isRefundSupported()) {
 			// refund not supported

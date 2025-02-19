@@ -325,6 +325,21 @@ class VikbookingViewBooking extends JViewVikBooking
 		$nodep = intval($pnodep) > 0 || intval($cnodep) > 0 ? 1 : 0;
 
 		/**
+		 * Scan the booking and related rooms for damage deposit payment data.
+		 * Obtain also the information about possible previous payments.
+		 * 
+		 * @since 	1.17.6 (J) - 1.7.6 (WP)
+		 */
+		$damage_deposit_payment = VBORoomHelper::getInstance()->getDamageDepositSplitPayment($order, $orderrooms);
+		$prev_dd_payments = [];
+		if ($damage_deposit_payment['damagedep_gross'] ?? 0) {
+			$prev_dd_payments = VikBooking::getBookingHistoryInstance($order['id'])
+				->getEventsWithData('PN', function($data) {
+					return (is_object($data) && !empty($data->damage_deposit));
+				});
+		}
+
+		/**
 		 * Upselling extra services only for non-cancelled bookings
 		 * with a check-out date in the future.
 		 * 
@@ -382,6 +397,8 @@ class VikbookingViewBooking extends JViewVikBooking
 		$this->payment = $payment;
 		$this->nodep = $nodep;
 		$this->upselling = $upselling;
+		$this->damage_deposit_payment = $damage_deposit_payment;
+		$this->prev_dd_payments = $prev_dd_payments;
 		$this->vbo_tn = $vbo_tn;
 
 		// theme

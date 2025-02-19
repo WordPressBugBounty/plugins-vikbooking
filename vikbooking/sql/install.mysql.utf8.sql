@@ -293,7 +293,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_greview_service` (
 
 CREATE TABLE IF NOT EXISTS `#__vikbooking_invoices` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `number` varchar(16) NOT NULL,
+  `number` varchar(32) NOT NULL,
   `file_name` varchar(128) DEFAULT NULL,
   `idorder` int(10) NOT NULL,
   `idcustomer` int(10) NOT NULL,

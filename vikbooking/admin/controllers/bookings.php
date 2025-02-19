@@ -196,6 +196,7 @@ class VikBookingControllerBookings extends JControllerAdmin
 				->select([
 					$dbo->qn('id'),
 					$dbo->qn('name', 'text'),
+					$dbo->qn('img'),
 				])
 				->from($dbo->qn('#__vikbooking_rooms'))
 				->where($dbo->qn('name') . ' LIKE ' . $dbo->q("%{$term}%"))
@@ -205,6 +206,18 @@ class VikBookingControllerBookings extends JControllerAdmin
 
 		// set results found
 		$response['results'] = $dbo->loadAssocList();
+
+		// load and map mini thumbnails
+		$mini_thumbnails = VBORoomHelper::getInstance()->loadMiniThumbnails($response['results']);
+		$response['results'] = array_map(function($room) use ($mini_thumbnails) {
+			if ($mini_thumbnails[$room['id']] ?? '') {
+				// set mini thumbnail URL
+				$room['img'] = $mini_thumbnails[$room['id']];
+			} else {
+				unset($room['img']);
+			}
+			return $room;
+		}, $response['results']);
 
 		// output the JSON encoded object with results found
 		VBOHttpDocument::getInstance()->json($response);

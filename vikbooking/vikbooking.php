@@ -3,7 +3,7 @@
 Plugin Name:  VikBooking
 Plugin URI:   https://vikwp.com/plugin/vikbooking
 Description:  Certified Booking Engine for Hotels and Accommodations.
-Version:      1.7.5
+Version:      1.7.6
 Author:       E4J s.r.l.
 Author URI:   https://vikwp.com
 License:      GPL2
@@ -106,19 +106,6 @@ add_action('plugins_loaded', function()
 	// installer class will check the update status
 	VikBookingInstaller::update();
 
-	/**
-	 * 
-	 * Fires once the plugins have loaded.
-	 * 
-	 * Language is loaded through the filter 'plugins_loaded' in order to avoid to load language 
-	 * before the correct one has been set by WordPress or by another third-party plugin. 
-	 * 
-	 * @link https://developer.wordpress.org/reference/hooks/plugins_loaded/
-	 * 
-	 * @since 1.4.2 
-	 */
-	VikBookingBuilder::loadLanguage();
-
 	global $pagenow;
 
 	$app   = JFactory::getApplication();
@@ -162,6 +149,13 @@ add_action('plugins_loaded', function()
 // process the request and obtain the response
 add_action('init', function()
 {
+	/**
+	 * Language files should no longer be loaded during 'plugins_loaded'.
+	 * 
+	 * @since 1.7.6
+	 */
+	VikBookingBuilder::loadLanguage();
+
 	$app 	= JFactory::getApplication();
 	$input 	= $app->input;
 

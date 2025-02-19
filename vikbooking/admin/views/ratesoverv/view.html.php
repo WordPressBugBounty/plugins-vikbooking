@@ -69,7 +69,7 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 		// make sure to set at least the first index of cid[]
 		$cid[0] = $roomid;
 		//
-		$q = "SELECT `id`,`name` FROM `#__vikbooking_rooms` ORDER BY `#__vikbooking_rooms`.`name` ASC;";
+		$q = "SELECT `id`,`name`,`img` FROM `#__vikbooking_rooms` ORDER BY `#__vikbooking_rooms`.`name` ASC;";
 		$dbo->setQuery($q);
 		$all_rooms = $dbo->loadAssocList();
 
@@ -99,12 +99,12 @@ class VikBookingViewRatesoverv extends JViewVikBooking
 				array_push($reqids, $rid);
 			}
 		}
-		if (!count($reqcats) && !count($reqids)) {
+		if (!$reqcats && !$reqids) {
 			$app->redirect("index.php?option=com_vikbooking&task=rooms");
 			exit;
 		}
 
-		if (!count($reqcats) && empty($sesscids) && count($reqids) === 1 && count($all_rooms) > 1) {
+		if (!$reqcats && empty($sesscids) && count($reqids) === 1 && count($all_rooms) > 1) {
 			// push the first 5 rooms by default
 			$max_def_rooms = VBOFactory::getConfig()->getInt('roverv_def_max_rooms', 5);
 			$def_rooms_count = 0;

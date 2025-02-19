@@ -1346,13 +1346,25 @@ if (!empty($payments) && !count($this->mod_booking)) {
 		<div class="vbo-oconfirm-choosedeposit">
 			<h4><?php echo JText::translate('VBCHOOSEDEPOSIT'); ?></h4>
 			<div class="vbo-oconfirm-choosedeposit-inner">
-				<div class="vbo-oconfirm-choosedeposit-payfull">
+				<div class="vbo-oconfirm-choosedeposit-block vbo-oconfirm-choosedeposit-payfull">
 					<input type="radio" name="nodep" value="1" id="nodepone" checked="checked" />
 					<label for="nodepone"><?php echo JText::translate('VBCHOOSEDEPOSITPAYFULL'); ?></label>
 				</div>
-				<div class="vbo-oconfirm-choosedeposit-paydeposit">
+				<div class="vbo-oconfirm-choosedeposit-block vbo-oconfirm-choosedeposit-paydeposit">
 					<input type="radio" name="nodep" value="0" id="nodeptwo" />
-					<label for="nodeptwo"><?php echo JText::sprintf('VBCHOOSEDEPOSITPAYDEPOF', $dep_string); ?></label>
+					<div class="vbo-oconfirm-choosedeposit-paydeposit-inner">
+						<label for="nodeptwo"><?php echo JText::sprintf('VBCHOOSEDEPOSITPAYDEPOF', $dep_string); ?></label>
+					<?php
+					$pay_balance_days_adv = VBOFactory::getConfig()->get('depbalancedays');
+					if (is_numeric($pay_balance_days_adv)) {
+						?>
+						<div class="vbo-oconfirm-choosedeposit-paydeposit-balance">
+							<span><?php echo !intval($pay_balance_days_adv) ? JText::translate('VBO_PAY_BALANCE_ONARRIVAL') : JText::sprintf('VBO_PAY_BALANCE_NDAYS', (int) $pay_balance_days_adv); ?></span>
+						</div>
+						<?php
+					}
+					?>
+					</div>
 				</div>
 			</div>
 		</div>

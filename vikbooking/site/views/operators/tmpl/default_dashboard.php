@@ -63,10 +63,14 @@ $pitemid = VikRequest::getInt('Itemid', 0, 'request');
 				// tool is either native (layout) or custom
 				$tool_link = JRoute::rewrite('index.php?option=com_vikbooking&view=operators&tool=' . $perm['type'] . (!empty($pitemid) ? '&Itemid=' . $pitemid : ''));
 			}
+
+			// tool icon
+			$tool_icon = ($tool_data['icon'] ?? '') ?: '<i class="' . VikBookingIcons::i('cube') . '"></i>';
+
 			?>
 			<li>
 				<div class="vbo-operator-dashboard-link-left">
-					<a href="<?php echo $tool_link; ?>"><?php echo $oper_obj->getToolName($perm['type']); ?></a>
+					<a href="<?php echo $tool_link; ?>"><?php echo $tool_icon; ?> <?php echo $oper_obj->getToolName($perm['type']); ?></a>
 				</div>
 				<div class="vbo-operator-dashboard-link-right">
 					<a class="btn vbo-pref-color-btn" href="<?php echo $tool_link; ?>"><?php echo JText::translate('VBOOPERVIEWPG'); ?></a>

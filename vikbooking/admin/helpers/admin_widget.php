@@ -366,6 +366,8 @@ abstract class VikBookingAdminWidget
 
 	/**
 	 * Returns an associative array with the current widget details.
+	 * Method's visibility should never change from public, because
+	 * the controller may call it, and widgets may override it.
 	 * 
 	 * @return 	array
 	 * 

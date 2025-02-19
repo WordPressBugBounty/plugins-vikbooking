@@ -1,0 +1,1 @@
+ALTER TABLE `#__vikbooking_invoices` CHANGE `number` `number` varchar(32) NOT NULL;
