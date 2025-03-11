@@ -689,6 +689,20 @@ class VikBookingController extends JControllerVikBooking
 				}
 
 				$realcost = ($actopt[0]['perperson'] == 1 ? ($realcost * $arrpeople[$rnoid[0]]['adults']) : $realcost);
+
+				/**
+				 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+				 * 
+				 * @since 	1.17.7 (J) - 1.7.7 (WP)
+				 */
+				$use_room_cost = $is_package === true ? $pkg['cost'] : ($tars[$rnoid[0]][0]['cost'] ?? 0);
+				$custom_calc_booking = ['days' => $use_los];
+				$custom_calc_booking_room = array_merge($arrpeople[$rnoid[0]], ['room_cost' => $use_room_cost]);
+				$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$actopt[0], $custom_calc_booking, $custom_calc_booking_room]);
+				if ($custom_calculation) {
+					$realcost = (float) $custom_calculation[0];
+				}
+
 				$opt_minus_iva = VikBooking::sayOptionalsMinusIva($realcost, $actopt[0]['idiva']);
 				$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $actopt[0]['idiva']);
 				if ($actopt[0]['is_citytax'] == 1) {
@@ -1993,6 +2007,17 @@ class VikBookingController extends JControllerVikBooking
 						if ($actopt[0]['perperson'] == 1) {
 							$realcost = $realcost * $or['adults'];
 						}
+
+						/**
+						 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+						 * 
+						 * @since 	1.17.7 (J) - 1.7.7 (WP)
+						 */
+						$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$actopt[0], $row, $or]);
+						if ($custom_calculation) {
+							$realcost = (float) $custom_calculation[0];
+						}
+
 						$opt_minus_tax = VikBooking::sayOptionalsMinusIva($realcost, $actopt[0]['idiva']);
 						$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $actopt[0]['idiva']);
 						if ($actopt[0]['is_citytax'] == 1) {
@@ -2000,7 +2025,7 @@ class VikBookingController extends JControllerVikBooking
 						} elseif ($actopt[0]['is_fee'] == 1) {
 							$tot_fees += $opt_minus_tax;
 						}
-						// VBO 1.11 - always calculate the amount of tax no matter if this is already a tax or a fee
+						// always calculate the amount of tax no matter if this is already a tax or a fee
 						if ($tmpopr == $realcost) {
 							$tot_taxes += ($realcost - $opt_minus_tax);
 						} else {
@@ -3304,6 +3329,17 @@ class VikBookingController extends JControllerVikBooking
 				$optcost = $optcost * $extra['adults'];
 			}
 			$optcost *= $extra['quant'];
+
+			/**
+			 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+			 * 
+			 * @since 	1.17.7 (J) - 1.7.7 (WP)
+			 */
+			$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$optcost, &$o, $order, $extra]);
+			if ($custom_calculation) {
+				$optcost = (float) $custom_calculation[0];
+			}
+
 			$floatoptprice = VikBooking::sayOptionalsPlusIva($optcost, $o['idiva']);
 			$netoptprice   = VikBooking::sayOptionalsMinusIva($optcost, $o['idiva']);
 			$increase += $floatoptprice;

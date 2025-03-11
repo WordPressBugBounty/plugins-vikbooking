@@ -1972,7 +1972,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						return;
 					}
 
-					let modalWrap = modalContent.closest('.vbo-modal-widget_modal-wrap');
+					let modalWrap = modalContent.closest('.vbo-modal-widget_modal-wrap[data-dock-minimized]');
 					if (!modalWrap) {
 						return;
 					}

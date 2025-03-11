@@ -293,6 +293,19 @@ if (count($this->mod_booking)) {
 				if ($selo['perperson'] == 1) {
 					$realcost = $realcost * $arrpeople[$num]['adults'];
 				}
+
+				/**
+				 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+				 * 
+				 * @since 	1.17.7 (J) - 1.7.7 (WP)
+				 */
+				$custom_calc_booking = ['days' => $room_nights];
+				$custom_calc_booking_room = array_merge(($arrpeople[$num] ?? []), ['room_cost' => $base_cost]);
+				$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$selo, $custom_calc_booking, $custom_calc_booking_room]);
+				if ($custom_calculation) {
+					$realcost = (float) $custom_calculation[0];
+				}
+
 				$optbeforetax = VikBooking::sayOptionalsMinusIva($realcost, $selo['idiva']);
 				$imp += $optbeforetax;
 				$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $selo['idiva']);
@@ -434,8 +447,21 @@ if (count($this->mod_booking)) {
 				if ($aop['perperson'] == 1) {
 					$thisoptcost = $thisoptcost * $arrpeople[$num]['adults'];
 				}
-				$optwithout = (intval($aop['perday']) == 1 ? VikBooking::sayOptionalsMinusIva($thisoptcost, $aop['idiva']) : VikBooking::sayOptionalsMinusIva($thisoptcost, $aop['idiva']));
-				$optwith = (intval($aop['perday']) == 1 ? VikBooking::sayOptionalsPlusIva($thisoptcost, $aop['idiva']) : VikBooking::sayOptionalsPlusIva($thisoptcost, $aop['idiva']));
+
+				/**
+				 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+				 * 
+				 * @since 	1.17.7 (J) - 1.7.7 (WP)
+				 */
+				$custom_calc_booking = ['days' => $room_nights];
+				$custom_calc_booking_room = array_merge(($arrpeople[$num] ?? []), ['room_cost' => ($base_cost ?? 0)]);
+				$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$thisoptcost, &$aop, $custom_calc_booking, $custom_calc_booking_room]);
+				if ($custom_calculation) {
+					$thisoptcost = (float) $custom_calculation[0];
+				}
+
+				$optwithout = VikBooking::sayOptionalsMinusIva($thisoptcost, $aop['idiva']);
+				$optwith = VikBooking::sayOptionalsPlusIva($thisoptcost, $aop['idiva']);
 				$opttax = ($optwith - $optwithout);
 			?>
 			<div class="vbo-oconfirm-summary-room-row vbo-oconfirm-summary-option-row">
@@ -961,9 +987,9 @@ foreach ($cfields as $cf) {
 					// append empty value
 					states_elem.append('<option value="">-----</option>');
 
-					for (var i = 0; i < obj_res.length; i++) {
+					for (var ind = 0; ind < obj_res.length; ind++) {
 						// append state
-						states_elem.append('<option value="' + obj_res[i]['state_2_code'] + '">' + obj_res[i]['state_name'] + '</option>');
+						states_elem.append('<option value="' + obj_res[ind]['state_2_code'] + '">' + obj_res[ind]['state_name'] + '</option>');
 					}
 
 					if (current_state.length && states_elem.find('option[value="' + current_state + '"]').length) {

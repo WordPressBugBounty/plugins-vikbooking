@@ -1428,6 +1428,16 @@ function vboSearchExtraCost(elem) {
 											// it's a percent value, so we do not multiply anything
 											$thisoptcost = $o['cost'];
 										}
+
+										/**
+										 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+										 * 
+										 * @since 	1.17.7 (J) - 1.7.7 (WP)
+										 */
+										$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$thisoptcost, &$o, $ord, $or]);
+										if ($custom_calculation) {
+											$thisoptcost = (float) $custom_calculation[0];
+										}
 										?>
 									<div class="vbo-editbooking-room-service vbo-editbooking-room-option">
 										<div class="vbo-editbooking-room-service-inner vbo-editbooking-room-option-inner">
@@ -1770,6 +1780,16 @@ function vboSearchExtraCost(elem) {
 										$thisoptcost = $thisoptcost * $optquancheckb;
 										if (intval($o['perperson']) == 1) {
 											$thisoptcost = $thisoptcost * $arrpeople[$num]['adults'];
+										}
+
+										/**
+										 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+										 * 
+										 * @since 	1.17.7 (J) - 1.7.7 (WP)
+										 */
+										$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$thisoptcost, &$o, $ord, $or]);
+										if ($custom_calculation) {
+											$thisoptcost = (float) $custom_calculation[0];
 										}
 										?>
 									<div class="vbo-editbooking-room-service vbo-editbooking-room-option">

@@ -484,9 +484,8 @@ JS
 <select {$attr_str}>{$empty_option}</select>
 HTML;
 
-		// add script declaration to document
-		JFactory::getDocument()->addScriptDeclaration(
-<<<JAVASCRIPT
+		// build script declaration
+		$js_decl = <<<JAVASCRIPT
 jQuery(function() {
 	jQuery('select#{$options['id']}').select2({
 		allowClear: $clearable_str,
@@ -500,8 +499,15 @@ jQuery(function() {
 		},
 	});
 });
-JAVASCRIPT
-		);
+JAVASCRIPT;
+
+		if ((VBOPlatformDetection::isWordPress() && wp_doing_ajax()) || (!VBOPlatformDetection::isWordPress() && !strcasecmp((string) JFactory::getApplication()->input->server->get('HTTP_X_REQUESTED_WITH', ''), 'xmlhttprequest'))) {
+			// concatenate script to HTML string when doing an AJAX request
+			$html .= "\n" . '<script>' . $js_decl . '</script>';
+		} else {
+			// add script declaration to document
+			JFactory::getDocument()->addScriptDeclaration($js_decl);
+		}
 
 		// return the HTML string to be displayed
 		return $html;

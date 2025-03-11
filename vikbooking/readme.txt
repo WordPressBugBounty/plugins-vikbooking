@@ -3,7 +3,7 @@ Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
 Tested up to: 6.7
-Stable tag: 1.7.6
+Stable tag: 1.7.7
 Requires PHP: 7.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -129,6 +129,20 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 
 == Changelog ==
 
+= 1.7.7 =
+*Release date - 11 March 2025*
+
+* Various admin widgets improvements.
+* Responsiveness improvements on admin section.
+* Dates range picker improvements.
+* Damage deposit separate payment improvements.
+* PMS Reports framework updates with new profile settings support.
+* Various improvements to the PMS Reports framework.
+* Pre-checkin guests data collection drivers can validate the information before submission.
+* Introducing PMS report for Catalonia (Spain) Mossos d'Esquadra.
+* Cron jobs email and pre-checkin reminder new listings filter.
+* Orphan dates collection and opening now available for the AI Assistant widget.
+
 = 1.7.6 =
 *Release date - 19 February 2025*
 
@@ -166,42 +180,6 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 * Various Visual Editor improvements.
 * Maintenance controller for performance optimization (large datasets).
 * Multiple security improvements.
-
-= 1.7.2 =
-*Release date - 18 December 2024*
-
-* Custom OTA pricing overrides in Rates Overview.
-* New default PMS Reports.
-* New options/extras of type late check-out/early check-in.
-* Various AI framework improvements.
-* New front-end search settings to display unavailable rooms.
-
-= 1.7.1 =
-*Release date - 12 November 2024*
-
-* New OTA listing onboarding functions (Airbnb and Booking.com).
-* Refactoring of PMS Reports framework.
-* AI framework improvements required by Vik Channel Manager and E4jConnect.
-* Minor back-end design improvements.
-* Minor fixes.
-
-= 1.7.0 =
-*Release date - 23 September 2024*
-
-* Major framework release.
-* AI framework powered by ChatGPT (Channel Manager and E4jConnect subscription required).
-* New admin-widget "AI Assistant" (Channel Manager and E4jConnect subscription required).
-* New admin-widget "Guest Reviews" (Channel Manager and E4jConnect subscription required).
-* Added support to Airbnb reactions in "Guest Messages" admin-widget.
-* Derived rate plans with automatic rates and restrictions update from parent rate plans.
-* Tiny URLs generated automatically to improve the OTA messaging capabilities.
-* Room rates and restrictions management in admin-widget "Bookings Calendar".
-* Improved Notifications Center functionalities and CTA buttons.
-* Schedule automatic payment collections.
-* Register, update and delete offline payments.
-* New financial statistics.
-* New back-end styles.
-* Several framework improvements.
 
 = Earlier versions =
 

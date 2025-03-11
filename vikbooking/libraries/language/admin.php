@@ -5460,7 +5460,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('A list of the upcoming arrivals', 'vikbooking');
 				break;
 			case 'VBO_W_ORPHDATES_TITLE':
-				$result = __('Orphan Dates', 'vikbooking');
+				$result = __('Orphan dates', 'vikbooking');
 				break;
 			case 'VBO_W_ORPHDATES_DESCR':
 				$result = __('The future orphan dates found due to booking restrictions', 'vikbooking');
@@ -7629,6 +7629,31 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_SKIP_DERIVED_RPLANS':
 				$result = __('Skip derived rate plans', 'vikbooking');
+				break;
+			case 'VBO_LISTINGS':
+				$result = __('Listings', 'vikbooking');
+				break;
+			case 'VBO_PROFILE_SETTINGS':
+				$result = __('Profile settings', 'vikbooking');
+				break;
+			case 'VBO_PROFILE_SETTINGS_HELP':
+				$result = __('This report supports multiple profiles with different settings.', 'vikbooking');
+				break;
+			case 'VBO_PROFILE_NAME':
+				$result = __('Profile name', 'vikbooking');
+				break;
+			case 'VBO_PROFILE_NEW':
+				$result = __('New profile', 'vikbooking');
+				break;
+			case 'VBO_PRECHECKIN_COMPLETED':
+				$result = __('Pre-checkin completed', 'vikbooking');
+				break;
+			case 'VBO_MISSING_GFIELD_REGISTRATION':
+				// @TRANSLATORS: Please provide the information for the guest registration field "ID Number".
+				$result = _x('Please provide the information for the guest registration field "%s".', 'e.g. Please provide the information for the guest registration field "ID Number".', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_ORPHAN_DATES':
+				$result = __('Orphan dates', 'vikbooking');
 				break;
 		}
 

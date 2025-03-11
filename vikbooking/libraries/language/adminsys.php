@@ -317,10 +317,10 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 				$result = __('Get your License Key and Upgrade to PRO', 'vikbooking');
 				break;
 			case 'VBOPROWHYRATES':
-				$result = __('Set up your daily/seasonal prices with just a few clicks', 'vikbooking');
+				$result = __('Take full control of your pricing with ease!', 'vikbooking');
 				break;
 			case 'VBOPROWHYRATESDESC':
-				$result = __('Set different rates on some seasons, holidays, weekends or days of the year with just two clicks. Bookings Restrictions: define the minimum or maximum nights of stay for certain dates of the year and rooms, set days closed to arrival or departure.', 'vikbooking');
+				$result = __('Seamlessly adjust rates for different seasons, holidays, weekends, or special dates in just a few clicks.<br />Apply booking restrictions: define minimum or maximum stay durations, close availability on certain days, or set arrival and departure limits. <br />Designed to simplify your workflow and maximize revenue.', 'vikbooking');
 				break;
 			case 'VBOPROWHYBOOKINGS':
 				$result = __('Create and Modify Bookings via back-end', 'vikbooking');
@@ -332,7 +332,7 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 				$result = __('Channels Management Capabilities', 'vikbooking');
 				break;
 			case 'VBOPROWHYCHMANAGERDESC':
-				$result = __('<p>Only Vik Booking Pro is capable of working together on the same website with the complementary plugin Vik Channel Manager.</p><p>Turn your website into a professional and full solution of Booking Engine + PMS and Channel Manager to sync availability, rates and bookings with the most popular channels of the world.</p>', 'vikbooking');
+				$result = __('<p>With Vik Booking Pro and Vik Channel Manager working together, your website becomes a complete hospitality management solution.</p><p>Transform your site into a complete booking solution, combining a powerful Booking Engine, PMS, and Channel Manager to effortlessly sync availability, rates, and reservations with the world’s top booking channels.</p>', 'vikbooking');
 				break;
 			case 'VBOPROWHYUNLOCKF':
 				$result = __('Unlock over 50 must-have features', 'vikbooking');
@@ -413,16 +413,25 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 				$result = __('Active License Key', 'vikbooking');
 				break;
 			case 'VBOPROVCMADTITLE':
-				$result = __('Want to avoid the risk of overbooking?', 'vikbooking');
+				$result = __('Worried about overbookings?', 'vikbooking');
 				break;
 			case 'VBOPROVCMADDESCR':
-				$result = __('The Vik Booking + Vik Channel Manager plugins suite is the very first and only native solution for WordPress to be officially certificated as <strong>Premier Connectivity Partner of Booking.com</strong>.', 'vikbooking');
+				$result = __('Vik Booking + Vik Channel Manager is the only native WordPress suite officially certified as a <strong>Premier Connectivity Partner of Booking.com and Airbnb.</strong>', 'vikbooking');
 				break;
 			case 'VBOPROVCMADMOREINFO':
-				$result = __('MORE INFORMATION', 'vikbooking');
+				$result = __('More information', 'vikbooking');
+				break;
+			case 'VBOPROVCMTRIAL':
+				$result = __('Free 30-day Trial >', 'vikbooking');
+				break;
+			case 'VBOPROVCTRIALTITLE':
+				$result = __('Experience the Benefits – Free for 30 Days!', 'vikbooking');
+				break;
+			case 'VBOPROVCTRIALQUESTION':
+				$result = __('Test real-time updates, automate reservations, and optimize your pricing with ease—all without any upfront cost.', 'vikbooking');
 				break;
 			case 'VBOPROVCMADSOMECHAV':
-				$result = __('Some of the channels available', 'vikbooking');
+				$result = __('Trusted in hospitality', 'vikbooking');
 				break;
 			case 'VBOPROVCMADCHANDMANY':
 				$result = __('and many others...', 'vikbooking');
@@ -434,7 +443,7 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 				$result = __('Configure optional and mandatory Extra Services', 'vikbooking');
 				break;
 			case 'VBOPROWHYEXTRASERVICESDESC':
-				$result = __('Assign to your rooms some optional services that guests can order during the booking process, like breakfast, transfers or parking.<br />You can also define mandatory Fees or Taxes, like Cleaning Fees or Tourist Taxes to be paid at the time of booking.', 'vikbooking');
+				$result = __('Enhance your bookings by offering optional services like breakfast, transfers, or parking, which guests can add during the reservation process. <br />Easily configure mandatory fees or taxes, such as cleaning fees or tourist taxes, to be collected at the time of booking.', 'vikbooking');
 				break;
 			case 'VBOPROWHYREPORT':
 				$result = __('Occupancy Ranking report to analyse every detail', 'vikbooking');
@@ -443,10 +452,10 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 				$result = __('Get to monitor your future occupancy through the Occupancy Ranking report. Filter the targets by dates and analyse the data by day, week or month. The report will provide the information about the occupancy, the total number of rooms sold, nights booked, revenues and more.', 'vikbooking');
 				break;
 			case 'VBOPROWHYCRONJOB':
-				$result = __('Notify your customers with automatic email and save time', 'vikbooking');
+				$result = __('Automated emails & pre Check-In notifications', 'vikbooking');
 				break;
 			case 'VBOPROWHYCRONJOBDESC':
-				$result = __('<p>The relationship with your customers is fundamental for your business.</p><p>Automatise certain tasks, such as sending automatic reminders via email or SMS to your guests, either before the check-in to provide additional information, or after the check-out maybe by asking them to leave a review.</p><p>Generate and send the invoices automatically, invite your guests to fill the pre-checkin form, and much more.</p>', 'vikbooking');
+				$result = __('<p>Strengthen guest relationships effortlessly with the PRO version of Vik Booking.<br/>Send automatic email and SMS reminders before check-in, request reviews after check-out, and generate invoices instantly.<br />From pre-check-in forms to seamless communication, streamline your workflow and boost efficiency.</p>', 'vikbooking');
 				break;
 			case 'VBOPROWHYMOREEXTRA':
 				$result = __('and much more...', 'vikbooking');
@@ -494,10 +503,10 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 				$result = __('<p>A Booking Engine fully integrated with your website with no monthly fees or commissions.</p><p>Stop &quot;renting&quot; external systems and increase your revenue.</p>', 'vikbooking');
 				break;
 			case 'VBOPROSYNCHNEWBOOKINGS':
-				$result = __('Synchronize new bookings in real-time, manage the rates and keep the availability up to date with the most popular OTAs.', 'vikbooking');
+				$result = __('Keep your availability and rates always up to date with automatic synchronization across OTAs.', 'vikbooking');
 				break;
 			case 'VBOPROVCMSYNCHEVERYTHING':
-				$result = __('With the complementary plugin Vik Channel Manager everything will be synced automatically.', 'vikbooking');
+				$result = __('Vik Channel Manager seamlessly syncs new bookings in real-time, so you never have to adjust availability manually.', 'vikbooking');
 				break;
 			/**
 			 * @wponly - First Setup Dashboard

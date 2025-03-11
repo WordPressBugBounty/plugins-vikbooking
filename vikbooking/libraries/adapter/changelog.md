@@ -1,5 +1,15 @@
 # Framework Changelog
 
+### 10.1.60
+
+*Release date - 24 February 2025*
+
+##### BUG FIXES
+
+* Prevented the fatal error thrown because of a WP error returned by WPML.
+
+---
+
 ### 10.1.59
 
 *Release date - 4 December 2024*

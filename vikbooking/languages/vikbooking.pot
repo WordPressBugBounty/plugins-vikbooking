@@ -2,19 +2,20 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: VikBooking 1.7.5\n"
+"Project-Id-Version: VikBooking 1.7.7\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/vikbooking\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-02-19T17:44:24+01:00\n"
+"POT-Creation-Date: 2025-03-11T16:03:00+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.6.0\n"
+"X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: vikbooking\n"
 
 #. Plugin Name of the plugin
+#: vikbooking.php
 #: libraries/language/admin.php:1212
 #: libraries/language/adminsys.php:52
 #: modules/mod_vikbooking_channelrates/widget.php:48
@@ -26,18 +27,22 @@ msgid "VikBooking"
 msgstr ""
 
 #. Plugin URI of the plugin
+#: vikbooking.php
 msgid "https://vikwp.com/plugin/vikbooking"
 msgstr ""
 
 #. Description of the plugin
+#: vikbooking.php
 msgid "Certified Booking Engine for Hotels and Accommodations."
 msgstr ""
 
 #. Author of the plugin
+#: vikbooking.php
 msgid "E4J s.r.l."
 msgstr ""
 
 #. Author URI of the plugin
+#: vikbooking.php
 msgid "https://vikwp.com"
 msgstr ""
 
@@ -188,7 +193,7 @@ msgstr ""
 #: libraries/html/rss/optin/modal.php:91
 #: libraries/language/admin.php:840
 #: libraries/language/admin.php:1053
-#: libraries/language/site.php:1221
+#: libraries/language/site.php:1222
 #: modules/mod_vikbooking_currencyconverter/language/handler.php:68
 msgid "Yes"
 msgstr ""
@@ -199,7 +204,7 @@ msgstr ""
 #: libraries/html/rss/optin/modal.php:91
 #: libraries/language/admin.php:843
 #: libraries/language/admin.php:1056
-#: libraries/language/site.php:1224
+#: libraries/language/site.php:1225
 #: modules/mod_vikbooking_currencyconverter/language/handler.php:65
 msgid "No"
 msgstr ""
@@ -210,7 +215,7 @@ msgstr ""
 
 #: libraries/html/rss/feed.php:21
 #: libraries/html/rss/feed.php:72
-#: libraries/language/adminsys.php:431
+#: libraries/language/adminsys.php:440
 msgid "Don't show again"
 msgstr ""
 
@@ -261,13 +266,13 @@ msgstr ""
 #: libraries/language/admin.php:45
 #: libraries/language/admin.php:1971
 #: libraries/language/admin.php:3993
-#: libraries/language/site.php:1485
+#: libraries/language/site.php:1486
 #: libraries/language/system.php:209
 msgid "Save"
 msgstr ""
 
 #: libraries/language/admin.php:48
-#: libraries/language/site.php:741
+#: libraries/language/site.php:742
 #: libraries/language/system.php:225
 msgid "Cancel"
 msgstr ""
@@ -280,19 +285,19 @@ msgid "Delete"
 msgstr ""
 
 #: libraries/language/admin.php:54
-#: libraries/language/site.php:318
+#: libraries/language/site.php:319
 #: libraries/language/system.php:181
 msgid "Back"
 msgstr ""
 
 #: libraries/language/admin.php:57
 #: libraries/language/admin.php:1764
-#: libraries/language/site.php:2114
+#: libraries/language/site.php:2115
 msgid "Confirmed"
 msgstr ""
 
 #: libraries/language/admin.php:60
-#: libraries/language/site.php:2117
+#: libraries/language/site.php:2118
 msgid "Standby"
 msgstr ""
 
@@ -493,8 +498,8 @@ msgstr ""
 #: libraries/language/admin.php:3411
 #: libraries/language/admin.php:4125
 #: libraries/language/adminsys.php:226
-#: libraries/language/site.php:549
-#: libraries/language/site.php:1371
+#: libraries/language/site.php:550
+#: libraries/language/site.php:1372
 msgid "Booking Details"
 msgstr ""
 
@@ -534,7 +539,7 @@ msgstr ""
 #: libraries/language/admin.php:2649
 #: libraries/language/admin.php:2880
 #: libraries/language/admin.php:3114
-#: libraries/language/site.php:1725
+#: libraries/language/site.php:1726
 msgid "Remove"
 msgstr ""
 
@@ -632,15 +637,15 @@ msgstr ""
 
 #: libraries/language/admin.php:288
 #: libraries/language/admin.php:7040
-#: libraries/language/site.php:48
-#: libraries/language/site.php:174
-#: libraries/language/site.php:216
+#: libraries/language/site.php:49
+#: libraries/language/site.php:175
+#: libraries/language/site.php:217
 msgid "Reservation"
 msgstr ""
 
 #: libraries/language/admin.php:291
-#: libraries/language/site.php:54
-#: libraries/language/site.php:177
+#: libraries/language/site.php:55
+#: libraries/language/site.php:178
 msgid "Completed"
 msgstr ""
 
@@ -682,10 +687,10 @@ msgstr ""
 #: libraries/language/admin.php:1608
 #: libraries/language/admin.php:1785
 #: libraries/language/admin.php:2322
-#: libraries/language/site.php:138
-#: libraries/language/site.php:321
-#: libraries/language/site.php:633
-#: libraries/language/site.php:648
+#: libraries/language/site.php:139
+#: libraries/language/site.php:322
+#: libraries/language/site.php:634
+#: libraries/language/site.php:649
 #: modules/mod_vikbooking_channelrates/language/handler.php:142
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:174
 msgid "Nights"
@@ -701,8 +706,8 @@ msgid "Price(s) per Night"
 msgstr ""
 
 #: libraries/language/admin.php:330
-#: libraries/language/site.php:141
-#: libraries/language/site.php:645
+#: libraries/language/site.php:142
+#: libraries/language/site.php:646
 msgid "Night"
 msgstr ""
 
@@ -750,7 +755,7 @@ msgstr ""
 #: libraries/language/admin.php:453
 #: libraries/language/admin.php:1794
 #: libraries/language/admin.php:3306
-#: libraries/language/site.php:1368
+#: libraries/language/site.php:1369
 msgid "Customer Information"
 msgstr ""
 
@@ -782,37 +787,37 @@ msgid "1 Year"
 msgstr ""
 
 #: libraries/language/admin.php:384
-#: libraries/language/site.php:462
+#: libraries/language/site.php:463
 msgid "Sun"
 msgstr ""
 
 #: libraries/language/admin.php:387
-#: libraries/language/site.php:465
+#: libraries/language/site.php:466
 msgid "Mon"
 msgstr ""
 
 #: libraries/language/admin.php:390
-#: libraries/language/site.php:468
+#: libraries/language/site.php:469
 msgid "Tue"
 msgstr ""
 
 #: libraries/language/admin.php:393
-#: libraries/language/site.php:471
+#: libraries/language/site.php:472
 msgid "Wed"
 msgstr ""
 
 #: libraries/language/admin.php:396
-#: libraries/language/site.php:474
+#: libraries/language/site.php:475
 msgid "Thu"
 msgstr ""
 
 #: libraries/language/admin.php:399
-#: libraries/language/site.php:477
+#: libraries/language/site.php:478
 msgid "Fri"
 msgstr ""
 
 #: libraries/language/admin.php:402
-#: libraries/language/site.php:480
+#: libraries/language/site.php:481
 msgid "Sat"
 msgstr ""
 
@@ -825,8 +830,8 @@ msgstr ""
 #: libraries/language/admin.php:3312
 #: libraries/language/admin.php:3933
 #: libraries/language/admin.php:4326
-#: libraries/language/site.php:123
-#: libraries/language/site.php:1374
+#: libraries/language/site.php:124
+#: libraries/language/site.php:1375
 msgid "Check-in"
 msgstr ""
 
@@ -839,8 +844,8 @@ msgstr ""
 #: libraries/language/admin.php:3906
 #: libraries/language/admin.php:3936
 #: libraries/language/admin.php:4329
-#: libraries/language/site.php:126
-#: libraries/language/site.php:1377
+#: libraries/language/site.php:127
+#: libraries/language/site.php:1378
 msgid "Check-out"
 msgstr ""
 
@@ -861,16 +866,16 @@ msgstr ""
 #: libraries/language/admin.php:1179
 #: libraries/language/admin.php:1266
 #: libraries/language/admin.php:1626
-#: libraries/language/site.php:258
-#: libraries/language/site.php:423
-#: libraries/language/site.php:504
+#: libraries/language/site.php:259
+#: libraries/language/site.php:424
+#: libraries/language/site.php:505
 #: libraries/language/system.php:307
 msgid "Name"
 msgstr ""
 
 #: libraries/language/admin.php:420
 #: libraries/language/adminsys.php:67
-#: libraries/language/site.php:117
+#: libraries/language/site.php:118
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:156
 msgid "Category"
 msgstr ""
@@ -878,21 +883,21 @@ msgstr ""
 #: libraries/language/admin.php:423
 #: libraries/language/admin.php:1161
 #: libraries/language/admin.php:2694
-#: libraries/language/site.php:696
+#: libraries/language/site.php:697
 msgid "Characteristics"
 msgstr ""
 
 #: libraries/language/admin.php:426
 #: libraries/language/admin.php:609
 #: libraries/language/admin.php:2565
-#: libraries/language/site.php:225
-#: libraries/language/site.php:309
-#: libraries/language/site.php:858
+#: libraries/language/site.php:226
+#: libraries/language/site.php:310
+#: libraries/language/site.php:859
 msgid "Options"
 msgstr ""
 
 #: libraries/language/admin.php:429
-#: libraries/language/site.php:483
+#: libraries/language/site.php:484
 msgid "Available"
 msgstr ""
 
@@ -911,8 +916,8 @@ msgstr ""
 #: libraries/language/admin.php:441
 #: libraries/language/admin.php:1014
 #: libraries/language/admin.php:1452
-#: libraries/language/site.php:120
-#: libraries/language/site.php:165
+#: libraries/language/site.php:121
+#: libraries/language/site.php:166
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:159
 msgid "Any"
 msgstr ""
@@ -932,8 +937,8 @@ msgstr ""
 #: libraries/language/admin.php:4245
 #: libraries/language/admin.php:4281
 #: libraries/language/admin.php:4413
-#: libraries/language/site.php:42
-#: libraries/language/site.php:1353
+#: libraries/language/site.php:43
+#: libraries/language/site.php:1354
 msgid "Date"
 msgstr ""
 
@@ -948,10 +953,10 @@ msgstr ""
 #: libraries/language/admin.php:1899
 #: libraries/language/admin.php:2673
 #: libraries/language/adminsys.php:142
-#: libraries/language/site.php:621
-#: libraries/language/site.php:654
-#: libraries/language/site.php:855
-#: libraries/language/site.php:1479
+#: libraries/language/site.php:622
+#: libraries/language/site.php:655
+#: libraries/language/site.php:856
+#: libraries/language/site.php:1480
 #: modules/mod_vikbooking_channelrates/language/handler.php:127
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:162
 #: modules/mod_vikbooking_rooms/widget.php:45
@@ -962,8 +967,8 @@ msgstr ""
 #: libraries/language/admin.php:3264
 #: libraries/language/admin.php:3318
 #: libraries/language/admin.php:6822
-#: libraries/language/site.php:1380
-#: libraries/language/site.php:1512
+#: libraries/language/site.php:1381
+#: libraries/language/site.php:1513
 #: modules/mod_vikbooking_channelrates/language/handler.php:133
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:116
 msgid "Guests"
@@ -978,10 +983,10 @@ msgstr ""
 #: libraries/language/admin.php:2916
 #: libraries/language/admin.php:3330
 #: libraries/language/admin.php:4449
-#: libraries/language/site.php:240
-#: libraries/language/site.php:357
-#: libraries/language/site.php:618
-#: libraries/language/site.php:1392
+#: libraries/language/site.php:241
+#: libraries/language/site.php:358
+#: libraries/language/site.php:619
+#: libraries/language/site.php:1393
 msgid "Total"
 msgstr ""
 
@@ -1047,7 +1052,7 @@ msgstr ""
 #: libraries/language/admin.php:1305
 #: libraries/language/admin.php:3294
 #: libraries/language/admin.php:4284
-#: libraries/language/site.php:1356
+#: libraries/language/site.php:1357
 #: modules/mod_vikbooking_rooms/language/handler.php:87
 msgid "Description"
 msgstr ""
@@ -1055,8 +1060,8 @@ msgstr ""
 #: libraries/language/admin.php:528
 #: libraries/language/admin.php:2865
 #: libraries/language/admin.php:3303
-#: libraries/language/site.php:222
-#: libraries/language/site.php:1365
+#: libraries/language/site.php:223
+#: libraries/language/site.php:1366
 msgid "Price"
 msgstr ""
 
@@ -1066,7 +1071,7 @@ msgstr ""
 #: libraries/language/admin.php:636
 #: libraries/language/admin.php:660
 #: libraries/language/admin.php:6372
-#: libraries/language/site.php:1857
+#: libraries/language/site.php:1858
 msgid "Tax Rate"
 msgstr ""
 
@@ -1113,9 +1118,9 @@ msgstr ""
 #: libraries/language/admin.php:567
 #: libraries/language/admin.php:588
 #: libraries/language/admin.php:900
-#: libraries/language/site.php:300
-#: libraries/language/site.php:363
-#: libraries/language/site.php:1212
+#: libraries/language/site.php:301
+#: libraries/language/site.php:364
+#: libraries/language/site.php:1213
 msgid "Booking Date"
 msgstr ""
 
@@ -1128,9 +1133,9 @@ msgstr ""
 #: libraries/language/admin.php:909
 #: libraries/language/admin.php:3498
 #: libraries/language/admin.php:7577
-#: libraries/language/site.php:153
-#: libraries/language/site.php:351
-#: libraries/language/site.php:372
+#: libraries/language/site.php:154
+#: libraries/language/site.php:352
+#: libraries/language/site.php:373
 #: modules/mod_vikbooking_channelrates/language/handler.php:121
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:150
 msgid "Check-in date"
@@ -1145,9 +1150,9 @@ msgstr ""
 #: libraries/language/admin.php:912
 #: libraries/language/admin.php:3501
 #: libraries/language/admin.php:7580
-#: libraries/language/site.php:156
-#: libraries/language/site.php:354
-#: libraries/language/site.php:375
+#: libraries/language/site.php:157
+#: libraries/language/site.php:355
+#: libraries/language/site.php:376
 #: modules/mod_vikbooking_channelrates/language/handler.php:124
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:153
 msgid "Check-out date"
@@ -1170,9 +1175,9 @@ msgstr ""
 #: libraries/language/admin.php:1788
 #: libraries/language/admin.php:2265
 #: libraries/language/admin.php:2589
-#: libraries/language/site.php:630
-#: libraries/language/site.php:636
-#: libraries/language/site.php:651
+#: libraries/language/site.php:631
+#: libraries/language/site.php:637
+#: libraries/language/site.php:652
 #: modules/mod_vikbooking_channelrates/language/handler.php:136
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:168
 msgid "Room"
@@ -1190,11 +1195,11 @@ msgstr ""
 #: libraries/language/admin.php:1584
 #: libraries/language/admin.php:2325
 #: libraries/language/admin.php:3324
-#: libraries/language/site.php:624
-#: libraries/language/site.php:639
-#: libraries/language/site.php:660
-#: libraries/language/site.php:684
-#: libraries/language/site.php:1386
+#: libraries/language/site.php:625
+#: libraries/language/site.php:640
+#: libraries/language/site.php:661
+#: libraries/language/site.php:685
+#: libraries/language/site.php:1387
 #: modules/mod_vikbooking_channelrates/language/handler.php:130
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:165
 msgid "Adults"
@@ -1208,11 +1213,11 @@ msgstr ""
 #: libraries/language/admin.php:1812
 #: libraries/language/admin.php:2328
 #: libraries/language/admin.php:3327
-#: libraries/language/site.php:627
-#: libraries/language/site.php:642
-#: libraries/language/site.php:666
-#: libraries/language/site.php:687
-#: libraries/language/site.php:1389
+#: libraries/language/site.php:628
+#: libraries/language/site.php:643
+#: libraries/language/site.php:667
+#: libraries/language/site.php:688
+#: libraries/language/site.php:1390
 #: modules/mod_vikbooking_channelrates/language/handler.php:139
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:171
 msgid "Children"
@@ -1339,12 +1344,12 @@ msgid "Check-in/out Date Format"
 msgstr ""
 
 #: libraries/language/admin.php:738
-#: libraries/language/site.php:201
+#: libraries/language/site.php:202
 msgid "DD/MM/YYYY"
 msgstr ""
 
 #: libraries/language/admin.php:741
-#: libraries/language/site.php:204
+#: libraries/language/site.php:205
 msgid "YYYY/MM/DD"
 msgstr ""
 
@@ -1382,7 +1387,7 @@ msgstr ""
 
 #: libraries/language/admin.php:768
 #: libraries/language/admin.php:3672
-#: libraries/language/site.php:417
+#: libraries/language/site.php:418
 msgid "Leave a deposit of "
 msgstr ""
 
@@ -1397,7 +1402,7 @@ msgstr ""
 #: libraries/language/admin.php:777
 #: libraries/language/admin.php:3858
 #: libraries/language/admin.php:3864
-#: libraries/language/site.php:1629
+#: libraries/language/site.php:1630
 msgid "Company Name"
 msgstr ""
 
@@ -1520,61 +1525,61 @@ msgid "Number of Months to Show"
 msgstr ""
 
 #: libraries/language/admin.php:879
-#: libraries/language/site.php:342
+#: libraries/language/site.php:343
 msgid "Reservation Received on the"
 msgstr ""
 
 #: libraries/language/admin.php:885
-#: libraries/language/site.php:348
+#: libraries/language/site.php:349
 msgid "Rooms Reserved"
 msgstr ""
 
 #: libraries/language/admin.php:897
 #: libraries/language/admin.php:1761
 #: libraries/language/admin.php:1947
-#: libraries/language/site.php:360
+#: libraries/language/site.php:361
 msgid "Booking Status"
 msgstr ""
 
 #: libraries/language/admin.php:903
-#: libraries/language/site.php:303
-#: libraries/language/site.php:366
+#: libraries/language/site.php:304
+#: libraries/language/site.php:367
 msgid "Personal Details"
 msgstr ""
 
 #: libraries/language/admin.php:906
-#: libraries/language/site.php:369
+#: libraries/language/site.php:370
 msgid "Rooms Booked"
 msgstr ""
 
 #: libraries/language/admin.php:915
-#: libraries/language/site.php:378
+#: libraries/language/site.php:379
 msgid "To see your booking details, visit the following page"
 msgstr ""
 
 #: libraries/language/admin.php:918
-#: libraries/language/site.php:381
+#: libraries/language/site.php:382
 #: modules/mod_vikbooking_channelrates/language/handler.php:184
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:213
 msgid "January"
 msgstr ""
 
 #: libraries/language/admin.php:921
-#: libraries/language/site.php:384
+#: libraries/language/site.php:385
 #: modules/mod_vikbooking_channelrates/language/handler.php:187
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:216
 msgid "February"
 msgstr ""
 
 #: libraries/language/admin.php:924
-#: libraries/language/site.php:387
+#: libraries/language/site.php:388
 #: modules/mod_vikbooking_channelrates/language/handler.php:190
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:219
 msgid "March"
 msgstr ""
 
 #: libraries/language/admin.php:927
-#: libraries/language/site.php:390
+#: libraries/language/site.php:391
 #: modules/mod_vikbooking_channelrates/language/handler.php:193
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:222
 msgid "April"
@@ -1582,57 +1587,57 @@ msgstr ""
 
 #: libraries/language/admin.php:930
 #: libraries/language/admin.php:2376
-#: libraries/language/site.php:393
-#: libraries/language/site.php:1170
+#: libraries/language/site.php:394
+#: libraries/language/site.php:1171
 #: modules/mod_vikbooking_channelrates/language/handler.php:196
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:225
 msgid "May"
 msgstr ""
 
 #: libraries/language/admin.php:933
-#: libraries/language/site.php:396
+#: libraries/language/site.php:397
 #: modules/mod_vikbooking_channelrates/language/handler.php:199
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:228
 msgid "June"
 msgstr ""
 
 #: libraries/language/admin.php:936
-#: libraries/language/site.php:399
+#: libraries/language/site.php:400
 #: modules/mod_vikbooking_channelrates/language/handler.php:202
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:231
 msgid "July"
 msgstr ""
 
 #: libraries/language/admin.php:939
-#: libraries/language/site.php:402
+#: libraries/language/site.php:403
 #: modules/mod_vikbooking_channelrates/language/handler.php:205
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:234
 msgid "August"
 msgstr ""
 
 #: libraries/language/admin.php:942
-#: libraries/language/site.php:405
+#: libraries/language/site.php:406
 #: modules/mod_vikbooking_channelrates/language/handler.php:208
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:237
 msgid "September"
 msgstr ""
 
 #: libraries/language/admin.php:945
-#: libraries/language/site.php:408
+#: libraries/language/site.php:409
 #: modules/mod_vikbooking_channelrates/language/handler.php:211
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:240
 msgid "October"
 msgstr ""
 
 #: libraries/language/admin.php:948
-#: libraries/language/site.php:411
+#: libraries/language/site.php:412
 #: modules/mod_vikbooking_channelrates/language/handler.php:214
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:243
 msgid "November"
 msgstr ""
 
 #: libraries/language/admin.php:951
-#: libraries/language/site.php:414
+#: libraries/language/site.php:415
 #: modules/mod_vikbooking_channelrates/language/handler.php:217
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:246
 msgid "December"
@@ -1653,7 +1658,7 @@ msgstr ""
 #: libraries/language/admin.php:1728
 #: libraries/language/admin.php:2046
 #: libraries/language/admin.php:4158
-#: libraries/language/site.php:1116
+#: libraries/language/site.php:1117
 msgid "From"
 msgstr ""
 
@@ -1662,7 +1667,7 @@ msgstr ""
 #: libraries/language/admin.php:1335
 #: libraries/language/admin.php:1731
 #: libraries/language/admin.php:4161
-#: libraries/language/site.php:1119
+#: libraries/language/site.php:1120
 msgid "To"
 msgstr ""
 
@@ -1727,8 +1732,8 @@ msgstr ""
 #: libraries/language/admin.php:1050
 #: libraries/language/admin.php:1209
 #: libraries/language/admin.php:3471
-#: libraries/language/site.php:333
-#: libraries/language/site.php:453
+#: libraries/language/site.php:334
+#: libraries/language/site.php:454
 msgid "Notes"
 msgstr ""
 
@@ -1783,11 +1788,11 @@ msgstr ""
 
 #: libraries/language/admin.php:1083
 #: libraries/language/admin.php:1185
-#: libraries/language/site.php:264
-#: libraries/language/site.php:429
-#: libraries/language/site.php:510
-#: libraries/language/site.php:969
-#: libraries/language/site.php:1254
+#: libraries/language/site.php:265
+#: libraries/language/site.php:430
+#: libraries/language/site.php:511
+#: libraries/language/site.php:970
+#: libraries/language/site.php:1255
 msgid "e-Mail"
 msgstr ""
 
@@ -1897,42 +1902,42 @@ msgstr ""
 #: libraries/language/admin.php:1182
 #: libraries/language/admin.php:2139
 #: libraries/language/admin.php:2622
-#: libraries/language/site.php:261
-#: libraries/language/site.php:426
-#: libraries/language/site.php:507
-#: libraries/language/site.php:897
+#: libraries/language/site.php:262
+#: libraries/language/site.php:427
+#: libraries/language/site.php:508
+#: libraries/language/site.php:898
 msgid "Last Name"
 msgstr ""
 
 #: libraries/language/admin.php:1188
 #: libraries/language/admin.php:2628
-#: libraries/language/site.php:267
-#: libraries/language/site.php:432
-#: libraries/language/site.php:921
+#: libraries/language/site.php:268
+#: libraries/language/site.php:433
+#: libraries/language/site.php:922
 msgid "Phone"
 msgstr ""
 
 #: libraries/language/admin.php:1191
 #: libraries/language/admin.php:3453
 #: libraries/language/admin.php:3537
-#: libraries/language/site.php:270
-#: libraries/language/site.php:435
-#: libraries/language/site.php:906
+#: libraries/language/site.php:271
+#: libraries/language/site.php:436
+#: libraries/language/site.php:907
 msgid "Address"
 msgstr ""
 
 #: libraries/language/admin.php:1194
-#: libraries/language/site.php:273
-#: libraries/language/site.php:438
+#: libraries/language/site.php:274
+#: libraries/language/site.php:439
 msgid "Zip Code"
 msgstr ""
 
 #: libraries/language/admin.php:1197
 #: libraries/language/admin.php:3456
 #: libraries/language/admin.php:3540
-#: libraries/language/site.php:276
-#: libraries/language/site.php:441
-#: libraries/language/site.php:909
+#: libraries/language/site.php:277
+#: libraries/language/site.php:442
+#: libraries/language/site.php:910
 msgid "City"
 msgstr ""
 
@@ -1940,8 +1945,8 @@ msgstr ""
 #: libraries/language/admin.php:2043
 #: libraries/language/admin.php:2631
 #: libraries/language/admin.php:4455
-#: libraries/language/site.php:444
-#: libraries/language/site.php:918
+#: libraries/language/site.php:445
+#: libraries/language/site.php:919
 msgid "Country"
 msgstr ""
 
@@ -1951,7 +1956,7 @@ msgid "Date of Birth"
 msgstr ""
 
 #: libraries/language/admin.php:1206
-#: libraries/language/site.php:450
+#: libraries/language/site.php:451
 msgid "Flight Number"
 msgstr ""
 
@@ -1986,8 +1991,8 @@ msgstr ""
 
 #: libraries/language/admin.php:1236
 #: libraries/language/admin.php:2289
-#: libraries/language/site.php:564
-#: libraries/language/site.php:708
+#: libraries/language/site.php:565
+#: libraries/language/site.php:709
 #: modules/mod_vikbooking_channelrates/language/handler.php:160
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:189
 msgid "Sunday"
@@ -1995,8 +2000,8 @@ msgstr ""
 
 #: libraries/language/admin.php:1239
 #: libraries/language/admin.php:2292
-#: libraries/language/site.php:567
-#: libraries/language/site.php:711
+#: libraries/language/site.php:568
+#: libraries/language/site.php:712
 #: modules/mod_vikbooking_channelrates/language/handler.php:163
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:192
 msgid "Monday"
@@ -2004,8 +2009,8 @@ msgstr ""
 
 #: libraries/language/admin.php:1242
 #: libraries/language/admin.php:2295
-#: libraries/language/site.php:570
-#: libraries/language/site.php:714
+#: libraries/language/site.php:571
+#: libraries/language/site.php:715
 #: modules/mod_vikbooking_channelrates/language/handler.php:166
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:195
 msgid "Tuesday"
@@ -2013,8 +2018,8 @@ msgstr ""
 
 #: libraries/language/admin.php:1245
 #: libraries/language/admin.php:2298
-#: libraries/language/site.php:573
-#: libraries/language/site.php:717
+#: libraries/language/site.php:574
+#: libraries/language/site.php:718
 #: modules/mod_vikbooking_channelrates/language/handler.php:169
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:198
 msgid "Wednesday"
@@ -2022,8 +2027,8 @@ msgstr ""
 
 #: libraries/language/admin.php:1248
 #: libraries/language/admin.php:2301
-#: libraries/language/site.php:576
-#: libraries/language/site.php:720
+#: libraries/language/site.php:577
+#: libraries/language/site.php:721
 #: modules/mod_vikbooking_channelrates/language/handler.php:172
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:201
 msgid "Thursday"
@@ -2031,8 +2036,8 @@ msgstr ""
 
 #: libraries/language/admin.php:1251
 #: libraries/language/admin.php:2304
-#: libraries/language/site.php:579
-#: libraries/language/site.php:723
+#: libraries/language/site.php:580
+#: libraries/language/site.php:724
 #: modules/mod_vikbooking_channelrates/language/handler.php:175
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:204
 msgid "Friday"
@@ -2040,8 +2045,8 @@ msgstr ""
 
 #: libraries/language/admin.php:1254
 #: libraries/language/admin.php:2307
-#: libraries/language/site.php:582
-#: libraries/language/site.php:726
+#: libraries/language/site.php:583
+#: libraries/language/site.php:727
 #: modules/mod_vikbooking_channelrates/language/handler.php:178
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:207
 msgid "Saturday"
@@ -2078,8 +2083,8 @@ msgid "Separator"
 msgstr ""
 
 #: libraries/language/admin.php:1287
-#: libraries/language/site.php:543
-#: libraries/language/site.php:900
+#: libraries/language/site.php:544
+#: libraries/language/site.php:901
 msgid "Billing Information"
 msgstr ""
 
@@ -2092,7 +2097,7 @@ msgid "Calendar Type"
 msgstr ""
 
 #: libraries/language/admin.php:1296
-#: libraries/language/site.php:546
+#: libraries/language/site.php:547
 msgid "Booking Number"
 msgstr ""
 
@@ -2120,7 +2125,7 @@ msgid "Discount -"
 msgstr ""
 
 #: libraries/language/admin.php:1326
-#: libraries/language/site.php:594
+#: libraries/language/site.php:595
 msgid "Opening Time"
 msgstr ""
 
@@ -2225,7 +2230,7 @@ msgid "Pricing"
 msgstr ""
 
 #: libraries/language/admin.php:1422
-#: libraries/language/site.php:1902
+#: libraries/language/site.php:1903
 msgid "Dashboard"
 msgstr ""
 
@@ -2275,7 +2280,7 @@ msgid "Standby Reservations"
 msgstr ""
 
 #: libraries/language/admin.php:1494
-#: libraries/language/site.php:615
+#: libraries/language/site.php:616
 msgid "Coupon"
 msgstr ""
 
@@ -2336,19 +2341,19 @@ msgid "Short Description"
 msgstr ""
 
 #: libraries/language/admin.php:1557
-#: libraries/language/site.php:681
+#: libraries/language/site.php:682
 msgid "Room #"
 msgstr ""
 
 #: libraries/language/admin.php:1566
-#: libraries/language/site.php:657
-#: libraries/language/site.php:690
+#: libraries/language/site.php:658
+#: libraries/language/site.php:691
 msgid "Adult"
 msgstr ""
 
 #: libraries/language/admin.php:1569
-#: libraries/language/site.php:663
-#: libraries/language/site.php:693
+#: libraries/language/site.php:664
+#: libraries/language/site.php:694
 msgid "Child"
 msgstr ""
 
@@ -2367,7 +2372,7 @@ msgstr ""
 #: libraries/language/admin.php:1581
 #: libraries/language/admin.php:1809
 #: libraries/language/admin.php:4287
-#: libraries/language/site.php:1206
+#: libraries/language/site.php:1207
 msgid "Total Paid"
 msgstr ""
 
@@ -2420,7 +2425,7 @@ msgstr ""
 
 #: libraries/language/admin.php:1632
 #: libraries/language/admin.php:2283
-#: libraries/language/site.php:1143
+#: libraries/language/site.php:1144
 msgid "Arrival Week Day"
 msgstr ""
 
@@ -2475,7 +2480,7 @@ msgid "Error, a restriction for the selected month already exists."
 msgstr ""
 
 #: libraries/language/admin.php:1689
-#: libraries/language/site.php:882
+#: libraries/language/site.php:883
 msgid "Confirmation Number"
 msgstr ""
 
@@ -2484,7 +2489,7 @@ msgid "Filter Bookings"
 msgstr ""
 
 #: libraries/language/admin.php:1695
-#: libraries/language/site.php:1293
+#: libraries/language/site.php:1294
 msgid "per Night"
 msgstr ""
 
@@ -2518,7 +2523,7 @@ msgstr ""
 
 #: libraries/language/admin.php:1734
 #: libraries/language/admin.php:1914
-#: libraries/language/site.php:1053
+#: libraries/language/site.php:1054
 msgid "Total People"
 msgstr ""
 
@@ -2535,7 +2540,7 @@ msgid "Close room in these dates"
 msgstr ""
 
 #: libraries/language/admin.php:1746
-#: libraries/language/site.php:948
+#: libraries/language/site.php:949
 msgid "Room Closed"
 msgstr ""
 
@@ -2545,8 +2550,8 @@ msgstr ""
 
 #: libraries/language/admin.php:1752
 #: libraries/language/admin.php:1770
-#: libraries/language/site.php:993
-#: libraries/language/site.php:2120
+#: libraries/language/site.php:994
+#: libraries/language/site.php:2121
 msgid "Cancelled"
 msgstr ""
 
@@ -2869,7 +2874,7 @@ msgstr ""
 
 #: libraries/language/admin.php:2049
 #: libraries/language/admin.php:6812
-#: libraries/language/site.php:1953
+#: libraries/language/site.php:1954
 #: modules/mod_vikbooking_otareviews/language/handler.php:103
 msgid "Website"
 msgstr ""
@@ -2901,7 +2906,7 @@ msgid "Fees"
 msgstr ""
 
 #: libraries/language/admin.php:2070
-#: libraries/language/site.php:1062
+#: libraries/language/site.php:1063
 msgid "Breakfast Included"
 msgstr ""
 
@@ -2991,7 +2996,7 @@ msgstr ""
 
 #: libraries/language/admin.php:2136
 #: libraries/language/admin.php:2619
-#: libraries/language/site.php:894
+#: libraries/language/site.php:895
 msgid "First Name"
 msgstr ""
 
@@ -3142,39 +3147,39 @@ msgid "Rates Overview"
 msgstr ""
 
 #: libraries/language/admin.php:2268
-#: libraries/language/site.php:1134
+#: libraries/language/site.php:1135
 msgid "%d Night"
 msgstr ""
 
 #: libraries/language/admin.php:2271
-#: libraries/language/site.php:1131
+#: libraries/language/site.php:1132
 msgid "%d Nights"
 msgstr ""
 
 #: libraries/language/admin.php:2274
-#: libraries/language/site.php:1128
+#: libraries/language/site.php:1129
 msgid "Off-Season Prices"
 msgstr ""
 
 #: libraries/language/admin.php:2277
-#: libraries/language/site.php:1137
+#: libraries/language/site.php:1138
 msgid "Min. Nights"
 msgstr ""
 
 #: libraries/language/admin.php:2280
-#: libraries/language/site.php:1140
+#: libraries/language/site.php:1141
 msgid "Max. Nights"
 msgstr ""
 
 #: libraries/language/admin.php:2286
-#: libraries/language/site.php:1146
+#: libraries/language/site.php:1147
 msgid "Arrival Week Days"
 msgstr ""
 
 #: libraries/language/admin.php:2313
 #: libraries/language/admin.php:2574
-#: libraries/language/site.php:600
-#: libraries/language/site.php:1233
+#: libraries/language/site.php:601
+#: libraries/language/site.php:1234
 msgid "Apply"
 msgstr ""
 
@@ -3200,14 +3205,14 @@ msgstr ""
 
 #: libraries/language/admin.php:2340
 #: libraries/language/admin.php:3297
-#: libraries/language/site.php:1359
+#: libraries/language/site.php:1360
 msgid "Net"
 msgstr ""
 
 #: libraries/language/admin.php:2343
 #: libraries/language/admin.php:3300
 #: libraries/language/admin.php:4467
-#: libraries/language/site.php:1362
+#: libraries/language/site.php:1363
 #: modules/mod_vikbooking_channelrates/language/handler.php:55
 msgid "Taxes"
 msgstr ""
@@ -3225,77 +3230,77 @@ msgid "Any Room"
 msgstr ""
 
 #: libraries/language/admin.php:2364
-#: libraries/language/site.php:1158
+#: libraries/language/site.php:1159
 msgid "Jan"
 msgstr ""
 
 #: libraries/language/admin.php:2367
-#: libraries/language/site.php:1161
+#: libraries/language/site.php:1162
 msgid "Feb"
 msgstr ""
 
 #: libraries/language/admin.php:2370
-#: libraries/language/site.php:1164
+#: libraries/language/site.php:1165
 msgid "Mar"
 msgstr ""
 
 #: libraries/language/admin.php:2373
-#: libraries/language/site.php:1167
+#: libraries/language/site.php:1168
 msgid "Apr"
 msgstr ""
 
 #: libraries/language/admin.php:2379
-#: libraries/language/site.php:1173
+#: libraries/language/site.php:1174
 msgid "Jun"
 msgstr ""
 
 #: libraries/language/admin.php:2382
-#: libraries/language/site.php:1176
+#: libraries/language/site.php:1177
 msgid "Jul"
 msgstr ""
 
 #: libraries/language/admin.php:2385
-#: libraries/language/site.php:1179
+#: libraries/language/site.php:1180
 msgid "Aug"
 msgstr ""
 
 #: libraries/language/admin.php:2388
-#: libraries/language/site.php:1182
+#: libraries/language/site.php:1183
 msgid "Sep"
 msgstr ""
 
 #: libraries/language/admin.php:2391
-#: libraries/language/site.php:1185
+#: libraries/language/site.php:1186
 msgid "Oct"
 msgstr ""
 
 #: libraries/language/admin.php:2394
-#: libraries/language/site.php:1188
+#: libraries/language/site.php:1189
 msgid "Nov"
 msgstr ""
 
 #: libraries/language/admin.php:2397
-#: libraries/language/site.php:1191
+#: libraries/language/site.php:1192
 msgid "Dec"
 msgstr ""
 
 #: libraries/language/admin.php:2400
-#: libraries/language/site.php:1194
+#: libraries/language/site.php:1195
 msgid "st"
 msgstr ""
 
 #: libraries/language/admin.php:2403
-#: libraries/language/site.php:1197
+#: libraries/language/site.php:1198
 msgid "nd"
 msgstr ""
 
 #: libraries/language/admin.php:2406
-#: libraries/language/site.php:1200
+#: libraries/language/site.php:1201
 msgid "rd"
 msgstr ""
 
 #: libraries/language/admin.php:2409
-#: libraries/language/site.php:1203
+#: libraries/language/site.php:1204
 msgid "th"
 msgstr ""
 
@@ -3349,7 +3354,7 @@ msgid "Based on Length of Stay"
 msgstr ""
 
 #: libraries/language/admin.php:2448
-#: libraries/language/site.php:864
+#: libraries/language/site.php:865
 msgid "per night"
 msgstr ""
 
@@ -3394,7 +3399,7 @@ msgid "Appearance and Texts"
 msgstr ""
 
 #: libraries/language/admin.php:2484
-#: libraries/language/site.php:903
+#: libraries/language/site.php:904
 msgid "Company"
 msgstr ""
 
@@ -3439,7 +3444,7 @@ msgid "Translations Saved!"
 msgstr ""
 
 #: libraries/language/admin.php:2517
-#: libraries/language/site.php:1209
+#: libraries/language/site.php:1210
 msgid "Special Requests"
 msgstr ""
 
@@ -3457,7 +3462,7 @@ msgstr ""
 
 #: libraries/language/admin.php:2535
 #: libraries/language/admin.php:3060
-#: libraries/language/site.php:1059
+#: libraries/language/site.php:1060
 msgid "Remaining Balance"
 msgstr ""
 
@@ -3481,7 +3486,7 @@ msgstr ""
 
 #: libraries/language/admin.php:2550
 #: libraries/language/admin.php:4464
-#: libraries/language/site.php:1476
+#: libraries/language/site.php:1477
 msgid "Customer Name"
 msgstr ""
 
@@ -3494,8 +3499,8 @@ msgid "Next Refresh in"
 msgstr ""
 
 #: libraries/language/admin.php:2559
-#: libraries/language/site.php:561
-#: libraries/language/site.php:2102
+#: libraries/language/site.php:562
+#: libraries/language/site.php:2103
 #: modules/mod_vikbooking_channelrates/language/handler.php:157
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:186
 msgid "Today"
@@ -3518,7 +3523,7 @@ msgid "Phone Number"
 msgstr ""
 
 #: libraries/language/admin.php:2580
-#: libraries/language/site.php:1218
+#: libraries/language/site.php:1219
 msgid "I agree to the terms and conditions"
 msgstr ""
 
@@ -3564,7 +3569,7 @@ msgid "No Customers found"
 msgstr ""
 
 #: libraries/language/admin.php:2625
-#: libraries/language/site.php:924
+#: libraries/language/site.php:925
 msgid "eMail"
 msgstr ""
 
@@ -3598,12 +3603,12 @@ msgstr ""
 
 #: libraries/language/admin.php:2664
 #: libraries/language/admin.php:4419
-#: libraries/language/site.php:1932
+#: libraries/language/site.php:1933
 msgid "Total Bookings"
 msgstr ""
 
 #: libraries/language/admin.php:2667
-#: libraries/language/site.php:1242
+#: libraries/language/site.php:1243
 msgid "PIN Code"
 msgstr ""
 
@@ -3705,7 +3710,7 @@ msgid "Select or Drag & Drop Files"
 msgstr ""
 
 #: libraries/language/admin.php:2763
-#: libraries/language/site.php:552
+#: libraries/language/site.php:553
 #: modules/mod_vikbooking_channelrates/language/handler.php:148
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:177
 msgid "Done"
@@ -3744,7 +3749,7 @@ msgid "Toggle Distinctive Features"
 msgstr ""
 
 #: libraries/language/admin.php:2790
-#: libraries/language/site.php:1278
+#: libraries/language/site.php:1279
 msgid "Room Number"
 msgstr ""
 
@@ -3757,7 +3762,7 @@ msgid "Feature"
 msgstr ""
 
 #: libraries/language/admin.php:2802
-#: libraries/language/site.php:1812
+#: libraries/language/site.php:1813
 msgid "Room Unit #"
 msgstr ""
 
@@ -3927,7 +3932,7 @@ msgid "Package Updated Successfully!"
 msgstr ""
 
 #: libraries/language/admin.php:2961
-#: libraries/language/site.php:1329
+#: libraries/language/site.php:1330
 msgid "Room Rate"
 msgstr ""
 
@@ -3957,12 +3962,12 @@ msgstr ""
 
 #: libraries/language/admin.php:2988
 #: libraries/language/admin.php:3549
-#: libraries/language/site.php:1722
+#: libraries/language/site.php:1723
 msgid "Add"
 msgstr ""
 
 #: libraries/language/admin.php:2991
-#: libraries/language/site.php:1914
+#: libraries/language/site.php:1915
 msgid "Commissions"
 msgstr ""
 
@@ -3992,7 +3997,7 @@ msgstr ""
 
 #: libraries/language/admin.php:3015
 #: libraries/language/admin.php:4452
-#: libraries/language/site.php:1947
+#: libraries/language/site.php:1948
 msgid "Top Countries"
 msgstr ""
 
@@ -4072,8 +4077,8 @@ msgstr ""
 #: libraries/language/admin.php:3075
 #: libraries/language/admin.php:3204
 #: libraries/language/admin.php:3705
-#: libraries/language/site.php:972
-#: libraries/language/site.php:1257
+#: libraries/language/site.php:973
+#: libraries/language/site.php:1258
 msgid "Message"
 msgstr ""
 
@@ -4090,17 +4095,17 @@ msgid "SMS Successfully Sent!"
 msgstr ""
 
 #: libraries/language/admin.php:3087
-#: libraries/language/site.php:1338
+#: libraries/language/site.php:1339
 msgid "Error Sending the SMS"
 msgstr ""
 
 #: libraries/language/admin.php:3090
-#: libraries/language/site.php:1341
+#: libraries/language/site.php:1342
 msgid "An error occurred while sending the SMS to the Administrator. Below is the provider response."
 msgstr ""
 
 #: libraries/language/admin.php:3093
-#: libraries/language/site.php:1344
+#: libraries/language/site.php:1345
 msgid "An error occurred while sending the SMS to the Customer. Below is the provider response."
 msgstr ""
 
@@ -4113,7 +4118,7 @@ msgid "Cron Jobs Secret Key"
 msgstr ""
 
 #: libraries/language/admin.php:3102
-#: libraries/language/site.php:1275
+#: libraries/language/site.php:1276
 msgid "Your Booking"
 msgstr ""
 
@@ -4331,17 +4336,17 @@ msgid "Company Information Header"
 msgstr ""
 
 #: libraries/language/admin.php:3288
-#: libraries/language/site.php:1350
+#: libraries/language/site.php:1351
 msgid "Invoice Number"
 msgstr ""
 
 #: libraries/language/admin.php:3321
-#: libraries/language/site.php:1383
+#: libraries/language/site.php:1384
 msgid "Number of nights"
 msgstr ""
 
 #: libraries/language/admin.php:3333
-#: libraries/language/site.php:1395
+#: libraries/language/site.php:1396
 msgid "Grand Total"
 msgstr ""
 
@@ -4397,7 +4402,7 @@ msgid "Re-Send via eMail"
 msgstr ""
 
 #: libraries/language/admin.php:3378
-#: libraries/language/site.php:1674
+#: libraries/language/site.php:1675
 msgid "View"
 msgstr ""
 
@@ -4411,7 +4416,7 @@ msgid "Deselect All"
 msgstr ""
 
 #: libraries/language/admin.php:3390
-#: libraries/language/site.php:1404
+#: libraries/language/site.php:1405
 msgid "Apply Filter"
 msgstr ""
 
@@ -4440,7 +4445,7 @@ msgid "Remove Selected Invoices"
 msgstr ""
 
 #: libraries/language/admin.php:3414
-#: libraries/language/site.php:1407
+#: libraries/language/site.php:1408
 msgid "Print"
 msgstr ""
 
@@ -4495,13 +4500,13 @@ msgstr ""
 
 #: libraries/language/admin.php:3462
 #: libraries/language/admin.php:5922
-#: libraries/language/site.php:1686
+#: libraries/language/site.php:1687
 msgid "ID Type"
 msgstr ""
 
 #: libraries/language/admin.php:3465
 #: libraries/language/admin.php:5925
-#: libraries/language/site.php:1689
+#: libraries/language/site.php:1690
 msgid "ID Number"
 msgstr ""
 
@@ -4582,7 +4587,7 @@ msgid "View Details"
 msgstr ""
 
 #: libraries/language/admin.php:3546
-#: libraries/language/site.php:1410
+#: libraries/language/site.php:1411
 msgid "Extra Services"
 msgstr ""
 
@@ -4700,12 +4705,12 @@ msgid "CTD Week Days"
 msgstr ""
 
 #: libraries/language/admin.php:3636
-#: libraries/language/site.php:1443
+#: libraries/language/site.php:1444
 msgid "Week Days Closed to Arrival"
 msgstr ""
 
 #: libraries/language/admin.php:3639
-#: libraries/language/site.php:1446
+#: libraries/language/site.php:1447
 msgid "Week Days Closed to Departure"
 msgstr ""
 
@@ -4746,9 +4751,9 @@ msgid "Vik Channel Manager is not installed."
 msgstr ""
 
 #: libraries/language/admin.php:3669
-#: libraries/language/site.php:51
-#: libraries/language/site.php:312
-#: libraries/language/site.php:315
+#: libraries/language/site.php:52
+#: libraries/language/site.php:313
+#: libraries/language/site.php:316
 msgid "Waiting for the Payment"
 msgstr ""
 
@@ -4977,7 +4982,7 @@ msgid "Average Values may be applied when the booked dates are not included in t
 msgstr ""
 
 #: libraries/language/admin.php:3846
-#: libraries/language/site.php:1935
+#: libraries/language/site.php:1936
 msgid "Nights Booked"
 msgstr ""
 
@@ -4990,13 +4995,13 @@ msgid "Total Occupancy"
 msgstr ""
 
 #: libraries/language/admin.php:3855
-#: libraries/language/site.php:1944
+#: libraries/language/site.php:1945
 msgid "Total Units"
 msgstr ""
 
 #: libraries/language/admin.php:3861
 #: libraries/language/admin.php:3867
-#: libraries/language/site.php:1632
+#: libraries/language/site.php:1633
 msgid "VAT ID"
 msgstr ""
 
@@ -5050,28 +5055,28 @@ msgid "Guest Details"
 msgstr ""
 
 #: libraries/language/admin.php:3912
-#: libraries/language/site.php:1683
+#: libraries/language/site.php:1684
 msgid "Guest #%d"
 msgstr ""
 
 #: libraries/language/admin.php:3915
-#: libraries/language/site.php:1996
+#: libraries/language/site.php:1997
 msgid "Extra notes"
 msgstr ""
 
 #: libraries/language/admin.php:3921
-#: libraries/language/site.php:2105
+#: libraries/language/site.php:2106
 msgid "Checked-in"
 msgstr ""
 
 #: libraries/language/admin.php:3924
-#: libraries/language/site.php:2108
+#: libraries/language/site.php:2109
 msgid "Checked-out"
 msgstr ""
 
 #: libraries/language/admin.php:3927
 #: libraries/language/admin.php:3939
-#: libraries/language/site.php:2111
+#: libraries/language/site.php:2112
 msgid "No Show"
 msgstr ""
 
@@ -5124,8 +5129,8 @@ msgid "No departures for today."
 msgstr ""
 
 #: libraries/language/admin.php:3975
-#: libraries/language/site.php:957
-#: libraries/language/site.php:996
+#: libraries/language/site.php:958
+#: libraries/language/site.php:997
 #: libraries/language/system.php:249
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:147
 msgid "Search"
@@ -5148,18 +5153,18 @@ msgid "Skip Signature"
 msgstr ""
 
 #: libraries/language/admin.php:3990
-#: libraries/language/site.php:1482
+#: libraries/language/site.php:1483
 msgid "Sign above"
 msgstr ""
 
 #: libraries/language/admin.php:3996
-#: libraries/language/site.php:1488
+#: libraries/language/site.php:1489
 #: libraries/language/system.php:335
 msgid "Clear"
 msgstr ""
 
 #: libraries/language/admin.php:3999
-#: libraries/language/site.php:1491
+#: libraries/language/site.php:1492
 msgid "No Signature Provided!"
 msgstr ""
 
@@ -5184,7 +5189,7 @@ msgid "Please enter a value"
 msgstr ""
 
 #: libraries/language/admin.php:4017
-#: libraries/language/site.php:1473
+#: libraries/language/site.php:1474
 msgid "Check-in Signature"
 msgstr ""
 
@@ -5212,42 +5217,42 @@ msgid "Reloading"
 msgstr ""
 
 #: libraries/language/admin.php:4029
-#: libraries/language/site.php:1503
+#: libraries/language/site.php:1504
 msgid "Error saving the signature"
 msgstr ""
 
 #: libraries/language/admin.php:4032
-#: libraries/language/site.php:1506
+#: libraries/language/site.php:1507
 msgid "Customer Signature Available"
 msgstr ""
 
 #: libraries/language/admin.php:4035
-#: libraries/language/site.php:1509
+#: libraries/language/site.php:1510
 msgid "New Signature"
 msgstr ""
 
 #: libraries/language/admin.php:4038
-#: libraries/language/site.php:1467
+#: libraries/language/site.php:1468
 msgid "Terms and Conditions"
 msgstr ""
 
 #: libraries/language/admin.php:4041
-#: libraries/language/site.php:1494
+#: libraries/language/site.php:1495
 msgid "I accept the Terms and Conditions"
 msgstr ""
 
 #: libraries/language/admin.php:4044
-#: libraries/language/site.php:1497
+#: libraries/language/site.php:1498
 msgid "I have read and agree to the terms and conditions"
 msgstr ""
 
 #: libraries/language/admin.php:4047
-#: libraries/language/site.php:1500
+#: libraries/language/site.php:1501
 msgid "You must accept the Terms and Conditions."
 msgstr ""
 
 #: libraries/language/admin.php:4050
-#: libraries/language/site.php:1470
+#: libraries/language/site.php:1471
 msgid ""
 "1. Check-in time is from %s and check-out time is until %s.\n"
 "2. The guest acknowledge joint and several liability for all services rendered until full settlement of bills.\n"
@@ -5437,7 +5442,7 @@ msgid "Rate Plan"
 msgstr ""
 
 #: libraries/language/admin.php:4209
-#: libraries/language/site.php:1626
+#: libraries/language/site.php:1627
 msgid ""
 "Booking modified on %s.\n"
 "Previous dates booked: %s.\n"
@@ -5495,19 +5500,19 @@ msgstr ""
 
 #: libraries/language/admin.php:4254
 #: libraries/language/admin.php:5913
-#: libraries/language/site.php:1698
+#: libraries/language/site.php:1699
 msgid "Gender"
 msgstr ""
 
 #: libraries/language/admin.php:4257
 #: libraries/language/admin.php:5916
-#: libraries/language/site.php:1701
+#: libraries/language/site.php:1702
 msgid "Male"
 msgstr ""
 
 #: libraries/language/admin.php:4260
 #: libraries/language/admin.php:5919
-#: libraries/language/site.php:1704
+#: libraries/language/site.php:1705
 msgid "Female"
 msgstr ""
 
@@ -5662,7 +5667,7 @@ msgstr ""
 
 #: libraries/language/admin.php:4392
 #: libraries/language/admin.php:4446
-#: libraries/language/site.php:1917
+#: libraries/language/site.php:1918
 msgid "Revenue"
 msgstr ""
 
@@ -5695,17 +5700,17 @@ msgid "Rooms Sold"
 msgstr ""
 
 #: libraries/language/admin.php:4422
-#: libraries/language/site.php:1938
+#: libraries/language/site.php:1939
 msgid "% Occupancy"
 msgstr ""
 
 #: libraries/language/admin.php:4425
-#: libraries/language/site.php:1920
+#: libraries/language/site.php:1921
 msgid "IBE Revenue"
 msgstr ""
 
 #: libraries/language/admin.php:4428
-#: libraries/language/site.php:1923
+#: libraries/language/site.php:1924
 msgid "OTA Revenue"
 msgstr ""
 
@@ -5951,7 +5956,7 @@ msgid "This percentage value is calculated proportionally by taking into account
 msgstr ""
 
 #: libraries/language/admin.php:4632
-#: libraries/language/site.php:1941
+#: libraries/language/site.php:1942
 msgid "Average Nights of Stay"
 msgstr ""
 
@@ -5993,8 +5998,8 @@ msgstr ""
 
 #: libraries/language/admin.php:4662
 #: libraries/language/admin.php:4695
-#: libraries/language/site.php:1644
-#: libraries/language/site.php:1905
+#: libraries/language/site.php:1645
+#: libraries/language/site.php:1906
 msgid "Tableaux"
 msgstr ""
 
@@ -6016,7 +6021,7 @@ msgid "No Operators found"
 msgstr ""
 
 #: libraries/language/admin.php:4677
-#: libraries/language/site.php:1638
+#: libraries/language/site.php:1639
 msgid "Authentication Code"
 msgstr ""
 
@@ -6238,12 +6243,12 @@ msgid "Daily Room Report"
 msgstr ""
 
 #: libraries/language/admin.php:4848
-#: libraries/language/site.php:231
+#: libraries/language/site.php:232
 msgid "Arrival"
 msgstr ""
 
 #: libraries/language/admin.php:4851
-#: libraries/language/site.php:234
+#: libraries/language/site.php:235
 msgid "Departure"
 msgstr ""
 
@@ -6304,12 +6309,12 @@ msgid "Week"
 msgstr ""
 
 #: libraries/language/admin.php:4896
-#: libraries/language/site.php:702
+#: libraries/language/site.php:703
 msgid "Day"
 msgstr ""
 
 #: libraries/language/admin.php:4899
-#: libraries/language/site.php:1794
+#: libraries/language/site.php:1795
 msgid "Add new note for today"
 msgstr ""
 
@@ -6358,7 +6363,7 @@ msgid "Repeat until"
 msgstr ""
 
 #: libraries/language/admin.php:4935
-#: libraries/language/site.php:675
+#: libraries/language/site.php:676
 #: libraries/language/system.php:270
 #: modules/mod_vikbooking_rooms/language/handler.php:60
 msgid "Details"
@@ -6369,7 +6374,7 @@ msgid "Settings"
 msgstr ""
 
 #: libraries/language/admin.php:4941
-#: libraries/language/site.php:1740
+#: libraries/language/site.php:1741
 msgid "Your reservation at %s"
 msgstr ""
 
@@ -6434,7 +6439,7 @@ msgid "Open Wizard"
 msgstr ""
 
 #: libraries/language/admin.php:4989
-#: libraries/language/site.php:1950
+#: libraries/language/site.php:1951
 msgid "Channels"
 msgstr ""
 
@@ -6480,7 +6485,7 @@ msgstr ""
 
 #: libraries/language/admin.php:5022
 #: libraries/language/admin.php:7589
-#: libraries/language/site.php:2072
+#: libraries/language/site.php:2073
 msgid "Close"
 msgstr ""
 
@@ -6740,7 +6745,7 @@ msgid "See guest review"
 msgstr ""
 
 #: libraries/language/admin.php:5211
-#: libraries/language/site.php:1752
+#: libraries/language/site.php:1753
 msgid "Leave a review"
 msgstr ""
 
@@ -6753,7 +6758,7 @@ msgid "Occupancy Based Pricing Rules"
 msgstr ""
 
 #: libraries/language/admin.php:5220
-#: libraries/language/site.php:1797
+#: libraries/language/site.php:1798
 msgid "Consecutive days"
 msgstr ""
 
@@ -6854,7 +6859,7 @@ msgid "If enabled, any percent coupon code will not discount taxes or mandatory 
 msgstr ""
 
 #: libraries/language/admin.php:5295
-#: libraries/language/site.php:1800
+#: libraries/language/site.php:1801
 msgid "Until"
 msgstr ""
 
@@ -6868,7 +6873,7 @@ msgstr ""
 
 #: libraries/language/admin.php:5304
 #: libraries/language/admin.php:5910
-#: libraries/language/site.php:1695
+#: libraries/language/site.php:1696
 msgid "Nationality"
 msgstr ""
 
@@ -7073,7 +7078,8 @@ msgid "A list of the upcoming arrivals"
 msgstr ""
 
 #: libraries/language/admin.php:5463
-msgid "Orphan Dates"
+#: libraries/language/admin.php:7656
+msgid "Orphan dates"
 msgstr ""
 
 #: libraries/language/admin.php:5466
@@ -7181,7 +7187,7 @@ msgid "If enabled, the special tags will debug the execution of the rules. Use i
 msgstr ""
 
 #: libraries/language/admin.php:5544
-#: libraries/language/site.php:1809
+#: libraries/language/site.php:1810
 msgid "[Rule %s was not compliant. Special tag %s was not applied.]"
 msgstr ""
 
@@ -7358,7 +7364,7 @@ msgid "Enable Geocoding"
 msgstr ""
 
 #: libraries/language/admin.php:5679
-#: libraries/language/site.php:1815
+#: libraries/language/site.php:1816
 msgid "Base Address"
 msgstr ""
 
@@ -7615,7 +7621,7 @@ msgid "Refund"
 msgstr ""
 
 #: libraries/language/admin.php:5877
-#: libraries/language/site.php:1824
+#: libraries/language/site.php:1825
 msgid "Amount Refunded"
 msgstr ""
 
@@ -7652,12 +7658,12 @@ msgid "Refunded amount changed from %s to %s"
 msgstr ""
 
 #: libraries/language/admin.php:5904
-#: libraries/language/site.php:1827
+#: libraries/language/site.php:1828
 msgid "Upload Documents"
 msgstr ""
 
 #: libraries/language/admin.php:5907
-#: libraries/language/site.php:1692
+#: libraries/language/site.php:1693
 msgid "Place of birth"
 msgstr ""
 
@@ -7846,7 +7852,7 @@ msgid "The most recent events for your bookings"
 msgstr ""
 
 #: libraries/language/admin.php:6072
-#: libraries/language/site.php:1305
+#: libraries/language/site.php:1306
 msgid "Check Availability"
 msgstr ""
 
@@ -7855,17 +7861,17 @@ msgid "Calculate the rates for the available rooms"
 msgstr ""
 
 #: libraries/language/admin.php:6078
-#: libraries/language/site.php:228
-#: libraries/language/site.php:492
-#: libraries/language/site.php:1215
+#: libraries/language/site.php:229
+#: libraries/language/site.php:493
+#: libraries/language/site.php:1216
 #: modules/mod_vikbooking_channelrates/language/handler.php:118
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:50
 msgid "Book Now"
 msgstr ""
 
 #: libraries/language/admin.php:6081
-#: libraries/language/site.php:669
-#: libraries/language/site.php:2006
+#: libraries/language/site.php:670
+#: libraries/language/site.php:2007
 #: libraries/language/system.php:396
 msgid "Select"
 msgstr ""
@@ -8022,7 +8028,7 @@ msgid "Original information request"
 msgstr ""
 
 #: libraries/language/admin.php:6198
-#: libraries/language/site.php:1851
+#: libraries/language/site.php:1852
 msgid "Pending inquiry"
 msgstr ""
 
@@ -8256,7 +8262,7 @@ msgid "Unpaid"
 msgstr ""
 
 #: libraries/language/admin.php:6369
-#: libraries/language/site.php:1854
+#: libraries/language/site.php:1855
 msgid "Tax Summary"
 msgstr ""
 
@@ -8313,8 +8319,8 @@ msgid "It is possible to modify the stay dates of some rooms when multiple rooms
 msgstr ""
 
 #: libraries/language/admin.php:6414
-#: libraries/language/site.php:912
-#: libraries/language/site.php:1869
+#: libraries/language/site.php:913
+#: libraries/language/site.php:1870
 msgid "State/Province"
 msgstr ""
 
@@ -8371,7 +8377,7 @@ msgid "Set to Pending (Standby)"
 msgstr ""
 
 #: libraries/language/admin.php:6456
-#: libraries/language/site.php:2099
+#: libraries/language/site.php:2100
 msgid "Guest Messages"
 msgstr ""
 
@@ -8380,17 +8386,17 @@ msgid "Navigate through all your guest messages."
 msgstr ""
 
 #: libraries/language/admin.php:6462
-#: libraries/language/site.php:2129
+#: libraries/language/site.php:2130
 msgid "No reply needed"
 msgstr ""
 
 #: libraries/language/admin.php:6465
-#: libraries/language/site.php:2132
+#: libraries/language/site.php:2133
 msgid "Do you want to proceed?"
 msgstr ""
 
 #: libraries/language/admin.php:6468
-#: libraries/language/site.php:1908
+#: libraries/language/site.php:1909
 msgid "Finance"
 msgstr ""
 
@@ -8399,17 +8405,17 @@ msgid "Metrics about occupancy, revenue and commission savings."
 msgstr ""
 
 #: libraries/language/admin.php:6474
-#: libraries/language/site.php:1911
+#: libraries/language/site.php:1912
 msgid "Gross Booking Value"
 msgstr ""
 
 #: libraries/language/admin.php:6477
-#: libraries/language/site.php:1926
+#: libraries/language/site.php:1927
 msgid "Average Commissions"
 msgstr ""
 
 #: libraries/language/admin.php:6480
-#: libraries/language/site.php:1929
+#: libraries/language/site.php:1930
 msgid "Commission Savings"
 msgstr ""
 
@@ -8470,7 +8476,7 @@ msgid "Pre-checkin information received"
 msgstr ""
 
 #: libraries/language/admin.php:6525
-#: libraries/language/site.php:1872
+#: libraries/language/site.php:1873
 msgid "Cancellation fee"
 msgstr ""
 
@@ -8508,12 +8514,12 @@ msgid "Add upgrade details to message"
 msgstr ""
 
 #: libraries/language/admin.php:6555
-#: libraries/language/site.php:1878
+#: libraries/language/site.php:1879
 msgid "Confirm upgrade"
 msgstr ""
 
 #: libraries/language/admin.php:6558
-#: libraries/language/site.php:1881
+#: libraries/language/site.php:1882
 msgid "You save %s"
 msgstr ""
 
@@ -8610,17 +8616,17 @@ msgid "Dinner"
 msgstr ""
 
 #: libraries/language/admin.php:6630
-#: libraries/language/site.php:1896
+#: libraries/language/site.php:1897
 msgid "Pet"
 msgstr ""
 
 #: libraries/language/admin.php:6633
-#: libraries/language/site.php:1899
+#: libraries/language/site.php:1900
 msgid "Pets"
 msgstr ""
 
 #: libraries/language/admin.php:6636
-#: libraries/language/site.php:1785
+#: libraries/language/site.php:1786
 msgid "Meal Plan"
 msgstr ""
 
@@ -8716,7 +8722,7 @@ msgid "Expiration Date"
 msgstr ""
 
 #: libraries/language/admin.php:6709
-#: libraries/language/site.php:891
+#: libraries/language/site.php:892
 msgid "CVV"
 msgstr ""
 
@@ -8875,7 +8881,7 @@ msgid "Message from %s"
 msgstr ""
 
 #: libraries/language/admin.php:6843
-#: libraries/language/site.php:2123
+#: libraries/language/site.php:2124
 msgid "Reply"
 msgstr ""
 
@@ -9114,7 +9120,7 @@ msgid "Rates"
 msgstr ""
 
 #: libraries/language/admin.php:7019
-#: libraries/language/site.php:954
+#: libraries/language/site.php:955
 msgid "Search Bookings"
 msgstr ""
 
@@ -9594,77 +9600,77 @@ msgid "Child relation"
 msgstr ""
 
 #: libraries/language/admin.php:7401
-#: libraries/language/site.php:2057
+#: libraries/language/site.php:2058
 msgid "Passport"
 msgstr ""
 
 #: libraries/language/admin.php:7404
-#: libraries/language/site.php:2015
+#: libraries/language/site.php:2016
 msgid "Grandfather/Grandmother"
 msgstr ""
 
 #: libraries/language/admin.php:7407
-#: libraries/language/site.php:2018
+#: libraries/language/site.php:2019
 msgid "Great-grandfather/grandmother"
 msgstr ""
 
 #: libraries/language/admin.php:7410
-#: libraries/language/site.php:2021
+#: libraries/language/site.php:2022
 msgid "Great-grandson/granddaughter"
 msgstr ""
 
 #: libraries/language/admin.php:7413
-#: libraries/language/site.php:2024
+#: libraries/language/site.php:2025
 msgid "Brother/Sister-in-law"
 msgstr ""
 
 #: libraries/language/admin.php:7416
-#: libraries/language/site.php:2027
+#: libraries/language/site.php:2028
 msgid "Spouse"
 msgstr ""
 
 #: libraries/language/admin.php:7419
-#: libraries/language/site.php:2030
+#: libraries/language/site.php:2031
 msgid "Son/Daughter"
 msgstr ""
 
 #: libraries/language/admin.php:7422
-#: libraries/language/site.php:2033
+#: libraries/language/site.php:2034
 msgid "Brother/Sister"
 msgstr ""
 
 #: libraries/language/admin.php:7425
-#: libraries/language/site.php:2036
+#: libraries/language/site.php:2037
 msgid "Grandson/Granddaughter"
 msgstr ""
 
 #: libraries/language/admin.php:7428
-#: libraries/language/site.php:2039
+#: libraries/language/site.php:2040
 msgid "Father/Mother"
 msgstr ""
 
 #: libraries/language/admin.php:7431
-#: libraries/language/site.php:2042
+#: libraries/language/site.php:2043
 msgid "Nephew/Nephew"
 msgstr ""
 
 #: libraries/language/admin.php:7434
-#: libraries/language/site.php:2045
+#: libraries/language/site.php:2046
 msgid "Father/Mother-in-law"
 msgstr ""
 
 #: libraries/language/admin.php:7437
-#: libraries/language/site.php:2048
+#: libraries/language/site.php:2049
 msgid "Uncle/Aunt"
 msgstr ""
 
 #: libraries/language/admin.php:7440
-#: libraries/language/site.php:2051
+#: libraries/language/site.php:2052
 msgid "Son/Daughter-in-law"
 msgstr ""
 
 #: libraries/language/admin.php:7443
-#: libraries/language/site.php:2054
+#: libraries/language/site.php:2055
 msgid "Guardian"
 msgstr ""
 
@@ -9677,88 +9683,88 @@ msgid "Link to listing details in search results"
 msgstr ""
 
 #: libraries/language/admin.php:7452
-#: libraries/language/site.php:1963
+#: libraries/language/site.php:1964
 msgid "Guest type"
 msgstr ""
 
 #: libraries/language/admin.php:7455
-#: libraries/language/site.php:1966
+#: libraries/language/site.php:1967
 msgid "Single guest"
 msgstr ""
 
 #: libraries/language/admin.php:7458
-#: libraries/language/site.php:1969
+#: libraries/language/site.php:1970
 msgid "Head of family"
 msgstr ""
 
 #: libraries/language/admin.php:7461
-#: libraries/language/site.php:1972
+#: libraries/language/site.php:1973
 msgid "Family member"
 msgstr ""
 
 #: libraries/language/admin.php:7464
-#: libraries/language/site.php:1975
+#: libraries/language/site.php:1976
 msgid "Group leader"
 msgstr ""
 
 #: libraries/language/admin.php:7467
-#: libraries/language/site.php:1978
+#: libraries/language/site.php:1979
 msgid "Group member"
 msgstr ""
 
 #: libraries/language/admin.php:7470
-#: libraries/language/site.php:1981
+#: libraries/language/site.php:1982
 msgid "Country of birth"
 msgstr ""
 
 #: libraries/language/admin.php:7473
-#: libraries/language/site.php:1984
+#: libraries/language/site.php:1985
 msgid "Municipality of birth"
 msgstr ""
 
 #: libraries/language/admin.php:7476
-#: libraries/language/site.php:1987
+#: libraries/language/site.php:1988
 msgid "Country of residence"
 msgstr ""
 
 #: libraries/language/admin.php:7479
-#: libraries/language/site.php:1990
+#: libraries/language/site.php:1991
 msgid "Municipality of residence"
 msgstr ""
 
 #: libraries/language/admin.php:7482
-#: libraries/language/site.php:1993
+#: libraries/language/site.php:1994
 msgid "ID issue place"
 msgstr ""
 
 #: libraries/language/admin.php:7486
-#: libraries/language/site.php:2000
+#: libraries/language/site.php:2001
 msgctxt "e.g. Only if country = Italy"
 msgid "Only if country = %s"
 msgstr ""
 
 #: libraries/language/admin.php:7489
-#: libraries/language/site.php:2003
+#: libraries/language/site.php:2004
 msgid "Optional"
 msgstr ""
 
 #: libraries/language/admin.php:7492
-#: libraries/language/site.php:2009
+#: libraries/language/site.php:2010
 msgid "Select country"
 msgstr ""
 
 #: libraries/language/admin.php:7495
-#: libraries/language/site.php:2012
+#: libraries/language/site.php:2013
 msgid "Select document"
 msgstr ""
 
 #: libraries/language/admin.php:7498
-#: libraries/language/site.php:2060
+#: libraries/language/site.php:2061
 msgid "Driving License"
 msgstr ""
 
 #: libraries/language/admin.php:7501
-#: libraries/language/site.php:2063
+#: libraries/language/site.php:2064
 msgid "Identity Document"
 msgstr ""
 
@@ -9858,17 +9864,17 @@ msgid "Use some of the following placeholder tags, if needed."
 msgstr ""
 
 #: libraries/language/admin.php:7583
-#: libraries/language/site.php:2066
+#: libraries/language/site.php:2067
 msgid "Minimum stay: %d nights"
 msgstr ""
 
 #: libraries/language/admin.php:7586
-#: libraries/language/site.php:2069
+#: libraries/language/site.php:2070
 msgid "Clear dates"
 msgstr ""
 
 #: libraries/language/admin.php:7592
-#: libraries/language/site.php:2075
+#: libraries/language/site.php:2076
 msgid "Amenities"
 msgstr ""
 
@@ -9877,7 +9883,7 @@ msgid "Optimize database records"
 msgstr ""
 
 #: libraries/language/admin.php:7598
-#: libraries/language/site.php:2126
+#: libraries/language/site.php:2127
 msgid "There are no more messages."
 msgstr ""
 
@@ -9918,12 +9924,42 @@ msgid "Use default"
 msgstr ""
 
 #: libraries/language/admin.php:7628
-#: libraries/language/site.php:2135
+#: libraries/language/site.php:2136
 msgid "There are new messages."
 msgstr ""
 
 #: libraries/language/admin.php:7631
 msgid "Skip derived rate plans"
+msgstr ""
+
+#: libraries/language/admin.php:7634
+msgid "Listings"
+msgstr ""
+
+#: libraries/language/admin.php:7637
+msgid "Profile settings"
+msgstr ""
+
+#: libraries/language/admin.php:7640
+msgid "This report supports multiple profiles with different settings."
+msgstr ""
+
+#: libraries/language/admin.php:7643
+msgid "Profile name"
+msgstr ""
+
+#: libraries/language/admin.php:7646
+msgid "New profile"
+msgstr ""
+
+#: libraries/language/admin.php:7649
+msgid "Pre-checkin completed"
+msgstr ""
+
+#: libraries/language/admin.php:7653
+#: libraries/language/site.php:2147
+msgctxt "e.g. Please provide the information for the guest registration field \"ID Number\"."
+msgid "Please provide the information for the guest registration field \"%s\"."
 msgstr ""
 
 #: libraries/language/adminsys.php:45
@@ -10207,6 +10243,7 @@ msgid "Update Failed. Please click here"
 msgstr ""
 
 #: libraries/language/adminsys.php:287
+#: libraries/language/site.php:2143
 msgid "Please wait"
 msgstr ""
 
@@ -10251,11 +10288,11 @@ msgid "Get your License Key and Upgrade to PRO"
 msgstr ""
 
 #: libraries/language/adminsys.php:320
-msgid "Set up your daily/seasonal prices with just a few clicks"
+msgid "Take full control of your pricing with ease!"
 msgstr ""
 
 #: libraries/language/adminsys.php:323
-msgid "Set different rates on some seasons, holidays, weekends or days of the year with just two clicks. Bookings Restrictions: define the minimum or maximum nights of stay for certain dates of the year and rooms, set days closed to arrival or departure."
+msgid "Seamlessly adjust rates for different seasons, holidays, weekends, or special dates in just a few clicks.<br />Apply booking restrictions: define minimum or maximum stay durations, close availability on certain days, or set arrival and departure limits. <br />Designed to simplify your workflow and maximize revenue."
 msgstr ""
 
 #: libraries/language/adminsys.php:326
@@ -10271,7 +10308,7 @@ msgid "Channels Management Capabilities"
 msgstr ""
 
 #: libraries/language/adminsys.php:335
-msgid "<p>Only Vik Booking Pro is capable of working together on the same website with the complementary plugin Vik Channel Manager.</p><p>Turn your website into a professional and full solution of Booking Engine + PMS and Channel Manager to sync availability, rates and bookings with the most popular channels of the world.</p>"
+msgid "<p>With Vik Booking Pro and Vik Channel Manager working together, your website becomes a complete hospitality management solution.</p><p>Transform your site into a complete booking solution, combining a powerful Booking Engine, PMS, and Channel Manager to effortlessly sync availability, rates, and reservations with the world’s top booking channels.</p>"
 msgstr ""
 
 #: libraries/language/adminsys.php:338
@@ -10303,7 +10340,7 @@ msgid "Set charges/discounts with absolute/percent values. Create packages with 
 msgstr ""
 
 #: libraries/language/adminsys.php:359
-#: libraries/language/site.php:1284
+#: libraries/language/site.php:1285
 msgid "Packages and Offers"
 msgstr ""
 
@@ -10376,1687 +10413,1704 @@ msgid "Active License Key"
 msgstr ""
 
 #: libraries/language/adminsys.php:416
-msgid "Want to avoid the risk of overbooking?"
+msgid "Worried about overbookings?"
 msgstr ""
 
 #: libraries/language/adminsys.php:419
-msgid "The Vik Booking + Vik Channel Manager plugins suite is the very first and only native solution for WordPress to be officially certificated as <strong>Premier Connectivity Partner of Booking.com</strong>."
+msgid "Vik Booking + Vik Channel Manager is the only native WordPress suite officially certified as a <strong>Premier Connectivity Partner of Booking.com and Airbnb.</strong>"
 msgstr ""
 
 #: libraries/language/adminsys.php:422
-msgid "MORE INFORMATION"
+msgid "More information"
 msgstr ""
 
 #: libraries/language/adminsys.php:425
-msgid "Some of the channels available"
+msgid "Free 30-day Trial >"
 msgstr ""
 
 #: libraries/language/adminsys.php:428
-msgid "and many others..."
+msgid "Experience the Benefits – Free for 30 Days!"
+msgstr ""
+
+#: libraries/language/adminsys.php:431
+msgid "Test real-time updates, automate reservations, and optimize your pricing with ease—all without any upfront cost."
 msgstr ""
 
 #: libraries/language/adminsys.php:434
-msgid "Configure optional and mandatory Extra Services"
+msgid "Trusted in hospitality"
 msgstr ""
 
 #: libraries/language/adminsys.php:437
-msgid "Assign to your rooms some optional services that guests can order during the booking process, like breakfast, transfers or parking.<br />You can also define mandatory Fees or Taxes, like Cleaning Fees or Tourist Taxes to be paid at the time of booking."
-msgstr ""
-
-#: libraries/language/adminsys.php:440
-msgid "Occupancy Ranking report to analyse every detail"
+msgid "and many others..."
 msgstr ""
 
 #: libraries/language/adminsys.php:443
-msgid "Get to monitor your future occupancy through the Occupancy Ranking report. Filter the targets by dates and analyse the data by day, week or month. The report will provide the information about the occupancy, the total number of rooms sold, nights booked, revenues and more."
+msgid "Configure optional and mandatory Extra Services"
 msgstr ""
 
 #: libraries/language/adminsys.php:446
-msgid "Notify your customers with automatic email and save time"
+msgid "Enhance your bookings by offering optional services like breakfast, transfers, or parking, which guests can add during the reservation process. <br />Easily configure mandatory fees or taxes, such as cleaning fees or tourist taxes, to be collected at the time of booking."
 msgstr ""
 
 #: libraries/language/adminsys.php:449
-msgid "<p>The relationship with your customers is fundamental for your business.</p><p>Automatise certain tasks, such as sending automatic reminders via email or SMS to your guests, either before the check-in to provide additional information, or after the check-out maybe by asking them to leave a review.</p><p>Generate and send the invoices automatically, invite your guests to fill the pre-checkin form, and much more.</p>"
+msgid "Occupancy Ranking report to analyse every detail"
 msgstr ""
 
 #: libraries/language/adminsys.php:452
-msgid "and much more..."
+msgid "Get to monitor your future occupancy through the Occupancy Ranking report. Filter the targets by dates and analyse the data by day, week or month. The report will provide the information about the occupancy, the total number of rooms sold, nights booked, revenues and more."
 msgstr ""
 
 #: libraries/language/adminsys.php:455
-msgid "Ready to increase your bookings?"
+msgid "Automated emails & pre Check-In notifications"
 msgstr ""
 
 #: libraries/language/adminsys.php:458
-msgid "Already have Vik Booking PRO? Upgrade to the PRO version <a href=\"#upgrade\">here</a>."
+msgid "<p>Strengthen guest relationships effortlessly with the PRO version of Vik Booking.<br/>Send automatic email and SMS reminders before check-in, request reviews after check-out, and generate invoices instantly.<br />From pre-check-in forms to seamless communication, streamline your workflow and boost efficiency.</p>"
 msgstr ""
 
 #: libraries/language/adminsys.php:461
-msgid "Would you like to reduce OTA commissions?"
+msgid "and much more..."
 msgstr ""
 
 #: libraries/language/adminsys.php:464
-msgid "Start collecting direct bookings from your own website"
+msgid "Ready to increase your bookings?"
 msgstr ""
 
 #: libraries/language/adminsys.php:467
-msgid "Vik Booking PRO: the Booking Engine and PMS plugin<br />for Hotels and Accommodations on WordPress"
+msgid "Already have Vik Booking PRO? Upgrade to the PRO version <a href=\"#upgrade\">here</a>."
 msgstr ""
 
 #: libraries/language/adminsys.php:470
-msgid "Start collecting direct bookings from your website"
+msgid "Would you like to reduce OTA commissions?"
 msgstr ""
 
 #: libraries/language/adminsys.php:473
-msgid "Reduce OTA commissions"
+msgid "Start collecting direct bookings from your own website"
 msgstr ""
 
 #: libraries/language/adminsys.php:476
-msgid "No recurring fees. Become independent"
+msgid "Vik Booking PRO: the Booking Engine and PMS plugin<br />for Hotels and Accommodations on WordPress"
 msgstr ""
 
 #: libraries/language/adminsys.php:479
-msgid "1<span>.</span> Start collect<br />direct bookings"
+msgid "Start collecting direct bookings from your website"
 msgstr ""
 
 #: libraries/language/adminsys.php:482
-msgid "<p>Increase your reputation, receive and manage all the bookings through your website.</p><p>Collect payments through your preferred bank (PayPal is included for free).</p>"
+msgid "Reduce OTA commissions"
 msgstr ""
 
 #: libraries/language/adminsys.php:485
-msgid "2<span>.</span> Save on<br />OTA commissions"
+msgid "No recurring fees. Become independent"
 msgstr ""
 
 #: libraries/language/adminsys.php:488
-msgid "<p>OTAs, such as Booking.com or Expedia, charge your property high fees for every booking.</p><p>Power up your website to create competition, and to reduce the costs.</p>"
+msgid "1<span>.</span> Start collect<br />direct bookings"
 msgstr ""
 
 #: libraries/language/adminsys.php:491
-msgid "3<span>.</span> Become truly<br />independent"
+msgid "<p>Increase your reputation, receive and manage all the bookings through your website.</p><p>Collect payments through your preferred bank (PayPal is included for free).</p>"
 msgstr ""
 
 #: libraries/language/adminsys.php:494
-msgid "<p>A Booking Engine fully integrated with your website with no monthly fees or commissions.</p><p>Stop &quot;renting&quot; external systems and increase your revenue.</p>"
+msgid "2<span>.</span> Save on<br />OTA commissions"
 msgstr ""
 
 #: libraries/language/adminsys.php:497
-msgid "Synchronize new bookings in real-time, manage the rates and keep the availability up to date with the most popular OTAs."
+msgid "<p>OTAs, such as Booking.com or Expedia, charge your property high fees for every booking.</p><p>Power up your website to create competition, and to reduce the costs.</p>"
 msgstr ""
 
 #: libraries/language/adminsys.php:500
-msgid "With the complementary plugin Vik Channel Manager everything will be synced automatically."
+msgid "3<span>.</span> Become truly<br />independent"
+msgstr ""
+
+#: libraries/language/adminsys.php:503
+msgid "<p>A Booking Engine fully integrated with your website with no monthly fees or commissions.</p><p>Stop &quot;renting&quot; external systems and increase your revenue.</p>"
 msgstr ""
 
 #: libraries/language/adminsys.php:506
-msgid "Shortcodes in Pages/Posts"
+msgid "Keep your availability and rates always up to date with automatic synchronization across OTAs."
 msgstr ""
 
-#: libraries/language/adminsys.php:512
-msgid "Allow your guests to pay their bookings online through your preferred bank gateway. The Pro version comes with an integration for PayPal Standard and two more payment solutions, but the framework could be extended by installing apposite payment plugins for Vik Booking for your preferred bank."
+#: libraries/language/adminsys.php:509
+msgid "Vik Channel Manager seamlessly syncs new bookings in real-time, so you never have to adjust availability manually."
 msgstr ""
 
 #: libraries/language/adminsys.php:515
-msgid "Thanks to the coupon codes you can give your clients some dedicated discounts for their reservations."
-msgstr ""
-
-#: libraries/language/adminsys.php:518
-msgid "The Packages will let you create some particular booking solutions with some benefits and restrictions. For example, you could offer a stay for a particular weekend with the access to the SPA if booked N days in advance."
+msgid "Shortcodes in Pages/Posts"
 msgstr ""
 
 #: libraries/language/adminsys.php:521
-msgid "Allow your guests to book some extra services, either they are optional or mandatory. This function can be used to create services or fees like tourist taxes, breakfast, transfers and anything else that could be booked with the rooms."
+msgid "Allow your guests to pay their bookings online through your preferred bank gateway. The Pro version comes with an integration for PayPal Standard and two more payment solutions, but the framework could be extended by installing apposite payment plugins for Vik Booking for your preferred bank."
 msgstr ""
 
 #: libraries/language/adminsys.php:524
-msgid "This function will let you create seasonal prices, promotions or special rates for the weekends or any other day of the week. Those who are used to work with seasonal rates will find this feature fundamental."
+msgid "Thanks to the coupon codes you can give your clients some dedicated discounts for their reservations."
 msgstr ""
 
 #: libraries/language/adminsys.php:527
-msgid "The booking restrictions will let you define a minimum or maximum number of nights of stay for specific rooms and dates of the year. You could also allow or deny the arrival/departure on some specific days of the week."
+msgid "The Packages will let you create some particular booking solutions with some benefits and restrictions. For example, you could offer a stay for a particular weekend with the access to the SPA if booked N days in advance."
 msgstr ""
 
 #: libraries/language/adminsys.php:530
-msgid "Here you can manage all of your customers information, send specific email or SMS messages, and manage their documents."
+msgid "Allow your guests to book some extra services, either they are optional or mandatory. This function can be used to create services or fees like tourist taxes, breakfast, transfers and anything else that could be booked with the rooms."
 msgstr ""
 
 #: libraries/language/adminsys.php:533
-msgid "Manage all the invoices generated for the various bookings or services."
+msgid "This function will let you create seasonal prices, promotions or special rates for the weekends or any other day of the week. Those who are used to work with seasonal rates will find this feature fundamental."
 msgstr ""
 
 #: libraries/language/adminsys.php:536
-msgid "This page will display graphs and charts by showing important information and statistics about your reservations, occupancy and revenue."
+msgid "The booking restrictions will let you define a minimum or maximum number of nights of stay for specific rooms and dates of the year. You could also allow or deny the arrival/departure on some specific days of the week."
 msgstr ""
 
 #: libraries/language/adminsys.php:539
-msgid "Cron Jobs are essentials to automatize certain functions, such as to send email/SMS reminders to your clients before the check-in, after the check-out, remaing balance payments and much more."
+msgid "Here you can manage all of your customers information, send specific email or SMS messages, and manage their documents."
 msgstr ""
 
 #: libraries/language/adminsys.php:542
-msgid "This function will let you manage the operator accounts to access certain functions via front-end, such as the Tableaux to see the next arrivals or departures."
+msgid "Manage all the invoices generated for the various bookings or services."
 msgstr ""
 
 #: libraries/language/adminsys.php:545
-msgid "Reports are essentials to obtain and/or export data. You can use them to calculate your revenue on some dates, your occupancy, or to generate documents for your local authorities. This framework is also extendable with custom PMS reports."
+msgid "This page will display graphs and charts by showing important information and statistics about your reservations, occupancy and revenue."
 msgstr ""
 
 #: libraries/language/adminsys.php:548
-msgid "Some countries may require the invoices to be generated in electronic format (XML) for transmitting them to the local authorities. This framework could be extended to meet your country requirements."
+msgid "Cron Jobs are essentials to automatize certain functions, such as to send email/SMS reminders to your clients before the check-in, after the check-out, remaing balance payments and much more."
+msgstr ""
+
+#: libraries/language/adminsys.php:551
+msgid "This function will let you manage the operator accounts to access certain functions via front-end, such as the Tableaux to see the next arrivals or departures."
 msgstr ""
 
 #: libraries/language/adminsys.php:554
-msgid "Vik Booking - Import reservations from third party plugins"
+msgid "Reports are essentials to obtain and/or export data. You can use them to calculate your revenue on some dates, your occupancy, or to generate documents for your local authorities. This framework is also extendable with custom PMS reports."
 msgstr ""
 
 #: libraries/language/adminsys.php:557
-msgid "There are no rooms in Vik Booking yet. Please create some room-types before importing the reservations from third party plugins into Vik Booking."
-msgstr ""
-
-#: libraries/language/adminsys.php:560
-msgid "This tool is provided as-is, with no warranty of any kind. Third party plugins may change their structure or the data they contain may be unwanted. Please use this tool carefully, and consider uninstalling for then re-installing Vik Booking in case you do not obtain the desired result. If some reservations can be imported from a third party plugin, you may uninstall the third party plugin after the import, to continue with the setup of Vik Booking."
+msgid "Some countries may require the invoices to be generated in electronic format (XML) for transmitting them to the local authorities. This framework could be extended to meet your country requirements."
 msgstr ""
 
 #: libraries/language/adminsys.php:563
-msgid "Third party plugins installed for importing the reservations"
+msgid "Vik Booking - Import reservations from third party plugins"
 msgstr ""
 
 #: libraries/language/adminsys.php:566
-msgid "No supported third party plugins found, or no third party plugins have some reservations that could be imported into Vik Booking."
+msgid "There are no rooms in Vik Booking yet. Please create some room-types before importing the reservations from third party plugins into Vik Booking."
 msgstr ""
 
 #: libraries/language/adminsys.php:569
-msgid "Load reservations from third party plugin"
+msgid "This tool is provided as-is, with no warranty of any kind. Third party plugins may change their structure or the data they contain may be unwanted. Please use this tool carefully, and consider uninstalling for then re-installing Vik Booking in case you do not obtain the desired result. If some reservations can be imported from a third party plugin, you may uninstall the third party plugin after the import, to continue with the setup of Vik Booking."
 msgstr ""
 
 #: libraries/language/adminsys.php:572
-msgid "Load reservations"
+msgid "Third party plugins installed for importing the reservations"
 msgstr ""
 
 #: libraries/language/adminsys.php:575
-msgid "No valid reservations found for import from the selected third party plugin."
+msgid "No supported third party plugins found, or no third party plugins have some reservations that could be imported into Vik Booking."
 msgstr ""
 
 #: libraries/language/adminsys.php:578
-msgid "Reservations found for import: %d"
+msgid "Load reservations from third party plugin"
 msgstr ""
 
 #: libraries/language/adminsys.php:581
-msgid "Please select the corresponding room-type of Vik Booking for each room found in the third party plugin. In case of room-types with multiple sub-units, just select the corresponding room-type in Vik Booking for each sub-unit of the third party plugin. If some rooms of the third party plugin will not have a corresponding room-type in Vik Booking, those reservations will not be imported. Make sure to make the right selections, as this will affect the availability in Vik Booking after importing the reservations."
+msgid "Load reservations"
 msgstr ""
 
 #: libraries/language/adminsys.php:584
-msgid "Select the corresponding rooms in Vik Booking"
+msgid "No valid reservations found for import from the selected third party plugin."
 msgstr ""
 
 #: libraries/language/adminsys.php:587
-msgid "Third party plugin room"
+msgid "Reservations found for import: %d"
 msgstr ""
 
 #: libraries/language/adminsys.php:590
-msgid "Corresponding room in Vik Booking"
+msgid "Please select the corresponding room-type of Vik Booking for each room found in the third party plugin. In case of room-types with multiple sub-units, just select the corresponding room-type in Vik Booking for each sub-unit of the third party plugin. If some rooms of the third party plugin will not have a corresponding room-type in Vik Booking, those reservations will not be imported. Make sure to make the right selections, as this will affect the availability in Vik Booking after importing the reservations."
 msgstr ""
 
 #: libraries/language/adminsys.php:593
-msgid "Import selected reservations into Vik Booking"
+msgid "Select the corresponding rooms in Vik Booking"
 msgstr ""
 
 #: libraries/language/adminsys.php:596
-msgid "Import reservations"
+msgid "Third party plugin room"
 msgstr ""
 
 #: libraries/language/adminsys.php:599
-msgid "All the selected reservations will be imported. Continue?"
+msgid "Corresponding room in Vik Booking"
 msgstr ""
 
 #: libraries/language/adminsys.php:602
-msgid "Total reservations imported from third party plugin: %d"
+msgid "Import selected reservations into Vik Booking"
 msgstr ""
 
 #: libraries/language/adminsys.php:605
-msgid "Already imported on %s"
+msgid "Import reservations"
 msgstr ""
 
 #: libraries/language/adminsys.php:608
-msgid "Booking imported from third party plugin"
+msgid "All the selected reservations will be imported. Continue?"
 msgstr ""
 
 #: libraries/language/adminsys.php:611
-msgid "Select the reservations you wish to import"
+msgid "Total reservations imported from third party plugin: %d"
 msgstr ""
 
 #: libraries/language/adminsys.php:614
-msgid "Want to import the reservations from other plugins?"
+msgid "Already imported on %s"
 msgstr ""
 
 #: libraries/language/adminsys.php:617
-msgid "Import reservations from %s into Vik Booking"
+msgid "Booking imported from third party plugin"
+msgstr ""
+
+#: libraries/language/adminsys.php:620
+msgid "Select the reservations you wish to import"
 msgstr ""
 
 #: libraries/language/adminsys.php:623
-msgid "View page in front site"
+msgid "Want to import the reservations from other plugins?"
 msgstr ""
 
 #: libraries/language/adminsys.php:626
-msgid "Create page"
-msgstr ""
-
-#: libraries/language/adminsys.php:629
-msgid "View trashed posts"
+msgid "Import reservations from %s into Vik Booking"
 msgstr ""
 
 #: libraries/language/adminsys.php:632
-msgid "You can always create a custom page or post manually and use this Shortcode text inside it. By proceeding, a page containing this Shortcode will be created automatically."
+msgid "View page in front site"
 msgstr ""
 
 #: libraries/language/adminsys.php:635
-msgid "The Shortcode was successfully added to a new page of your website. Visit the new page in the front site to see the content (if any)."
+msgid "Create page"
+msgstr ""
+
+#: libraries/language/adminsys.php:638
+msgid "View trashed posts"
 msgstr ""
 
 #: libraries/language/adminsys.php:641
-msgid "Alternatively, you can install one Sample Data package to skip the initial setup steps."
+msgid "You can always create a custom page or post manually and use this Shortcode text inside it. By proceeding, a page containing this Shortcode will be created automatically."
 msgstr ""
 
 #: libraries/language/adminsys.php:644
-msgid "Select Sample Data"
-msgstr ""
-
-#: libraries/language/adminsys.php:647
-msgid "Vik Booking - Install Sample Data"
+msgid "The Shortcode was successfully added to a new page of your website. Visit the new page in the front site to see the content (if any)."
 msgstr ""
 
 #: libraries/language/adminsys.php:650
-msgid "Install Sample Data"
+msgid "Alternatively, you can install one Sample Data package to skip the initial setup steps."
 msgstr ""
 
 #: libraries/language/adminsys.php:653
-msgid "Choose the type of Sample Data you would like to install. This operation will populate the plugin with some demo contents to complete the first configuration."
+msgid "Select Sample Data"
 msgstr ""
 
 #: libraries/language/adminsys.php:656
+msgid "Vik Booking - Install Sample Data"
+msgstr ""
+
+#: libraries/language/adminsys.php:659
+msgid "Install Sample Data"
+msgstr ""
+
+#: libraries/language/adminsys.php:662
+msgid "Choose the type of Sample Data you would like to install. This operation will populate the plugin with some demo contents to complete the first configuration."
+msgstr ""
+
+#: libraries/language/adminsys.php:665
 msgid "To undo the installation of the sample data, you can deactivate and delete the plugin for then re-installing it. Otherwise, you can modify or remove some demo contents according to your needs."
 msgstr ""
 
-#: libraries/language/site.php:45
+#: libraries/language/site.php:46
 msgid "IP"
 msgstr ""
 
-#: libraries/language/site.php:57
+#: libraries/language/site.php:58
 msgid "Sorry, the room has been booked. Please make a new reservation."
 msgstr ""
 
-#: libraries/language/site.php:60
+#: libraries/language/site.php:61
 msgid "The room is now being booked by another customer. Please make a new reservation."
 msgstr ""
 
-#: libraries/language/site.php:63
+#: libraries/language/site.php:64
 msgid "Check-in and Check-out Dates are wrong"
 msgstr ""
 
-#: libraries/language/site.php:66
+#: libraries/language/site.php:67
 msgid "Error, booking total is wrong"
 msgstr ""
 
-#: libraries/language/site.php:69
-#: libraries/language/site.php:72
+#: libraries/language/site.php:70
+#: libraries/language/site.php:73
 msgid "Error, Wrong data."
 msgstr ""
 
-#: libraries/language/site.php:75
+#: libraries/language/site.php:76
 msgid "Error, Insufficient Data Received."
 msgstr ""
 
-#: libraries/language/site.php:78
+#: libraries/language/site.php:79
 msgid "Error, Invalid Token. Unable to Save the Reservation"
 msgstr ""
 
-#: libraries/language/site.php:81
+#: libraries/language/site.php:82
 msgid "Error, the room is already booked and is no longer available. Please search for another one."
 msgstr ""
 
-#: libraries/language/site.php:84
+#: libraries/language/site.php:85
 msgid "Error, Booking not found"
 msgstr ""
 
-#: libraries/language/site.php:87
+#: libraries/language/site.php:88
 msgid "An Error occurred processing fares. Please choose new dates"
 msgstr ""
 
-#: libraries/language/site.php:90
+#: libraries/language/site.php:91
 msgid "Error, Not Existing Fare"
 msgstr ""
 
-#: libraries/language/site.php:93
+#: libraries/language/site.php:94
 msgid "No Fares selected, please try again"
 msgstr ""
 
-#: libraries/language/site.php:96
+#: libraries/language/site.php:97
 msgid "The Room selected is not available from the"
 msgstr ""
 
-#: libraries/language/site.php:99
+#: libraries/language/site.php:100
 msgid "to the"
 msgstr ""
 
-#: libraries/language/site.php:102
+#: libraries/language/site.php:103
 msgid "The room is not available from the"
 msgstr ""
 
-#: libraries/language/site.php:105
+#: libraries/language/site.php:106
 msgid "Room not found"
 msgstr ""
 
-#: libraries/language/site.php:108
+#: libraries/language/site.php:109
 msgid "Room not available"
 msgstr ""
 
-#: libraries/language/site.php:111
+#: libraries/language/site.php:112
 msgid "No Fares Found. Please select a different date or room"
 msgstr ""
 
-#: libraries/language/site.php:114
+#: libraries/language/site.php:115
 msgid "Search Notification"
 msgstr ""
 
-#: libraries/language/site.php:129
+#: libraries/language/site.php:130
 msgid "Search Results"
 msgstr ""
 
-#: libraries/language/site.php:132
+#: libraries/language/site.php:133
 msgid "No rooms available in the dates requested."
 msgstr ""
 
-#: libraries/language/site.php:135
+#: libraries/language/site.php:136
 msgid "No room is available for booking for"
 msgstr ""
 
-#: libraries/language/site.php:144
+#: libraries/language/site.php:145
 msgid "Check-out date previous than check-in"
 msgstr ""
 
-#: libraries/language/site.php:147
+#: libraries/language/site.php:148
 msgid "Wrong Date Format. Right Format is"
 msgstr ""
 
-#: libraries/language/site.php:150
+#: libraries/language/site.php:151
 msgid "Please select Check-in and Check-out Dates and select the number of people per room"
 msgstr ""
 
-#: libraries/language/site.php:159
+#: libraries/language/site.php:160
 msgid "At"
 msgstr ""
 
-#: libraries/language/site.php:162
+#: libraries/language/site.php:163
 msgid "Rooms Category"
 msgstr ""
 
-#: libraries/language/site.php:168
+#: libraries/language/site.php:169
 msgid "Error while connecting to Paypal.com"
 msgstr ""
 
-#: libraries/language/site.php:171
+#: libraries/language/site.php:172
 msgid "Unable to process the payment of the"
 msgstr ""
 
-#: libraries/language/site.php:180
+#: libraries/language/site.php:181
 msgid "Valid Paypal Payment, Error Saving the Booking"
 msgstr ""
 
-#: libraries/language/site.php:183
+#: libraries/language/site.php:184
 msgid "Payment received with Success, Booking not Saved. Correct the problem manually."
 msgstr ""
 
-#: libraries/language/site.php:186
+#: libraries/language/site.php:187
 msgid "Paypal Response"
 msgstr ""
 
-#: libraries/language/site.php:189
+#: libraries/language/site.php:190
 msgid "Invalid Paypal Payment"
 msgstr ""
 
-#: libraries/language/site.php:192
+#: libraries/language/site.php:193
 msgid "Please Select a Payment Method"
 msgstr ""
 
-#: libraries/language/site.php:195
+#: libraries/language/site.php:196
 msgid "Payment Not Verified"
 msgstr ""
 
-#: libraries/language/site.php:198
+#: libraries/language/site.php:199
 msgid "Server Response"
 msgstr ""
 
-#: libraries/language/site.php:207
+#: libraries/language/site.php:208
 msgid "Rooms Found"
 msgstr ""
 
-#: libraries/language/site.php:210
-#: libraries/language/site.php:729
-#: libraries/language/site.php:744
+#: libraries/language/site.php:211
+#: libraries/language/site.php:730
+#: libraries/language/site.php:745
 msgid "Continue"
 msgstr ""
 
-#: libraries/language/site.php:213
-#: libraries/language/site.php:456
+#: libraries/language/site.php:214
+#: libraries/language/site.php:457
 msgid "Starting From"
 msgstr ""
 
-#: libraries/language/site.php:219
+#: libraries/language/site.php:220
 msgid "for"
 msgstr ""
 
-#: libraries/language/site.php:237
+#: libraries/language/site.php:238
 msgid "Booking Summary"
 msgstr ""
 
-#: libraries/language/site.php:243
+#: libraries/language/site.php:244
 msgid "Taxable Income"
 msgstr ""
 
-#: libraries/language/site.php:246
-#: libraries/language/site.php:327
+#: libraries/language/site.php:247
+#: libraries/language/site.php:328
 msgid "Tax"
 msgstr ""
 
-#: libraries/language/site.php:249
+#: libraries/language/site.php:250
 msgid "Total Due"
 msgstr ""
 
-#: libraries/language/site.php:252
+#: libraries/language/site.php:253
 msgid "Please Fill all Fields"
 msgstr ""
 
-#: libraries/language/site.php:255
+#: libraries/language/site.php:256
 msgid "Purchaser Details"
 msgstr ""
 
-#: libraries/language/site.php:279
+#: libraries/language/site.php:280
 msgid "State"
 msgstr ""
 
-#: libraries/language/site.php:282
-#: libraries/language/site.php:447
+#: libraries/language/site.php:283
+#: libraries/language/site.php:448
 msgid "Date of birth"
 msgstr ""
 
-#: libraries/language/site.php:285
+#: libraries/language/site.php:286
 msgid "Fiscal Code"
 msgstr ""
 
-#: libraries/language/site.php:288
+#: libraries/language/site.php:289
 msgid "Confirm Reservation"
 msgstr ""
 
-#: libraries/language/site.php:291
+#: libraries/language/site.php:292
 msgid "Thanks, Booking Successfully Completed"
 msgstr ""
 
-#: libraries/language/site.php:294
+#: libraries/language/site.php:295
 msgid "To review your reservation, please visit"
 msgstr ""
 
-#: libraries/language/site.php:297
+#: libraries/language/site.php:298
 msgid "This Page"
 msgstr ""
 
-#: libraries/language/site.php:306
+#: libraries/language/site.php:307
 msgid "Room Reserved"
 msgstr ""
 
-#: libraries/language/site.php:324
+#: libraries/language/site.php:325
 msgid "Net Price"
 msgstr ""
 
-#: libraries/language/site.php:330
+#: libraries/language/site.php:331
 msgid "Total Price"
 msgstr ""
 
-#: libraries/language/site.php:336
+#: libraries/language/site.php:337
 msgid "Change Dates"
 msgstr ""
 
-#: libraries/language/site.php:339
-#: libraries/language/site.php:420
+#: libraries/language/site.php:340
+#: libraries/language/site.php:421
 msgid "Payment Method"
 msgstr ""
 
-#: libraries/language/site.php:345
+#: libraries/language/site.php:346
 msgid "Purchaser Info"
 msgstr ""
 
-#: libraries/language/site.php:459
+#: libraries/language/site.php:460
 msgid "View Details &gt;&gt;"
 msgstr ""
 
-#: libraries/language/site.php:486
+#: libraries/language/site.php:487
 msgid "Partially Reserved"
 msgstr ""
 
-#: libraries/language/site.php:489
+#: libraries/language/site.php:490
 msgid "Not Available"
 msgstr ""
 
-#: libraries/language/site.php:495
+#: libraries/language/site.php:496
 msgid "Select a check-in and check-out date"
 msgstr ""
 
-#: libraries/language/site.php:498
+#: libraries/language/site.php:499
 msgid "%s is not available for %d nights or for the number of guests requested. Please try with different dates or guests."
 msgstr ""
 
-#: libraries/language/site.php:501
-#: libraries/language/site.php:522
+#: libraries/language/site.php:502
+#: libraries/language/site.php:523
 msgid "Sign Up"
 msgstr ""
 
-#: libraries/language/site.php:513
+#: libraries/language/site.php:514
 msgid "Username"
 msgstr ""
 
-#: libraries/language/site.php:516
+#: libraries/language/site.php:517
 msgid "Password"
 msgstr ""
 
-#: libraries/language/site.php:519
+#: libraries/language/site.php:520
 msgid "Confirm Password"
 msgstr ""
 
-#: libraries/language/site.php:525
-#: libraries/language/site.php:528
+#: libraries/language/site.php:526
+#: libraries/language/site.php:529
 msgid "Login"
 msgstr ""
 
-#: libraries/language/site.php:531
+#: libraries/language/site.php:532
 msgid "Please fill in all the registration fields"
 msgstr ""
 
-#: libraries/language/site.php:534
+#: libraries/language/site.php:535
 msgid "Error while creating an account, please try again"
 msgstr ""
 
-#: libraries/language/site.php:537
+#: libraries/language/site.php:538
 msgid "Hour"
 msgstr ""
 
-#: libraries/language/site.php:540
+#: libraries/language/site.php:541
 msgid "Hours"
 msgstr ""
 
-#: libraries/language/site.php:555
+#: libraries/language/site.php:556
 #: modules/mod_vikbooking_channelrates/language/handler.php:151
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:180
 #: modules/mod_vikbooking_rooms/language/handler.php:192
 msgid "Prev"
 msgstr ""
 
-#: libraries/language/site.php:558
+#: libraries/language/site.php:559
 #: modules/mod_vikbooking_channelrates/language/handler.php:154
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:183
 #: modules/mod_vikbooking_rooms/language/handler.php:195
 msgid "Next"
 msgstr ""
 
-#: libraries/language/site.php:585
+#: libraries/language/site.php:586
 #: modules/mod_vikbooking_channelrates/language/handler.php:181
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:210
 msgid "Wk"
 msgstr ""
 
-#: libraries/language/site.php:588
+#: libraries/language/site.php:589
 msgid "Invalid Amount Paid"
 msgstr ""
 
-#: libraries/language/site.php:591
+#: libraries/language/site.php:592
 msgid "A payment for the booking %s has been received. The total amount received is %s instead of %s."
 msgstr ""
 
-#: libraries/language/site.php:597
+#: libraries/language/site.php:598
 msgid "Enter here your coupon code"
 msgstr ""
 
-#: libraries/language/site.php:603
+#: libraries/language/site.php:604
 msgid "Error, Coupon not found"
 msgstr ""
 
-#: libraries/language/site.php:606
+#: libraries/language/site.php:607
 msgid "The Coupon is not valid for these reservation dates"
 msgstr ""
 
-#: libraries/language/site.php:609
+#: libraries/language/site.php:610
 msgid "The Coupon is not valid for this room"
 msgstr ""
 
-#: libraries/language/site.php:612
+#: libraries/language/site.php:613
 msgid "This coupon requires a greater booking total amount"
 msgstr ""
 
-#: libraries/language/site.php:672
+#: libraries/language/site.php:673
 msgid "Selected"
 msgstr ""
 
-#: libraries/language/site.php:678
+#: libraries/language/site.php:679
 msgid "Error selecting the rooms, please try again."
 msgstr ""
 
-#: libraries/language/site.php:699
+#: libraries/language/site.php:700
 msgid "Price Breakdown"
 msgstr ""
 
-#: libraries/language/site.php:705
+#: libraries/language/site.php:706
 msgid "Price per Night"
 msgstr ""
 
-#: libraries/language/site.php:732
+#: libraries/language/site.php:733
 msgid "Room Selection"
 msgstr ""
 
-#: libraries/language/site.php:735
+#: libraries/language/site.php:736
 msgid "Rooms Selection"
 msgstr ""
 
-#: libraries/language/site.php:738
+#: libraries/language/site.php:739
 msgid "Room Selected:"
 msgstr ""
 
-#: libraries/language/site.php:747
+#: libraries/language/site.php:748
 msgid "Your Reservation"
 msgstr ""
 
-#: libraries/language/site.php:750
+#: libraries/language/site.php:751
 msgid "Check-in on the"
 msgstr ""
 
-#: libraries/language/site.php:753
+#: libraries/language/site.php:754
 msgid "Check-out on the"
 msgstr ""
 
-#: libraries/language/site.php:756
+#: libraries/language/site.php:757
 msgid "%s of %s"
 msgstr ""
 
-#: libraries/language/site.php:759
+#: libraries/language/site.php:760
 msgid "1st"
 msgstr ""
 
-#: libraries/language/site.php:762
+#: libraries/language/site.php:763
 msgid "2nd"
 msgstr ""
 
-#: libraries/language/site.php:765
+#: libraries/language/site.php:766
 msgid "3rd"
 msgstr ""
 
-#: libraries/language/site.php:768
+#: libraries/language/site.php:769
 msgid "4th"
 msgstr ""
 
-#: libraries/language/site.php:771
+#: libraries/language/site.php:772
 msgid "5th"
 msgstr ""
 
-#: libraries/language/site.php:774
+#: libraries/language/site.php:775
 msgid "6th"
 msgstr ""
 
-#: libraries/language/site.php:777
+#: libraries/language/site.php:778
 msgid "7th"
 msgstr ""
 
-#: libraries/language/site.php:780
+#: libraries/language/site.php:781
 msgid "8th"
 msgstr ""
 
-#: libraries/language/site.php:783
+#: libraries/language/site.php:784
 msgid "9th"
 msgstr ""
 
-#: libraries/language/site.php:786
+#: libraries/language/site.php:787
 msgid "10th"
 msgstr ""
 
-#: libraries/language/site.php:789
+#: libraries/language/site.php:790
 msgid "11th"
 msgstr ""
 
-#: libraries/language/site.php:792
+#: libraries/language/site.php:793
 msgid "12th"
 msgstr ""
 
-#: libraries/language/site.php:795
+#: libraries/language/site.php:796
 msgid "13th"
 msgstr ""
 
-#: libraries/language/site.php:798
+#: libraries/language/site.php:799
 msgid "14th"
 msgstr ""
 
-#: libraries/language/site.php:801
+#: libraries/language/site.php:802
 msgid "15th"
 msgstr ""
 
-#: libraries/language/site.php:804
+#: libraries/language/site.php:805
 msgid "16th"
 msgstr ""
 
-#: libraries/language/site.php:807
+#: libraries/language/site.php:808
 msgid "17th"
 msgstr ""
 
-#: libraries/language/site.php:810
+#: libraries/language/site.php:811
 msgid "18th"
 msgstr ""
 
-#: libraries/language/site.php:813
+#: libraries/language/site.php:814
 msgid "19th"
 msgstr ""
 
-#: libraries/language/site.php:816
+#: libraries/language/site.php:817
 msgid "20th"
 msgstr ""
 
-#: libraries/language/site.php:819
+#: libraries/language/site.php:820
 msgid "21st"
 msgstr ""
 
-#: libraries/language/site.php:822
+#: libraries/language/site.php:823
 msgid "22nd"
 msgstr ""
 
-#: libraries/language/site.php:825
+#: libraries/language/site.php:826
 msgid "23rd"
 msgstr ""
 
-#: libraries/language/site.php:828
+#: libraries/language/site.php:829
 msgid "24th"
 msgstr ""
 
-#: libraries/language/site.php:831
+#: libraries/language/site.php:832
 msgid "25th"
 msgstr ""
 
-#: libraries/language/site.php:834
+#: libraries/language/site.php:835
 msgid "26th"
 msgstr ""
 
-#: libraries/language/site.php:837
+#: libraries/language/site.php:838
 msgid "27th"
 msgstr ""
 
-#: libraries/language/site.php:840
+#: libraries/language/site.php:841
 msgid "28th"
 msgstr ""
 
-#: libraries/language/site.php:843
+#: libraries/language/site.php:844
 msgid "29th"
 msgstr ""
 
-#: libraries/language/site.php:846
+#: libraries/language/site.php:847
 msgid "30th"
 msgstr ""
 
-#: libraries/language/site.php:849
+#: libraries/language/site.php:850
 msgid "31st"
 msgstr ""
 
-#: libraries/language/site.php:852
+#: libraries/language/site.php:853
 msgid "Dates"
 msgstr ""
 
-#: libraries/language/site.php:861
+#: libraries/language/site.php:862
 msgid "Book"
 msgstr ""
 
-#: libraries/language/site.php:867
+#: libraries/language/site.php:868
 msgid "We are sorry, but there aren't enough rooms for %s. Please select a different number of rooms or guests."
 msgstr ""
 
-#: libraries/language/site.php:870
+#: libraries/language/site.php:871
 msgid "Error, the arrival day in %s must be on a %s. Please try again."
 msgstr ""
 
-#: libraries/language/site.php:873
+#: libraries/language/site.php:874
 msgid "Error, the maximum number of nights of stay in %s is %d. Please try again."
 msgstr ""
 
-#: libraries/language/site.php:876
+#: libraries/language/site.php:877
 msgid "Error, the minimum number of nights of stay in %s is %d. Please try again."
 msgstr ""
 
-#: libraries/language/site.php:879
+#: libraries/language/site.php:880
 msgid "Error, the number of nights of stay allowed in %s must be a multiple of %d. Please try again."
 msgstr ""
 
-#: libraries/language/site.php:885
+#: libraries/language/site.php:886
 msgid "Credit Card Number"
 msgstr ""
 
-#: libraries/language/site.php:888
+#: libraries/language/site.php:889
 msgid "Valid Through"
 msgstr ""
 
-#: libraries/language/site.php:915
+#: libraries/language/site.php:916
 msgid "ZIP Code"
 msgstr ""
 
-#: libraries/language/site.php:927
+#: libraries/language/site.php:928
 msgid "Process and Pay"
 msgstr ""
 
-#: libraries/language/site.php:930
-#: libraries/language/site.php:939
+#: libraries/language/site.php:931
+#: libraries/language/site.php:940
 msgid "Processing..."
 msgstr ""
 
-#: libraries/language/site.php:933
+#: libraries/language/site.php:934
 msgid "Please provide your Credit Card information. Your card will not be charged and the information will be securely kept by us."
 msgstr ""
 
-#: libraries/language/site.php:936
+#: libraries/language/site.php:937
 msgid "Submit Credit Card Information"
 msgstr ""
 
-#: libraries/language/site.php:942
+#: libraries/language/site.php:943
 msgid "Credit Card Information Received"
 msgstr ""
 
-#: libraries/language/site.php:945
+#: libraries/language/site.php:946
 msgid "Total to Pay"
 msgstr ""
 
-#: libraries/language/site.php:951
+#: libraries/language/site.php:952
 msgid "Error, Invalid Confirmation Number"
 msgstr ""
 
-#: libraries/language/site.php:960
+#: libraries/language/site.php:961
 msgid "%d people in one room (adults: %d, children: %d)"
 msgstr ""
 
-#: libraries/language/site.php:963
+#: libraries/language/site.php:964
 msgid "Cancellation/Modification Request"
 msgstr ""
 
-#: libraries/language/site.php:966
+#: libraries/language/site.php:967
 msgid "Click here to request a cancellation or modification of the booking"
 msgstr ""
 
-#: libraries/language/site.php:975
-#: libraries/language/site.php:1260
+#: libraries/language/site.php:976
+#: libraries/language/site.php:1261
 msgid "Send Request"
 msgstr ""
 
-#: libraries/language/site.php:978
+#: libraries/language/site.php:979
 msgid "Booking Cancellation-Modification Request"
 msgstr ""
 
-#: libraries/language/site.php:981
+#: libraries/language/site.php:982
 msgid ""
 "A Cancellation-Modification Request has been sent by the customer for the booking id %s.\n"
 "Booking details: %s"
 msgstr ""
 
-#: libraries/language/site.php:984
+#: libraries/language/site.php:985
 msgid "Your request has been sent successfully. Please do not send it again"
 msgstr ""
 
-#: libraries/language/site.php:987
+#: libraries/language/site.php:988
 msgid "Check-in for today no longer available, please select a different Check-in Date"
 msgstr ""
 
-#: libraries/language/site.php:990
+#: libraries/language/site.php:991
 msgid "The Check-in Date is in the past, please select a different Date"
 msgstr ""
 
-#: libraries/language/site.php:999
+#: libraries/language/site.php:1000
 msgid "Error, the departure day in %s must be on a %s if arriving on a %s"
 msgstr ""
 
-#: libraries/language/site.php:1002
+#: libraries/language/site.php:1003
 msgid "Error, the arrival day in these dates must be on a %s. Please try again."
 msgstr ""
 
-#: libraries/language/site.php:1005
+#: libraries/language/site.php:1006
 msgid "Error, the maximum number of nights of stay in these dates is %d. Please try again."
 msgstr ""
 
-#: libraries/language/site.php:1008
+#: libraries/language/site.php:1009
 msgid "Error, the minimum number of nights of stay in these dates is %d. Please try again."
 msgstr ""
 
-#: libraries/language/site.php:1011
+#: libraries/language/site.php:1012
 msgid "Error, the number of nights of stay allowed in these dates must be a multiple of %d. Please try again."
 msgstr ""
 
-#: libraries/language/site.php:1014
+#: libraries/language/site.php:1015
 msgid "Error, the departure day in these dates must be on a %s if arriving on a %s"
 msgstr ""
 
-#: libraries/language/site.php:1017
+#: libraries/language/site.php:1018
 msgid "Some results were excluded: try selecting the arrival day in %s as a %s."
 msgstr ""
 
-#: libraries/language/site.php:1020
+#: libraries/language/site.php:1021
 msgid "Some results were excluded: the maximum number of nights of stay in %s is %d."
 msgstr ""
 
-#: libraries/language/site.php:1023
+#: libraries/language/site.php:1024
 msgid "Some results were excluded: the minimum number of nights of stay in %s is %d."
 msgstr ""
 
-#: libraries/language/site.php:1026
+#: libraries/language/site.php:1027
 msgid "Some results were excluded: the number of nights of stay allowed in %s should be a multiple of %d."
 msgstr ""
 
-#: libraries/language/site.php:1029
+#: libraries/language/site.php:1030
 msgid "Some results were excluded: the departure day in %s should be on a %s if arriving on a %s"
 msgstr ""
 
-#: libraries/language/site.php:1032
+#: libraries/language/site.php:1033
 msgid "Some results were excluded: the arrival day in these dates should be on a %s."
 msgstr ""
 
-#: libraries/language/site.php:1035
+#: libraries/language/site.php:1036
 msgid "Some results were excluded: the maximum number of nights of stay in these dates is %d."
 msgstr ""
 
-#: libraries/language/site.php:1038
+#: libraries/language/site.php:1039
 msgid "Some results were excluded: the minimum number of nights of stay in these dates is %d."
 msgstr ""
 
-#: libraries/language/site.php:1041
+#: libraries/language/site.php:1042
 msgid "Some results were excluded: the number of nights of stay allowed in these dates should be a multiple of %d."
 msgstr ""
 
-#: libraries/language/site.php:1044
+#: libraries/language/site.php:1045
 msgid "Some results were excluded: the departure day in these dates should be on a %s if arriving on a %s"
 msgstr ""
 
-#: libraries/language/site.php:1047
+#: libraries/language/site.php:1048
 msgid "Last %d available!"
 msgstr ""
 
-#: libraries/language/site.php:1050
+#: libraries/language/site.php:1051
 msgid "<sup>***</sup>Prices may change depending on the number of guests and on the number of nights of stay."
 msgstr ""
 
-#: libraries/language/site.php:1056
+#: libraries/language/site.php:1057
 msgid "Sent via eMail"
 msgstr ""
 
-#: libraries/language/site.php:1065
+#: libraries/language/site.php:1066
 msgid "Free Cancellation"
 msgstr ""
 
-#: libraries/language/site.php:1068
+#: libraries/language/site.php:1069
 msgid "Refundable up to %d days before arrival"
 msgstr ""
 
-#: libraries/language/site.php:1071
+#: libraries/language/site.php:1072
 msgid "New Reservation #%s"
 msgstr ""
 
-#: libraries/language/site.php:1074
+#: libraries/language/site.php:1075
 msgid "Payment for Reservation #%s"
 msgstr ""
 
-#: libraries/language/site.php:1077
+#: libraries/language/site.php:1078
 msgid "Error, %d units of the room %s are not available on the requested dates. Please select other rooms or use different dates."
 msgstr ""
 
-#: libraries/language/site.php:1080
+#: libraries/language/site.php:1081
 msgid "There are no more units available of this room with the current selection"
 msgstr ""
 
-#: libraries/language/site.php:1083
+#: libraries/language/site.php:1084
 msgid "Insufficient data received for converting the currency"
 msgstr ""
 
-#: libraries/language/site.php:1086
+#: libraries/language/site.php:1087
 msgid "Invalid data received for converting the currency"
 msgstr ""
 
-#: libraries/language/site.php:1089
+#: libraries/language/site.php:1090
 msgid "Invalid Credit Card Information Received, please try again"
 msgstr ""
 
-#: libraries/language/site.php:1092
+#: libraries/language/site.php:1093
 msgid "The payment was not verified, please try again"
 msgstr ""
 
-#: libraries/language/site.php:1095
+#: libraries/language/site.php:1096
 msgid "Thank you! Credit Card Information Successfully Received"
 msgstr ""
 
-#: libraries/language/site.php:1098
+#: libraries/language/site.php:1099
 msgid "Check-out Only"
 msgstr ""
 
-#: libraries/language/site.php:1101
+#: libraries/language/site.php:1102
 msgid "We may use third-party service providers to process your personal information on our behalf for the purposes specified above. For example, we may share some information about you with these third parties so that they can contact you directly by email (e.g. to obtain post-stay reviews about your travel experience)."
 msgstr ""
 
-#: libraries/language/site.php:1104
+#: libraries/language/site.php:1105
 msgid "Okay"
 msgstr ""
 
-#: libraries/language/site.php:1107
+#: libraries/language/site.php:1108
 msgid "No active promotions found"
 msgstr ""
 
-#: libraries/language/site.php:1110
+#: libraries/language/site.php:1111
 msgid "Off"
 msgstr ""
 
-#: libraries/language/site.php:1113
+#: libraries/language/site.php:1114
 msgid "Off per Day"
 msgstr ""
 
-#: libraries/language/site.php:1122
+#: libraries/language/site.php:1123
 msgid "Valid until"
 msgstr ""
 
-#: libraries/language/site.php:1125
+#: libraries/language/site.php:1126
 msgid "Book it Now"
 msgstr ""
 
-#: libraries/language/site.php:1149
+#: libraries/language/site.php:1150
 msgid "Availability Calendar"
 msgstr ""
 
-#: libraries/language/site.php:1152
+#: libraries/language/site.php:1153
 msgid "Rates &amp; Restrictions - Seasons Calendar"
 msgstr ""
 
-#: libraries/language/site.php:1155
+#: libraries/language/site.php:1156
 msgid "%d units of %s are not available for %d nights"
 msgstr ""
 
-#: libraries/language/site.php:1227
+#: libraries/language/site.php:1228
 msgid "Returning Customer?"
 msgstr ""
 
-#: libraries/language/site.php:1230
+#: libraries/language/site.php:1231
 msgid "Please enter your PIN Code"
 msgstr ""
 
-#: libraries/language/site.php:1236
+#: libraries/language/site.php:1237
 msgid "Welcome back"
 msgstr ""
 
-#: libraries/language/site.php:1239
+#: libraries/language/site.php:1240
 msgid "Invalid PIN Code. Please try again or just enter your information below"
 msgstr ""
 
-#: libraries/language/site.php:1245
+#: libraries/language/site.php:1246
 msgid "Request Information"
 msgstr ""
 
-#: libraries/language/site.php:1248
+#: libraries/language/site.php:1249
 msgid "Request Information for %s"
 msgstr ""
 
-#: libraries/language/site.php:1251
+#: libraries/language/site.php:1252
 #: modules/mod_vikbooking_currencyconverter/language/handler.php:59
 msgid "Full Name"
 msgstr ""
 
-#: libraries/language/site.php:1263
+#: libraries/language/site.php:1264
 msgid "Please fill in all the fields in order to request information."
 msgstr ""
 
-#: libraries/language/site.php:1266
+#: libraries/language/site.php:1267
 msgid "Information Request for %s"
 msgstr ""
 
-#: libraries/language/site.php:1269
+#: libraries/language/site.php:1270
 msgid "Information Request Successfully Sent!"
 msgstr ""
 
-#: libraries/language/site.php:1272
+#: libraries/language/site.php:1273
 msgid "Error, Invalid Token."
 msgstr ""
 
-#: libraries/language/site.php:1281
+#: libraries/language/site.php:1282
 msgid "No active packages found"
 msgstr ""
 
-#: libraries/language/site.php:1287
+#: libraries/language/site.php:1288
 msgid "Validity"
 msgstr ""
 
-#: libraries/language/site.php:1290
+#: libraries/language/site.php:1291
 msgid "per Person"
 msgstr ""
 
-#: libraries/language/site.php:1296
+#: libraries/language/site.php:1297
 msgid "More Details"
 msgstr ""
 
-#: libraries/language/site.php:1299
+#: libraries/language/site.php:1300
 msgid "Package not found or no longer available."
 msgstr ""
 
-#: libraries/language/site.php:1302
+#: libraries/language/site.php:1303
 msgid "Book now your room"
 msgstr ""
 
-#: libraries/language/site.php:1308
+#: libraries/language/site.php:1309
 msgid "Package not found."
 msgstr ""
 
-#: libraries/language/site.php:1311
+#: libraries/language/site.php:1312
 msgid "The room requested is not available for this package."
 msgstr ""
 
-#: libraries/language/site.php:1314
+#: libraries/language/site.php:1315
 msgid "Invalid number of nights requested for this package."
 msgstr ""
 
-#: libraries/language/site.php:1317
+#: libraries/language/site.php:1318
 msgid "Check-in Date not allowed for this package."
 msgstr ""
 
-#: libraries/language/site.php:1320
+#: libraries/language/site.php:1321
 msgid "Check-out Date not allowed for this package."
 msgstr ""
 
-#: libraries/language/site.php:1323
+#: libraries/language/site.php:1324
 msgid "Invalid date selected for this package (%s)"
 msgstr ""
 
-#: libraries/language/site.php:1326
+#: libraries/language/site.php:1327
 msgid "Packages"
 msgstr ""
 
-#: libraries/language/site.php:1332
+#: libraries/language/site.php:1333
 msgid "We will be closed on the following dates: %s"
 msgstr ""
 
-#: libraries/language/site.php:1335
+#: libraries/language/site.php:1336
 msgid "Confirmation Number or PIN Code"
 msgstr ""
 
-#: libraries/language/site.php:1347
+#: libraries/language/site.php:1348
 msgid "Check-in Only"
 msgstr ""
 
-#: libraries/language/site.php:1398
+#: libraries/language/site.php:1399
 msgid "Invoice for your stay"
 msgstr ""
 
-#: libraries/language/site.php:1401
+#: libraries/language/site.php:1402
 msgid ""
 "Dear Customer, \n"
 "attached to this message you will find the invoice for your stay. \n"
 "Thank you!"
 msgstr ""
 
-#: libraries/language/site.php:1413
+#: libraries/language/site.php:1414
 msgid "Payment Terms"
 msgstr ""
 
-#: libraries/language/site.php:1416
+#: libraries/language/site.php:1417
 msgid "Pay full amount now"
 msgstr ""
 
-#: libraries/language/site.php:1419
+#: libraries/language/site.php:1420
 msgid "Leave a deposit of %s"
 msgstr ""
 
-#: libraries/language/site.php:1422
+#: libraries/language/site.php:1423
 msgid "Customer has chosen to pay the full amount."
 msgstr ""
 
-#: libraries/language/site.php:1425
+#: libraries/language/site.php:1426
 msgid "Card Type"
 msgstr ""
 
-#: libraries/language/site.php:1428
+#: libraries/language/site.php:1429
 msgid "Hide/Show Credit Card Details Submission Form"
 msgstr ""
 
-#: libraries/language/site.php:1431
+#: libraries/language/site.php:1432
 msgid "Error, arrivals on %s are not permitted on %s"
 msgstr ""
 
-#: libraries/language/site.php:1434
+#: libraries/language/site.php:1435
 msgid "Error, departures on %s are not permitted on %s"
 msgstr ""
 
-#: libraries/language/site.php:1437
+#: libraries/language/site.php:1438
 msgid "Error, arrivals on %s are not permitted on the selected dates"
 msgstr ""
 
-#: libraries/language/site.php:1440
+#: libraries/language/site.php:1441
 msgid "Error, departures on %s are not permitted on the selected dates"
 msgstr ""
 
-#: libraries/language/site.php:1449
+#: libraries/language/site.php:1450
 msgid "Please fill in or accept all the required fields"
 msgstr ""
 
-#: libraries/language/site.php:1452
+#: libraries/language/site.php:1453
 msgid "Error, this booking has a check-in date in the past and it was not confirmed on time. The booking is now Cancelled."
 msgstr ""
 
-#: libraries/language/site.php:1455
+#: libraries/language/site.php:1456
 msgid "Time over to confirm the reservation. Please make a new one."
 msgstr ""
 
-#: libraries/language/site.php:1458
+#: libraries/language/site.php:1459
 msgid "Minute"
 msgstr ""
 
-#: libraries/language/site.php:1461
+#: libraries/language/site.php:1462
 msgid "Minutes"
 msgstr ""
 
-#: libraries/language/site.php:1464
+#: libraries/language/site.php:1465
 msgid "You have %s left to confirm the reservation"
 msgstr ""
 
-#: libraries/language/site.php:1515
+#: libraries/language/site.php:1516
 msgid "Thank you! Signature saved correctly"
 msgstr ""
 
-#: libraries/language/site.php:1518
+#: libraries/language/site.php:1519
 msgid "Maximum date in the future allowed for booking is %s"
 msgstr ""
 
-#: libraries/language/site.php:1521
+#: libraries/language/site.php:1522
 msgid "Minimum days in advance for bookings is %d"
 msgstr ""
 
-#: libraries/language/site.php:1524
+#: libraries/language/site.php:1525
 msgid "the number of guests selected"
 msgstr ""
 
-#: libraries/language/site.php:1527
+#: libraries/language/site.php:1528
 msgid "Closest booking solutions for %s"
 msgstr ""
 
-#: libraries/language/site.php:1530
+#: libraries/language/site.php:1531
 msgid "Check-in on %s"
 msgstr ""
 
-#: libraries/language/site.php:1533
+#: libraries/language/site.php:1534
 msgid "Check-out on %s"
 msgstr ""
 
-#: libraries/language/site.php:1536
+#: libraries/language/site.php:1537
 msgid "Availability for the dates near the ones selected"
 msgstr ""
 
-#: libraries/language/site.php:1539
+#: libraries/language/site.php:1540
 msgid "Other booking solutions for %s"
 msgstr ""
 
-#: libraries/language/site.php:1542
+#: libraries/language/site.php:1543
 msgid "No booking solutions found for the number of rooms and guests requested"
 msgstr ""
 
-#: libraries/language/site.php:1545
+#: libraries/language/site.php:1546
 msgid "No booking solutions found for the number of nights and guests requested"
 msgstr ""
 
-#: libraries/language/site.php:1548
+#: libraries/language/site.php:1549
 msgid "Search Rooms"
 msgstr ""
 
-#: libraries/language/site.php:1551
+#: libraries/language/site.php:1552
 msgid "Cancel your Booking"
 msgstr ""
 
-#: libraries/language/site.php:1554
+#: libraries/language/site.php:1555
 msgid "Please specify your cancellation reasons"
 msgstr ""
 
-#: libraries/language/site.php:1557
+#: libraries/language/site.php:1558
 msgid "Booking Cancellation"
 msgstr ""
 
-#: libraries/language/site.php:1560
+#: libraries/language/site.php:1561
 msgid ""
 "The booking ID %s has been cancelled on behalf of the customer. The rate plan selected, and the cancellation terms, allowed the customer to cancel this reservation.\n"
 "Booking details: %s"
 msgstr ""
 
-#: libraries/language/site.php:1563
+#: libraries/language/site.php:1564
 msgid "The reservation has been cancelled successfully"
 msgstr ""
 
-#: libraries/language/site.php:1566
+#: libraries/language/site.php:1567
 msgid "Missing required data to complete the action"
 msgstr ""
 
-#: libraries/language/site.php:1569
+#: libraries/language/site.php:1570
 msgid "This booking cannot be cancelled due to the cancellation terms not matching the requirements"
 msgstr ""
 
-#: libraries/language/site.php:1572
+#: libraries/language/site.php:1573
 msgid "Modify your Booking"
 msgstr ""
 
-#: libraries/language/site.php:1575
+#: libraries/language/site.php:1576
 msgid "Do you really want to modify your booking?"
 msgstr ""
 
-#: libraries/language/site.php:1578
+#: libraries/language/site.php:1579
 msgid "Your confirmed booking at %s"
 msgstr ""
 
-#: libraries/language/site.php:1581
+#: libraries/language/site.php:1582
 msgid "Booking Confirmed"
 msgstr ""
 
-#: libraries/language/site.php:1584
+#: libraries/language/site.php:1585
 msgid "Booking waiting for the payment"
 msgstr ""
 
-#: libraries/language/site.php:1587
+#: libraries/language/site.php:1588
 msgid "Booking Cancelled"
 msgstr ""
 
-#: libraries/language/site.php:1590
+#: libraries/language/site.php:1591
 msgid "Cancel Modification"
 msgstr ""
 
-#: libraries/language/site.php:1593
+#: libraries/language/site.php:1594
 msgid "This booking cannot be modified due to the modification terms not matching the requirements"
 msgstr ""
 
-#: libraries/language/site.php:1596
+#: libraries/language/site.php:1597
 msgid "Select the new dates, number of rooms and guests to modify your booking"
 msgstr ""
 
-#: libraries/language/site.php:1599
+#: libraries/language/site.php:1600
 msgid "Select the new rooms to modify your booking"
 msgstr ""
 
-#: libraries/language/site.php:1602
+#: libraries/language/site.php:1603
 msgid "Choose your rate plans to modify the booking"
 msgstr ""
 
-#: libraries/language/site.php:1605
+#: libraries/language/site.php:1606
 msgid "Confirm your details to modify the booking"
 msgstr ""
 
-#: libraries/language/site.php:1608
+#: libraries/language/site.php:1609
 msgid "Previous Total"
 msgstr ""
 
-#: libraries/language/site.php:1611
+#: libraries/language/site.php:1612
 msgid "Totals Difference"
 msgstr ""
 
-#: libraries/language/site.php:1614
+#: libraries/language/site.php:1615
 msgid "Modify Booking"
 msgstr ""
 
-#: libraries/language/site.php:1617
+#: libraries/language/site.php:1618
 msgid "Reservation #%s Modified"
 msgstr ""
 
-#: libraries/language/site.php:1620
+#: libraries/language/site.php:1621
 msgid "Reservation Modified"
 msgstr ""
 
-#: libraries/language/site.php:1623
+#: libraries/language/site.php:1624
 msgid "Your booking was successfully modified"
 msgstr ""
 
-#: libraries/language/site.php:1635
+#: libraries/language/site.php:1636
 msgid "Non Refundable Rate"
 msgstr ""
 
-#: libraries/language/site.php:1641
+#: libraries/language/site.php:1642
 msgid "Invalid authentication code. Please try again"
 msgstr ""
 
-#: libraries/language/site.php:1647
+#: libraries/language/site.php:1648
 msgid "Logout"
 msgstr ""
 
-#: libraries/language/site.php:1650
+#: libraries/language/site.php:1651
 msgid "You are not authorized to access this resource."
 msgstr ""
 
-#: libraries/language/site.php:1653
+#: libraries/language/site.php:1654
 msgid "Arriving today"
 msgstr ""
 
-#: libraries/language/site.php:1656
+#: libraries/language/site.php:1657
 msgid "Arriving tomorrow"
 msgstr ""
 
-#: libraries/language/site.php:1659
+#: libraries/language/site.php:1660
 msgid "Departing today"
 msgstr ""
 
-#: libraries/language/site.php:1662
+#: libraries/language/site.php:1663
 msgid "Departing tomorrow"
 msgstr ""
 
-#: libraries/language/site.php:1665
+#: libraries/language/site.php:1666
 msgid "Staying today"
 msgstr ""
 
-#: libraries/language/site.php:1668
+#: libraries/language/site.php:1669
 msgid "Staying tomorrow"
 msgstr ""
 
-#: libraries/language/site.php:1671
+#: libraries/language/site.php:1672
 msgid "Toggle Fullscreen"
 msgstr ""
 
-#: libraries/language/site.php:1677
+#: libraries/language/site.php:1678
 msgid "Chat with %s"
 msgstr ""
 
-#: libraries/language/site.php:1680
-#: libraries/language/site.php:1713
+#: libraries/language/site.php:1681
+#: libraries/language/site.php:1714
 msgid "Pre Check-in"
 msgstr ""
 
-#: libraries/language/site.php:1707
+#: libraries/language/site.php:1708
 msgid "Save check-in information"
 msgstr ""
 
-#: libraries/language/site.php:1710
+#: libraries/language/site.php:1711
 msgid "Information correctly saved. Thank you!"
 msgstr ""
 
-#: libraries/language/site.php:1716
+#: libraries/language/site.php:1717
 msgid "Reserve additional services"
 msgstr ""
 
-#: libraries/language/site.php:1719
+#: libraries/language/site.php:1720
 msgid "Add some extra services to your reservation!"
 msgstr ""
 
-#: libraries/language/site.php:1728
+#: libraries/language/site.php:1729
 msgid "Update Reservation"
 msgstr ""
 
-#: libraries/language/site.php:1731
+#: libraries/language/site.php:1732
 msgid "The selected extra services will be added to your reservation. The action cannot be undone. Do you want to proceed?"
 msgstr ""
 
-#: libraries/language/site.php:1734
+#: libraries/language/site.php:1735
 msgid "Thank you! Your reservation has been updated correctly!"
 msgstr ""
 
-#: libraries/language/site.php:1737
+#: libraries/language/site.php:1738
 msgid "Please select a quantity greater than zero"
 msgstr ""
 
-#: libraries/language/site.php:1743
+#: libraries/language/site.php:1744
 msgid "%d rooms missing"
 msgstr ""
 
-#: libraries/language/site.php:1746
+#: libraries/language/site.php:1747
 msgid "%d room missing"
 msgstr ""
 
-#: libraries/language/site.php:1749
+#: libraries/language/site.php:1750
 msgid "Reserve"
 msgstr ""
 
-#: libraries/language/site.php:1755
+#: libraries/language/site.php:1756
 msgid "Leave a review for your stay"
 msgstr ""
 
-#: libraries/language/site.php:1758
+#: libraries/language/site.php:1759
 msgid "Please describe your experience"
 msgstr ""
 
-#: libraries/language/site.php:1761
+#: libraries/language/site.php:1762
 msgid "By leaving a review you agree with our Terms and Conditions and Privacy Policy."
 msgstr ""
 
-#: libraries/language/site.php:1764
+#: libraries/language/site.php:1765
 msgid "Submit review"
 msgstr ""
 
-#: libraries/language/site.php:1767
+#: libraries/language/site.php:1768
 msgid "Please use a minimum of %d chars for your review message"
 msgstr ""
 
-#: libraries/language/site.php:1770
+#: libraries/language/site.php:1771
 msgid "Thank you! We have received your review."
 msgstr ""
 
-#: libraries/language/site.php:1773
+#: libraries/language/site.php:1774
 msgid "Error, please try again."
 msgstr ""
 
-#: libraries/language/site.php:1776
+#: libraries/language/site.php:1777
 msgid "Owner reply"
 msgstr ""
 
-#: libraries/language/site.php:1779
+#: libraries/language/site.php:1780
 msgid "Please rate your experience"
 msgstr ""
 
-#: libraries/language/site.php:1782
+#: libraries/language/site.php:1783
 msgid "Your rating"
 msgstr ""
 
-#: libraries/language/site.php:1788
+#: libraries/language/site.php:1789
 msgid "Bed preference"
 msgstr ""
 
-#: libraries/language/site.php:1791
+#: libraries/language/site.php:1792
 msgid "Booker is Genius"
 msgstr ""
 
-#: libraries/language/site.php:1803
+#: libraries/language/site.php:1804
 msgid "The requested combination of rooms and guests is only available on other dates."
 msgstr ""
 
-#: libraries/language/site.php:1806
+#: libraries/language/site.php:1807
 msgid "We could not find enough rooms for the party requested, but you can book a different combination of rooms."
 msgstr ""
 
-#: libraries/language/site.php:1818
+#: libraries/language/site.php:1819
 msgid "Do you want to cancel the selection?"
 msgstr ""
 
-#: libraries/language/site.php:1821
+#: libraries/language/site.php:1822
 msgid "Pay Now"
 msgstr ""
 
-#: libraries/language/site.php:1830
+#: libraries/language/site.php:1831
 msgid "Uploading failed. Please try again"
 msgstr ""
 
-#: libraries/language/site.php:1833
+#: libraries/language/site.php:1834
 msgid "Do you want to remove the selected file?"
 msgstr ""
 
-#: libraries/language/site.php:1836
+#: libraries/language/site.php:1837
 msgid "Click the save button at the bottom of the page when you are done."
 msgstr ""
 
-#: libraries/language/site.php:1839
+#: libraries/language/site.php:1840
 msgid "Personal data is collected and processed in accordance with the Privacy Policy accepted at the time of booking."
 msgstr ""
 
-#: libraries/language/site.php:1842
+#: libraries/language/site.php:1843
 msgid "Alternative dates were used to allocate the inquiry reservation"
 msgstr ""
 
-#: libraries/language/site.php:1845
+#: libraries/language/site.php:1846
 msgid "Alternative room party used to allocate the inquiry reservation"
 msgstr ""
 
-#: libraries/language/site.php:1848
+#: libraries/language/site.php:1849
 msgid "Dummy room was used to allocate the inquiry reservation due to no availability"
 msgstr ""
 
-#: libraries/language/site.php:1860
+#: libraries/language/site.php:1861
 msgid "Split stay solutions"
 msgstr ""
 
-#: libraries/language/site.php:1863
+#: libraries/language/site.php:1864
 msgid "By placing a split stay reservation you will have to change room(s) during your stay."
 msgstr ""
 
-#: libraries/language/site.php:1866
+#: libraries/language/site.php:1867
 msgid "Split stay reservation"
 msgstr ""
 
-#: libraries/language/site.php:1875
+#: libraries/language/site.php:1876
 msgid "Get a better room"
 msgstr ""
 
-#: libraries/language/site.php:1884
+#: libraries/language/site.php:1885
 msgid "Keep this room"
 msgstr ""
 
-#: libraries/language/site.php:1887
+#: libraries/language/site.php:1888
 msgid "Do you want to upgrade to this room? Your booking will be modified."
 msgstr ""
 
-#: libraries/language/site.php:1890
+#: libraries/language/site.php:1891
 msgid "This coupon requires a lower booking total amount"
 msgstr ""
 
-#: libraries/language/site.php:1893
+#: libraries/language/site.php:1894
 msgid "Do you want to remove the coupon discount?"
 msgstr ""
 
-#: libraries/language/site.php:1957
+#: libraries/language/site.php:1958
 msgid "Listings: %s."
 msgstr ""
 
-#: libraries/language/site.php:1960
+#: libraries/language/site.php:1961
 msgid "All listings"
 msgstr ""
 
-#: libraries/language/site.php:2078
+#: libraries/language/site.php:2079
 msgid "All photos"
 msgstr ""
 
-#: libraries/language/site.php:2081
+#: libraries/language/site.php:2082
 msgid "Where you will be"
 msgstr ""
 
-#: libraries/language/site.php:2084
+#: libraries/language/site.php:2085
 msgid "View document"
 msgstr ""
 
-#: libraries/language/site.php:2087
+#: libraries/language/site.php:2088
 msgid "Sign document"
 msgstr ""
 
-#: libraries/language/site.php:2090
+#: libraries/language/site.php:2091
 msgid "Remaining balance to be paid %d days before arrival."
 msgstr ""
 
-#: libraries/language/site.php:2093
+#: libraries/language/site.php:2094
 msgid "Remaining balance to be paid upon arrival."
 msgstr ""
 
-#: libraries/language/site.php:2096
+#: libraries/language/site.php:2097
 msgid "Damage deposit"
+msgstr ""
+
+#: libraries/language/site.php:2140
+msgctxt "e.g. Payable starting from 2025-03-01"
+msgid "Payable starting from %s"
 msgstr ""
 
 #: libraries/language/system.php:46

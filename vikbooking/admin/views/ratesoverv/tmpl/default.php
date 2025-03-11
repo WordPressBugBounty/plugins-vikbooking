@@ -48,6 +48,8 @@ $vbo_app->loadSelect2();
 $vbo_app->loadDatePicker();
 $vbo_app->loadDatesRangePicker();
 
+$is_mobile = VikBooking::detectUserAgent(false, false);
+
 $pdebug = VikRequest::getint('e4j_debug', '', 'request');
 
 $vbo_df = VikBooking::getDateFormat();
@@ -1534,6 +1536,13 @@ jQuery(function() {
 	});
 
 	/**
+	 * Disable keyboard on regular datepicker input fields.
+	 */
+	jQuery('.vbodatepicker').on('focus', function() {
+		jQuery(this).blur();
+	});
+
+	/**
 	 * Dates-Range-Picker calendar for Rates Calculator tool.
 	 */
 	jQuery('#checkindate').vboDatesRangePicker({
@@ -1541,7 +1550,7 @@ jQuery(function() {
 		showOn: 'focus',
 		dateFormat: 'yy-mm-dd',
 		minDate: '0d',
-		numberOfMonths: 2,
+		numberOfMonths: <?php echo $is_mobile ? 1 : 2; ?>,
 		onSelect: {
 			checkin: (selectedDate) => {
 				var nownights = parseInt(jQuery('#vbo-numnights').val());

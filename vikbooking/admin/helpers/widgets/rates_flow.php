@@ -805,7 +805,7 @@ class VikBookingAdminWidgetRatesFlow extends VikBookingAdminWidget
 				};
 			}
 
-			jQuery(document).ready(function() {
+			jQuery(function() {
 
 				// render datepicker calendars for dates navigation
 				jQuery('#<?php echo $wrapper_id; ?>').find('.vbo-ratesflow-dtpicker-from, .vbo-ratesflow-dtpicker-to').datepicker({

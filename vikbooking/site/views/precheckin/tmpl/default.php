@@ -18,6 +18,9 @@ if (VikBooking::loadJquery()) {
 $document->addStyleSheet(VBO_SITE_URI.'resources/jquery-ui.min.css');
 JHtml::fetch('script', VBO_SITE_URI.'resources/jquery-ui.min.js');
 
+// load VBO core JS
+VikBooking::getVboApplication()->loadCoreJS();
+
 $currencysymb = VikBooking::getCurrencySymb();
 $datesep = VikBooking::getDateSeparator();
 $nowdf = VikBooking::getDateFormat();
@@ -66,13 +69,14 @@ foreach ($this->orderrooms as $ind => $or) {
 // countries list
 $all_countries = VikBooking::getCountriesArray();
 
-// access the active back-end driver instance also for pre-checkin
+// access pax fields registration object
 $pax_fields_obj = VBOCheckinPax::getInstance();
 
 // load langs for JS
 JText::script('VBO_UPLOAD_FAILED');
 JText::script('VBO_REMOVEF_CONFIRM');
 JText::script('VBO_PRECHECKIN_TOAST_HELP');
+JText::script('VBO_PLEASE_WAIT');
 ?>
 
 <h3 class="vbo-booking-details-intro"><?php echo JText::sprintf('VBOYOURBOOKCONFAT', VikBooking::getFrontTitle()); ?></h3>
@@ -111,7 +115,7 @@ JText::script('VBO_PRECHECKIN_TOAST_HELP');
 
 	<div class="vbo-precheckin-container">
 		<div class="info vbo-precheckin-disclaimer"><?php echo JText::translate('VBO_PRECHECKIN_DISCLAIMER'); ?></div>
-		<form action="<?php echo JRoute::rewrite('index.php?option=com_vikbooking'.(!empty($pitemid) ? '&Itemid='.$pitemid : '')); ?>" method="post">
+		<form action="<?php echo JRoute::rewrite('index.php?option=com_vikbooking'.(!empty($pitemid) ? '&Itemid='.$pitemid : '')); ?>" method="post" id="vbo-precheckin-main-form">
 			<input type="hidden" name="option" value="com_vikbooking" />
 			<input type="hidden" name="task" value="storeprecheckin" />
 			<input type="hidden" name="sid" value="<?php echo empty($this->order['sid']) && !empty($this->order['idorderota']) ? $this->order['idorderota'] : $this->order['sid']; ?>" />
@@ -741,6 +745,67 @@ JText::script('VBO_PRECHECKIN_TOAST_HELP');
 					// if toast is clicked, we never display it again
 					vbo_typingtoast_displayed = true;
 				});
+			}
+		});
+
+		/**
+		 * Pre-submit form data validation.
+		 */
+		jQuery('#vbo-precheckin-main-form').on('submit', function(e) {
+			// prevent immediate data submission
+			e.preventDefault();
+
+			// disable submit button to avoid duplicate submissions
+			jQuery(this).find('button[type="submit"]').prop('disabled', true);
+
+			try {
+				// build form data for fields validation
+				const validateForm = new FormData;
+
+				// scan all form entries
+				const pcForm = new FormData(document.querySelector('#vbo-precheckin-main-form'));
+				for (const pair of pcForm.entries()) {
+					if (!pair[0] || pair[0].indexOf('guests') !== 0) {
+						// we only want to validate the form "guests" fields
+						continue;
+					}
+					// append field and related value for validation
+					validateForm.append(pair[0], pair[1]);
+				}
+
+				// append booking values for identification
+				validateForm.append('sid', '<?php echo empty($this->order['sid']) && !empty($this->order['idorderota']) ? $this->order['idorderota'] : $this->order['sid']; ?>');
+				validateForm.append('ts', '<?php echo $this->order['ts']; ?>');
+
+				// build query parameters for validation
+				let qpValidation = new URLSearchParams(validateForm).toString();
+
+				// display toast message
+				vboPresentToast(Joomla.JText._('VBO_PLEASE_WAIT'), 5000);
+
+				// validate guest registration fields
+				VBOCore.doAjax(
+					"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=checkin.validatePrecheckinFields'); ?>",
+					qpValidation,
+					(response) => {
+						// unregister form submit event
+						jQuery('#vbo-precheckin-main-form').off('submit');
+						// propagate the form submission in case of success
+						jQuery('#vbo-precheckin-main-form').submit();
+					},
+					(error) => {
+						// display error
+						alert(error.responseText || 'Could not validate fields');
+						// enable submit button to allow re-validation
+						jQuery(this).find('button[type="submit"]').prop('disabled', false);
+					}
+				);
+			} catch(error) {
+				console.error(error);
+				// unregister form submit event
+				jQuery('#vbo-precheckin-main-form').off('submit');
+				// submit the form without fields validation
+				jQuery('#vbo-precheckin-main-form').submit();
 			}
 		});
 

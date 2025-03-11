@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.7.7
+
+*Release date - 11 March 2025*
+
+- Various admin widgets improvements.
+- Responsiveness improvements on admin section.
+- Dates range picker improvements.
+- Damage deposit separate payment improvements.
+- PMS Reports framework updates with new profile settings support.
+- Various improvements to the PMS Reports framework.
+- Pre-checkin guests data collection drivers can validate the information before submission.
+- Introducing PMS report for Catalonia (Spain) Mossos d'Esquadra.
+- Cron jobs email and pre-checkin reminder new listings filter.
+- Orphan dates collection and opening now available for the AI Assistant widget.
+
 ## 1.7.6
 
 *Release date - 19 February 2025*

@@ -112,6 +112,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 			$days_indexes[$i] = (6 - ($firstwday - $i) + 1) % 7;
 		}
 
+		// detect mobile device
+		$is_mobile = VikBooking::detectUserAgent(false, false);
+
 		// currency symbol
 		$currencysymb = VikBooking::getCurrencySymb();
 
@@ -493,7 +496,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				changeMonth: true,
 				changeYear: true,
 				dateFormat: "<?php echo $dtpicker_df; ?>",
-				numberOfMonths: 2,
+				numberOfMonths: <?php echo $is_mobile ? 1 : 2; ?>,
 				responsiveNumMonths: {
 					threshold: 860,
 				},

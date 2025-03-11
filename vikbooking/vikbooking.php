@@ -3,7 +3,7 @@
 Plugin Name:  VikBooking
 Plugin URI:   https://vikwp.com/plugin/vikbooking
 Description:  Certified Booking Engine for Hotels and Accommodations.
-Version:      1.7.6
+Version:      1.7.7
 Author:       E4J s.r.l.
 Author URI:   https://vikwp.com
 License:      GPL2
@@ -338,6 +338,16 @@ add_action('vikbooking_before_dispatch', function()
 		VikBooking::loadPreferredColorStyles();
 	}
 
+	/**
+	 * Prevent some pages from performing an auto-redirect when running
+	 * the Bricks plugin preview.
+	 * 
+	 * @since 1.7.7
+	 */
+	if ($app->input->get('bricks') === 'run' && in_array($app->input->get('view'), ['tinyurl']))
+	{
+		$app->input->set('view', '');
+	}
 });
 
 // instead using the default server timezone, try to use the one

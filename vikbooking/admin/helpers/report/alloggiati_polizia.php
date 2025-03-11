@@ -164,6 +164,17 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 	/**
 	 * @inheritDoc
 	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function allowsProfileSettings()
+	{
+		// allow multiple report profile settings
+		return true;
+	}
+
+	/**
+	 * @inheritDoc
+	 * 
 	 * @since 	1.17.1 (J) - 1.7.1 (WP)
 	 */
 	public function getSettingFields()
@@ -342,6 +353,8 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			return $this->reportFilters;
 		}
 
+		$app = JFactory::getApplication();
+
 		// get VBO Application Object
 		$vbo_app = VikBooking::getVboApplication();
 
@@ -504,7 +517,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			'label' => '<label for="fromdate">'.JText::translate('VBOREPORTSDATEFROM').'</label>',
 			'html' => '<input type="text" id="fromdate" name="fromdate" value="" class="vbo-report-datepicker vbo-report-datepicker-from" />'.$hidden_vals,
 			'type' => 'calendar',
-			'name' => 'fromdate'
+			'name' => 'fromdate',
 		);
 		array_push($this->reportFilters, $filter_opt);
 
@@ -513,7 +526,27 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			'label' => '<label for="todate">'.JText::translate('VBOREPORTSDATETO').'</label>',
 			'html' => '<input type="text" id="todate" name="todate" value="" class="vbo-report-datepicker vbo-report-datepicker-to" />',
 			'type' => 'calendar',
-			'name' => 'todate'
+			'name' => 'todate',
+		);
+		array_push($this->reportFilters, $filter_opt);
+
+		// Listings Filter
+		$filter_opt = array(
+			'label' => '<label for="listingsfilt">' . JText::translate('VBO_LISTINGS') . '</label>',
+			'html' => '<span class="vbo-toolbar-multiselect-wrap">' . $vbo_app->renderElementsDropDown([
+				'id'              => 'listingsfilt',
+				'elements'        => 'listings',
+				'placeholder'     => JText::translate('VBO_LISTINGS'),
+				'allow_clear'     => 1,
+				'attributes'      => [
+					'name' => 'listings[]',
+					'multiple' => 'multiple',
+				],
+				'selected_values' => (array) $app->input->get('listings', [], 'array'),
+			]) . '</span>',
+			'type' => 'select',
+			'multiple' => true,
+			'name' => 'listings',
 		);
 		array_push($this->reportFilters, $filter_opt);
 
@@ -981,6 +1014,8 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 		$pkrorder = VikRequest::getString('krorder', $this->defaultKeyOrder, 'request');
 		$pkrorder = empty($pkrorder) ? $this->defaultKeyOrder : $pkrorder;
 		$pkrorder = $pkrorder == 'DESC' ? 'DESC' : 'ASC';
+		$plistings = (array) VikRequest::getVar('listings', array());
+		$plistings = array_filter(array_map('intval', $plistings));
 		$currency_symb = VikBooking::getCurrencySymb();
 		$df = $this->getDateFormat();
 		$datesep = VikBooking::getDateSeparator();
@@ -1002,14 +1037,59 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			date('Y-m-d', $to_ts),
 		];
 
-		// query to obtain the records (all check-ins within the dates filter)
-		$q = "SELECT `o`.`id`,`o`.`custdata`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`country`,".
-			"`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`t_first_name`,`or`.`t_last_name`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,".
-			"`co`.`idcustomer`,`co`.`pax_data`,`c`.`first_name`,`c`.`last_name`,`c`.`country` AS `customer_country`,`c`.`address`,`c`.`doctype`,`c`.`docnum`,`c`.`gender`,`c`.`bdate`,`c`.`pbirth` ".
-			"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
-			"LEFT JOIN `#__vikbooking_customers_orders` AS `co` ON `co`.`idorder`=`o`.`id` LEFT JOIN `#__vikbooking_customers` AS `c` ON `c`.`id`=`co`.`idcustomer` ".
-			"WHERE `o`.`status`='confirmed' AND `o`.`closure`=0 AND `o`.`checkin`>=".$from_ts." AND `o`.`checkin`<=".$to_ts." ".
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
+		// build query to obtain the records (all check-ins within the dates filter)
+		$q = $this->dbo->getQuery(true)
+			->select([
+				$this->dbo->qn('o.id'),
+				$this->dbo->qn('o.custdata'),
+				$this->dbo->qn('o.ts'),
+				$this->dbo->qn('o.days'),
+				$this->dbo->qn('o.checkin'),
+				$this->dbo->qn('o.checkout'),
+				$this->dbo->qn('o.totpaid'),
+				$this->dbo->qn('o.roomsnum'),
+				$this->dbo->qn('o.total'),
+				$this->dbo->qn('o.idorderota'),
+				$this->dbo->qn('o.channel'),
+				$this->dbo->qn('o.country'),
+				$this->dbo->qn('or.idorder'),
+				$this->dbo->qn('or.idroom'),
+				$this->dbo->qn('or.adults'),
+				$this->dbo->qn('or.children'),
+				$this->dbo->qn('or.t_first_name'),
+				$this->dbo->qn('or.t_last_name'),
+				$this->dbo->qn('or.cust_cost'),
+				$this->dbo->qn('or.cust_idiva'),
+				$this->dbo->qn('or.extracosts'),
+				$this->dbo->qn('or.room_cost'),
+				$this->dbo->qn('co.idcustomer'),
+				$this->dbo->qn('co.pax_data'),
+				$this->dbo->qn('c.first_name'),
+				$this->dbo->qn('c.last_name'),
+				$this->dbo->qn('c.country', 'customer_country'),
+				$this->dbo->qn('c.address'),
+				$this->dbo->qn('c.doctype'),
+				$this->dbo->qn('c.docnum'),
+				$this->dbo->qn('c.gender'),
+				$this->dbo->qn('c.bdate'),
+				$this->dbo->qn('c.pbirth'),
+			])
+			->from($this->dbo->qn('#__vikbooking_orders', 'o'))
+			->leftJoin($this->dbo->qn('#__vikbooking_ordersrooms', 'or') . ' ON ' . $this->dbo->qn('or.idorder') . ' = ' . $this->dbo->qn('o.id'))
+			->leftJoin($this->dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $this->dbo->qn('co.idorder') . ' = ' . $this->dbo->qn('o.id'))
+			->leftJoin($this->dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $this->dbo->qn('c.id') . ' = ' . $this->dbo->qn('co.idcustomer'))
+			->where($this->dbo->qn('o.status') . ' = ' . $this->dbo->q('confirmed'))
+			->where($this->dbo->qn('o.closure') . ' = 0')
+			->where($this->dbo->qn('o.checkin') . ' >= ' . $from_ts)
+			->where($this->dbo->qn('o.checkin') . ' <= ' . $to_ts)
+			->order($this->dbo->qn('o.checkin') . ' ASC')
+			->order($this->dbo->qn('o.id') . ' ASC')
+			->order($this->dbo->qn('or.id') . ' ASC');
+
+		if ($plistings) {
+			$q->where($this->dbo->qn('or.idroom') . ' IN (' . implode(', ', $plistings) . ')');
+		}
+
 		$this->dbo->setQuery($q);
 		$records = $this->dbo->loadAssocList();
 

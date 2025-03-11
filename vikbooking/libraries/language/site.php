@@ -1,3 +1,4 @@
+
 <?php
 /** 
  * @package   	VikBooking - Libraries
@@ -2133,6 +2134,17 @@ class VikBookingLanguageSite implements JLanguageHandler
 				break;
 			case 'VBO_NEW_MESSAGES':
 				$result = __('There are new messages.', 'vikbooking');
+				break;
+			case 'VBO_PAYABLE_FROM_DT':
+				// @TRANSLATORS: Payable starting from 2025-03-01.
+				$result = _x('Payable starting from %s', 'e.g. Payable starting from 2025-03-01', 'vikbooking');
+				break;
+			case 'VBO_PLEASE_WAIT':
+				$result = __('Please wait', 'vikbooking');
+				break;
+			case 'VBO_MISSING_GFIELD_REGISTRATION':
+				// @TRANSLATORS: Please provide the information for the guest registration field "ID Number".
+				$result = _x('Please provide the information for the guest registration field "%s".', 'e.g. Please provide the information for the guest registration field "ID Number".', 'vikbooking');
 				break;
 		}
 

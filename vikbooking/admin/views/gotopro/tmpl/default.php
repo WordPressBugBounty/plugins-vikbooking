@@ -63,16 +63,28 @@ $datesep = VikBooking::getDateSeparator();
 		</div>
 	</div>
 	<div class="viwppro-feats-cnt">
+		
 		<div class="viwppro-feats-row vikwppro-even viwppro-row-heightsmall">
-			<div class="viwppro-feats-img">
-				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/rates_overview.gif" alt="<?php echo JText::translate('VBOPROWHYRATES'); ?>" />
-			</div>
 			<div class="viwppro-feats-text">
 				<h4><?php echo JText::translate('VBOPROWHYRATES'); ?></h4>
 				<p><?php echo JText::translate('VBOPROWHYRATESDESC'); ?></p>
 			</div>
+			<div class="viwppro-feats-img">
+				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/rates_overview.jpg" alt="<?php echo JText::translate('VBOPROWHYRATES'); ?>" />
+			</div>
 		</div>
-		<div class="viwppro-feats-row vikwppro-odd">
+
+		<div class="viwppro-feats-row">
+			<div class="viwppro-feats-text">
+				<h4><?php echo JText::translate('VBOPROWHYCRONJOB'); ?></h4>
+				<p><?php echo JText::translate('VBOPROWHYCRONJOBDESC'); ?></p>
+			</div>
+			<div class="viwppro-feats-img">
+				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vik-booking-automatize-email-tasks.jpg" alt="<?php echo JText::translate('VBOPROWHYCRONJOB'); ?>" />
+			</div>
+		</div>
+
+		<div class="viwppro-feats-row">
 			<div class="viwppro-feats-text">
 				<h4><?php echo JText::translate('VBOPROWHYEXTRASERVICES'); ?></h4>
 				<p><?php echo JText::translate('VBOPROWHYEXTRASERVICESDESC'); ?></p>
@@ -81,34 +93,14 @@ $datesep = VikBooking::getDateSeparator();
 				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vbo-extra-services.jpg" alt="<?php echo JText::translate('VBOPROWHYEXTRASERVICES'); ?>" />
 			</div>
 		</div>
-		
-		<div class="viwppro-feats-row vikwppro-odd">
-			<div class="viwppro-feats-img">
-				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/occupancy-report.jpg" alt="<?php echo JText::translate('VBOPROWHYREPORT'); ?>" />
-			</div>
-			<div class="viwppro-feats-text">
-				<h4><?php echo JText::translate('VBOPROWHYREPORT'); ?></h4>
-				<p><?php echo JText::translate('VBOPROWHYREPORTDESC'); ?></p>
-			</div>			
-		</div>
-
-		<div class="viwppro-feats-row vikwppro-odd">
-			<div class="viwppro-feats-text">
-				<h4><?php echo JText::translate('VBOPROWHYCRONJOB'); ?></h4>
-				<p><?php echo JText::translate('VBOPROWHYCRONJOBDESC'); ?></p>
-			</div>
-			<div class="viwppro-feats-img">
-				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/hotel-vik-booking-invoices-wordpress.jpg" alt="<?php echo JText::translate('VBOPROWHYCRONJOB'); ?>" />
-			</div>
-		</div>
 
 		<div class="viwppro-feats-row vikwppro-even">
-			<div class="viwppro-feats-img">
-				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/channelrates.jpg" alt="<?php echo JText::translate('VBOPROWHYCHMANAGER'); ?>" />
-			</div>
 			<div class="viwppro-feats-text">
 				<h4><?php echo JText::translate('VBOPROWHYCHMANAGER'); ?></h4>
 				<p><?php echo JText::translate('VBOPROWHYCHMANAGERDESC'); ?></p>
+			</div>
+			<div class="viwppro-feats-img">
+				<img style="max-width: 400px;" src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/direct-bookings-best-prices.png" alt="<?php echo JText::translate('VBOPROWHYCHMANAGER'); ?>" />
 			</div>
 		</div>
 	</div>
@@ -224,23 +216,27 @@ $datesep = VikBooking::getDateSeparator();
 			<div class="viwpro-e4jc-text">
 				<h3 style="margin-top: 0;"><?php echo JText::translate('VBOPROVCMADTITLE'); ?></h3>
 				<h4><?php echo JText::translate('VBOPROSYNCHNEWBOOKINGS'); ?></h4>
-				<h5><?php echo JText::translate('VBOPROVCMSYNCHEVERYTHING'); ?></h5>
+				<p><?php echo JText::translate('VBOPROVCMSYNCHEVERYTHING'); ?></p>
 				<p><?php echo JText::translate('VBOPROVCMADDESCR'); ?></p>
-				<p class="vikpro-e4jc-badgeimg"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/bookingcom-premier-badge.png" title="e4jConnect Premier Partner" /> <img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/airbnb-preferred-badge.png" title="Airbnb e4jConnect Preferred Partner" /> <img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/expedia-partner.png" title="e4jConnect Expedia Partner" /> <img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/google-partner.png" title="e4jConnect Google Partner" /> <img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vrbo-partner-badge.png" title="e4jConnect Vrbo Partner" /></p>
 				<a href="https://vikwp.com/plugin/vikchannelmanager?utm_source=free_version&utm_medium=vbo&utm_campaign=gotopro" class="vikwp-pro-discover btn btn-primary" target="_blank"><?php echo JText::translate('VBOPROVCMADMOREINFO'); ?></a>
+				<div class="viwpro-e4jc-trial-content">
+					<p class="viwpro-e4jc-trial-title"><?php echo JText::translate('VBOPROVCTRIALTITLE'); ?></p>
+					<p><?php echo JText::translate('VBOPROVCTRIALQUESTION'); ?></p>
+					<a href="https://e4jconnect.com/free-channel-manager-trial?utm_source=free_version&utm_medium=vbo&utm_campaign=gotopro" class="vikwp-pro-trial btn btn-green" target="_blank"><?php echo JText::translate('VBOPROVCMTRIAL'); ?></a>
+				</div>
 			</div>
 			<div class="viwpro-e4jc-img"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vcm-synch-img.jpg" title="e4jConnect Vik Channel Manager" /></div>
 		</div>
 		<div class="viwpro-e4jc-channels">
 			<div class="viwpro-e4jc-channels-intro"><h3><?php echo JText::translate('VBOPROVCMADSOMECHAV'); ?></h3></div>
 			<div class="viwpro-e4jc-channels-inner">
-				<div class="viwpro-e4jc-channel"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/booking.png" alt="e4jConnect Booking.com channel"/></div>
-				<div class="viwpro-e4jc-channel"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/airbnb.png" alt="e4jConnect Airbnb channel"/></div>
-				<div class="viwpro-e4jc-channel"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/expedia.png" alt="e4jConnect Expedia channel"/></div>
-				<div class="viwpro-e4jc-channel"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/google-hotel.png" alt="e4jConnect Google Hotel channel"/></div>
-				<div class="viwpro-e4jc-channel"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/hostelworld.png" alt="e4jConnect Hostelworld channel"/></div>
-				<div class="viwpro-e4jc-channel"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vrbo.png" alt="e4jConnect VRBO channel"/></div>
-				<div class="viwpro-e4jc-channel"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/tripconnect.png" alt="e4jConnect TripAdvisor tripconnect channel"/></div>
+				<p class="vikpro-e4jc-badgeimg">
+					<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/bookingcom-premier-badge.png" title="e4jConnect Premier Partner" /> 
+					<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/airbnb-preferred-badge.png" title="Airbnb e4jConnect Preferred Partner" /> 
+					<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/expedia-partner.png" title="e4jConnect Expedia Partner" /> 
+					<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/google-partner.png" title="e4jConnect Google Partner" /> 
+					<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vrbo-partner-badge.png" title="e4jConnect Vrbo Partner" />
+				</p>				
 			</div>
 			<div class="viwpro-e4jc-channels-more"><?php echo JText::translate('VBOPROVCMADCHANDMANY'); ?></div>
 		</div>

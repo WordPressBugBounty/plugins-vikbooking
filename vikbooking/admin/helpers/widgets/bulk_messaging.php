@@ -72,6 +72,7 @@ class VikBookingAdminWidgetBulkMessaging extends VikBookingAdminWidget
 		// get date timestamps
 		$from_ts = VikBooking::getDateTimestamp($from_dt, 0, 0);
 		$to_ts = VikBooking::getDateTimestamp($to_dt, 23, 59, 59);
+		$from_ts_end = VikBooking::getDateTimestamp($from_dt, 23, 59, 59);
 
 		// query the db
 		$dbo = JFactory::getDbo();
@@ -98,11 +99,8 @@ class VikBookingAdminWidgetBulkMessaging extends VikBookingAdminWidget
 			$q->where($dbo->qn('o.ts') . ' <= ' . $to_ts);
 		} else {
 			// stayover
-			$q->where('(
-				(' . $dbo->qn('o.checkin') . ' >= ' . $from_ts . ' AND ' . $dbo->qn('o.checkin') . ' <= ' . $to_ts . ')
-				OR
-				(' . $dbo->qn('o.checkout') . ' >= ' . $from_ts . ' AND ' . $dbo->qn('o.checkout') . ' <= ' . $to_ts . ')
-			)');
+			$q->where($dbo->qn('o.checkin') . ' < ' . $from_ts_end);
+			$q->where($dbo->qn('o.checkout') . ' > ' . $to_ts);
 		}
 
 		$dbo->setQuery($q);

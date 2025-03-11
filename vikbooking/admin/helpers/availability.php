@@ -546,6 +546,224 @@ class VikBookingAvailability
 	}
 
 	/**
+	 * Returns the orphan dates for the given or set rooms and dates.
+	 * 
+	 * @param 	array 	$options 	List of fetching options.
+	 * 
+	 * @return 	array 	Associative list of rooms orphan dates.
+	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function getOrphanDates(array $options = [])
+	{
+		// flag to indicate whether room-level restrictions were loaded
+		$use_room_level_restr = false;
+
+		// load and set rooms and restrictions
+		if ($options['room_ids'] ?? []) {
+			// force the requested rooms to be loaded
+			$this->loadRooms((array) $options['room_ids']);
+
+			// load restrictions with room filters
+			$all_restrictions = VikBooking::loadRestrictions(true, (array) $options['room_ids']);
+
+			// turn flag on for room-level restrictions being used
+			$use_room_level_restr = true;
+		} else {
+			// load restrictions with no filters
+			$all_restrictions = VikBooking::loadRestrictions(false);
+		}
+
+		// default minimum stay
+		$def_min_stay = VikBooking::getDefaultNightsCalendar();
+
+		// figure out dates range
+		if (($current_stay_dates = $this->getStayDates()) && !($options['from_date'] ?? null)) {
+			// populate current stay dates
+			$options['from_date'] = $current_stay_dates[0];
+			$options['to_date'] = $current_stay_dates[1];
+		} else {
+			// check given fetching options
+			if (!($options['from_date'] ?? null)) {
+				// default to today's date
+				$options['from_date'] = date('Y-m-d');
+			}
+
+			if (!($options['to_date'] ?? null)) {
+				// default to next week's date
+				$options['to_date'] = date('Y-m-d', strtotime('+1 week'));
+			}
+		}
+
+		// calculate the highest minimum stay for a better accuracy
+		$all_min_los = [($def_min_stay > 1 ? $def_min_stay : 0)];
+		foreach ($all_restrictions as $index => $restrs) {
+			$all_min_los = array_merge($all_min_los, array_column($restrs, 'minlos'));
+		}
+		$max_min_los = max(array_map('intval', $all_min_los));
+
+		if (!$max_min_los) {
+			// no minimum stay restrictions to apply, hence no orphan dates
+			return [];
+		}
+
+		// calculate past limit timestamp for today at midnight
+		$lim_past_ts = strtotime(date('Y-m-d'));
+
+		// always fetch a wider availability window for better accuracy
+		$fetch_from_date = date('Y-m-d', strtotime("-{$max_min_los} days", strtotime($options['from_date'])));
+		$fetch_to_date = date('Y-m-d', strtotime("+{$max_min_los} days", strtotime($options['to_date'])));
+		if (strtotime($fetch_from_date) < $lim_past_ts) {
+			// start fetching the inventory from today's date (past dates not accepted)
+			$fetch_from_date = date('Y-m-d');
+		}
+
+		// always set stay dates
+		$this->setStayDates($fetch_from_date, $fetch_to_date);
+
+		// obtain the availability inventory by ignoring restrictions
+		$ari = $this->getInventory(false);
+
+		if (!$ari) {
+			return [];
+		}
+
+		// build orphan dates pool
+		$orphans_pool = [];
+
+		// UTC timezone
+		$utc_tz = new DateTimezone('UTC');
+
+		// get date bounds
+		$from_bound = new DateTime($options['from_date'], $utc_tz);
+		$to_bound = new DateTime($options['to_date'], $utc_tz);
+
+		// build iterable dates interval (period)
+		$date_range = new DatePeriod(
+			// start date included by default in the result set
+			$from_bound,
+			// interval between recurrences within the period
+			new DateInterval('P1D'),
+			// end date excluded by default from the result set
+			$to_bound->modify('+1 day')
+		);
+
+		// scan rooms availability inventory
+		foreach ($ari as $idroom => $room_ari) {
+			// load proper room-level restrictions if not done already
+			$all_restrictions = $use_room_level_restr ? $all_restrictions : VikBooking::loadRestrictions(true, [$idroom]);
+
+			// iterate the dates interval
+			foreach ($date_range as $dt) {
+				// calculate date values
+				$day_key = $dt->format('Y-m-d');
+				$day_now_ts = strtotime($day_key);
+				$day_after_ts = strtotime('+1 day', $day_now_ts);
+
+				// parse room restrictions for the current inventory day and room to get the minimum stay
+				$restr = VikBooking::parseSeasonRestrictions($day_now_ts, $day_after_ts, 1, $all_restrictions);
+				$minimum_stay = (int) ($restr['minlos'] ?? $def_min_stay);
+
+				if ($minimum_stay < 2) {
+					// no real minimum stay restriction detected for this day
+					continue;
+				}
+
+				// scan rooms availability
+				foreach ($room_ari['inventory'] as $keypoint => $inventory) {
+					if ($inventory['day'] != $day_key) {
+						// not the date-key point we are looking for
+						continue;
+					}
+
+					// tell whether the listing is available on the current date-key point
+					$is_available = (bool) ($inventory['units_to_sell'] ?? $inventory['available'] ?? 0);
+					if (!$is_available) {
+						// this day is fully booked, hence no orphan dates
+						continue 2;
+					}
+
+					// scan the availability for the next minimum stay days from the current day-key point
+					for ($d = 0; $d < $minimum_stay; $d++) {
+						// build next date-key point value (start from current day-key point as it counts as one available night of stay)
+						$next_keypoint = $keypoint + $d;
+
+						if (!isset($room_ari['inventory'][$next_keypoint])) {
+							// no more data available
+							break;
+						}
+
+						// tell whether the listing will be available on this future date-key point (0th day will always be available)
+						$will_be_available = (bool) ($room_ari['inventory'][$next_keypoint]['units_to_sell'] ?? $room_ari['inventory'][$next_keypoint]['available'] ?? 0);
+
+						if (!$will_be_available) {
+							/**
+							 * Probable orphan date found for bookings on days ahead. Ensure this
+							 * is truly an orphan date by checking the days before. If staying
+							 * on this (available) night is allowed, then this should not be
+							 * considered as an orphan date, even though arriving is not allowed.
+							 */
+							if (!($options['orphans_checkin'] ?? false)) {
+								// check previous dates before saying it's an orphan date
+								for ($backd = ($keypoint - 1), $distance = 1; $backd >= 0; $backd--, $distance++) {
+									if (!isset($room_ari['inventory'][$backd])) {
+										// nothing to do, let it be an orphan date
+										break;
+									}
+
+									// tell whether the listing was available on this previous date-key point
+									$was_available = (bool) ($room_ari['inventory'][$backd]['units_to_sell'] ?? $room_ari['inventory'][$backd]['available'] ?? 0);
+
+									if (!$was_available) {
+										// nothing to do, let it be an orphan date
+										break;
+									}
+
+									// calculate past date values
+									$past_day_now_ts = strtotime($room_ari['inventory'][$backd]['day']);
+									$past_day_after_ts = strtotime('+1 day', $past_day_now_ts);
+
+									// parse room restrictions for the current past day and room to get the minimum stay
+									$restr = VikBooking::parseSeasonRestrictions($past_day_now_ts, $past_day_after_ts, 1, $all_restrictions);
+									$minimum_stay = (int) ($restr['minlos'] ?? $def_min_stay);
+
+									if ($minimum_stay <= $distance) {
+										// free day with a minimum stay that allows to stay on the presumed orphan date
+										// break the cycles for the presumed orphan date-key point, because it's not truly an orphan
+										break 3;
+									}
+								}
+							}
+
+							// orphan date found
+							if (!isset($orphans_pool[$idroom])) {
+								// start container
+								$orphans_pool[$idroom] = [
+									'room_name' => $room_ari['room_name'],
+									'orphans'   => [],
+								];
+							}
+
+							// push orphan date information
+							$orphans_pool[$idroom]['orphans'][] = [
+								'day'                         => $day_key,
+								'current_min_stay_nights'     => $minimum_stay,
+								'max_min_stay_nights_allowed' => $d,
+							];
+
+							// break the cycles for this date-key point
+							break 2;
+						}
+					}
+				}
+			}
+		}
+
+		// return the associative list of room orphan dates found, if any
+		return $orphans_pool;
+	}
+
+	/**
 	 * Returns the inventory for the rooms and dates set.
 	 * 
 	 * @param 	bool 	$restrictions 	Whether to include booking restrictions data.
@@ -2100,11 +2318,11 @@ class VikBookingAvailability
 	}
 
 	/**
-	 * Returns the current stay date or timestamps.
+	 * Returns the current stay dates or timestamps.
 	 * 
 	 * @param 	bool 	$ts 	whether to get the date timestamps.
 	 * 
-	 * @return 	array 			the current stay date timestamps.
+	 * @return 	array 			the current stay dates or timestamps.
 	 */
 	public function getStayDates($ts = false)
 	{

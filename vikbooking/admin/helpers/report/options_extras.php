@@ -337,7 +337,7 @@ class VikBookingReportOptionsExtras extends VikBookingReport
 								//
 								$realcost = (intval($actopt['perday']) == 1 ? ($actopt['cost'] * $gbook[0]['days'] * $stept[1]) : ($actopt['cost'] * $stept[1]));
 							}
-							if (!empty ($actopt['maxprice']) && $actopt['maxprice'] > 0 && $realcost > $actopt['maxprice']) {
+							if (!empty($actopt['maxprice']) && $actopt['maxprice'] > 0 && $realcost > $actopt['maxprice']) {
 								$realcost = $actopt['maxprice'];
 								if (intval($actopt['hmany']) == 1 && intval($stept[1]) > 1) {
 									$realcost = $actopt['maxprice'] * $stept[1];
@@ -346,6 +346,17 @@ class VikBookingReportOptionsExtras extends VikBookingReport
 							if ($actopt['perperson'] == 1) {
 								$realcost = $realcost * $or['adults'];
 							}
+
+							/**
+							 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+							 * 
+							 * @since 	1.17.7 (J) - 1.7.7 (WP)
+							 */
+							$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$actopt, $gbook[0], $or]);
+							if ($custom_calculation) {
+								$realcost = (float) $custom_calculation[0];
+							}
+
 							$with_tax = VikBooking::sayOptionalsPlusIva($realcost, $actopt['idiva']);
 							$with_tax_daily = $with_tax / (int)$gbook[0]['days'];
 							$without_tax = VikBooking::sayOptionalsMinusIva($realcost, $actopt['idiva']);

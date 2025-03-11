@@ -574,6 +574,19 @@ if (count($this->mod_booking)) {
 										if (!empty($ageintervals['maxprice']) && $ageintervals['maxprice'] > 0 && $intvparts[2] > $ageintervals['maxprice']) {
 											$intvparts[2] = $ageintervals['maxprice'];
 										}
+
+										/**
+										 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+										 * 
+										 * @since 	1.17.7 (J) - 1.7.7 (WP)
+										 */
+										$custom_calc_booking = ['days' => $this->tars[$num][0]['days']];
+										$custom_calc_booking_room = ($this->arrpeople[$num] ?? []);
+										$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$intvparts[2], &$ageintervals, $custom_calc_booking, $custom_calc_booking_room]);
+										if ($custom_calculation) {
+											$intvparts[2] = (float) $custom_calculation[0];
+										}
+
 										$intvparts[2] = $tax_summary ? $intvparts[2] : VikBooking::sayOptionalsPlusIva($intvparts[2], $ageintervals['idiva']);
 										$pricestr = floatval($intvparts[2]) >= 0 ? '+ '.VikBooking::numberFormat($intvparts[2]) : '- '.VikBooking::numberFormat($intvparts[2]);
 										$pcent_interval = false;
@@ -648,6 +661,18 @@ if (count($this->mod_booking)) {
 					$optcost = $optcost * $this->arrpeople[$num]['adults'];
 				}
 				$optcost = $optcost * 1;
+
+				/**
+				 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+				 * 
+				 * @since 	1.17.7 (J) - 1.7.7 (WP)
+				 */
+				$custom_calc_booking = ['days' => $this->tars[$num][0]['days']];
+				$custom_calc_booking_room = array_merge(($this->arrpeople[$num] ?? []), ['room_cost' => ($deftar_costs[$num] ?? 0)]);
+				$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$optcost, &$o, $custom_calc_booking, $custom_calc_booking_room]);
+				if ($custom_calculation) {
+					$optcost = (float) $custom_calculation[0];
+				}
 
 				$forcesummary = false;
 				if (intval($o['forcesel']) == 1) {

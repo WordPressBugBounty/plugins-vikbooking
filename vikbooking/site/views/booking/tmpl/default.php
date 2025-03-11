@@ -155,6 +155,17 @@ foreach ($orderrooms as $kor => $or) {
 			if ($actopt['perperson'] == 1) {
 				$realcost = $realcost * $or['adults'];
 			}
+
+			/**
+			 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+			 * 
+			 * @since 	1.17.7 (J) - 1.7.7 (WP)
+			 */
+			$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$actopt, $ord, $or]);
+			if ($custom_calculation) {
+				$realcost = (float) $custom_calculation[0];
+			}
+
 			$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $actopt['idiva']);
 			$isdue += $tmpopr;
 			$isdue_orig += $tmpopr;
@@ -715,6 +726,17 @@ if ($ord['refund'] > 0) {
  */
 $payable = (($ord['totpaid'] > 0 && ($ord['totpaid'] + ($this->damage_deposit_payment['damagedep_gross'] ?? 0)) < $ord['total'] && $ord['paymcount'] > 0) || $ord['payable'] > 0);
 $ota_will_pay = false;
+$dd_payable_later = false;
+if ($payable && $ord['status'] == 'confirmed' && !empty($ord['idorderota']) && $ord['payable'] > 0 && !$this->prev_dd_payments) {
+	if (($this->damage_deposit_payment['damagedep_gross'] ?? 0) == $ord['payable'] && ($this->damage_deposit_payment['payment_window']['pay_id'] ?? 0)) {
+		// upselling event must have added the damage deposit to an OTA booking, and this is the only outstanding amount that will be paid separately
+		$payable = false;
+		// check if the damage deposit is payable later
+		if (!($this->damage_deposit_payment['payment_window']['payable'] ?? 0) && ($this->damage_deposit_payment['payment_window']['payment_from_dt'] ?? null)) {
+			$dd_payable_later = true;
+		}
+	}
+}
 if ($payable && !empty($ord['idorderota']) && !empty($ord['channel']) && $ord['cmms'] && ($ord['total'] - $ord['totpaid'] - $ord['cmms']) < 1) {
 	// the difference of the amount paid is equal to the OTA commissions amount
 	$payable = false;
@@ -888,6 +910,21 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 		</div>
 	</div>
 			<?php
+			if ($dd_payable_later === true) {
+				// display message for when the damage deposit amount will be payable
+				?>
+	<div class="vbo-booking-cost-detail vbo-booking-cost-detail-dd-payable-later">
+		<div class="vbo-booking-cost-lbl">
+			<span><?php echo JText::translate('VBO_DAMAGE_DEPOSIT'); ?></span>
+		</div>
+		<div class="vbo-booking-cost-val">
+			<span class="vbo-booking-cost-val-number">
+				<span><?php echo JText::sprintf('VBO_PAYABLE_FROM_DT', ($this->damage_deposit_payment['payment_window']['payment_from_dt'] ?? '')); ?></span>
+			</span>
+		</div>
+	</div>
+				<?php
+			}
 		}
 	}
 	if ($ptmpl == 'component') {
@@ -1580,6 +1617,17 @@ if ($tot_upselling) {
 						$optcost = $optcost * $orderrooms[$kor]['adults'];
 					}
 					$optcost = $optcost * 1;
+
+					/**
+					 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+					 * 
+					 * @since 	1.17.7 (J) - 1.7.7 (WP)
+					 */
+					$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$optcost, &$o, $ord, $orderrooms[$kor]]);
+					if ($custom_calculation) {
+						$optcost = (float) $custom_calculation[0];
+					}
+
 					$optquaninp = '';
 					$optquanbtn = '';
 					if (intval($o['hmany']) == 1) {

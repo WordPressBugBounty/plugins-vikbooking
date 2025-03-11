@@ -116,4 +116,73 @@ class VikBookingControllerCheckin extends JControllerAdmin
             'signatureFileName' => $sign_fname,
         ]);
     }
+
+    /**
+     * AJAX endpoint for validating fields during pre-checkin before submission.
+     * 
+     * @since   1.17.7 (J) - 1.7.7 (WP)
+     */
+    public function validatePrecheckinFields()
+    {
+        $app = JFactory::getApplication();
+        $dbo = JFactory::getDbo();
+
+        if (!JSession::checkToken()) {
+            // missing CSRF-proof token
+            VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
+        }
+
+        // gather request values
+        $sid = $app->input->getAlnum('sid', '');
+        $ts = $app->input->getUInt('ts', 0);
+        $guests = $app->input->get('guests', [], 'array');
+
+        // get the booking record involved
+        $dbo->setQuery(
+            $dbo->getQuery(true)
+                ->select('*')
+                ->from($dbo->qn('#__vikbooking_orders'))
+                ->where($dbo->qn('ts') . ' = ' . $ts)
+                ->where($dbo->qn('status') . ' = ' . $dbo->q('confirmed'))
+                ->andWhere([
+                    $dbo->qn('sid') . ' = ' . $dbo->q($sid),
+                    $dbo->qn('idorderota') . ' = ' . $dbo->q($sid),
+                ])
+        );
+
+        $booking = $dbo->loadObject();
+
+        if (!$booking) {
+            VBOHttpDocument::getInstance($app)->close(404, 'Booking not found');
+        }
+
+        // get booking rooms data
+        $booking_rooms = VikBooking::loadOrdersRoomsData($booking->id);
+
+        // get the customer record involved
+        $customer = VikBooking::getCPinInstance()->getCustomerFromBooking($booking->id);
+
+        if (!$customer) {
+            VBOHttpDocument::getInstance($app)->close(404, 'Customer not found');
+        }
+
+        // validate guests registration fields
+        if (!$guests) {
+            VBOHttpDocument::getInstance($app)->close(500, 'Missing guest fields for validation.');
+        }
+
+        // access pax fields registration object
+        $pax_fields_obj = VBOCheckinPax::getInstance();
+
+        try {
+            // let the driver perform the fields validation
+            $pax_fields_obj->validateRegistrationFields((array) $booking, $booking_rooms, $guests);
+        } catch (Exception $e) {
+            // raise an error
+            VBOHttpDocument::getInstance($app)->close($e->getCode() ?: 500, $e->getMessage());
+        }
+
+        // send successful response to output
+        VBOHttpDocument::getInstance($app)->json(['success' => 1]);
+    }
 }

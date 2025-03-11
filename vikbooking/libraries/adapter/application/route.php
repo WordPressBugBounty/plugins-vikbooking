@@ -199,7 +199,12 @@ class JRoute
 			 */
 			$wpml_post_lang = apply_filters('wpml_post_language_details', null, $post_id);
 
-			if ($wpml_post_lang)
+			/**
+			 * Make sure we haven't received an error object from WPML.
+			 * 
+			 * @since 10.1.60
+			 */
+			if ($wpml_post_lang && !is_wp_error($wpml_post_lang))
 			{
 				// WPML supported, go ahead
 				return apply_filters('wpml_permalink', get_permalink($post_id), $wpml_post_lang['language_code']);

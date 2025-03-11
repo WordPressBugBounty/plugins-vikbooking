@@ -178,28 +178,12 @@ class VikBookingViewTableaux extends JViewVikBooking
 		$q = "SELECT `id`,`name`,`units`,`params` FROM `#__vikbooking_rooms`".($roomids ? " WHERE `id` IN (".implode(', ', $roomids).")" : "")." ORDER BY `name` ASC;";
 		$dbo->setQuery($q);
 		$all = $dbo->loadAssocList();
-		if ($all) {
-			foreach ($all as $r) {
-				$rooms[$r['id']] = $r;
-			}
+		foreach ($all as $r) {
+			$rooms[$r['id']] = $r;
 		}
 		if (!$rooms) {
 			JFactory::getApplication()->redirect('index.php?option=com_vikbooking');
 			exit;
-		}
-		// all rooms must always be taken to compose the drop down
-		$allrooms = array();
-		if (!$roomids) {
-			$allrooms = $rooms;
-		} else {
-			$q = "SELECT `id`,`name`,`units` FROM `#__vikbooking_rooms` ORDER BY `name` ASC;";
-			$dbo->setQuery($q);
-			$all = $dbo->loadAssocList();
-			if ($all) {
-				foreach ($all as $r) {
-					$allrooms[$r['id']] = $r;
-				}
-			}
 		}
 
 		// get all occupied dates for these rooms
@@ -242,22 +226,9 @@ class VikBookingViewTableaux extends JViewVikBooking
 		 * @since 	1.13.5
 		 */
 		$rdaynotes = VikBooking::getCriticalDatesInstance()->loadRoomDayNotes(date('Y-m-d', $fromts), date('Y-m-d', $tots));
-		//
-
-		/**
-		 * Load categories to be used for group filter.
-		 * 
-		 * @since 	1.13.5
-		 */
-		$q = "SELECT `id`,`name` FROM `#__vikbooking_categories` ORDER BY `#__vikbooking_categories`.`name` ASC;";
-		$dbo->setQuery($q);
-		$categories = $dbo->loadAssocList();
-		$categories = $categories ? $categories : [];
 		
 		$this->roomids = $roomids;
 		$this->rooms = $rooms;
-		$this->allrooms = $allrooms;
-		$this->categories = $categories;
 		$this->reqcats = $reqcats;
 		$this->mindate = $mindate;
 		$this->maxdate = $maxdate;

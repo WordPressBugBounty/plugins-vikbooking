@@ -2756,29 +2756,36 @@ class VikBookingController extends JControllerVikBooking
 									$ageintervals_child_string = isset($optageovrct['ageintervals_child' . ($child_num + 1)]) ? $optageovrct['ageintervals_child' . ($child_num + 1)] : $opt['ageintervals'];
 									$optagecosts = VikBooking::getOptionIntervalsCosts($ageintervals_child_string);
 									$optorigcost = $optagecosts[($chvar - 1)];
+									$tmp_room_cost = 0;
 									if (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 1) {
-										//percentage value of the adults tariff
+										// percentage value of the adults tariff
 										if ($is_package !== true && array_key_exists($num, $tars)) {
-											//type of price
+											// type of price
+											$tmp_room_cost = $tars[$num][0]['cost'];
 											$optorigcost = $tars[$num][0]['cost'] * $optagecosts[($chvar - 1)] / 100;
 										} elseif ($is_package === true && array_key_exists($num, $cust_costs)) {
-											//package
+											// package
+											$tmp_room_cost = $cust_costs[$num]['cust_cost'];
 											$optorigcost = $cust_costs[$num]['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
 										} elseif (array_key_exists($num, $cust_costs) && array_key_exists('cust_cost', $cust_costs[$num])) {
-											//custom rate + custom tax rate
+											// custom rate + custom tax rate
+											$tmp_room_cost = $cust_costs[$num]['cust_cost'];
 											$optorigcost = $cust_costs[$num]['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
 										}
 									} elseif (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 2) {
-										//VBO 1.10 - percentage value of room base cost
+										// percentage value of room base cost
 										if ($is_package !== true && array_key_exists($num, $tars)) {
-											//type of price
+											// type of price
 											$usecost = isset($tars[$num][0]['room_base_cost']) ? $tars[$num][0]['room_base_cost'] : $tars[$num][0]['cost'];
+											$tmp_room_cost = $usecost;
 											$optorigcost = $usecost * $optagecosts[($chvar - 1)] / 100;
 										} elseif ($is_package === true && array_key_exists($num, $cust_costs)) {
-											//package
+											// package
+											$tmp_room_cost = $cust_costs[$num]['cust_cost'];
 											$optorigcost = $cust_costs[$num]['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
 										} elseif (array_key_exists($num, $cust_costs) && array_key_exists('cust_cost', $cust_costs[$num])) {
-											//custom rate + custom tax rate
+											// custom rate + custom tax rate
+											$tmp_room_cost = $cust_costs[$num]['cust_cost'];
 											$optorigcost = $cust_costs[$num]['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
 										}
 									}
@@ -2790,6 +2797,19 @@ class VikBookingController extends JControllerVikBooking
 									if (!empty($opt['maxprice']) && $opt['maxprice'] > 0 && $realcost > $opt['maxprice']) {
 										$realcost = $opt['maxprice'];
 									}
+
+									/**
+									 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+									 * 
+									 * @since 	1.17.7 (J) - 1.7.7 (WP)
+									 */
+									$custom_calc_booking = array_merge($ord, ['days' => $room_nights]);
+									$custom_calc_booking_room = array_merge($or, ($arrpeople[$num] ?? []), ($tmp_room_cost ? ['room_cost' => $tmp_room_cost] : []));
+									$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$opt, $custom_calc_booking, $custom_calc_booking_room]);
+									if ($custom_calculation) {
+										$realcost = (float) $custom_calculation[0];
+									}
+
 									$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $opt['idiva']);
 									if ($opt['is_citytax'] == 1) {
 										$tot_city_taxes += $tmpopr;
@@ -2809,7 +2829,8 @@ class VikBookingController extends JControllerVikBooking
 							}
 						} else {
 							$tmpvar = VikRequest::getString('optid'.$num.$opt['id'], '', 'request');
-							//options forced per child fix, no age intervals, like children tourist taxes
+							$tmp_room_cost = 0;
+							// options forced per child fix, no age intervals, like children tourist taxes
 							$forcedquan = 1;
 							$forceperday = false;
 							$forceperchild = false;
@@ -2824,15 +2845,18 @@ class VikBookingController extends JControllerVikBooking
 							//
 							if (!empty($tmpvar)) {
 								$wop .= $opt['id'].":".$tmpvar.";";
-								// VBO 1.11 - options percentage cost of the room total fee
+								// options percentage cost of the room total fee
 								if ($is_package !== true && array_key_exists($num, $tars)) {
-									//type of price
+									// type of price
+									$tmp_room_cost = $tars[$num][0]['cost'];
 									$deftar_basecosts = $tars[$num][0]['cost'];
 								} elseif ($is_package === true && array_key_exists($num, $cust_costs)) {
-									//package
+									// package
+									$tmp_room_cost = $cust_costs[$num]['cust_cost'];
 									$deftar_basecosts = $cust_costs[$num]['cust_cost'];
 								} elseif (array_key_exists($num, $cust_costs) && array_key_exists('cust_cost', $cust_costs[$num])) {
-									//custom rate + custom tax rate
+									// custom rate + custom tax rate
+									$tmp_room_cost = $cust_costs[$num]['cust_cost'];
 									$deftar_basecosts = $cust_costs[$num]['cust_cost'];
 								}
 								$opt['cost'] = (int)$opt['pcentroom'] ? ($deftar_basecosts * $opt['cost'] / 100) : $opt['cost'];
@@ -2848,6 +2872,19 @@ class VikBookingController extends JControllerVikBooking
 									$num_adults = array_key_exists($num, $arrpeople) && array_key_exists('adults', $arrpeople[$num]) ? $arrpeople[$num]['adults'] : 1;
 									$realcost = $realcost * $num_adults;
 								}
+
+								/**
+								 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+								 * 
+								 * @since 	1.17.7 (J) - 1.7.7 (WP)
+								 */
+								$custom_calc_booking = array_merge($ord, ['days' => $room_nights]);
+								$custom_calc_booking_room = array_merge($or, ($arrpeople[$num] ?? []), ($tmp_room_cost ? ['room_cost' => $tmp_room_cost] : []));
+								$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$opt, $custom_calc_booking, $custom_calc_booking_room]);
+								if ($custom_calculation) {
+									$realcost = (float) $custom_calculation[0];
+								}
+
 								$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $opt['idiva']);
 								if ($opt['is_citytax'] == 1) {
 									$tot_city_taxes += $tmpopr;
@@ -3697,6 +3734,17 @@ class VikBookingController extends JControllerVikBooking
 					if ($actopt[0]['perperson'] == 1) {
 						$realcost = $realcost * $or['adults'];
 					}
+
+					/**
+					 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+					 * 
+					 * @since 	1.17.7 (J) - 1.7.7 (WP)
+					 */
+					$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$actopt[0], $order, $or]);
+					if ($custom_calculation) {
+						$realcost = (float) $custom_calculation[0];
+					}
+
 					$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $actopt[0]['idiva']);
 					$isdue += $tmpopr;
 					$optstr[$num][] = ($stept[1] > 1 ? $stept[1] . " " : "") . $actopt[0]['name'] . ": " . $tmpopr . " " . $currencyname . "\n";
@@ -12267,6 +12315,17 @@ jQuery(".' . $selector . '").hover(function() {
 								}
 							}
 							$realcost = $actopt['perperson'] == 1 ? ($realcost * $ord['adults']) : $realcost;
+
+							/**
+							 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+							 * 
+							 * @since 	1.17.7 (J) - 1.7.7 (WP)
+							 */
+							$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$actopt, $ord, $ord]);
+							if ($custom_calculation) {
+								$realcost = (float) $custom_calculation[0];
+							}
+
 							$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $actopt['idiva']);
 							$options_str .= ($stept[1] > 1 ? $stept[1]." " : "").$actopt['name'].": ".(!$optpcent ? $currencyname : '')." ".VikBooking::numberFormat($tmpopr).($optpcent ? ' %' : '')." \r\n";
 						}

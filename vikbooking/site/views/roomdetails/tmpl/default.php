@@ -208,7 +208,7 @@ if ($totrestrictions > 0) {
 				$notmultiplyminlosrestrictions[] = $rmonth;
 			}
 			$minlosrestrictions[($rmonth - 1)] = $restr['minlos'];
-			if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] > $restr['minlos']) {
+			if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] >= $restr['minlos']) {
 				$maxlosrestrictions[($rmonth - 1)] = $restr['maxlos'];
 			}
 		} else {

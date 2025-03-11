@@ -198,22 +198,6 @@ i.wp-quest-popover:hover {
 	text-align: left;
 	vertical-align: middle;
 }
-
-.table th.title.left,
-.table th.left,
-.table td.left {
-	text-align: left;
-}
-.table th.title.center,
-.table th.center,
-.table td.center {
-	text-align: center;
-}
-.table th.title.right,
-.table th.right,
-.table td.right {
-	text-align: right;
-}
 .table {
 	border-collapse: collapse;
 	border-spacing: 0;
@@ -752,7 +736,7 @@ input[type="number"], #vbo-addnumnight, #vbo-numnights, #vbo-numadults, #vbo-num
 	vertical-align: bottom;
 }
 .vbo-reports-filters-outer .vbo-reports-filters-report .vbo-report-filter-wrap {
-	vertical-align: top;
+	vertical-align: bottom;
 }
 .vbo-report-layout-type {
 	margin-top: 20px;
@@ -928,34 +912,29 @@ button.vbo-gotopro:hover {
 	text-align: right;
 }
 .viwppro-feats-cnt {
+	display: grid;
+	gap: 30px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	margin-top: 40px;
 }
 .viwppro-feats-cnt img {
 	max-width: 100%;
+	padding: 0 20px;
+	box-sizing: border-box;
 }
 .viwppro-feats-row {
-	margin: 25px 0;
+	margin: 0;
 	background: var(--vbo-config-bg-color);
 	border: 1px solid #93b0d0;
-	height: 320px;
-	overflow: hidden;
-	display: flex;
-	flex-wrap: wrap;
 	border-radius: 4px;
 	box-shadow: 0 0 10px rgba(0,0,0,.05);
-}
-.viwppro-row-heightsmall {
-	height: 274px;
-}
-.viwppro-feats-row .viwppro-feats-img {
-	flex: 0 0 40%;
-}
-.vikwppro-odd .viwppro-feats-img {
-	padding-right: 0;
 }
 .vikwppro-even .viwppro-feats-img {
 	padding-left: 0;
 	text-align: center;
+	box-sizing: border-box;
+	max-height: 460px;
+  	overflow: hidden;
 }
 .vikwppro-header-inner .vikwppro-header-img img {
 	box-shadow: 0 0 8px rgba(0,0,0,.1);
@@ -964,15 +943,15 @@ button.vbo-gotopro:hover {
 	position: relative;
 }
 .viwppro-feats-text {
-	padding: 30px;
-	font-size: 1.2em;
-	flex: 1;
+	padding: 10px 30px 0;
+	font-size: 14px;
 }
 .viwppro-feats-text h4 {
 	font-weight: bold;
-	font-size: 1.3em;
-	margin-bottom: 0px;
+	font-size: 20px;
 	padding-bottom: 0;
+	margin-bottom: 14px;
+	line-height: 1.2em;
 }
 .viwppro-feats-text p {
 	font-size: 1.1em;
@@ -1308,18 +1287,25 @@ h1.vikwp-download-error {
 	flex: 1;
 }
 .viwpro-e4jc .viwpro-e4jc-text {
-	padding: 40px;
+	padding: 40px 40px 10px;
 }
 .vikpro-e4jc-badgeimg img {
 	height: 60px;
   	margin: 5px;
+	text-align: center;
 }
 .vikwp-pro-discover {
 	border: 1px solid #3596db;
 	background: #3596db;
 	font-size: 14px;
 }
-
+.viwpro-e4jc-trial-content {
+	border: 1px solid var(--vbo-green-color);
+	border-radius: 20px;
+	padding: 20px;
+	margin-top: 20px;
+	box-shadow: 0 0px 7px rgba(0, 0, 0, .15);	
+}
 .viwpro-e4jc .viwpro-e4jc-text h3 {
 	font-size: 20px;
 	line-height: 1.1em;
@@ -1328,8 +1314,8 @@ h1.vikwp-download-error {
 	color: var(--vbo-config-titles-color-light);
 }
 .viwpro-e4jc .viwpro-e4jc-text h4 {
-	font-size: 23px;
-	line-height: 1.1em;
+	font-size: 24px;
+	line-height: 28px;
 	margin-top: 5px;
 	font-weight: bold;
 	margin-bottom: 10px;
@@ -1344,6 +1330,10 @@ h1.vikwp-download-error {
 .viwpro-e4jc .viwpro-e4jc-text p {
 	font-size: 16px;
 }
+.viwpro-e4jc-trial-title {
+	margin-top: 0;
+	font-weight: bold;	
+}
 .viwpro-e4jc .viwpro-e4jc-img img {
 	margin: 10px -10px 10px 0;
 	max-width: 100%;
@@ -1354,6 +1344,7 @@ h1.vikwp-download-error {
 .viwpro-e4jc-channels .viwpro-e4jc-channels-inner {
 	display: flex;
 	flex-wrap: wrap;
+	justify-content: center;
 	padding: 10px 20px 0px;
 }
 .viwpro-e4jc-channels-intro {
@@ -1549,6 +1540,9 @@ h1.vikwp-download-error {
 	.viwppro-feats-row .viwppro-feats-text, .viwppro-feats-row .viwppro-feats-img {
 		flex: auto;
 	}
+	.viwppro-feats-row .viwppro-feats-img {
+		text-align: center;
+	}
 	.viwppro-feats-text {
 		padding: 0 30px 5px;
 	}
@@ -1598,6 +1592,10 @@ h1.vikwp-download-error {
 	}
 	.viwppro-feats-cnt img {
 		max-width: 400px;
+	}
+	.viwppro-feats-cnt {
+		grid-template-columns: repeat(1, minmax(0, 1fr));
+		gap: 20px;
 	}
 }
 @media screen and (max-width : 782px) {

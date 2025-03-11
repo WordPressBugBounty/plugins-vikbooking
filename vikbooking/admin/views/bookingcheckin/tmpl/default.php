@@ -572,6 +572,17 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 								}
 							}
 							$realcost = $actopt['perperson'] == 1 ? ($realcost * $arrpeople[$num]['adults']) : $realcost;
+
+							/**
+							 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+							 * 
+							 * @since 	1.17.7 (J) - 1.7.7 (WP)
+							 */
+							$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$actopt, $order, $or]);
+							if ($custom_calculation) {
+								$realcost = (float) $custom_calculation[0];
+							}
+
 							$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $actopt['idiva']);
 							?>
 							<div class="vbo-roomdet-foot-options">

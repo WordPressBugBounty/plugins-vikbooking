@@ -172,6 +172,27 @@ abstract class VBOCheckinAdapter implements VBOCheckinPaxfields
 	}
 
 	/**
+	 * Performs a validation over the guest registration fields data for a given reservation.
+	 * Custom drivers can override this method to implement their own validation method.
+	 * 
+	 * @param 	array 	$booking 		The booking record involved with the guests registration.
+	 * @param 	array 	$booking_rooms 	The booking room records involved with the guests registration.
+	 * @param 	array 	$data 			The guests registration data to validate.
+	 * @param 	bool 	$precheckin 	True if validating pre-checkin fields.
+	 * 
+	 * @return 	void
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function validateRegistrationFields(array $booking, array $booking_rooms, array $data, bool $precheckin = true)
+	{
+		// no guest fields data validation performed by default
+		return;
+	}
+
+	/**
 	 * Composes the field type class name given its type-string.
 	 * 
 	 * @param 	string 	$field_type 	the field type-string identifier.

@@ -322,7 +322,7 @@ class VikbookingViewSearch extends JViewVikBooking
 												}
 											}
 										}
-										if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] > $restr['minlos']) {
+										if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] >= $restr['minlos']) {
 											if ($daysdiff > $restr['maxlos']) {
 												$restrictionsvalid = false;
 												$restrictionerrmsg = JText::sprintf('VBRESTRERRMAXLOSEXCEEDEDRANGE', $restr['maxlos']);

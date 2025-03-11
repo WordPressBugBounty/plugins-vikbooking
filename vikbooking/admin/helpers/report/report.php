@@ -1273,35 +1273,171 @@ abstract class VikBookingReport
 	}
 
 	/**
-	 * Returns the report custom settings defined.
+	 * Tells whether the current report allows to save
+	 * the settings across multiple profile identifiers.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function allowsProfileSettings()
+	{
+		// report profile settings disabled by default
+		return false;
+	}
+
+	/**
+	 * Returns the report currently active profile identifier, if any.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function getActiveProfile()
+	{
+		$profile = (string) VBOFactory::getConfig()->getString('report_active_profile_' . $this->getFileName(), '');
+
+		return $profile;
+	}
+
+	/**
+	 * Sets the report currently active profile identifier.
+	 * 
+	 * @param 	string 	$profile_id 	The profile identifier to set.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function setActiveProfile(string $profile_id)
+	{
+		VBOFactory::getConfig()->set('report_active_profile_' . $this->getFileName(), $profile_id);
+	}
+
+	/**
+	 * Returns an associative list for the report setting profiles available.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function getSettingProfiles()
+	{
+		return (array) VBOFactory::getConfig()->getArray('report_profile_list_' . $this->getFileName(), []);
+	}
+
+	/**
+	 * Sets a new report setting profile identifier.
+	 * 
+	 * @param 	string 	$profile_name 	The profile name.
+	 * 
+	 * @return 	array 	List of profile identifier and name.
+	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function setSettingProfile(string $profile_name)
+	{
+		// get all report profiles
+		$profiles = $this->getSettingProfiles();
+
+		// build profile identifier
+		$profile_id = preg_replace('/[^A-Z0-9]/i', '', strtolower($profile_name));
+		$profile_id = $profile_id ?: uniqid();
+
+		// set report profile
+		$profiles[$profile_id] = $profile_name;
+		VBOFactory::getConfig()->set('report_profile_list_' . $this->getFileName(), $profiles);
+
+		return [$profile_id, $profile_name];
+	}
+
+	/**
+	 * Clears all profile settings and related data.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function clearProfiles()
+	{
+		// unset active profile
+		VBOFactory::getConfig()->set('report_active_profile_' . $this->getFileName(), '');
+
+		// unset profiles list
+		VBOFactory::getConfig()->set('report_profile_list_' . $this->getFileName(), []);
+
+		// clear profile settings
+		VBOFactory::getConfig()->set('report_profile_settings_' . $this->getFileName(), []);
+	}
+
+	/**
+	 * Returns the current report custom settings, optionally loaded from a
+	 * given profile identifier in case the report supports multiple settings.
+	 * 
+	 * @param 	?string 	$profile 	Optional settings profile identifier.
 	 * 
 	 * @return 	array
 	 * 
 	 * @since 	1.17.1 (J) - 1.7.1 (WP)
 	 */
-	public function loadSettings()
+	public function loadSettings(string $profile = null)
 	{
-		return (array) VBOFactory::getConfig()->getArray('report_settings_' . $this->getFileName(), []);
+		// access report current settings
+		$current_settings = (array) VBOFactory::getConfig()->getArray('report_settings_' . $this->getFileName(), []);
+
+		// default settings
+		$default_settings = [];
+
+		if (!$profile && $this->allowsProfileSettings()) {
+			// load current profile settings
+			$profile = $this->getActiveProfile();
+			$default_settings = $current_settings;
+		}
+
+		if ($profile) {
+			// check if the requested profile settings are available
+			$profile_settings = (array) VBOFactory::getConfig()->getArray('report_profile_settings_' . $this->getFileName(), []);
+
+			// overwrite report current settings
+			$current_settings = $profile_settings[$profile] ?? $default_settings;
+		}
+
+		return $current_settings;
 	}
 
 	/**
 	 * Saves the report custom settings defined.
 	 * The visibility should be public.
 	 * 
-	 * @param 	array 	$data 	The associative list of settings to save.
-	 * @param 	bool 	$merge 	If true, the previous settings will be merged.
+	 * @param   array    $data     The associative list of settings to save.
+	 * @param   bool     $merge    If true, the previous settings will be merged.
+	 * @param   ?string  $profile  Optional settings profile identifier.
 	 * 
-	 * @return 	void
+	 * @return  void
 	 * 
-	 * @since 	1.17.1 (J) - 1.7.1 (WP)
+	 * @since   1.17.1 (J) - 1.7.1 (WP)
+	 * @since   1.17.7 (J) - 1.7.7 (WP) added 3rd argument $profile and related support.
 	 */
-	public function saveSettings(array $data, $merge = true)
+	public function saveSettings(array $data, $merge = true, string $profile = null)
 	{
 		if ($merge) {
-			$data = array_merge($this->loadSettings(), $data);
+			// build report global settings
+			$data = array_merge($this->loadSettings($profile), $data);
 		}
 
+		// save report global settings
 		VBOFactory::getConfig()->set('report_settings_' . $this->getFileName(), $data);
+
+		if ($profile) {
+			// get report current profile settings
+			$profile_settings = (array) VBOFactory::getConfig()->getArray('report_profile_settings_' . $this->getFileName(), []);
+
+			// set new profile settings
+			$profile_settings[$profile] = $data;
+
+			// save report profile settings
+			VBOFactory::getConfig()->set('report_profile_settings_' . $this->getFileName(), $profile_settings);
+		}
 	}
 
 	/**

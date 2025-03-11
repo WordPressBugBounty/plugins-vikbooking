@@ -451,7 +451,7 @@ class VikBooking
 							$season_restrictions['ctd'] = explode(',', $restr['ctdd']);
 						}
 					}
-					if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] > $restr['minlos']) {
+					if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] >= $restr['minlos']) {
 						$season_restrictions['maxlos'] = $restr['maxlos'];
 						if ($daysdiff > $restr['maxlos']) {
 							$season_restrictions['allowed'] = false;
@@ -748,7 +748,7 @@ class VikBooking
 					}
 
 					// max LOS validation
-					if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] > $restr['minlos']) {
+					if (!empty($restr['maxlos']) && $restr['maxlos'] > 0 && $restr['maxlos'] >= $restr['minlos']) {
 						if ($daysdiff > $restr['maxlos']) {
 							$restrictionsvalid = false;
 							$restrictionerrmsg = JText::sprintf('VBRESTRTIPMAXLOSEXCEEDEDRANGE', $restr['maxlos']);
@@ -1729,63 +1729,101 @@ class VikBooking
 	 * 
 	 * @return 	array 	list of upsellable options for each room booked.
 	 * 
-	 * @since 	1.3.0
+	 * @since 	1.13 (J) - 1.3.0 (WP)
+	 * @since 	1.17.7 (J) - 1.7.7 (WP) added support for damage deposit to confirmed bookings.
 	 */
-	public static function loadUpsellingData($upsell_data, $info, $vbo_tn) {
+	public static function loadUpsellingData($upsell_data, $info, $vbo_tn)
+	{
 		$dbo = JFactory::getDbo();
-		// get all options for all rooms booked
-		$all_room_ids = array();
+
+		// get all rooms booked
+		$all_room_ids = [];
 		foreach ($upsell_data as $v) {
 			if (!in_array($v->id, $all_room_ids)) {
-				array_push($all_room_ids, $v->id);
+				array_push($all_room_ids, (int) $v->id);
 			}
 		}
-		$q = "SELECT `id`, `idopt` FROM `#__vikbooking_rooms` WHERE `id` IN (" . implode(', ', $all_room_ids) . ");";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			// no rooms found
-			return array();
-		}
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select([
+					$dbo->qn('id'),
+					$dbo->qn('idopt'),
+				])
+				->from($dbo->qn('#__vikbooking_rooms'))
+				->where($dbo->qn('id') . ' IN (' . implode(', ', $all_room_ids) . ')')
+		);
 		$records = $dbo->loadAssocList();
-		$all_options = array();
-		$rooms_options = array();
+		if (!$records) {
+			// no rooms found
+			return [];
+		}
+
+		// get all suitable options
+		$all_options = [];
+		$rooms_options = [];
 		foreach ($records as $v) {
 			$allopts = explode(';', $v['idopt']);
-			$room_opt = array();
+			$room_opt = [];
 			foreach ($allopts as $o) {
 				if (empty($o)) {
 					continue;
 				}
-				if (!in_array((int)$o, $all_options)) {
-					array_push($all_options, (int)$o);
+				if (!in_array($o, $all_options)) {
+					array_push($all_options, (int) $o);
 				}
-				array_push($room_opt, (int)$o);
+				array_push($room_opt, (int) $o);
 			}
 			$rooms_options[$v['id']] = $room_opt;
 		}
-		if (!count($all_options)) {
+		if (!$all_options) {
 			// no options found
-			return array();
+			return [];
 		}
+
 		// load all options that could be used by the booked rooms no matter what was already booked
-		$q = "SELECT * FROM `#__vikbooking_optionals` WHERE `id` IN (" . implode(', ', $all_options) . ") AND `forcesel`=0 AND `ifchildren`=0 AND `is_citytax`=0 AND `is_fee`=0;";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			// no upsell-able options found
-			return array();
-		}
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_optionals'))
+				->where($dbo->qn('id') . ' IN (' . implode(', ', $all_options) . ')')
+				->where($dbo->qn('forcesel') . ' = 0')
+				->where($dbo->qn('ifchildren') . ' = 0')
+				->where($dbo->qn('is_citytax') . ' = 0')
+				->where($dbo->qn('is_fee') . ' = 0')
+		);
 		$records = $dbo->loadAssocList();
+
+		if (!strcasecmp(($info['status'] ?? ''), 'confirmed')) {
+			// merge mandatory damage deposit
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->select('*')
+					->from($dbo->qn('#__vikbooking_optionals'))
+					->where($dbo->qn('id') . ' IN (' . implode(', ', $all_options) . ')')
+					->where($dbo->qn('forcesel') . ' = 1')
+					->where($dbo->qn('oparams') . ' LIKE ' . $dbo->q('%' . str_replace(['{', '}'], '', json_encode(['damagedep' => 1])) . '%'))
+			);
+			$dd_records = $dbo->loadAssocList();
+
+			// merge with regular options
+			$records = array_merge($records, $dd_records);
+		}
+
+		if (!$records) {
+			// no upsell-able options found
+			return [];
+		}
+
 		// filter options by available date and translate records
 		self::filterOptionalsByDate($records, $info['checkin'], $info['checkout']);
 		$vbo_tn->translateContents($records, '#__vikbooking_optionals');
-		$records = !is_array($records) ? array() : $records;
-		//
+		$records = !is_array($records) ? [] : $records;
+
 		$tot_upsellable = 0;
 		foreach ($upsell_data as $k => $rdata) {
 			if (!isset($upsell_data[$k]->upsellable)) {
-				$upsell_data[$k]->upsellable = array();
+				$upsell_data[$k]->upsellable = [];
 			}
 			foreach ($records as $opt) {
 				if (!empty($opt['ageintervals'])) {
@@ -1797,25 +1835,26 @@ class VikBooking
 					continue;
 				}
 				// check if the option is suited for this room party
-				$clone_opt = array($opt);
+				$clone_opt = [$opt];
 				self::filterOptionalsByParty($clone_opt, $rdata->adults, $rdata->children);
-				if (!is_array($clone_opt) || !count($clone_opt)) {
+				if (!is_array($clone_opt) || !$clone_opt) {
 					// this option is not suited for this room party
 					continue;
 				}
-				//
+
 				if (in_array($opt['id'], $rdata->options)) {
 					// this option has already been booked
 					continue;
 				}
+
 				// push this option and increase counter
 				array_push($upsell_data[$k]->upsellable, $opt);
 				$tot_upsellable++;
 			}
 		}
-		
+
 		// if no upsellable options were found, we return an empty array
-		return $tot_upsellable > 0 ? $upsell_data : array();
+		return $tot_upsellable > 0 ? $upsell_data : [];
 	}
 
 	/**
@@ -4362,6 +4401,17 @@ class VikBooking
 					$realcost = $tf['maxprice'];
 				}
 				$realcost = $tf['perperson'] == 1 ? ($realcost * $num_adults) : $realcost;
+
+				/**
+				 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+				 * 
+				 * @since 	1.17.7 (J) - 1.7.7 (WP)
+				 */
+				$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$tf, ['days' => $num_nights], ['adults' => $num_adults]]);
+				if ($custom_calculation) {
+					$realcost = (float) $custom_calculation[0];
+				}
+
 				$realcost = self::sayOptionalsPlusIva($realcost, $tf['idiva']);
 				if ($tf['is_citytax'] == 1) {
 					$taxes += $realcost;
@@ -5929,6 +5979,17 @@ class VikBooking
 						if ($actopt[0]['perperson'] == 1) {
 							$realcost = $realcost * $or['adults'];
 						}
+
+						/**
+						 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+						 * 
+						 * @since 	1.17.7 (J) - 1.7.7 (WP)
+						 */
+						$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$actopt[0], $booking, $or]);
+						if ($custom_calculation) {
+							$realcost = (float) $custom_calculation[0];
+						}
+
 						$tmpopr = self::sayOptionalsPlusIva($realcost, $actopt[0]['idiva']);
 						$isdue += $tmpopr;
 						$optstr[$num][] = ($stept[1] > 1 ? $stept[1] . " " : "") . $actopt[0]['name'] . ": " . $tmpopr . " " . $currencyname . "\n";
@@ -9922,6 +9983,17 @@ class VikBooking
 							if ($actopt[0]['perperson'] == 1) {
 								$realcost = $realcost * $or['adults'];
 							}
+
+							/**
+							 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+							 * 
+							 * @since 	1.17.7 (J) - 1.7.7 (WP)
+							 */
+							$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$realcost, &$actopt[0], $booking, $or]);
+							if ($custom_calculation) {
+								$realcost = (float) $custom_calculation[0];
+							}
+
 							$tmpopr = self::sayOptionalsPlusIva($realcost, $actopt[0]['idiva']);
 							$optstr[$num][$opt_ind]['name'] = ($stept[1] > 1 ? $stept[1] . " " : "") . $actopt[0]['name'];
 							$optstr[$num][$opt_ind]['tot'] = $tmpopr;

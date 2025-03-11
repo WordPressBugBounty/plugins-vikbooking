@@ -51,6 +51,9 @@ final class VBOPerformanceCleaner
         if (!in_array('seasons', $skip_checks)) {
             // clean up expired seasonal records
             $affected_records += self::pricingAlterations();
+
+            // clean up ghost records
+            $affected_records += self::ghostRecords();
         }
 
         return $affected_records;
@@ -110,6 +113,113 @@ final class VBOPerformanceCleaner
 
         $affected += (int) $dbo->getAffectedRows();
 
+        return $affected;
+    }
+
+    /**
+     * Identifies and cleans up ghost records occupying listings with non existing bookings.
+     * If the E4jConnect Channel Manager is available, an auto bulk-action is triggered.
+     * 
+     * @return  int     The number of rows affected.
+     * 
+     * @since   1.17.7 (J) - 1.7.7 (WP)
+     */
+    public static function ghostRecords()
+    {
+        $dbo = JFactory::getDbo();
+
+        $affected = 0;
+
+        // identify the room-busy relations whose booking IDs are empty
+        $dbo->setQuery(
+            $dbo->getQuery(true)
+                ->select($dbo->qn('idbusy'))
+                ->from($dbo->qn('#__vikbooking_ordersbusy'))
+                ->where(1)
+                ->andWhere([
+                    $dbo->qn('idorder') . ' = 0',
+                    $dbo->qn('idorder') . ' IS NULL',
+                ], 'OR')
+        );
+
+        // set involved busy record IDs, if any (column is `idbusy`)
+        $hanging_busy_ids = array_column($dbo->loadAssocList(), 'idbusy');
+
+        // identify the occupied records whose busy relations have empty booking IDs
+        $dbo->setQuery(
+            $dbo->getQuery(true)
+                ->select($dbo->qn('b') . '.*')
+                ->select($dbo->qn('ob.idorder'))
+                ->select($dbo->qn('o.id', 'res_id'))
+                ->from($dbo->qn('#__vikbooking_busy', 'b'))
+                ->leftJoin($dbo->qn('#__vikbooking_ordersbusy', 'ob') . ' ON ' . $dbo->qn('b.id') . ' = ' . $dbo->qn('ob.idbusy'))
+                ->leftJoin($dbo->qn('#__vikbooking_orders', 'o') . ' ON ' . $dbo->qn('ob.idorder') . ' = ' . $dbo->qn('o.id'))
+                ->where($dbo->qn('b.checkout') . ' >= ' . time())
+                ->andWhere([
+                    $dbo->qn('ob.idorder') . ' = 0',
+                    $dbo->qn('ob.idorder') . ' IS NULL',
+                    $dbo->qn('o.id') . ' IS NULL',
+                ], 'OR')
+        );
+
+        $ghost_records = $dbo->loadAssocList();
+
+        // merge involved busy record IDs, if any (column is `id`)
+        $hanging_busy_ids = array_merge($hanging_busy_ids, array_column($ghost_records, 'id'));
+
+        // map to integer and filter involved busy record IDs for removal
+        $hanging_busy_ids = array_values(array_unique(array_filter(array_map('intval', $hanging_busy_ids))));
+
+        if ($hanging_busy_ids) {
+            // delete records involved
+            $dbo->setQuery(
+                $dbo->getQuery(true)
+                    ->delete($dbo->qn('#__vikbooking_busy'))
+                    ->where($dbo->qn('id') . ' IN (' . implode(', ', $hanging_busy_ids) . ')')
+            );
+
+            $dbo->execute();
+
+            $affected += (int) $dbo->getAffectedRows();
+        }
+
+        if ($ghost_records && class_exists('VikChannelManager')) {
+            // ghost records were removed, but OTAs may require a sync of availability
+            $listing_times_pool = [];
+            foreach ($ghost_records as $ghost_record) {
+                if (empty($ghost_record['idroom']) || empty($ghost_record['checkin']) || empty($ghost_record['checkout'])) {
+                    continue;
+                }
+                if (!isset($listing_times_pool[$ghost_record['idroom']])) {
+                    $listing_times_pool[$ghost_record['idroom']] = [];
+                }
+                // push listing check-in and check-out date times involved
+                $listing_times_pool[$ghost_record['idroom']][] = $ghost_record['checkin'];
+                $listing_times_pool[$ghost_record['idroom']][] = $ghost_record['checkout'];
+            }
+
+            $min_ts = 0;
+            $max_ts = 0;
+            foreach ($listing_times_pool as $listing_id => $listing_times) {
+                $min_ts = $min_ts ? min(min($listing_times), $min_ts) : min($listing_times);
+                $max_ts = $max_ts ? max(max($listing_times), $max_ts) : max($listing_times);
+            }
+
+            if ($min_ts && $max_ts) {
+                // no past dates allowed
+                $min_ts = $min_ts < time() ? time() : $min_ts;
+
+                // prepare the options for an auto bulk-action of type "availability"
+                VikChannelManager::autoBulkActions([
+                    'from_date'    => date('Y-m-d', $min_ts),
+                    'to_date'      => date('Y-m-d', $max_ts),
+                    'forced_rooms' => array_keys($listing_times_pool),
+                    'update'       => 'availability',
+                ]);
+            }
+        }
+
+        // return the number of affected records
         return $affected;
     }
 

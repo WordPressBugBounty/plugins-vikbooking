@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  com_vikbooking
  * @author      Alessio Gaggii - E4J srl
- * @copyright   Copyright (C) 2024 E4J srl. All rights reserved.
+ * @copyright   Copyright (C) 2025 E4J srl. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com
  */
@@ -11,18 +11,16 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 /**
- * VikBookingReport implementation for (Spain) Hospedajes - Ministerio del Interior.
+ * VikBookingReport implementation for (Catalonia - Spain) Mossos d'Esquadra.
  * 
- * This report supports two different types of registration, one based on the reservation
- * date (Reservas de hospedaje) and another based on the check-in date (Partes de viajeros).
- * This report also provides some custom scoped actions for the electronic operations.
+ * Property Managers from Catalonia are obliged to upload check-in information
+ * in TXT format to Mossos d'Esquadra, not to "SES Hospedajes" like the rest of Spain.
  * 
- * @see 	Instrucciones-hospedajes.pdf
- * @see 	MIR-HOSPE-DSI-WS-Servicio-de-Hospedajes---Comunicaciones-v3.1.2.pdf
+ * @link 	https://registreviatgers.mossos.gencat.cat/mossos_hotels/AppJava/info.do?reqCode=listDocuments&docIdPare=2#reqCode=listDocuments&docIdPare=2
  * 
- * @since 	1.17.2 (J) - 1.7.2 (WP)
+ * @since 	1.17.7 (J) - 1.7.7 (WP)
  */
-class VikBookingReportEsHospedajes extends VikBookingReport
+class VikBookingReportEsMossosDesquadra extends VikBookingReport
 {
 	/**
 	 * Property 'defaultKeySort' is used by the View that renders the report.
@@ -51,41 +49,6 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 	 * @var  	array
 	 */
 	protected $export_booking_ids = [];
-
-	/**
-	 * List of exported check-in dates (range).
-	 * 
-	 * @var  	array
-	 */
-	protected $exported_checkin_dates = [];
-
-	/**
-	 * The development (test, pruebas) endpoint.
-	 * 
-	 * @var  	string
-	 */
-	protected $endpoint_test = 'https://hospedajes.pre-ses.mir.es/hospedajes-web/ws/v1/comunicacion';
-
-	/**
-	 * The production (live, producción) endpoint.
-	 * 
-	 * @var  	string
-	 */
-	protected $endpoint_production = 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion';
-
-	/**
-	 * The path to the temporary directory used by this report.
-	 * 
-	 * @var  	string
-	 */
-	protected $report_tmp_path = '';
-
-	/**
-	 * The software application name.
-	 * 
-	 * @var 	string
-	 */
-	protected $software_application_name = 'VikBooking - E4jConnect';
 
 	/**
 	 * Associative list of RELACIÓN DE PARENTESCO
@@ -175,23 +138,13 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 	];
 
 	/**
-	 * Associative list of guest types.
-	 * 
-	 * @var 	array
-	 */
-	protected $guest_types = [
-		'TI' => 'Titular',
-		'VI' => 'Viajero',
-	];
-
-	/**
 	 * Class constructor should define the name of the report and
 	 * other vars. Call the parent constructor to define the DB object.
 	 */
 	public function __construct()
 	{
 		$this->reportFile = basename(__FILE__, '.php');
-		$this->reportName = 'SES Hospedajes - Ministerio del Interior';
+		$this->reportName = 'Mossos d\'Esquadra - Catalonia';
 		$this->reportFilters = [];
 
 		$this->cols = [];
@@ -199,9 +152,6 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$this->footerRow = [];
 
 		$this->registerExportFileName();
-
-		// set the temporary report directory path
-		$this->report_tmp_path = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'hospedajes_tmp';
 
 		parent::__construct();
 	}
@@ -235,198 +185,20 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			'codigo' => [
 				'type'  => 'text',
 				'label' => 'Código del establecimiento',
-				'help'  => 'Se deberá informar, si se conoce, el código del establecimiento asignado por el Sistema de Hospedajes en el momento del registro.',
+				'help'  => 'Identificador del establecimiento facilitado por los Mossos d\'Esquadra y que consta de 9 o 10 caracteres.',
 			],
-			'tipo_establecimiento' => [
-				'type'    => 'select',
-				'label'   => 'Tipo de establecimiento',
-				'help'    => 'Datos del establecimento en caso de no disponer de un código de establecimiento en el Sistema de Hospedajes.',
-				'options' => $this->tipos_de_establecimiento,
-				'default' => 'OTROS',
-			],
-			'nombre_establecimiento' => [
+			'nombre' => [
 				'type'  => 'text',
-				'label' => 'Nombre del establecimiento',
-				'help'  => 'Datos del establecimento en caso de no disponer de un código de establecimiento en el Sistema de Hospedajes.',
-				'attributes' => [
-					'maxlength' => 50,
-				],
-				'default' => strip_tags((string) VikBooking::getFrontTitle()),
+				'label' => 'Nombre establecimiento',
+				'help'  => 'Insertar el nombre del establecimiento.',
 			],
-			'direccion' => [
-				'type'  => 'text',
-				'label' => 'Dirección del establecimiento',
-				'help'  => 'Datos del establecimento en caso de no disponer de un código de establecimiento en el Sistema de Hospedajes.',
-			],
-			'codigo_postal' => [
-				'type'  => 'text',
-				'label' => 'Código postal',
-				'help'  => 'Datos del establecimento en caso de no disponer de un código de establecimiento en el Sistema de Hospedajes.',
-				'attributes' => [
-					'maxlength' => 20,
-				],
-			],
-			'pais' => [
-				'type'    => 'text',
-				'label'   => 'Código del país',
-				'help'    => 'Este campo va codificado según la norma ISO 3166-1 Alfa-3.',
-				'default' => 'ESP',
-				'attributes' => [
-					'maxlength' => 3,
-				],
-			],
-			'codigo_municipio' => [
-				'type'  => 'text',
-				'label' => 'Código municipio',
-				'help'  => 'Este campo irá codificado con los códigos de municipios del INE (5 dígitos). Obligatorio cuando el país es España.',
-				'attributes' => [
-					'maxlength' => 5,
-				],
-			],
-			'nombre_municipio' => [
-				'type'  => 'text',
-				'label' => 'Nombre municipio',
-				'help'  => 'Nombre del municipio, ciudad, estado, etc.. Obligatorio cuando el país no es España.',
-				'attributes' => [
-					'maxlength' => 100,
-				],
-			],
-			'service_test_mode' => [
-				'type'    => 'checkbox',
-				'label'   => 'Endpoint pruebas',
-				'help'    => 'Datos de acceso al Servicio de Comunicación. Pruebas o Producción.',
-				'default' => 0,
-			],
-			'service_arrendador' => [
-				'type'    => 'text',
-				'label'   => 'Arrendador',
-				'help'    => 'Código del arrendador asignado por el Sistema de Hospedajes en el momento del registro.',
-			],
-			'service_username' => [
-				'type'    => 'text',
-				'label'   => 'Usuario',
-				'help'    => 'Datos de acceso al Servicio de Comunicación. Usuario.',
-			],
-			'service_password' => [
-				'type'    => 'password',
-				'label'   => 'Contraseña',
-				'help'    => 'Datos de acceso al Servicio de Comunicación. Contraseña.',
+			'sequence' => [
+				'type'    => 'number',
+				'label'   => 'Secuencia numérica transmisión',
+				'help'    => 'Secuencia numérica para generar el siguiente archivo. El valor se incrementará automáticamente con cada generación del archivo.',
+				'default' => 1,
 			],
 		];
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	public function getScopedActions($scope = null, $visible = true)
-	{
-		// list of custom actions for this report
-		$actions = [
-			[
-				'id' => 'registerTravelerParts',
-				'name' => 'Alta de partes de viajeros',
-				'icon' => VikBookingIcons::i('cloud-upload-alt'),
-				// flag to indicate that it requires the report data (lines)
-				'export_data' => true,
-				'scopes' => [
-					'web',
-					'cron',
-				],
-			],
-			[
-				'id' => 'registerAccommodationReservations',
-				'name' => 'Alta de reservas de hospedaje',
-				'icon' => VikBookingIcons::i('cloud-upload-alt'),
-				// flag to indicate that it requires the report data (lines)
-				'export_data' => true,
-				'scopes' => [
-					'web',
-					'cron',
-				],
-			],
-			[
-				'id' => 'batchArchive',
-				'name' => 'Archivo lotes',
-				'help' => 'Archivo de lotes obtenidos como resultado de transmisiones de datos de huéspedes.',
-				'icon' => VikBookingIcons::i('folder-open'),
-				'scopes' => [
-					'web',
-				],
-				'params' => [
-					'op_month' => [
-						'type'    => 'calendar',
-						'label'   => 'Mes de la comunicación',
-						'help'    => 'Seleccione el mes en el que se produjo la comunicación.',
-						'default' => date('Y-m-01'),
-					],
-					'rp_type' => [
-						'type'    => 'select',
-						'label'   => 'Tipo de comunicación',
-						'help'    => 'Filtro opcional por tipo de comunicación.',
-						'options' => [
-							'0'  => '',
-							'PV' => 'Alta de partes de viajeros',
-							'HR' => 'Alta de reservas de hospedaje',
-						],
-						'default' => '0',
-					],
-				],
-				'params_submit_lbl' => 'Búsqueda lotes',
-			],
-			[
-				'id' => 'checkBatchStatus',
-				'name' => 'Consulta de lotes',
-				'help' => 'Consultar el estado de los lotes obtenidos de transmisiones de datos anteriores.',
-				'icon' => VikBookingIcons::i('user-check'),
-				'scopes' => [
-					'web',
-					'cron',
-				],
-				'params' => [
-					'batch_sequence' => [
-						'type'    => 'text',
-						'label'   => 'Lote',
-						'help'    => 'Ingrese el número de lote a buscar.',
-					],
-					'op_date' => [
-						'type'    => 'calendar',
-						'label'   => 'Fecha de la comunicación',
-						'help'    => 'Seleccione la fecha en el que se produjo la comunicación.',
-						'default' => date('Y-m-d'),
-					],
-				],
-				'params_submit_lbl' => 'Consulta lotes',
-			],
-			[
-				'id' => 'prepareCommunicationMessage',
-				'name' => 'Prepare communication mesage',
-				// flag to indicate that it's callable internally, but not graphically
-				'hidden' => true,
-				'scopes' => [
-					'web',
-				],
-			],
-		];
-
-		// filter actions by scope
-		if ($scope && (!strcasecmp($scope, 'cron') || !strcasecmp($scope, 'web'))) {
-			$actions = array_filter($actions, function($action) use ($scope) {
-				if (!($action['scopes'] ?? [])) {
-					return true;
-				}
-
-				return in_array(strtolower($scope), $action['scopes']);
-			});
-		}
-
-		// filter by visibility
-		if ($visible) {
-			$actions = array_filter($actions, function($action) {
-				return !($action['hidden'] ?? false);
-			});
-		}
-
-		return array_values($actions);
 	}
 
 	/**
@@ -448,10 +220,10 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$this->loadDatePicker();
 
 		// custom export button
-		$this->customExport = '<a href="JavaScript: void(0);" onclick="vboDownloadHospedajes();" class="vbcsvexport"><i class="'.VikBookingIcons::i('download').'"></i> <span>Download XML</span></a>';
+		$this->customExport = '<a href="JavaScript: void(0);" onclick="vboDownloadMossosDesquadra();" class="vbcsvexport"><i class="'.VikBookingIcons::i('download').'"></i> <span>Download TXT</span></a>';
 
 		// build the hidden values for the selection of various fields.
-		$hidden_vals = '<div id="vbo-report-hospedajes-hidden" style="display: none;">';
+		$hidden_vals = '<div id="vbo-report-mossosdesquadra-hidden" style="display: none;">';
 
 		// build params container HTML structure
 		$hidden_vals .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
@@ -460,7 +232,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '			<div class="vbo-params-block vbo-params-block-noborder">';
 
 		// tipos de pago
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-paytype" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-paytype" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Tipo de pago</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<select id="choose-paytype" onchange="vboReportChosenTipodepago(this);"><option value=""></option>';
@@ -472,7 +244,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// Nacionalidad
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-nazione" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-nazione" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Pais</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<select id="choose-nazione" onchange="vboReportChosenNacionalidad(this);"><option value=""></option>';
@@ -484,7 +256,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// tipos de documento
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-doctype" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-doctype" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Tipos de documento</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<select id="choose-documento" onchange="vboReportChosenDocumento(this);"><option value=""></option>';
@@ -496,7 +268,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// relacion de parentesco
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-parentesco" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-parentesco" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Relacion de parentesco</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<select id="choose-parentesco" onchange="vboReportChosenParentesco(this);"><option value=""></option>';
@@ -508,7 +280,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// sexo
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-sesso" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-sesso" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Sexo</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<select id="choose-sesso" onchange="vboReportChosenSesso(this);"><option value=""></option>';
@@ -520,7 +292,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// id number
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-docnum" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-docnum" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Número de documento</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<input type="text" size="40" id="choose-docnum" value="" />';
@@ -528,7 +300,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// número de soporte del documento
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-docsoporte" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-docsoporte" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Número de soporte del documento</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<input type="text" size="40" id="choose-docsoporte" value="" />';
@@ -537,7 +309,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// address
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-address" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-address" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Direccion</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<input type="text" size="40" id="choose-address" value="" />';
@@ -546,7 +318,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// codigo municipio
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-municipio" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-municipio" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Código de municipio</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<select id="choose-municipio" onchange="vboReportChosenMunicipio(this);"><option value=""></option>';
@@ -559,7 +331,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// city
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-city" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-city" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Nombre del municipio</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<input type="text" size="40" id="choose-city" value="" />';
@@ -568,7 +340,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// postal code
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-postalcode" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-postalcode" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Código postal</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<input type="text" size="40" id="choose-postalcode" value="" />';
@@ -576,7 +348,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// phone
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-phone" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-phone" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Teléfono</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<input type="tel" size="40" id="choose-phone" value="" />';
@@ -584,7 +356,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// email
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-email" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-email" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Dirección de correo electrónico</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<input type="email" size="40" id="choose-email" value="" />';
@@ -592,7 +364,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$hidden_vals .= '	</div>';
 
 		// birth date
-		$hidden_vals .= '	<div id="vbo-report-hospedajes-dbirth" class="vbo-report-hospedajes-selcont vbo-param-container" style="display: none;">';
+		$hidden_vals .= '	<div id="vbo-report-mossosdesquadra-dbirth" class="vbo-report-mossosdesquadra-selcont vbo-param-container" style="display: none;">';
 		$hidden_vals .= '		<div class="vbo-param-label">Data di nascita</div>';
 		$hidden_vals .= '		<div class="vbo-param-setting">';
 		$hidden_vals .= '			<input type="text" size="40" id="choose-dbirth" value="" />';
@@ -626,25 +398,10 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		);
 		array_push($this->reportFilters, $filter_opt);
 
-		// export type filter
-		$types = [
-			'checkin' 	  => sprintf('%s (%s)', JText::translate('VBPICKUPAT'), 'Partes de viajeros'),
-			'reservation' => sprintf('%s (%s)', JText::translate('VBPCHOOSEBUSYORDATE'), 'Reservas de hospedaje'),
-		];
-		$ptype = VikRequest::getString('type', 'checkin', 'request');
-		$types_sel_html = $vbo_app->getNiceSelect($types, $ptype, 'type', '', '', '', '', 'type');
-		$filter_opt = array(
-			'label' => '<label for="type">' . JText::translate('VBPSHOWSEASONSTHREE') . '</label>',
-			'html' => $types_sel_html,
-			'type' => 'select',
-			'name' => 'type'
-		);
-		array_push($this->reportFilters, $filter_opt);
-
 		// append button to save the data when creating manual values
 		$filter_opt = array(
-			'label' => '<label class="vbo-report-hospedajes-manualsave" style="display: none;">Guests data</label>',
-			'html' => '<button type="button" class="btn vbo-config-btn vbo-report-hospedajes-manualsave" style="display: none;" onclick="vboHospedajesSaveData();"><i class="' . VikBookingIcons::i('save') . '"></i> ' . JText::translate('VBSAVE') . '</button>',
+			'label' => '<label class="vbo-report-mossosdesquadra-manualsave" style="display: none;">Guests data</label>',
+			'html' => '<button type="button" class="btn vbo-config-btn vbo-report-mossosdesquadra-manualsave" style="display: none;" onclick="vboMossosDesquadraSaveData();"><i class="' . VikBookingIcons::i('save') . '"></i> ' . JText::translate('VBSAVE') . '</button>',
 		);
 		array_push($this->reportFilters, $filter_opt);
 
@@ -653,10 +410,10 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$ptodate = VikRequest::getString('todate', '', 'request');
 
 		$js = 'var reportActiveCell = null, reportObj = {};
-		var vbo_hospedajes_ajax_uri = "' . VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=invoke_report&report=' . $this->reportFile) . '";
-		var vbo_hospedajes_save_icn = "' . VikBookingIcons::i('save') . '";
-		var vbo_hospedajes_saving_icn = "' . VikBookingIcons::i('circle-notch', 'fa-spin fa-fw') . '";
-		var vbo_hospedajes_saved_icn = "' . VikBookingIcons::i('check-circle') . '";
+		var vbo_mossosdesquadra_ajax_uri = "' . VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=invoke_report&report=' . $this->reportFile) . '";
+		var vbo_mossosdesquadra_save_icn = "' . VikBookingIcons::i('save') . '";
+		var vbo_mossosdesquadra_saving_icn = "' . VikBookingIcons::i('circle-notch', 'fa-spin fa-fw') . '";
+		var vbo_mossosdesquadra_saved_icn = "' . VikBookingIcons::i('check-circle') . '";
 		jQuery(function() {
 			//prepare main filters
 			jQuery(".vbo-report-datepicker:input").datepicker({
@@ -667,7 +424,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			'.(!empty($pfromdate) ? 'jQuery(".vbo-report-datepicker-from").datepicker("setDate", "'.$pfromdate.'");' : '').'
 			'.(!empty($ptodate) ? 'jQuery(".vbo-report-datepicker-to").datepicker("setDate", "'.$ptodate.'");' : '').'
 			//prepare filler helpers
-			jQuery("#vbo-report-hospedajes-hidden").children().detach().appendTo(".vbo-info-overlay-report");
+			jQuery("#vbo-report-mossosdesquadra-hidden").children().detach().appendTo(".vbo-info-overlay-report");
 			jQuery("#choose-paytype").select2({placeholder: "- Tipo de pago -", width: "200px"});
 			jQuery("#choose-nazione").select2({placeholder: "- Seleccione un país -", width: "200px"});
 			jQuery("#choose-documento").select2({placeholder: "- Seleccione un tipo de documento -", width: "200px"});
@@ -684,8 +441,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			//click events
 			jQuery(".vbo-report-load-nazione, .vbo-report-load-nazione-stay, .vbo-report-load-cittadinanza , .vbo-report-load-countrystay").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-nazione").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-nazione").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
@@ -693,8 +450,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-doctype").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-doctype").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-doctype").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
@@ -702,8 +459,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-paytype").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-paytype").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-paytype").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
@@ -711,8 +468,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-sesso").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-sesso").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-sesso").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog vbo-modal-nofooter",
@@ -720,8 +477,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-docnum").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-docnum").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-docnum").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -731,8 +488,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-docsoporte").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-docsoporte").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-docsoporte").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -742,8 +499,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-address").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-address").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-address").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -753,8 +510,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-parentesco").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-parentesco").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-parentesco").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -764,8 +521,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-municipio").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-municipio").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-municipio").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -775,8 +532,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-city").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-city").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-city").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -786,8 +543,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-postalcode").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-postalcode").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-postalcode").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -797,8 +554,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-phone").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-phone").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-phone").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -808,8 +565,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-email").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-email").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-email").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -819,8 +576,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			});
 			jQuery(".vbo-report-load-dbirth").click(function() {
 				reportActiveCell = this;
-				jQuery(".vbo-report-hospedajes-selcont").hide();
-				jQuery("#vbo-report-hospedajes-dbirth").show();
+				jQuery(".vbo-report-mossosdesquadra-selcont").hide();
+				jQuery("#vbo-report-mossosdesquadra-dbirth").show();
 				vboShowOverlay({
 					title: "Completa la información",
 					extra_class: "vbo-modal-rounded vbo-modal-dialog",
@@ -869,7 +626,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-paytype").val("").select2("data", null, false);
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenNacionalidad(naz) {
 			var c_code = naz.value;
@@ -904,7 +661,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-nazione").val("").select2("data", null, false);
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenDocumento(doctype) {
 			var c_code = doctype.value;
@@ -929,7 +686,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-documento").val("").select2("data", null, false);
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenParentesco(parentesco) {
 			var c_code = parentesco.value;
@@ -954,7 +711,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-parentesco").val("").select2("data", null, false);
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenSesso(sesso) {
 			var c_code = sesso.value;
@@ -979,7 +736,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-sesso").val("").select2("data", null, false);
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenDocnum(val) {
 			var c_code = val, c_val = val;
@@ -1003,7 +760,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-docnum").val("");
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenDocsoporte(val) {
 			var c_code = val, c_val = val;
@@ -1027,7 +784,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-docsoporte").val("");
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenAddress(val) {
 			var c_code = val, c_val = val;
@@ -1051,7 +808,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-address").val("");
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenMunicipio(municipio) {
 			var c_code = municipio.value;
@@ -1076,7 +833,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-municipio").val("").select2("data", null, false);
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenCity(val) {
 			var c_code = val, c_val = val;
@@ -1100,7 +857,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-city").val("");
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenPostalcode(val) {
 			var c_code = val, c_val = val;
@@ -1124,7 +881,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-postalcode").val("");
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenPhone(val) {
 			var c_code = val, c_val = val;
@@ -1148,7 +905,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-phone").val("");
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenEmail(val) {
 			var c_code = val, c_val = val;
@@ -1172,7 +929,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-email").val("");
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		function vboReportChosenDbirth(val) {
 			var c_code = val, c_val = val;
@@ -1196,10 +953,10 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			reportActiveCell = null;
 			vboHideOverlay();
 			jQuery("#choose-dbirth").val("");
-			jQuery(".vbo-report-hospedajes-manualsave").show();
+			jQuery(".vbo-report-mossosdesquadra-manualsave").show();
 		}
 		//download function
-		function vboDownloadHospedajes(type, report_type) {
+		function vboDownloadMossosDesquadra(type, report_type) {
 			if (!confirm("¿Estás seguro de que quieres continuar?")) {
 				return false;
 			}
@@ -1229,10 +986,10 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			}, 1000);
 		}
 		// save data function
-		function vboHospedajesSaveData() {
-			jQuery("button.vbo-report-hospedajes-manualsave").find("i").attr("class", vbo_hospedajes_saving_icn);
+		function vboMossosDesquadraSaveData() {
+			jQuery("button.vbo-report-mossosdesquadra-manualsave").find("i").attr("class", vbo_mossosdesquadra_saving_icn);
 			VBOCore.doAjax(
-				vbo_hospedajes_ajax_uri,
+				vbo_mossosdesquadra_ajax_uri,
 				{
 					call: "updatePaxData",
 					params: reportObj,
@@ -1243,11 +1000,11 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 						alert("An error occurred.");
 						return false;
 					}
-					jQuery("button.vbo-report-hospedajes-manualsave").addClass("btn-success").find("i").attr("class", vbo_hospedajes_saved_icn);
+					jQuery("button.vbo-report-mossosdesquadra-manualsave").addClass("btn-success").find("i").attr("class", vbo_mossosdesquadra_saved_icn);
 				},
 				function(error) {
 					alert(error.responseText);
-					jQuery("button.vbo-report-hospedajes-manualsave").removeClass("btn-success").find("i").attr("class", vbo_hospedajes_save_icn);
+					jQuery("button.vbo-report-mossosdesquadra-manualsave").removeClass("btn-success").find("i").attr("class", vbo_mossosdesquadra_save_icn);
 				}
 			);
 		}
@@ -1283,12 +1040,10 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		// injected options will replace request variables, if any
 		$opt_fromdate = $options->get('fromdate', '');
 		$opt_todate   = $options->get('todate', '');
-		$opt_type     = $options->get('type', '');
 
 		// input fields and other vars
 		$pfromdate = $opt_fromdate ?: VikRequest::getString('fromdate', '', 'request');
 		$ptodate = $opt_todate ?: VikRequest::getString('todate', '', 'request');
-		$ptype = $opt_type ?: VikRequest::getString('type', 'checkin', 'request');
 
 		$pkrsort = VikRequest::getString('krsort', $this->defaultKeySort, 'request');
 		$pkrsort = empty($pkrsort) ? $this->defaultKeySort : $pkrsort;
@@ -1311,12 +1066,6 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			$this->setError(JText::translate('VBOREPORTSERRNODATES'));
 			return false;
 		}
-
-		// set the dates being exported
-		$this->exported_checkin_dates = [
-			date('Y-m-d', $from_ts),
-			date('Y-m-d', $to_ts),
-		];
 
 		// query to obtain the records (all check-ins or reservations created within the dates filter)
 		$q = $this->dbo->getQuery(true)
@@ -1363,17 +1112,11 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			->leftJoin($this->dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $this->dbo->qn('c.id') . ' = ' . $this->dbo->qn('co.idcustomer'))
 			->where($this->dbo->qn('o.status') . ' = ' . $this->dbo->q('confirmed'))
 			->where($this->dbo->qn('o.closure') . ' = 0')
+			->where($this->dbo->qn('o.checkin') . ' >= ' . $from_ts)
+			->where($this->dbo->qn('o.checkin') . ' <= ' . $to_ts)
 			->order($this->dbo->qn('o.checkin') . ' ASC')
 			->order($this->dbo->qn('o.id') . ' ASC')
 			->order($this->dbo->qn('or.id') . ' ASC');
-
-		if ($ptype === 'reservation') {
-			$q->where($this->dbo->qn('o.ts') . ' >= ' . $from_ts);
-			$q->where($this->dbo->qn('o.ts') . ' <= ' . $to_ts);
-		} else {
-			$q->where($this->dbo->qn('o.checkin') . ' >= ' . $from_ts);
-			$q->where($this->dbo->qn('o.checkin') . ' <= ' . $to_ts);
-		}
 
 		$this->dbo->setQuery($q);
 		$records = $this->dbo->loadAssocList();
@@ -1398,11 +1141,6 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 
 		// define the columns of the report
 		$this->cols = array(
-			// guest type (rol)
-			array(
-				'key' => 'guest_type',
-				'label' => 'Rol',
-			),
 			// first name
 			array(
 				'key' => 'first_name',
@@ -1420,6 +1158,42 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 					'class="center"'
 				),
 				'label' => JText::translate('VBPCHOOSEBUSYORDATE'),
+				'ignore_view' => 1,
+			),
+			// check-in date
+			array(
+				'key' => 'checkindate',
+				'attr' => array(
+					'class="center"'
+				),
+				'label' => JText::translate('VBPICKUPAT'),
+				'ignore_view' => 1,
+			),
+			// check-in time
+			array(
+				'key' => 'checkintime',
+				'attr' => array(
+					'class="center"'
+				),
+				'label' => 'Check-in time',
+				'ignore_view' => 1,
+			),
+			// check-out date
+			array(
+				'key' => 'checkoutdate',
+				'attr' => array(
+					'class="center"'
+				),
+				'label' => JText::translate('VBRELEASEAT'),
+				'ignore_view' => 1,
+			),
+			// check-out time
+			array(
+				'key' => 'checkouttime',
+				'attr' => array(
+					'class="center"'
+				),
+				'label' => 'Check-out time',
 				'ignore_view' => 1,
 			),
 			// number of guests
@@ -1615,18 +1389,6 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 				// find the actual guest-room-index
 				$guest_room_ind = $this->calcGuestRoomIndex($room_guests, $guest_ind);
 
-				// guest type (rol)
-				$pax_guesttype = $ptype === 'reservation' && $guest_room_ind < 2 ? 'TI' : 'VI';
-
-				array_push($insert_row, array(
-					'key' => 'guest_type',
-					'callback' => function($val) {
-						return $this->guest_types[$val] ?? $val;
-					},
-					'no_export_callback' => 1,
-					'value' => $pax_guesttype,
-				));
-
 				// name
 				$nome = !empty($guests['t_first_name']) ? $guests['t_first_name'] : $guests['first_name'];
 				$pax_nome = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'first_name');
@@ -1652,9 +1414,61 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 						'class="center"'
 					),
 					'callback' => function($val) {
-						return date('Y-m-d', $val);
+						return date('Ymd', $val);
 					},
 					'value' => $guests['ts'],
+					'ignore_view' => 1,
+				));
+
+				// check-in date
+				array_push($insert_row, array(
+					'key' => 'checkindate',
+					'attr' => array(
+						'class="center"'
+					),
+					'callback' => function($val) {
+						return date('Ymd', $val);
+					},
+					'value' => $guests['checkin'],
+					'ignore_view' => 1,
+				));
+
+				// check-in time
+				array_push($insert_row, array(
+					'key' => 'checkintime',
+					'attr' => array(
+						'class="center"'
+					),
+					'callback' => function($val) {
+						return date('Hi', $val);
+					},
+					'value' => $guests['checkin'],
+					'ignore_view' => 1,
+				));
+
+				// check-out date
+				array_push($insert_row, array(
+					'key' => 'checkoutdate',
+					'attr' => array(
+						'class="center"'
+					),
+					'callback' => function($val) {
+						return date('Ymd', $val);
+					},
+					'value' => $guests['checkout'],
+					'ignore_view' => 1,
+				));
+
+				// check-out time
+				array_push($insert_row, array(
+					'key' => 'checkouttime',
+					'attr' => array(
+						'class="center"'
+					),
+					'callback' => function($val) {
+						return date('Hi', $val);
+					},
+					'value' => $guests['checkout'],
 					'ignore_view' => 1,
 				));
 
@@ -1851,6 +1665,15 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 					'callback' => function($val) {
 						if (!empty($val) && is_numeric($val)) {
 							return date('Y-m-d', $val);
+						}
+						return $val ?: '?';
+					},
+					'export_callback' => function($val) {
+						if (!empty($val) && is_numeric($val)) {
+							return date('Ymd', $val);
+						}
+						if (!empty($val) && strlen($val) > 8) {
+							return date('Ymd', strtotime($val));
 						}
 						return $val ?: '?';
 					},
@@ -2226,74 +2049,12 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 	 */
 	public function customExport($export_type = null)
 	{
-		// build the XML file
-		$xml = $this->buildXMLFile();
-
-		// build report action data, if needed
-		$action_data = array_merge($this->getActionData($registry = false), ['xml' => $xml]);
-
-		/**
-		 * Custom export method can run a custom action.
-		 */
-		if ($export_type && !is_numeric($export_type)) {
-			try {
-				// ensure the type of export is a callable scoped action, hidden or visible
-				$actions = $this->getScopedActions($this->getScope(), $visible = false);
-				$action_ids = array_column($actions, 'id');
-				$action_names = array_column($actions, 'name');
-				if (!in_array($export_type, $action_ids)) {
-					throw new Exception(sprintf('Cannot invoke the requested type of export [%s].', $export_type), 403);
-				}
-
-				// get the requested action readable name
-				$action_name = $action_names[array_search($export_type, $action_ids)];
-
-				if ($this->getScope() === 'web') {
-					// run the action and output the HTML response string
-					$html_result = $this->_callActionReturn($export_type, 'html', $this->getScope(), $action_data);
-
-					// build the action result data object
-					$js_result = json_encode([
-						'actionName' => $action_name,
-						'actionHtml' => $html_result,
-					]);
-
-					// render modal script with the action result
-					JFactory::getDocument()->addScriptDeclaration(
-<<<JS
-;(function($) {
-	$(function() {
-		let result = $js_result;
-		VBOCore.displayModal({
-			suffix:      'report-custom-scopedaction-result',
-			extra_class: 'vbo-modal-rounded vbo-modal-tall vbo-modal-nofooter',
-			title:       result.actionName,
-			body:        result.actionHtml,
-		});
-	});
-})(jQuery);
-JS
-					);
-
-					// abort and let the View render the result within a modal
-					return;
-				}
-
-				// let the report custom action run and return a boolean value if invoked by a cron
-				return (bool) $this->_callActionReturn($export_type, 'success', $this->getScope(), $action_data);
-
-			} catch (Exception $e) {
-				// silently catch the error and set it
-				$this->setError(sprintf('(%s) %s', $e->getCode(), $e->getMessage()));
-
-				// abort
-				return false;
-			}
-		}
+		// build the TXT file
+		$txt = $this->buildTXTFile();
 
 		// proceed with the regular export function (write on file through cron or download file through web)
 
-		if (!$xml) {
+		if (!$txt) {
 			// abort
 			return false;
 		}
@@ -2307,18 +2068,24 @@ JS
 		if ($this->hasExportHandler()) {
 			// write data onto the custom file handler
 			$fp = $this->getExportCSVHandler();
-			fwrite($fp, $xml);
+			fwrite($fp, $txt);
 			fclose($fp);
+
+			// update sequence for the next download
+			$this->increaseTransmissionSequence();
 
 			// return true as data was written
 			return true;
 		}
 
 		// force text file download in case of regular export
-		header("Content-type: text/xml");
+		header("Content-type: text/plain");
 		header("Cache-Control: no-store, no-cache");
 		header('Content-Disposition: attachment; filename="' . $this->getExportCSVFileName() . '"');
-		echo $xml;
+		echo $txt;
+
+		// update sequence for the next download
+		$this->increaseTransmissionSequence();
 
 		exit;
 	}
@@ -2409,13 +2176,11 @@ JS
 	}
 
 	/**
-	 * Builds the XML file for export or transmission.
+	 * Builds the TXT file for export.
 	 * 
-	 * @param 	string 	$type 	The XML export type (checkin or reservation).
-	 * 
-	 * @return 	string 			Empty string in case of errors, XML otherwise.
+	 * @return 	string 	Empty string in case of errors, TXT otherwise.
 	 */
-	protected function buildXMLFile($type = '')
+	protected function buildTXTFile()
 	{
 		if (!$this->getReportData()) {
 			return '';
@@ -2427,23 +2192,32 @@ JS
 		// get the possibly injected report options
 		$options = $this->getReportOptions();
 
-		// injected options will replace request variables, if any
-		$export_type = $type ?: $options->get('type', VikRequest::getString('type', 'checkin', 'request'));
-
 		// access manually filled values, if any
 		$pfiller = VikRequest::getString('filler', '', 'request', VIKREQUEST_ALLOWRAW);
 		$pfiller = !empty($pfiller) ? (array) json_decode($pfiller, true) : [];
 
-		// start building the XML
-		$xml = $this->loadXmlSoap('<alt:peticion xmlns:alt="http://www.neg.hospedajes.mir.es/altaParteHospedaje"></alt:peticion>');
+		// define the lines separator character (carriage return + new line feed)
+		$lines_separator = "\r\n";
 
-		// add main child common node (no value, empty namespace)
-		$solicitud = $xml->addChild('solicitud', null, '');
+		// define the data separator character (pipe)
+		$data_separator = '|';
 
-		if ($export_type === 'checkin') {
-			// partes de viajeros (check-in report)
-			$solicitud->addChild('codigoEstablecimiento', htmlspecialchars($settings['codigo'] ?? ''));
-		}
+		// start building the text file content
+		$file_content = '';
+
+		// add first line (LÍNEA AGRUPACIÓN) to text file content
+		$file_content .= implode($data_separator, [0, count($this->rows)]) . $lines_separator;
+
+		// add second line (LÍNEA ESTABLECIMIENTO) to text file content
+		$file_content .= implode($data_separator, [
+			1,
+			($settings['codigo'] ?? ''),
+			substr(($settings['nombre'] ?? ''), 0, 40),
+			date('Ymd'),
+			date('Hi'),
+			count($this->rows),
+			'V24',
+		]) . $lines_separator;
 
 		// group all rows by booking id
 		$booking_rows = [];
@@ -2474,50 +2248,28 @@ JS
 
 		// scan all booking rows
 		foreach ($booking_rows as $bid => $rows) {
-			// add <comunicacion> node for this reservation
-			$comunicacion = $solicitud->addChild('comunicacion');
-
-			// check if <establecimiento> node is needed
-			if ($export_type !== 'checkin') {
-				// reservas de hospedaje (reservation report)
-				$establecimiento = $comunicacion->addChild('establecimiento');
-				if (!empty($settings['codigo'])) {
-					// property code, if known
-					$establecimiento->addChild('codigo', htmlspecialchars($settings['codigo']));
-				} else {
-					// property details otherwise
-					$datos = $establecimiento->addChild('datosEstablecimiento');
-					$datos->addChild('tipo', htmlspecialchars($settings['tipo_establecimiento'] ?? ''));
-					$datos->addChild('nombre', htmlspecialchars($settings['nombre_establecimiento'] ?? ''));
-					$direccion = $datos->addChild('direccion');
-					$direccion->addChild('direccion', htmlspecialchars($settings['direccion'] ?? ''));
-					$direccion->addChild('codigoMunicipio', htmlspecialchars($settings['codigo_municipio'] ?? ''));
-					$direccion->addChild('nombreMunicipio', htmlspecialchars($settings['nombre_municipio'] ?? ''));
-					$direccion->addChild('codigoPostal', htmlspecialchars($settings['codigo_postal'] ?? ''));
-					$direccion->addChild('pais', htmlspecialchars($settings['pais'] ?? ''));
-				}
-			}
-
-			// build an associative list of data for the first guest row of this booking
-			$main_res_data = $this->getAssocRowData($rows[0]);
-
-			// add <contrato> node
-			$contrato = $comunicacion->addChild('contrato');
-			$contrato->addChild('referencia', $main_res_data['idbooking']);
-			$contrato->addChild('fechaContrato', htmlspecialchars($main_res_data['resdate']));
-			$contrato->addChild('fechaEntrada', htmlspecialchars($main_res_data['checkin']));
-			$contrato->addChild('fechaSalida', htmlspecialchars($main_res_data['checkout']));
-			$contrato->addChild('numPersonas', htmlspecialchars($main_res_data['numguests']));
-			$pago = $contrato->addChild('pago');
-			$pago->addChild('tipoPago', htmlspecialchars($main_res_data['paytype']));
-
 			// scan all guest rows for this reservation to build the various <persona> nodes
 			foreach ($rows as $row) {
 				// get the associative list of guest data from the current row
 				$row_data = $this->getAssocRowData($row);
 
-				// add <persona> node for this guest
-				$persona = $comunicacion->addChild('persona');
+				// build guest line contents (Tipo registro = 2)
+				$guest_line = [2];
+
+				// tell whether the guest is Spanish
+				$is_spanish = !empty($row_data['doctype']) && !strcasecmp($row_data['doctype'], 'NIF');
+
+				// Número de documento español
+				$guest_line[] = $is_spanish ? $row_data['docnum'] : '';
+
+				// Número de documento estranjero
+				$guest_line[] = !$is_spanish ? $row_data['docnum'] : '';
+
+				// Tipo de documento identificador
+				$guest_line[] = $row_data['doctype'];
+
+				// document issue date is not mandatory, but we need to fill the empty value
+				$guest_line[] = '';
 
 				// last name parts
 				$last_name_parts = explode(' ', (string) $row_data['last_name']);
@@ -2530,738 +2282,124 @@ JS
 					$last_name_one = implode(' ', $last_name_parts);
 				}
 
-				// set persona details
-				$persona->addChild('rol', htmlspecialchars($row_data['guest_type']));
-				$persona->addChild('nombre', htmlspecialchars($row_data['first_name']));
-				$persona->addChild('apellido1', htmlspecialchars($last_name_one));
-				if ($last_name_one != $last_name_two || (!empty($row_data['doctype']) && !strcasecmp($row_data['doctype'], 'NIF'))) {
-					// apellido2 is mandatory in this case
-					$persona->addChild('apellido2', htmlspecialchars($last_name_two));
-				}
-				if (!empty($row_data['doctype'])) {
-					$persona->addChild('tipoDocumento', htmlspecialchars($row_data['doctype']));
-				}
-				if (!empty($row_data['docnum'])) {
-					$persona->addChild('numeroDocumento', htmlspecialchars($row_data['docnum']));
-				}
-				if (!empty($row_data['docsoporte'])) {
-					$persona->addChild('soporteDocumento', htmlspecialchars($row_data['docsoporte']));
-				}
-				$persona->addChild('fechaNacimiento', htmlspecialchars($row_data['date_birth']));
-				$persona->addChild('nacionalidad', htmlspecialchars(($row_data['country_c'] ?: $row_data['country_s'])));
-				$persona->addChild('sexo', htmlspecialchars($row_data['gender']));
+				// Primer apellido (main/first last name)
+				$guest_line[] = $last_name_one;
 
-				// direccion
-				$direccion = $persona->addChild('direccion');
-				if ($row_data['address']) {
-					$direccion->addChild('direccion', htmlspecialchars($row_data['address']));
-				}
-				if ($row_data['municipio']) {
-					$direccion->addChild('codigoMunicipio', htmlspecialchars($row_data['municipio']));
-				}
-				if ($row_data['city']) {
-					$direccion->addChild('nombreMunicipio', htmlspecialchars($row_data['city']));
-				}
-				if ($row_data['postalcode']) {
-					$direccion->addChild('codigoPostal', htmlspecialchars($row_data['postalcode']));
-				}
-				if ($row_data['country_s'] || $row_data['country_c']) {
-					$direccion->addChild('pais', htmlspecialchars(($row_data['country_s'] ?: $row_data['country_c'])));
+				// Segundo apellido (second last name)
+				if ($last_name_one != $last_name_two || $is_spanish) {
+					$guest_line[] = $last_name_two;
+				} else {
+					$guest_line[] = '';
 				}
 
-				if (!empty($row_data['phone'])) {
-					$persona->addChild('telefono', htmlspecialchars($row_data['phone']));
-				}
-				if (!empty($row_data['email'])) {
-					$persona->addChild('correo', htmlspecialchars($row_data['email']));
-				}
-				if ($export_type === 'checkin' && !empty($row_data['parentesco'])) {
-					$persona->addChild('parentesco', htmlspecialchars($row_data['parentesco']));
-				}
+				// Nombre (first name)
+				$guest_line[] = $row_data['first_name'];
+
+				// Sexo
+				$guest_line[] = $row_data['gender'];
+
+				// Fecha Nacimiento
+				$guest_line[] = $row_data['date_birth'];
+
+				// Pais nacionalidad
+				$guest_line[] = $row_data['country_c'] ?: $row_data['country_s'];
+
+				// Fecha entrada
+				$guest_line[] = $row_data['checkindate'];
+
+				// Hora entrada
+				$guest_line[] = $row_data['checkintime'];
+
+				// Fecha salida
+				$guest_line[] = $row_data['checkoutdate'];
+
+				// Hora salida
+				$guest_line[] = $row_data['checkouttime'];
+
+				// Fecha contracto
+				$guest_line[] = $row_data['resdate'];
+
+				// Tipo contracte (C = Contrato en curso, R = Reserva)
+				$guest_line[] = 'R';
+
+				// Número contracto
+				$guest_line[] = $row_data['idbooking'];
+
+				// Número viajeros
+				$guest_line[] = $row_data['numguests'];
+
+				// Número habitaciones
+				$guest_line[] = 1;
+
+				// El hotel dispone de internet (S = Si, N = No)
+				$guest_line[] = 'S';
+
+				// Tipo pago
+				$guest_line[] = $row_data['paytype'];
+
+				// Teléfono
+				$guest_line[] = $row_data['phone'];
+
+				// Relación de parentesco
+				$guest_line[] = $row_data['parentesco'];
+
+				// Email
+				$guest_line[] = $row_data['email'];
+
+				// Número soporte documento identificativo
+				$guest_line[] = $row_data['docsoporte'];
+
+				// Dirección postal
+				$guest_line[] = substr((string) $row_data['address'], 0, 100);
+
+				// Provincia postal
+				$guest_line[] = substr((string) $row_data['municipio'], 0, 2);
+
+				// Municipio postal
+				$guest_line[] = $row_data['municipio'];
+
+				// Localitat postal
+				$guest_line[] = '';
+
+				// Pais postal
+				$guest_line[] = $row_data['country_s'] ?: $row_data['country_c'];
+
+				// Código postal
+				$guest_line[] = $row_data['postalcode'];
+
+				// last field also needs to be separated by a pipe character so we push an empty string
+				$guest_line[] = '';
+
+				// add guest line (LÍNEA VIAJERO) to text file content
+				$file_content .= implode($data_separator, $guest_line) . $lines_separator;
 			}
 		}
 
 		// set pool of booking IDs to update their history
 		$this->export_booking_ids = array_keys($booking_rows);
 
-		// get the formatted XML file string
-		$formatted_xml = $xml->formatXml();
-
-		// make sure to get rid of empty namespace attributes
-		$formatted_xml = str_replace(' xmlns=""', '', $formatted_xml);
-
-		// return the final XML file string
-		return $formatted_xml;
+		// return the final TXT file string
+		return rtrim($file_content, $lines_separator);
 	}
 
 	/**
-	 * Custom scoped action to transmit the registration of the traveler parts (Alta de partes de viajeros).
-	 * Accepted scopes are "web" and "cron", so the "success" property must be returned.
+	 * Increases the current configuration setting for the transmission sequence.
+	 * The transmission sequence is needed to give the export file a proper name.
 	 * 
-	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
-	 * @param 	array 	$data 	Optional associative list of data to process.
-	 * 
-	 * @return 	array 			The execution result properties.
-	 * 
-	 * @throws 	Exception
+	 * @return 	void
 	 */
-	protected function registerTravelerParts($scope = null, array $data = [])
+	protected function increaseTransmissionSequence()
 	{
-		if (!($data['xml'] ?? '') && $scope === 'web') {
-			// start the process through the interface by submitting the current data
-			return [
-				'html' => '<script type="text/javascript">vboDownloadHospedajes(\'registerTravelerParts\', \'checkin\');</script>',
-			];
-		}
-
-		if (!($data['xml'] ?? '')) {
-			// attempt to build the XML file if not set
-			$data['xml'] = $this->buildXMLFile();
-		}
-
-		if (!$data['xml']) {
-			throw new Exception('Missing XML request message.', 500);
-		}
-
-		// load report settings
+		// get report settings
 		$settings = $this->loadSettings();
 
-		if (!$settings || empty($settings['service_username']) || empty($settings['service_password']) || empty($settings['service_arrendador'])) {
-			throw new Exception(sprintf('[%s] error: missing service settings.', __METHOD__), 500);
-		}
+		// get current sequence
+		$current_sequence = (int) ($settings['sequence'] ?? 1);
 
-		// set the type of transmission
-		$tn_type = 'PV';
+		// update report settings with the increased sequence
+		$settings['sequence'] = ++$current_sequence;
 
-		// prepare the communication message data
-		$message_data = array_merge($data, [
-			'operation_type' => 'A',
-			'report_type'    => $tn_type,
-		]);
-
-		// get the communication message
-		$message = $this->_callActionReturn('prepareCommunicationMessage', 'message', $scope, $message_data);
-
-		try {
-			// post the message to the electronic service and get the Soap XML response message
-			$response = $this->postMessage($message, $settings);
-
-			// parse the response message and get the main node across multiple namespaces
-			$xmlBody = $this->loadXmlSoap($response)->getSoapRecursiveNsElement([
-				[
-					'SOAP-ENV',
-					true,
-					'Body',
-				],
-				[
-					'http://www.soap.servicios.hospedajes.mir.es/comunicacion',
-					false,
-					'respuesta',
-				],
-			]);
-
-			// access the desired XML element
-			$xmlBody = $xmlBody->respuesta ?? $xmlBody;
-
-			if (!isset($xmlBody->codigoRetorno)) {
-				// unexpected response
-				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
-			}
-
-			// validate the response
-			$is_error = (int) $xmlBody->codigoRetorno !== 0;
-
-			if ($is_error || !($xmlBody->lote ?? '')) {
-				$error_code = (string) ($xmlBody->codigoRetorno ?? '500');
-				$error_dets = (string) ($xmlBody->descripcion ?? 'Unknown');
-				// terminate the execution in case of errors or empty result
-				throw new Exception(sprintf("[%s] Response error:\n%s", $error_code, $error_dets), 500);
-			}
-
-			// the batch value obtained with the transmission
-			$batch_value = (string) $xmlBody->lote;
-
-			// store the batch value on the DB for later fetching
-			$this->storeBatchData([
-				'batch'   => $batch_value,
-				'op_date' => date('Y-m-d H:i:s'),
-				'from_dt' => $this->exported_checkin_dates[0] ?? date('Y-m-d'),
-				'to_dt'   => $this->exported_checkin_dates[1] ?? date('Y-m-d'),
-				'op_type' => 'A',
-				'rp_type' => $tn_type,
-			], 'hospedajes_batches_' . date('Yn'));
-
-			// build HTML response string
-			$html = '';
-			$html .= '<p class="successmade">Lote: ' . $batch_value . '</p>';
-
-		} catch (Exception $e) {
-			// propagate the error caught
-			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
-		}
-
-		// when executed through a cron, store an event in the Notifications Center
-		if ($scope === 'cron') {
-			// build the notification record
-			$notification = [
-				'sender'  => 'reports',
-				'type'    => 'pmsreport.travelparts.ok',
-				'title'   => 'Hospedajes - Alta de partes de viajeros',
-				'summary' => sprintf(
-					'Las partes de viajeros se han registrado correctamente para las fechas de check-in del %s al %s. Número de lote obtenido: %s.',
-					$this->exported_checkin_dates[0] ?? '',
-					$this->exported_checkin_dates[1] ?? '',
-					$batch_value
-				),
-			];
-
-			try {
-				// store the notification record
-				VBOFactory::getNotificationCenter()->store([$notification]);
-			} catch (Exception $e) {
-				// silently catch the error without doing anything
-			}
-		}
-
-		return [
-			'html'    => $html,
-			'success' => !empty($batch_value),
-			'batch'   => $batch_value,
-		];
-	}
-
-	/**
-	 * Custom scoped action to transmit the registration of the accommodation reservation (Alta de reservas de hospedaje).
-	 * Accepted scopes are "web" and "cron", so the "success" property must be returned.
-	 * 
-	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
-	 * @param 	array 	$data 	Optional associative list of data to process.
-	 * 
-	 * @return 	array 			The execution result properties.
-	 * 
-	 * @throws 	Exception
-	 */
-	protected function registerAccommodationReservations($scope = null, array $data = [])
-	{
-		if (!($data['xml'] ?? '') && $scope === 'web') {
-			// start the process through the interface by submitting the current data
-			return [
-				'html' => '<script type="text/javascript">vboDownloadHospedajes(\'registerAccommodationReservations\', \'reservation\');</script>',
-			];
-		}
-
-		if (!($data['xml'] ?? '')) {
-			// attempt to build the XML file if not set
-			$data['xml'] = $this->buildXMLFile();
-		}
-
-		if (!$data['xml']) {
-			throw new Exception('Missing XML request message.', 500);
-		}
-
-		// load report settings
-		$settings = $this->loadSettings();
-
-		if (!$settings || empty($settings['service_username']) || empty($settings['service_password']) || empty($settings['service_arrendador'])) {
-			throw new Exception(sprintf('[%s] error: missing service settings.', __METHOD__), 500);
-		}
-
-		// set the type of transmission
-		$tn_type = 'RH';
-
-		// prepare the communication message data
-		$message_data = array_merge($data, [
-			'operation_type' => 'A',
-			'report_type'    => $tn_type,
-		]);
-
-		// get the communication message
-		$message = $this->_callActionReturn('prepareCommunicationMessage', 'message', $scope, $message_data);
-
-		try {
-			// post the message to the electronic service and get the Soap XML response message
-			$response = $this->postMessage($message, $settings);
-
-			// parse the response message and get the main node across multiple namespaces
-			$xmlBody = $this->loadXmlSoap($response)->getSoapRecursiveNsElement([
-				[
-					'SOAP-ENV',
-					true,
-					'Body',
-				],
-				[
-					'http://www.soap.servicios.hospedajes.mir.es/comunicacion',
-					false,
-					'respuesta',
-				],
-			]);
-
-			// access the desired XML element
-			$xmlBody = $xmlBody->respuesta ?? $xmlBody;
-
-			if (!isset($xmlBody->codigoRetorno)) {
-				// unexpected response
-				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
-			}
-
-			// validate the response
-			$is_error = (int) $xmlBody->codigoRetorno !== 0;
-
-			if ($is_error || !($xmlBody->lote ?? '')) {
-				$error_code = (string) ($xmlBody->codigoRetorno ?? '500');
-				$error_dets = (string) ($xmlBody->descripcion ?? 'Unknown');
-				// terminate the execution in case of errors or empty result
-				throw new Exception(sprintf("[%s] Response error:\n%s", $error_code, $error_dets), 500);
-			}
-
-			// the batch value obtained with the transmission
-			$batch_value = (string) $xmlBody->lote;
-
-			// store the batch value on the DB for later fetching
-			$this->storeBatchData([
-				'batch'   => $batch_value,
-				'op_date' => date('Y-m-d H:i:s'),
-				'from_dt' => $this->exported_checkin_dates[0] ?? date('Y-m-d'),
-				'to_dt'   => $this->exported_checkin_dates[1] ?? date('Y-m-d'),
-				'op_type' => 'A',
-				'rp_type' => $tn_type,
-			], 'hospedajes_batches_' . date('Yn'));
-
-			// build HTML response string
-			$html = '';
-			$html .= '<p class="successmade">Lote: ' . $batch_value . '</p>';
-
-		} catch (Exception $e) {
-			// propagate the error caught
-			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
-		}
-
-		// when executed through a cron, store an event in the Notifications Center
-		if ($scope === 'cron') {
-			// build the notification record
-			$notification = [
-				'sender'  => 'reports',
-				'type'    => 'pmsreport.reshospedaje.ok',
-				'title'   => 'Hospedajes - Alta de reservas de hospedaje',
-				'summary' => sprintf(
-					'Las reservas de hospedaje se han registrado correctamente para las fechas del %s al %s. Número de lote obtenido: %s.',
-					$this->exported_checkin_dates[0] ?? '',
-					$this->exported_checkin_dates[1] ?? '',
-					$batch_value
-				),
-			];
-
-			try {
-				// store the notification record
-				VBOFactory::getNotificationCenter()->store([$notification]);
-			} catch (Exception $e) {
-				// silently catch the error without doing anything
-			}
-		}
-
-		return [
-			'html'    => $html,
-			'success' => !empty($batch_value),
-			'batch'   => $batch_value,
-		];
-	}
-
-	/**
-	 * Custom scoped action to list all the previously obtained batches.
-	 * 
-	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
-	 * @param 	array 	$data 	Optional associative list of data to process.
-	 * 
-	 * @return 	array 			The execution result properties.
-	 * 
-	 * @throws 	Exception
-	 */
-	protected function batchArchive($scope = null, array $data = [])
-	{
-		// response properties
-		$html = '';
-
-		// optional filter by exact date
-		$date_filter = '';
-
-		// optional filter by report type
-		$rptype_filter = $data['rp_type'] ?? '';
-
-		// read exact or current period (4-digit year + month without leading zero)
-		$read_period = $data['yearmon'] ?? date('Yn');
-
-		if (!empty($data['op_month'])) {
-			// date in Y-m-d format to be converted into year+mon for reading a specific month
-			$read_period = date('Yn', strtotime($data['op_month']));
-		}
-
-		if (!empty($data['op_date'])) {
-			// full date in Y-m-d format for reading the operations of a specific date
-			$date_filter = $data['op_date'];
-			// set the month to read from the database
-			$read_period = date('Yn', strtotime($data['op_date']));
-		}
-
-		// read batches for the requested period
-		$batches = $this->readBatchData('hospedajes_batches_' . $read_period);
-
-		if ($date_filter) {
-			// filter batches by exact date
-			$batches = $this->filterBatchData($batches, $date_filter);
-		}
-
-		if (strlen((string) $rptype_filter) === 2) {
-			// filter batches by report type
-			$batches = $this->filterBatchData($batches, '', $rptype_filter);
-		}
-
-		if (!$batches) {
-			$html .= '<p class="warn">No se encontraron lotes para el período solicitado.</p>';
-		} else {
-			$html .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
-			$html .= '	<div class="vbo-params-wrap">';
-			$html .= '		<div class="vbo-params-container">';
-			$html .= '			<div class="vbo-params-block">';
-
-			foreach ($batches as $batch) {
-				$report_type = $batch['rp_type'] === 'PV' ? 'Partes de viajeros' : 'Reservas de hospedaje';
-
-				$html .= '			<div class="vbo-param-container">';
-				$html .= '				<div class="vbo-param-label">' . $report_type . '<br/>' . $batch['op_date'] . '</div>';
-				$html .= '				<div class="vbo-param-setting">';
-				$html .= '					<span>' . $batch['batch'] . '</span>';
-				$html .= '					<span class="vbo-param-setting-comment">' . sprintf('(%s) %s - %s', $batch['op_type'], $batch['from_dt'], $batch['to_dt']) . '</span>';
-				$html .= '				</div>';
-				$html .= '			</div>';
-			}
-
-			$html .= '			</div>';
-			$html .= '		</div>';
-			$html .= '	</div>';
-			$html .= '</div>';
-		}
-
-		return [
-			'html'    => $html,
-			'total'   => count($batches),
-			'batches' => $batches,
-			'period'  => $read_period,
-			'date'    => $date_filter,
-		];
-	}
-
-	/**
-	 * Custom scoped action to check the status of batches obtained from previous transmissions.
-	 * Accepted scopes are "web" and "cron", so the "success" property must be returned.
-	 * 
-	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
-	 * @param 	array 	$data 	Optional associative list of data to process.
-	 * 
-	 * @return 	array 			The execution result properties.
-	 * 
-	 * @throws 	Exception
-	 */
-	protected function checkBatchStatus($scope = null, array $data = [])
-	{
-		// response properties
-		$html = '';
-		$communication_ok = 0;
-		$communication_err = 0;
-
-		// list of batch strings (sequences) to consult
-		$batches = [];
-
-		if ($data['batch_sequence'] ?? '') {
-			// push a single batch to check
-			$batches[] = $data['batch_sequence'];
-		} elseif ($data['op_date'] ?? '') {
-			// get the batches from a specific date
-			$list = $this->_callActionReturn('batchArchive', 'batches', $scope, ['op_date' => $data['op_date']]);
-			$batches = array_column($list, 'batch');
-		}
-
-		if (!$batches) {
-			throw new Exception(sprintf('[%s] error: %s', __METHOD__, 'No batch values to check according to filters.'), 404);
-		}
-
-		// build the communication XML string
-		$batch_nodes = implode("\n", array_map(function($batch) {
-			return "\t" . '<con:lote>' . $batch . '</con:lote>';
-		}, $batches));
-
-		$xml_comunication = <<<XML
-<con:lotes xmlns:con="http://www.neg.hospedajes.mir.es/consultarComunicacion">
-$batch_nodes
-</con:lotes>
-XML;
-
-		// prepare the communication message data
-		$message_data = [
-			'xml' => $xml_comunication,
-			'operation_type' => 'C',
-		];
-
-		// get the communication message
-		$message = $this->_callActionReturn('prepareCommunicationMessage', 'message', $scope, $message_data);
-
-		try {
-			// post the message to the electronic service and get the Soap XML response message
-			$response = $this->postMessage($message, $settings);
-
-			// parse the response message and get the main node across multiple namespaces
-			$xmlResponseNode = $this->loadXmlSoap($response)->getSoapRecursiveNsElement([
-				[
-					'SOAP-ENV',
-					true,
-					'Body',
-				],
-				[
-					'http://www.soap.servicios.hospedajes.mir.es/comunicacion',
-					false,
-					'respuesta',
-				],
-			]);
-
-			// access the "response" node for validation
-			$xmlResponseNode = $xmlResponseNode->respuesta ?? $xmlResponseNode;
-
-			if (!isset($xmlResponseNode->codigo)) {
-				// unexpected response
-				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlResponseNode->formatXml() ?: $response), 500);
-			}
-
-			// validate the response
-			$is_error = (int) $xmlResponseNode->codigo !== 0;
-
-			if ($is_error) {
-				$error_code = (string) ($xmlBody->codigo ?? '500');
-				$error_dets = (string) ($xmlBody->descripcion ?? 'Unknown');
-				// terminate the execution in case of errors or empty result
-				throw new Exception(sprintf("[%s] Response error:\n%s", $error_code, $error_dets), 500);
-			}
-
-			// now access the "result" node across multiple namespaces
-			$xmlResultNode = $this->loadXmlSoap($response)->getSoapRecursiveNsElement([
-				[
-					'SOAP-ENV',
-					true,
-					'Body',
-				],
-				[
-					'http://www.soap.servicios.hospedajes.mir.es/comunicacion',
-					false,
-					'resultado',
-				],
-			]);
-
-			// access the "result" node for validation
-			$xmlResultNode = $xmlResultNode->resultado ?? $xmlResultNode;
-
-			if (!isset($xmlResultNode->resultadoComunicaciones->resultadoComunicacion)) {
-				// unexpected response
-				throw new UnexpectedValueException(sprintf('Unexpected response with no results [%s]', $xmlResultNode->formatXml() ?: $response), 500);
-			}
-
-			// build HTML response string
-			$html .= '<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">';
-			$html .= '	<div class="vbo-params-wrap">';
-			$html .= '		<div class="vbo-params-container">';
-			$html .= '			<div class="vbo-params-block">';
-
-			$html .= '				<div class="vbo-param-container">';
-			$html .= '			 		<div class="vbo-param-label">Lote</div>';
-			$html .= '					<div class="vbo-param-setting">';
-			$html .= '						<span>' . (string) $xmlResultNode->lote . '</span>';
-			$html .= '					</div>';
-			$html .= '				</div>';
-
-			$html .= '				<div class="vbo-param-container">';
-			$html .= '			 		<div class="vbo-param-label">Tipo de comunicaciones enviadas</div>';
-			$html .= '					<div class="vbo-param-setting">';
-			$html .= '						<span>' . (string) $xmlResultNode->tipoComunicacion . ' - ' . (string) ($xmlResultNode->tipoOperacion ?? '') . '</span>';
-			$html .= '					</div>';
-			$html .= '				</div>';
-
-			$html .= '				<div class="vbo-param-container">';
-			$html .= '			 		<div class="vbo-param-label">Fecha Peticion</div>';
-			$html .= '					<div class="vbo-param-setting">';
-			$html .= '						<span>' . (string) $xmlResultNode->fechaPeticion . '</span>';
-			$html .= '						<span class="vbo-param-setting-comment">Fecha Procesamiento ' . (string) ($xmlResultNode->fechaProcesamiento ?? '') . '</span>';
-			$html .= '					</div>';
-			$html .= '				</div>';
-
-			$html .= '				<div class="vbo-param-container">';
-			$html .= '			 		<div class="vbo-param-label">Estado</div>';
-			$html .= '					<div class="vbo-param-setting">';
-			$html .= '						<span>(' . (string) $xmlResultNode->codigoEstado . ') ' . (string) $xmlResultNode->descEstado . '</span>';
-			$html .= '					</div>';
-			$html .= '				</div>';
-
-			// scan all results and increase success/error counters
-			foreach ($xmlResultNode->resultadoComunicaciones->resultadoComunicacion as $rescom) {
-				$html .= '			<div class="vbo-param-container">';
-				$html .= '		 		<div class="vbo-param-label">Resultado #' . (string) $rescom->orden . '</div>';
-				$html .= '				<div class="vbo-param-setting">';
-				if ((string) ($rescom->codigoComunicacion ?? '')) {
-					// expected communication code (success)
-					$html .= '				<span>' . (string) $rescom->codigoComunicacion . '</span>';
-					$html .= '				<span class="vbo-param-setting-comment">Codigo comunicacion.</span>';
-					// increase counter
-					$communication_ok++;
-				} else {
-					// expected error details
-					$html .= '				<span>' . (string) ($rescom->tipoError ?? '') . '</span>';
-					$html .= '				<span class="vbo-param-setting-comment">' . (string) ($rescom->error ?? '') . '</span>';
-					// increase counter
-					$communication_err++;
-				}
-				$html .= '				</div>';
-				$html .= '			</div>';
-			}
-
-			$html .= '			</div>';
-			$html .= '		</div>';
-			$html .= '	</div>';
-			$html .= '</div>';
-		} catch (Exception $e) {
-			// propagate the error caught
-			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
-		}
-
-		// when executed through a cron, store an event in the Notifications Center
-		if ($scope === 'cron') {
-			// build the notification record
-			$notification = [
-				'sender'  => 'reports',
-				'type'    => 'pmsreport.checkbatchstatus.' . ($communication_err ? 'error' : 'ok'),
-				'title'   => 'Hospedajes - Consulta de lotes',
-				'summary' => sprintf(
-					'Consulta de lotes finalizados. Resultados totales: %d. Éxito: %d. Error: %d.',
-					($communication_ok + $communication_err),
-					$communication_ok,
-					$communication_err
-				),
-			];
-
-			try {
-				// store the notification record
-				VBOFactory::getNotificationCenter()->store([$notification]);
-			} catch (Exception $e) {
-				// silently catch the error without doing anything
-			}
-		}
-
-		return [
-			'html'      => $html,
-			'success'   => true,
-			'count_ok'  => $communication_ok,
-			'count_err' => $communication_err,
-		];
-	}
-
-	/**
-	 * Custom scoped action to prepare a communication request towards the Electronic Service.
-	 * 
-	 * @param 	string 	$scope 	Optional scope identifier (cron, web, etc..).
-	 * @param 	array 	$data 	Optional associative list of data to process.
-	 * 
-	 * @return 	array 			The execution result properties.
-	 * 
-	 * @throws 	Exception
-	 */
-	protected function prepareCommunicationMessage($scope = null, array $data = [])
-	{
-		// load report settings
-		$settings = $this->loadSettings();
-
-		if (empty($data['operation_type'])) {
-			throw new Exception('Missing mandatory Operation Type.', 500);
-		}
-
-		// ensure the operation type is upper-case (A, C or B)
-		$data['operation_type'] = strtoupper($data['operation_type']);
-
-		if ($data['operation_type'] === 'A' && empty($data['report_type'])) {
-			// either "PV" (checkin) or "HR" (reservation) is mandatory
-			throw new Exception('Missing mandatory Report Type.', 500);
-		}
-
-		// ensure the report type is upper-case ("PV" or "HR")
-		$data['report_type'] = strtoupper($data['report_type'] ?? '');
-
-		if (!($data['xml'] ?? '')) {
-			// attempt to build the XML file if not set
-			$data['xml'] = $this->buildXMLFile();
-		}
-
-		if (!$data['xml']) {
-			throw new Exception('Missing XML request (solicitud).', 500);
-		}
-
-		// first off, clean up the report temporary directory to ensure we've got no other files
-		JFolder::delete($this->report_tmp_path);
-
-		// build the temporary XML file name
-		$xml_fname = uniqid('hospedajes_') . '.xml';
-
-		// store the XML file internally
-		$xml_stored = JFile::write($this->report_tmp_path . DIRECTORY_SEPARATOR . $xml_fname, $data['xml']);
-
-		if (!$xml_stored) {
-			throw new Exception('Could not store the XML file internally for the data transmission.', 500);
-		}
-
-		// build the zip file destination path
-		$zip_destination = $this->report_tmp_path . DIRECTORY_SEPARATOR . preg_replace("/\.xml$/", '.zip', $xml_fname);
-
-		// compress the folder (should contain a single XML file) into an archive
-		$xml_compressed = VBOArchiveFactory::compress($this->report_tmp_path, $zip_destination);
-		
-		if (!$xml_compressed) {
-			throw new Exception('Could not compress the XML file in zip format for the data transmission.', 500);
-		}
-
-		// read the archive into a base64-encoded string
-		$base64_request = base64_encode(file_get_contents($zip_destination));
-
-		if (!$base64_request) {
-			throw new Exception('Could not read the zip archive containing the XML file into a base64-encoded string for the data transmission.', 500);
-		}
-
-		// build SOAP message values
-		$codigo_arrendador = $settings['service_arrendador'] ?? '';
-		$application_name  = $this->software_application_name;
-		$operation_type_code = $data['operation_type'];
-		$communication_type_node = '';
-		if ($data['operation_type'] === 'A') {
-			// communication type node is mandatory
-			$communication_type_node = '<tipoComunicacion>' . $data['report_type'] . '</tipoComunicacion>';
-		}
-
-		// build SOAP XML message
-		$soap_xml = <<<XML
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:com="http://www.soap.servicios.hospedajes.mir.es/comunicacion">
-	<soapenv:Header/>
-	<soapenv:Body>
-		<com:comunicacionRequest>
-			<peticion>
-				<cabecera>
-					<codigoArrendador>$codigo_arrendador</codigoArrendador>
-					<aplicacion>$application_name</aplicacion>
-					<tipoOperacion>$operation_type_code</tipoOperacion>
-					$communication_type_node
-				</cabecera>
-				<solicitud>$base64_request</solicitud>
-			</peticion>
-		</com:comunicacionRequest>
-	</soapenv:Body>
-</soapenv:Envelope>
-XML;
-
-		return [
-			'message'   => $soap_xml,
-			'solicitud' => $data['xml'],
-		];
+		$this->saveSettings($settings);
 	}
 
 	/**
@@ -3287,273 +2425,29 @@ XML;
 	}
 
 	/**
-	 * Makes a POST request towards the electronic service by posting a SOAP XML message.
-	 * 
-	 * @param 	string 	$message 	The SOAP XML message to post.
-	 * @param 	array 	$settings 	The report settings.
-	 * 
-	 * @return 	string 				The response obtained.
-	 * 
-	 * @throws 	Exception
-	 */
-	protected function postMessage($message, array $settings = null)
-	{
-		if (!$settings) {
-			// load report settings
-			$settings = $this->loadSettings();
-		}
-
-		/**
-		 * @todo  start debug responses
-		 */
-		/*
-		$ok = '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
-	<SOAP-ENV:Header/>
-	<SOAP-ENV:Body>
-		<ns3:comunicacionResponse xmlns:ns3="http://www.soap.servicios.hospedajes.mir.es/comunicacion">
-			<respuesta>
-				<codigoRetorno>0</codigoRetorno>
-				<descripcion>Ok</descripcion>
-				<lote>00000000-1234-5678-0000-00000000' . rand(1000, 9999) . '</lote>
-			</respuesta>
-		</ns3:comunicacionResponse>
-	</SOAP-ENV:Body>
-</SOAP-ENV:Envelope>';
-
-		$nok = '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
-	<SOAP-ENV:Header/>
-	<SOAP-ENV:Body>
-		<ns3:comunicacionResponse xmlns:ns3="http://www.soap.servicios.hospedajes.mir.es/comunicacion">
-			<respuesta>
-				<codigoRetorno>109</codigoRetorno>
-				<descripcion>Formato de solicitud incorrecto. Ha de ir comprimido (zip) y codificado en Base64.</descripcion>
-			</respuesta>
-		</ns3:comunicacionResponse>
-	</SOAP-ENV:Body>
-</SOAP-ENV:Envelope>';
-
-		$okc = '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
-	<SOAP-ENV:Header/>
-	<SOAP-ENV:Body>
-		<ns3:comunicacionResponse xmlns:ns3="http://www.soap.servicios.hospedajes.mir.es/comunicacion">
-			<respuesta>
-				<codigo>0</codigo>
-				<descripcion>Ok</descripcion>
-			</respuesta>
-			<resultado>
-				<lote>00000000-0000-0000-0000-000000000000</lote>
-				<tipoComunicacion>PV</tipoComunicacion>
-				<tipoOperacion>A</tipoOperacion>
-				<fechaPeticion>2023-02-23T11:37:13.000+01:00</fechaPeticion>
-				<fechaProcesamiento>2023-02-23T11:37:33.000+01:00</fechaProcesamiento>
-				<codigoEstado>6</codigoEstado>
-				<descEstado>Se ha ejecutado pero hay errores en algunas comunicaciones</descEstado>
-				<identificadorUsuario>B00000000</identificadorUsuario>
-				<nombreUsuario>Prueba</nombreUsuario>
-				<codigoArrendador>0000000001</codigoArrendador>
-				<aplicacion>Sistema de pruebas</aplicacion>
-				<resultadoComunicaciones>
-					<resultadoComunicacion>
-						<orden>1</orden>
-						<codigoComunicacion>12345678-4321-3210-6789-210987654321</codigoComunicacion>
-					</resultadoComunicacion>
-				</resultadoComunicaciones>
-			</resultado>
-		</ns3:comunicacionResponse>
-	</SOAP-ENV:Body>
-</SOAP-ENV:Envelope>';
-
-		$nokc = '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
-	<SOAP-ENV:Header/>
-	<SOAP-ENV:Body>
-		<ns3:comunicacionResponse xmlns:ns3="http://www.soap.servicios.hospedajes.mir.es/comunicacion">
-			<respuesta>
-				<codigo>0</codigo>
-				<descripcion>Ok</descripcion>
-			</respuesta>
-			<resultado>
-				<lote>00000000-0000-0000-0000-000000000000</lote>
-				<tipoComunicacion>PV</tipoComunicacion>
-				<tipoOperacion>A</tipoOperacion>
-				<fechaPeticion>2023-02-23T11:37:13.000+01:00</fechaPeticion>
-				<fechaProcesamiento>2023-02-23T11:37:33.000+01:00</fechaProcesamiento>
-				<codigoEstado>6</codigoEstado>
-				<descEstado>Se ha ejecutado pero hay errores en algunas comunicaciones</descEstado>
-				<identificadorUsuario>B00000000</identificadorUsuario>
-				<nombreUsuario>Prueba</nombreUsuario>
-				<codigoArrendador>0000000001</codigoArrendador>
-				<aplicacion>Sistema de pruebas</aplicacion>
-				<resultadoComunicaciones>
-					<resultadoComunicacion>
-						<orden>1</orden>
-						<tipoError>Error validación de datos</tipoError>
-						<error>Error de validación en la comunicación [1]: [No existe un establecimiento para ese código. codigoEstablecimiento: [1234567890]]</error>
-					</resultadoComunicacion>
-				</resultadoComunicaciones>
-			</resultado>
-		</ns3:comunicacionResponse>
-	</SOAP-ENV:Body>
-</SOAP-ENV:Envelope>';
-
-		if (strpos($message, '<tipoOperacion>C</tipoOperacion>')) {
-			// consulta de lotes response simulation
-			return rand(0, 1) ? $okc : $nokc;
-		}
-
-		return rand(0, 1) ? $ok : $nok;
-		*/
-		// end debug responses
-
-
-		// build endpoint URL
-		if ($settings['service_test_mode'] ?? 1) {
-			$endpoint = $this->endpoint_test;
-		} else {
-			$endpoint = $this->endpoint_production;
-		}
-
-		// build basic-auth value
-		$basic_auth = base64_encode(($settings['service_username'] ?? '') . ':' . ($settings['service_password'] ?? ''));
-
-		// start HTTP transporter
-		$http = new JHttp();
-
-		// build connection request headers
-		$headers = [
-			'Authorization' => 'Basic ' . $basic_auth,
-			'Content-Type'  => 'text/xml',
-		];
-
-		// check SSL request header settings
-		if (is_file(dirname(__FILE__) . DIRECTORY_SEPARATOR . '_.ses.mir.es_1.crt')) {
-			// register custom SSL certificate path
-			$headers['sslcertificates'] = dirname(__FILE__) . DIRECTORY_SEPARATOR . '_.ses.mir.es_1.crt';
-		} elseif (is_file(dirname(__FILE__) . DIRECTORY_SEPARATOR . '_.ses.mir.es.crt')) {
-			// register custom SSL certificate path
-			$headers['sslcertificates'] = dirname(__FILE__) . DIRECTORY_SEPARATOR . '_.ses.mir.es.crt';
-		} else {
-			// disable SSL peer validation for using an unsecure connection
-			$headers['sslverify'] = false;
-		}
-
-		// make POST request to the specified URL
-		$response = $http->post($endpoint, $message, $headers);
-
-		if ($response->code != 200) {
-			// invalid response, throw an exception
-			throw new Exception(strip_tags((string) $response->body), $response->code);
-		}
-
-		return $response->body;
-	}
-
-	/**
-	 * Stores batch data under the given batch field name.
-	 * 
-	 * @param 	array 	$data 	The batch data to store.
-	 * @param 	string 	$field 	The batch field name.
-	 * 
-	 * @return 	void
-	 */
-	protected function storeBatchData(array $data, $field = '')
-	{
-		// the configuration field name
-		$field = $field ?: 'hospedajes_batches_' . date('Yn');
-
-		// access batches from the current field
-		$current_batches = VBOFactory::getConfig()->getArray($field, []);
-
-		// prepend new batch data
-		array_unshift($current_batches, $data);
-
-		// save new batches
-		VBOFactory::getConfig()->set($field, $current_batches);
-	}
-
-	/**
-	 * Reads batch data under the given batch field name.
-	 * 
-	 * @param 	string 	$field 	The batch field name.
-	 * 
-	 * @return 	array
-	 */
-	protected function readBatchData($field = '')
-	{
-		// the configuration field name
-		$field = $field ?: 'hospedajes_batches_' . date('Yn');
-
-		// return batches from the current field
-		return VBOFactory::getConfig()->getArray($field, []);
-	}
-
-	/**
-	 * Filters the given list of batch data by date and/or type.
-	 * 
-	 * @param 	string 	$date 	The exact date to filter for.
-	 * @param 	string 	$type 	Filter by report type ("PV", "HR").
-	 * 
-	 * @return 	array
-	 */
-	protected function filterBatchData(array $data, $date = '', $type = '')
-	{
-		// return the filtered batches, if any
-		return array_filter($data, function($batch) use ($date, $type) {
-			$date_valid = true;
-			$type_valid = true;
-
-			if ($date) {
-				$date_valid = (bool) preg_match("/^" . preg_quote($date) . "/", $batch['op_date'] ?? '');
-			}
-
-			if ($type) {
-				$type_valid = !strcasecmp($type, $batch['rp_type'] ?? '');
-			}
-
-			return $date_valid && $type_valid;
-		});
-	}
-
-	/**
-	 * Parses a SOAP XML message into a VBOXmlSoap object.
-	 * 
-	 * @param 	string 	$xmlMessage 	The SOAP XML message to load.
-	 * 
-	 * @return 	VBOXmlSoap
-	 * 
-	 * @throws 	Exception
-	 */
-	protected function loadXmlSoap($xmlMessage)
-	{
-		if (empty($xmlMessage)) {
-			throw new Exception('Empty Soap XML message.', 500);
-		}
-
-		// suppress warning messages
-		libxml_use_internal_errors(true);
-
-		// parse the Soap XML message
-		return simplexml_load_string($xmlMessage, VBOXmlSoap::class);
-	}
-
-	/**
 	 * Registers the name to give to the file being exported.
 	 * 
 	 * @return 	void
 	 */
 	protected function registerExportFileName()
 	{
+		// load report settings
+		$settings = $this->loadSettings();
+
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
-		$ptype = VikRequest::getString('type', '', 'request');
 
-		// build report type name
-		if ($ptype === 'checkin') {
-			$export_name = 'Partes_de_viajeros';
-		} else {
-			$export_name = 'Reservas_de_hospedaje';
-		}
+		// build report file name (property code (dot) 3-digit sequence (dot) txt)
+		$export_name = ($settings['codigo'] ?? '') ?: '0000000000';
 
-		$this->setExportCSVFileName($export_name . '-' . $this->reportName . '-' . str_replace('/', '_', $pfromdate) . '-' . str_replace('/', '_', $ptodate) . '.xml');
+		// build current sequence for progressive transmission without incrementing
+		$sequence_int = (int) ($settings['sequence'] ?? 1);
+		$sequence_int = $sequence_int > 999 ? 1 : $sequence_int;
+		$sequence_int = $sequence_int < 0 ? 1 : $sequence_int;
+
+		$sequence_str = str_pad((string) $sequence_int, 3, '0', STR_PAD_LEFT);
+
+		$this->setExportCSVFileName($export_name . '.' . $sequence_str . '.txt');
 	}
 
 	/**

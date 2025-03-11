@@ -961,9 +961,9 @@ function countBookingCells(cellobj, bidstart, roomid) {
 	while (loop === true) {
 		var next = cellelem.next('td');
 		if (next === undefined || !next.length) {
-			//attempt to go to the month after
-			var partable = cellelem.closest('tr').closest('table').nextAll('table.vboverviewtable').first();
+			// attempt to go to the month after
 			var nextmonth = false;
+			var partable = cellelem.closest('.vbo-overv-montable-wrap').next('.vbo-overv-montable-wrap').find('table.vboverviewtable');
 			if (partable !== undefined && partable.length) {
 				partable.find('tr.vboverviewtablerow').each(function() {
 					var roomexists = jQuery(this).find('td').first();
@@ -977,7 +977,7 @@ function countBookingCells(cellobj, bidstart, roomid) {
 				});
 			}
 			if (nextmonth === false) {
-				//nothing was found in the month after
+				// nothing was found in the month after
 				loop = false;
 				break;
 			}
@@ -1008,8 +1008,8 @@ function countCellFreeNights(landobj, roomid, totnights, moving_bids) {
 		var next = cellelem.next('td');
 		if (next === undefined || !next.length) {
 			// attempt to go to the month after
-			var partable = cellelem.closest('tr').closest('table').nextAll('table.vboverviewtable').first();
 			var nextmonth = false;
+			var partable = cellelem.closest('.vbo-overv-montable-wrap').next('.vbo-overv-montable-wrap').find('table.vboverviewtable');
 			if (partable !== undefined && partable.length) {
 				partable.find('tr.vboverviewtablerow').each(function() {
 					var roomexists = jQuery(this).find('td').first();

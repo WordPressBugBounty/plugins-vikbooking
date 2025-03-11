@@ -154,6 +154,79 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 	}
 
 	/**
+	 * @inheritDoc
+	 * @override
+	 * 
+	 * @since 	1.17.7 (J) - 1.7.7 (WP)
+	 */
+	public function validateRegistrationFields(array $booking, array $booking_rooms, array $data, bool $precheckin = true)
+	{
+		if (!$precheckin) {
+			// no validation needed during back-end registration
+			return;
+		}
+
+		// get all field labels
+		$labels = $this->getLabels();
+
+		// list of mandatory fields
+		$mandatory_gfields = [
+			'guest_type',
+			'first_name',
+			'last_name',
+			'gender',
+			'date_birth',
+			'country_b',
+			'country_c',
+		];
+
+		// list of mandatory fields for the main guest
+		$mandatory_main_gfields = [
+			'doctype',
+			'docnum',
+			'docplace',
+		];
+
+		// iterate over all rooms booked
+		foreach ($booking_rooms as $index => $booking_room) {
+			if (!is_array(($data[$index] ?? null)) || !$data[$index]) {
+				throw new Exception(sprintf('Missing guests registration data for room #%d.', ($index + 1)), 500);
+			}
+
+			// count expected room registration guests data
+			$room_adults = $booking_room['adults'] ?? 1;
+			$room_children = $booking_room['children'] ?? 0;
+			$room_guests = $this->registerChildren($precheckin) ? ($room_adults + $room_children) : $room_adults;
+
+			if ($room_guests > count($data[$index])) {
+				throw new Exception(sprintf('Please fill the information for all guests (%d) for room #%d.', $room_guests, ($index + 1)), 500);
+			}
+
+			// scan room guests for the expected room guest registration data
+			for ($g = 1; $g <= $room_guests; $g++) {
+				if (!is_array(($data[$index][$g] ?? null))) {
+					throw new Exception(sprintf('Please fill the information for the guests #%d for room #%d.', $g, ($index + 1)), 500);
+				}
+
+				// build guest mandatory fields
+				$mand_fields = $mandatory_gfields;
+
+				if ($g === 1) {
+					// merge main guest-level mandatory fields for validation
+					$mand_fields = array_merge($mand_fields, $mandatory_main_gfields);
+				}
+
+				// ensure no mandatory field is empty
+				foreach ($mand_fields as $mand_gfield) {
+					if (!is_string($data[$index][$g][$mand_gfield] ?? null) || !strlen($data[$index][$g][$mand_gfield])) {
+						throw new Exception(JText::sprintf('VBO_MISSING_GFIELD_REGISTRATION', ($labels[$mand_gfield] ?? $mand_gfield)), 500);
+					}
+				}
+			}
+		}
+	}
+
+	/**
 	 * Parses the file Nazioni.csv and returns an associative
 	 * array with the code and name of the "Nazione" (country).
 	 * 

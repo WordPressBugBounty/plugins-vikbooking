@@ -47,7 +47,7 @@ $days_labels = array(
 	JText::translate('VBWED'),
 	JText::translate('VBTHU'),
 	JText::translate('VBFRI'),
-	JText::translate('VBSAT')
+	JText::translate('VBSAT'),
 );
 $months_labels = array(
 	JText::translate('VBMONTHONE'),
@@ -61,7 +61,7 @@ $months_labels = array(
 	JText::translate('VBMONTHNINE'),
 	JText::translate('VBMONTHTEN'),
 	JText::translate('VBMONTHELEVEN'),
-	JText::translate('VBMONTHTWELVE')
+	JText::translate('VBMONTHTWELVE'),
 );
 $long_months_labels = $months_labels;
 foreach ($months_labels as $i => $v) {
@@ -86,38 +86,22 @@ foreach ($months_labels as $i => $v) {
 		</div>
 		<div id="filter-bar" class="btn-toolbar vbo-btn-toolbar vbo-tableaux-filters" style="width: 100%; display: inline-block;">
 			<div class="btn-group pull-left" style="font-size: 12px;">
-				<select id="roomsel" name="roomids[]" multiple="multiple">
-				<?php
-				foreach ($this->allrooms as $rid => $rdata) {
-					?>
-					<option value="<?php echo $rid; ?>"<?php echo in_array($rid, $roomids) ? ' selected="selected"' : ''; ?>><?php echo $rdata['name']; ?></option>
+				<span class="vbo-toolbar-multiselect-wrap">
 					<?php
-				}
-
-				/**
-				 * Use the optgroup to separate rooms from categories in the
-				 * drop down menu, only if allrooms > 1 e categories > 1.
-				 * 
-				 * @since 	1.13.5
-				 */
-				if (count($this->allrooms) > 1 && count($this->categories) > 1) {
+					echo $vbo_app->renderElementsDropDown([
+						'id'              => 'roomsel',
+						'elements'        => 'listings',
+						'placeholder'     => JText::translate('VBO_LISTINGS'),
+						'allow_clear'     => 1,
+						'attributes'      => [
+							'name' => 'roomids[]',
+							'multiple' => 'multiple',
+						],
+						'load_categories' => 1,
+						'selected_values' => (array) JFactory::getApplication()->input->get('roomids', [], 'array'),
+					]);
 					?>
-					<optgroup label="<?php echo addslashes(JText::translate('VBOCATEGORYFILTER')); ?>">
-					<?php
-					foreach ($this->categories as $cat) {
-						// we use negative values for the IDs of the categories
-						$cat_id = ($cat['id'] - ($cat['id'] * 2));
-						?>
-						<option value="<?php echo $cat_id; ?>"><?php echo (in_array($cat['id'], $this->reqcats) ? '- ' : '') . $cat['name']; ?></option>
-						<?php
-					}
-					?>
-					</optgroup>
-					<?php
-				}
-				//
-				?>
-				</select>
+				</span>
 			</div>
 			<div class="btn-group pull-left">
 				<span style="font-size: 15px;">&nbsp;</span>
@@ -1325,8 +1309,6 @@ function vboHandleScroll() {
 jQuery(function() {
 	// add listener to scroll event on the main table
 	document.getElementById('vbo-tableaux-table-scroller').addEventListener('scroll', vboDebounceScroll(vboHandleScroll, 1000));
-
-	jQuery("#roomsel, .vbo-perm-roomsel").select2({placeholder: '<?php echo addslashes(JText::translate('VBCOUPONALLVEHICLES')); ?>', width: "300px", allowClear: true});
 	
 	jQuery('#vbo-date-from').datepicker({
 		showOn: 'focus',
@@ -1375,6 +1357,15 @@ jQuery(function() {
 	jQuery('.vbo-tableaux-booking-checkin, .vbo-tableaux-booking-checkout, .vbo-tableaux-booking-stay').hover(function() {
 		registerHoveringTooltip(this);
 	}, unregisterHoveringTooltip);
+
+	// view booking snapshot
+	jQuery('.vbo-tableaux-booking').on('click', function(e) {
+		e.stopPropagation();
+		let bid = jQuery(this).attr('data-bid');
+		if (bid) {
+			VBOCore.handleDisplayWidgetNotification({widget_id: 'booking_details'}, {booking_id: bid});
+		}
+	});
 
 	jQuery(document).keydown(function(e) {
 		if (e.keyCode == 27) {

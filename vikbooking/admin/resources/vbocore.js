@@ -1,5 +1,5 @@
 /**
- * VikBooking Core v1.7.6
+ * VikBooking Core v1.7.7
  * Copyright (C) 2025 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -779,7 +779,8 @@
 				// determine widget rendering method
 				if (e && e.target) {
 					let cktarget = $(e.target);
-					if (e.shiftKey === true || VBOCore.options.is_vcm || (cktarget.hasClass(VBOCore.options.panel_opts.addw_modal_cls) || cktarget.parent().hasClass(VBOCore.options.panel_opts.addw_modal_cls))) {
+					let is_main_elem_clicked = cktarget.length && (cktarget.hasClass('vbo-sidepanel-widget-info-det') || cktarget.hasClass('vbo-sidepanel-widget-name'));
+					if (e.shiftKey === true || VBOCore.options.is_vcm || is_main_elem_clicked || (cktarget.hasClass(VBOCore.options.panel_opts.addw_modal_cls) || cktarget.parent().hasClass(VBOCore.options.panel_opts.addw_modal_cls))) {
 						// widget modal rendering
 						if (VBOCore.options.is_vcm) {
 							// register loading effect with automatic cancellation
@@ -3745,16 +3746,20 @@
 				// get modal body if NOT from localStorage
 				let prevBody = target.querySelector('.vbo-admin-dock-element-modalbody');
 
-				if (!Object.keys(widgetData).length && prevBody && prevBody.children && prevBody.children[0]) {
-					// unset dock-minimized attribute
+				if (!Object.keys(widgetData).length && prevBody && prevBody.children && prevBody.children[0] && prevBody.children[0]?.children?.length) {
+					// unset dock-minimized attribute on main element with class "vbo-modal-widget_modal-wrap"
 					prevBody.children[0].setAttribute('data-dock-minimized', 0);
+					// get the previous style attribute
+					let prevBodyStyle = prevBody.children[0].getAttribute('style');
 
 					// restore admin widget body previously minimized
 					let prevTitle = data?.title || '';
 					let nameSuffix = ' - ' + (details?.name || '');
 					let modalRestore = {
 						title: prevTitle + (prevTitle.indexOf(nameSuffix) < 0 ? nameSuffix : ''),
-						body: prevBody.children[0],
+						// do not immediately set the restored modal body to prevBody.children[0] in order
+						// to avoid getting duplicate nested elements with class "vbo-modal-widget_modal-wrap"
+						// body: prevBody.children[0],
 					};
 
 					if (details?.modal?.add_class && data?.extra_class && (data.extra_class + '').indexOf((details.modal.add_class) + '') < 0) {
@@ -3767,6 +3772,17 @@
 						Object.assign(data, modalRestore),
 						Object.assign({}, details)
 					);
+
+					if (prevBodyStyle) {
+						(restoredBody[0] || restoredBody).setAttribute('style', prevBodyStyle);
+					}
+
+					// iterate all children elements of main modal body element with class "vbo-modal-widget_modal-wrap"
+					// to append and restore the original child nodes and to avoid duplicate container elements
+					Array.from(prevBody.children[0].children).forEach((child) => {
+						// append child node to the restored modal body
+						(restoredBody[0] || restoredBody).append(child);
+					});
 
 					try {
 						if (typeof data?.onRestore === 'function') {

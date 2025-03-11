@@ -711,6 +711,16 @@ final class VBORoomHelper extends JObject
 				$dd_price = $dd_price * ((int) $room_dd_data['rr']['adults']);
 			}
 
+			/**
+			 * Trigger event to allow third party plugins to apply a custom calculation for the option/extra fee or tax.
+			 * 
+			 * @since 	1.17.7 (J) - 1.7.7 (WP)
+			 */
+			$custom_calculation = VBOFactory::getPlatform()->getDispatcher()->filter('onCalculateBookingOptionFeeCost', [$dd_price, &$dd_records_assoc[$opt_id], $booking, $booking_rooms]);
+			if ($custom_calculation) {
+				$dd_price = (float) $custom_calculation[0];
+			}
+
 			if ($dd_price <= 0) {
 				// invalid damage deposit cost
 				continue;

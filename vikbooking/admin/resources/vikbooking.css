@@ -146,6 +146,15 @@ a.label.label-info:hover, a.badge.badge-info:hover {
 a.label, a.badge, a.label:hover, a.badge:hover {
 	color: var(--vbo-contrast-text-color);
 }
+.btn.btn-green {
+	background-color: var(--vbo-green-color);
+	color: #fff;
+	border: 1px solid var(--vbo-green-color);
+}
+.btn.btn-green:hover {
+	background-color: var(--vbo-green-color-hover);
+	border: 1px solid var(--vbo-green-color-hover);
+}
 .vbo-label-nested {
 	padding: 1px 4px !important;
 	font-weight: 500;
@@ -154,6 +163,22 @@ a.label, a.badge, a.label:hover, a.badge:hover {
 }
 .vbo-enabled-icon {
 	color: var(--vbo-green-color);
+}
+
+.table th.title.left,
+.table th.left,
+.table td.left {
+	text-align: left;
+}
+.table th.title.center,
+.table th.center,
+.table td.center {
+	text-align: center;
+}
+.table th.title.right,
+.table th.right,
+.table td.right {
+	text-align: right;
 }
 
 /* @joomlaonly - forced border color for the Joomla top toolbar */
@@ -2707,6 +2732,37 @@ form[name="invoicesform"] .btn-toolbar {
 	margin-top: 5px;
 	margin-bottom: 5px !important;
 	padding: 0;
+}
+
+/* 
+ * By using the "vbo-toolbar-multiselect-wrap" container we can use inline select2 results.
+ */
+.vbo-btn-toolbar .vbo-toolbar-multiselect-wrap .select2-container {
+	width: auto !important;
+	max-width: 500px;
+}
+.vbo-btn-toolbar .vbo-toolbar-multiselect-wrap .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	padding: 4px 5px;
+	/* height: 38px; */
+}
+.vbo-btn-toolbar .vbo-toolbar-multiselect-wrap .select2-selection__rendered li .select2-search__field {
+	margin-bottom: 0 !important;
+}
+.vbo-btn-toolbar .vbo-toolbar-multiselect-wrap .select2-container .select2-search--inline {
+	padding-top: 0;
+}
+.vbo-btn-toolbar .vbo-toolbar-multiselect-wrap .select2-selection__rendered > li:last-of-type:not(:only-of-type) {
+	width: 20px !important;
+	padding-top: 0;
+	height: 20px;
+}
+.vbo-btn-toolbar .vbo-toolbar-multiselect-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice {
+	max-width: 120px;
+	margin: 0;
+	height: 18px;
 }
 
 .vbo-list-form-filters {

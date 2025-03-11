@@ -30,6 +30,48 @@ extract($displayData);
         <div class="vbo-params-wrap">
             <div class="vbo-params-container">
 
+            <?php
+            /**
+             * Handle multiple report profile settings.
+             * 
+             * @since   1.17.7 (J) - 1.7.7 (WP)
+             */
+            if ($instance->allowsProfileSettings()) {
+                // load all the existing profiles
+                $report_profiles = $instance->getSettingProfiles();
+
+                // load the active profile
+                $active_profile = $instance->getActiveProfile();
+
+                // get the active profile name
+                $profile_name = $active_profile ? ($report_profiles[$active_profile] ?? JText::translate('VBO_USE_DEFAULT')) : JText::translate('VBO_USE_DEFAULT');
+
+                ?>
+                <div class="vbo-params-block">
+
+                    <div class="vbo-param-container">
+                        <div class="vbo-param-label"><?php echo JText::translate('VBO_PROFILE_SETTINGS'); ?></div>
+                        <div class="vbo-param-setting">
+                            <select name="_profile" onchange="VBOCore.emitEvent('vbo-report-settings-profile-changed', {value: this.value});">
+                                <option value="<?php echo JHtml::fetch('esc_attr', $active_profile); ?>"><?php echo $profile_name; ?></option>
+                                <option value="_new"><?php echo JText::translate('VBO_PROFILE_NEW'); ?></option>
+                            </select>
+                            <span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_PROFILE_SETTINGS_HELP'); ?></span>
+                        </div>
+                    </div>
+
+                    <div class="vbo-param-container" data-profile="_new" style="display: none;">
+                        <div class="vbo-param-label"><?php echo JText::translate('VBO_PROFILE_NAME'); ?></div>
+                        <div class="vbo-param-setting">
+                            <input type="text" name="_newprofile" value="" maxlength="64" />
+                        </div>
+                    </div>
+
+                </div>
+                <?php
+            }
+            ?>
+
                 <div class="vbo-params-block">
 
                     <?php

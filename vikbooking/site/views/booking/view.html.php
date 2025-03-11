@@ -369,15 +369,7 @@ class VikbookingViewBooking extends JViewVikBooking
 				}
 				array_push($upsell_data, $room_data);
 			}
-			$upselling = VikBooking::loadUpsellingData(
-				$upsell_data, 
-				array(
-					'id' => $order['id'], 
-					'checkin' => $order['checkin'], 
-					'checkout' => $order['checkout'],
-				), 
-				$vbo_tn
-			);
+			$upselling = VikBooking::loadUpsellingData($upsell_data, $order, $vbo_tn);
 		}
 
 		/**
