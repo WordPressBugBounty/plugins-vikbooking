@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.8
+
+*Release date - 12 March 2025*
+
+- Fixed empty new line at the beginning of the file /wp-content/plugins/vikbooking/libraries/language/site.php.
+
 ## 1.7.7
 
 *Release date - 11 March 2025*
