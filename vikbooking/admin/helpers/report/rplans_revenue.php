@@ -398,7 +398,7 @@ class VikBookingReportRplansRevenue extends VikBookingReport
 			)
 		);
 
-		$total_rooms_units = $this->countRooms($pidroom);
+		$total_rooms_units = $this->countRooms($pidroom) ?: 1;
 
 		// loop over the bookings to build the data for each rate plan involved
 		$from_info = getdate($from_ts);

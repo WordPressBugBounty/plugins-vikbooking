@@ -26,7 +26,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 </div>
 
 <script type="text/javascript">
-	jQuery(document).ready(function() {
+	jQuery(function() {
 		jQuery.ajax({
 			type: "POST",
 			url: "admin-ajax.php",

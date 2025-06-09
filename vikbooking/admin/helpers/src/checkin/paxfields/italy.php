@@ -187,6 +187,12 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 			'docplace',
 		];
 
+		// list of mandatory fields for any guest in case the country of birth ("country_b") is Italy
+		$mandatory_italy_gfields = [
+			'comune_b',
+			'province_b',
+		];
+
 		// iterate over all rooms booked
 		foreach ($booking_rooms as $index => $booking_room) {
 			if (!is_array(($data[$index] ?? null)) || !$data[$index]) {
@@ -216,10 +222,58 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 					$mand_fields = array_merge($mand_fields, $mandatory_main_gfields);
 				}
 
+				// check if we need to validate additional fields for this guest in case it's Italian
+				if (!empty($data[$index][$g]['country_b']) && is_scalar($data[$index][$g]['country_b'])) {
+					if ($data[$index][$g]['country_b'] == '100000100' || !strcasecmp(substr((string) $data[$index][$g]['country_b'], 0, 2), 'IT')) {
+						// the guest is Italian, merge mandatory fields for Italian guests
+						$mand_fields = array_merge($mand_fields, $mandatory_italy_gfields);
+					}
+				}
+
 				// ensure no mandatory field is empty
 				foreach ($mand_fields as $mand_gfield) {
 					if (!is_string($data[$index][$g][$mand_gfield] ?? null) || !strlen($data[$index][$g][$mand_gfield])) {
 						throw new Exception(JText::sprintf('VBO_MISSING_GFIELD_REGISTRATION', ($labels[$mand_gfield] ?? $mand_gfield)), 500);
+					}
+				}
+			}
+		}
+
+		// map of guest-type codes with equal last name
+		$guest_type_codes_map = [
+			// main guest "Head of Family" expects other guests with equal last name to be "Family Member"
+			17 => 19,
+			// main guest "Head of Group" expects other guests with equal last name to be "Group Member"
+			18 => 20,
+		];
+
+		// fields are sufficient, prevent transmission errors with invalid guest-type codes
+		foreach ($booking_rooms as $index => $booking_room) {
+			// count expected room registration guests data
+			$room_adults = $booking_room['adults'] ?? 1;
+			$room_children = $booking_room['children'] ?? 0;
+			$room_guests = $this->registerChildren($precheckin) ? ($room_adults + $room_children) : $room_adults;
+
+			if ($room_guests < 2) {
+				// no validation needed over guest-type code
+				continue;
+			}
+
+			// identify the main guest type code and last name
+			$main_guest_type = (int) ($data[$index][1]['guest_type'] ?? 0);
+			$main_guest_lname = $data[$index][1]['last_name'] ?? '';
+			if (!in_array($main_guest_type, [17, 18]) || empty($main_guest_lname)) {
+				// expected 17 or 18, respectively for "Head of Family" or "Head of Group"
+				continue;
+			}
+
+			// scan room guests by excluding the main one
+			for ($g = 2; $g <= $room_guests; $g++) {
+				if ($main_guest_lname == ($data[$index][$g]['last_name'] ?? '')) {
+					// this guest has got the same last name as the main one
+					if ($guest_type_codes_map[$main_guest_type] != ($data[$index][$g]['guest_type'] ?? 0)) {
+						// expected additional guest type code differs from the selected value
+						throw new Exception(sprintf('The guest #%d for room #%d has got the same last name as the main guest, but their guest-type codes do not match.', $g, ($index + 1)), 500);
 					}
 				}
 			}

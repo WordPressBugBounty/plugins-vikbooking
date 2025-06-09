@@ -1176,10 +1176,7 @@ $layout_data = [
 	'prefix' => 'vbo-content-genai',
 	'room'   => $this->row,
 ];
-echo JLayoutHelper::render('ai.gencontent', $layout_data, null, [
-	'component' => 'com_vikbooking',
-	'client' 	=> 'administrator',
-]);
+echo JLayoutHelper::render('ai.gencontent', $layout_data);
 
 // the Load Image plugin is included for the preview images and image resizing functionality
 $vbo_app->addScript(VBO_ADMIN_URI . 'resources/js_upload/load-image.all.min.js');

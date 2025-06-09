@@ -467,7 +467,7 @@ if (!empty($order['channel'])) {
 			refreshing = null;
 		}
 	}
-	if (jQuery.isFunction(jQuery.fn.tooltip)) {
+	if (typeof jQuery.fn.tooltip === 'function') {
 		jQuery(".hasTooltip").tooltip();
 	} else {
 		jQuery.fn.tooltip = function(){};

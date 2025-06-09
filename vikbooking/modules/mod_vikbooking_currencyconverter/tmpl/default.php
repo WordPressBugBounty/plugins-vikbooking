@@ -44,7 +44,7 @@ var vbcurconvbaseflag = '<?php echo $baseurl.'modules/mod_vikbooking_currencycon
 var fromCurrency = '<?php echo $def_currency; ?>';
 var fromSymbol;
 var pricestaken = 0;
-jQuery(document).ready(function() {
+jQuery(function() {
 	if (jQuery(".vbo_price").length > 0) {
 		jQuery(".vbo_price").each(function() {
 			sendprices.push(jQuery(this).text());

@@ -143,10 +143,7 @@ foreach ($months_labels as $i => $v) {
 		'tool' => 'tableaux',
 	];
 	// render the permissions layout
-	echo JLayoutHelper::render('operators.permissions', $layout_data, null, [
-		'component' => 'com_vikbooking',
-		'client' 	=> 'administrator',
-	]);
+	echo JLayoutHelper::render('operators.permissions', $layout_data);
 
 	// count the cells per month
 	$thead_info = array();

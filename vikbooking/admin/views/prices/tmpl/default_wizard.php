@@ -77,7 +77,7 @@ function showVboWizard() {
 	});
 	vbodialog_on = true;
 }
-jQuery(document).ready(function() {
+jQuery(function() {
 	showVboWizard();
 	// modal handling
 	jQuery(document).keydown(function(e) {

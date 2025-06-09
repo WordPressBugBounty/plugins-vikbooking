@@ -274,7 +274,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 						'type'    => 'calendar',
 						'label'   => 'Data ricevuta',
 						'help'    => 'Seleziona la data per cui scaricare la ricevuta di una trasmissione.',
-						'default' => date('Y-m-d', strtotime('yesterday')),
+						'default' => date($this->getDateFormat(), strtotime('yesterday')),
 					],
 				],
 				'params_submit_lbl' => 'Scarica ricevuta',
@@ -933,7 +933,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			}, 1000);
 		}
 		// update apartment-room relation
-		function vboAlloggiatiSetAptRel(id_apt, id_room) {
+		function vboAlloggiatiSetAptRel(id_apt, id_room, apt_name) {
 			VBOCore.doAjax(
 				"' . VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=report.executeCustomAction') . '",
 				{
@@ -943,6 +943,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					report_data: {
 						id_apt: id_apt,
 						id_room: id_room,
+						apt_name: apt_name,
 					},
 				},
 				(resp) => {
@@ -1408,7 +1409,11 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				$cognome = !empty($pax_cognome) ? $pax_cognome : $cognome;
 				array_push($insert_row, array(
 					'key' => 'last_name',
-					'value' => $cognome
+					'callback_export' => function($val) {
+						$val = str_replace(['-', '.', ',', '?', '!'], ' ', (string) $val);
+						return $this->transliterateToAscii(trim($val));
+					},
+					'value' => $cognome,
 				));
 
 				// Nome
@@ -1417,7 +1422,11 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				$nome = !empty($pax_nome) ? $pax_nome : $nome;
 				array_push($insert_row, array(
 					'key' => 'first_name',
-					'value' => $nome
+					'callback_export' => function($val) {
+						$val = str_replace(['-', '.', ',', '?', '!'], ' ', (string) $val);
+						return $this->transliterateToAscii(trim($val));
+					},
+					'value' => $nome,
 				));
 
 				// Sesso
@@ -1849,7 +1858,13 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 						if ($guest_room_ind > 1 && empty($val)) {
 							return '---';
 						}
-						return !empty($val) && isset($this->nazioni[$val]) ? $this->nazioni[$val]['name'] : '?';
+						if (!empty($val) && isset($this->nazioni[$val])) {
+							return $this->nazioni[$val]['name'];
+						}
+						if (!empty($val) && isset($this->comuniProvince['comuni'][$val]['name'])) {
+							return $this->comuniProvince['comuni'][$val]['name'];
+						}
+						return $val ?: '?';
 					},
 					'no_export_callback' => 1,
 					'value' => $docplace
@@ -2117,6 +2132,15 @@ JS
 		// proceed with the regular export function (write on file through cron or download file through web)
 
 		if (!$lines) {
+			// set the error
+			$this->setError('No valid guest registration lines to export.');
+
+			// check if some warnings were set
+			if ($warnings = $this->getWarning()) {
+				// append the warnings to the error
+				$this->setError('Warnings: ' . $warnings);
+			}
+
 			// abort
 			return false;
 		}
@@ -2388,18 +2412,58 @@ JS
 			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
 		}
 
+		// get the currently active profile ID, if any
+		$activeProfileId = $this->getActiveProfile();
+
 		// update history for all bookings affected
 		foreach ($this->export_booking_ids as $bid) {
 			// build extra data payload for the history event
-			$data = [
+			$extradata = [
 				'transmitted' => 1,
 				'method'      => 'transmitCards',
 				'report'      => $this->getFileName(),
 			];
 			// store booking history event
 			VikBooking::getBookingHistoryInstance($bid)
-				->setExtraData($data)
+				->setExtraData($extradata)
 				->store('RP', $this->reportName . ' - Trasmissione schedine');
+		}
+
+		/**
+		 * When the report is executed through a cron-job, the transmission of the guest details
+		 * will also dump the data transmitted onto a resource file, useful for sending it via email.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		if ($scope === 'cron') {
+			// prepare the TXT resource file information
+			$txt_name = implode('_', array_filter([$this->getFileName(), 'trasmissione', 'schedine', time(), $activeProfileId, rand(100, 999)])) . '.txt';
+			$txt_dest = $this->getDataMediaPath() . DIRECTORY_SEPARATOR . $txt_name;
+			$txt_url  = $this->getDataMediaUrl() . $txt_name;
+
+			// store the TXT bytes into a local file on disk
+			$stored = JFile::write($txt_dest, implode("\r\n", $data['cards']));
+
+			if ($stored && VBOPlatformDetection::isWordPress()) {
+				/**
+				 * Trigger files mirroring operation
+				 */
+				VikBookingLoader::import('update.manager');
+				VikBookingUpdateManager::triggerUploadBackup($txt_dest);
+			}
+
+			if ($stored) {
+				// define a new report resource for the generated file
+				$this->defineResourceFile([
+					'summary' => sprintf(
+						'%sSchedine alloggiati generate con successo: %d.',
+						($activeProfileId ? '(' . ucwords($activeProfileId) . ') ' : ''),
+						$tot_submitted_cards
+					),
+					'url'  => $txt_url,
+					'path' => $txt_dest,
+				]);
+			}
 		}
 
 		// when executed through a cron, store an event in the Notifications Center
@@ -2410,7 +2474,8 @@ JS
 				'type'    => 'pmsreport.transmit.' . ($error_cards ? 'error' : 'ok'),
 				'title'   => $this->reportName . ' - Trasmissione schedine',
 				'summary' => sprintf(
-					'Sono stati trasmessi i dati degli ospiti con check-in dal %s al %s.',
+					'%sSono stati trasmessi i dati degli ospiti con check-in dal %s al %s.',
+					($activeProfileId ? '(' . ucwords($activeProfileId) . ') ' : ''),
 					$this->exported_checkin_dates[0] ?? '',
 					$this->exported_checkin_dates[1] ?? ''
 				),
@@ -2591,6 +2656,49 @@ JS
 			throw new Exception(sprintf('[%s] error: %s', __METHOD__, $e->getMessage()), $e->getCode() ?: 500);
 		}
 
+		// get the currently active profile ID, if any
+		$activeProfileId = $this->getActiveProfile();
+
+		/**
+		 * When the report is executed through a cron-job, the verification of the guest details
+		 * will also dump the data verified onto a resource file, useful for sending it via email.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		if ($scope === 'cron') {
+			// prepare the TXT resource file information
+			$txt_name = implode('_', array_filter([$this->getFileName(), 'controllo', 'schedine', time(), $activeProfileId, rand(100, 999)])) . '.txt';
+			$txt_dest = $this->getDataMediaPath() . DIRECTORY_SEPARATOR . $txt_name;
+			$txt_url  = $this->getDataMediaUrl() . $txt_name;
+
+			// store the TXT bytes into a local file on disk
+			$stored = JFile::write($txt_dest, implode("\r\n", $data['cards']));
+
+			if ($stored && VBOPlatformDetection::isWordPress()) {
+				/**
+				 * Trigger files mirroring operation
+				 */
+				VikBookingLoader::import('update.manager');
+				VikBookingUpdateManager::triggerUploadBackup($txt_dest);
+			}
+
+			if ($stored) {
+				// define a new report resource for the generated file
+				$this->defineResourceFile([
+					'summary' => sprintf(
+						"%sControllo schedine alloggiati completato con %s.\nTotale schedine analizzate: %d.\nTotale schedine valide: %d.\n%s",
+						($activeProfileId ? '(' . ucwords($activeProfileId) . ') ' : ''),
+						($tot_submitted_cards == $tot_valid_cards ? 'successo' : 'degli errori'),
+						$tot_submitted_cards,
+						$tot_valid_cards,
+						($error_cards ? "\n" . implode("\n", array_column($error_cards, 'message')) : '')
+					),
+					'url'  => $txt_url,
+					'path' => $txt_dest,
+				]);
+			}
+		}
+
 		// when executed through a cron, store an event in the Notifications Center
 		if ($scope === 'cron') {
 			// build the notification record
@@ -2599,7 +2707,8 @@ JS
 				'type'    => 'pmsreport.testtransmit.' . ($error_cards ? 'error' : 'ok'),
 				'title'   => $this->reportName . ' - Controllo schedine',
 				'summary' => sprintf(
-					'Sono stati verificati i dati degli ospiti con check-in dal %s al %s.',
+					'%sSono stati verificati i dati degli ospiti con check-in dal %s al %s.',
+					($activeProfileId ? '(' . ucwords($activeProfileId) . ') ' : ''),
 					$this->exported_checkin_dates[0] ?? '',
 					$this->exported_checkin_dates[1] ?? ''
 				),
@@ -2775,7 +2884,7 @@ JS
 						}
 
 						// set HTML string
-						$html .= '		<td><select onchange="vboAlloggiatiSetAptRel(\'' . $id_apt . '\', this.value);"><option value="">---</option>' . $relation_opts . '</select></td>';
+						$html .= '		<td><select onchange="vboAlloggiatiSetAptRel(\'' . $id_apt . '\', this.value, \'' . htmlspecialchars((string) $apt_name, ENT_QUOTES, 'UTF-8') . '\');"><option value="">---</option>' . $relation_opts . '</select></td>';
 					}
 				}
 
@@ -2793,7 +2902,13 @@ JS
 		// update settings with the apartment details obtained
 		$settings['apartments_list'] = $apartments;
 
-		$this->saveSettings($settings);
+		/**
+		 * Since this report supports multiple profiles, settings should be saved
+		 * on the active profile, and if not empty, saving will be successful.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		$this->saveSettings($settings, true, $this->getActiveProfile());
 
 		return [
 			'html'       => $html,
@@ -2818,10 +2933,7 @@ JS
 		// response properties
 		$html = '';
 
-		$pdf_name = implode('_', [$this->getFileName(), 'receipt', $receipt_date, time(), rand(100, 999)]) . '.pdf';
-		$pdf_dest = $this->getDataMediaPath() . DIRECTORY_SEPARATOR . $pdf_name;
-
-		// read all the downloaded receipts
+		// read all the downloaded receipts (we ignore the eventually configure setting profiles by listing all receipts)
 		$match_name = $this->getFileName() . '_receipt';
 		$receipts = JFolder::files($this->getDataMediaPath(), "^{$match_name}.+\.pdf$", $recurse = false, $full = false);
 
@@ -2836,12 +2948,15 @@ JS
 			foreach ($receipts as $receipt) {
 				$name_parts = explode('_', preg_replace("/^{$match_name}_/", '', $receipt));
 				$receipt_date = preg_replace("/T[0-9]{2}:[0-9]{2}:[0-9]{2}$/", '', $name_parts[0]);
+				// the file creation timestamp in the name parts can be shifted when using setting profiles
+				$creation_ts = is_numeric($name_parts[1]) && strlen((string) $name_parts[1]) > 9 ? $name_parts[1] : $name_parts[2];
+				$creation_ts = is_numeric($creation_ts) ? $creation_ts : time();
 
 				$html .= '			<div class="vbo-param-container">';
 				$html .= '				<div class="vbo-param-label">Ricevuta del ' . ($receipt_date ?: $receipt) . '</div>';
 				$html .= '				<div class="vbo-param-setting">';
 				$html .= '					<a href="' . $this->getDataMediaUrl() . $receipt . '" target="_blank">Scarica PDF</a>';
-				$html .= '					<span class="vbo-param-setting-comment">Scaricata in data ' . date('Y-m-d H:i:s', $name_parts[1]) . '</span>';
+				$html .= '					<span class="vbo-param-setting-comment">Scaricata in data ' . date('Y-m-d H:i:s', $creation_ts) . '</span>';
 				$html .= '				</div>';
 				$html .= '			</div>';
 			}
@@ -2891,8 +3006,9 @@ JS
 			$receipt_date = date('Y-m-d', VikBooking::getDateTimestamp($receipt_date));
 		}
 
-		// find the downloaded receipt, if any
-		$match_name = $this->getFileName() . '_receipt_' . $receipt_date;
+		// find the downloaded receipt, if any, for the currently active profile (if any)
+		$current_profile = $this->getActiveProfile();
+		$match_name = $this->getFileName() . '_receipt_' . $receipt_date . (!empty($current_profile) ? '_' . $current_profile : '');
 		$receipts = JFolder::files($this->getDataMediaPath(), "^{$match_name}.+\.pdf$", $recurse = false, $full = false);
 
 		if (!$receipts) {
@@ -2978,6 +3094,9 @@ JS
 			$receipt_date .= 'T00:00:00';
 		}
 
+		// get the currently active profile ID, if any
+		$activeProfileId = $this->getActiveProfile();
+
 		// build the Soap request message
 		$request = '<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -3017,11 +3136,11 @@ JS
 			}
 
 			// prepare the PDF file information
-			$pdf_name = implode('_', [$this->getFileName(), 'receipt', $receipt_date, time(), rand(100, 999)]) . '.pdf';
+			$pdf_name = implode('_', array_filter([$this->getFileName(), 'receipt', $receipt_date, $activeProfileId, time(), rand(100, 999)])) . '.pdf';
 			$pdf_dest = $this->getDataMediaPath() . DIRECTORY_SEPARATOR . $pdf_name;
 			$pdf_url  = $this->getDataMediaUrl() . $pdf_name;
 
-			// check whether a receipt for the same day exists
+			// check whether a receipt for the same day exists (and for the same active profile, if any)
 			$old_pdf_path = $this->_callActionReturn('receiptExists', 'pdf_path', $scope, $data);
 
 			// store the PDF bytes into a local file on disk
@@ -3033,7 +3152,7 @@ JS
 			}
 
 			if ($old_pdf_path) {
-				// get rid of the previously downloaded receipt for the same dates
+				// get rid of the previously downloaded receipt for the same dates (and active profile, if any)
 				unlink($old_pdf_path);
 			}
 
@@ -3066,7 +3185,11 @@ JS
 
 		// define a new report resource for the downloaded file
 		$this->defineResourceFile([
-			'summary' => sprintf('Ricevuta scaricata per la trasmissione con data %s.', $receipt_date),
+			'summary' => sprintf(
+				'%sRicevuta scaricata per la trasmissione con data %s.',
+				($activeProfileId ? '(' . ucwords($activeProfileId) . ') ' : ''),
+				$receipt_date
+			),
 			'url'  => $pdf_url,
 			'path' => $pdf_dest,
 		]);
@@ -3079,7 +3202,8 @@ JS
 				'type'    => 'pmsreport.dwnreceipt.' . ($error_cards ? 'error' : 'ok'),
 				'title'   => $this->reportName . ' - Download ricevuta',
 				'summary' => sprintf(
-					'È stata scaricata la ricevuta per la trasmissione delle schedine in data %s.',
+					'%sÈ stata scaricata la ricevuta per la trasmissione delle schedine in data %s.',
+					($activeProfileId ? '(' . ucwords($activeProfileId) . ') ' : ''),
 					date('Y-m-d', strtotime($receipt_date))
 				),
 				'label'   => 'Scarica PDF',
@@ -3200,7 +3324,13 @@ JS
 		$settings['token_issue_dt'] = $issued;
 		$settings['token_expiry_dt'] = $expiry;
 
-		$this->saveSettings($settings);
+		/**
+		 * Since this report supports multiple profiles, settings should be saved
+		 * on the active profile, and if not empty, saving will be successful.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		$this->saveSettings($settings, true, $this->getActiveProfile());
 
 		return [
 			'html'   => $html,
@@ -3302,7 +3432,7 @@ JS
 	{
 		$settings = $this->loadSettings();
 
-		if (empty($data['id_apt']) || empty($data['id_room'])) {
+		if (!strlen((string) $data['id_apt']) || empty($data['id_room'])) {
 			throw new InvalidArgumentException('Missing apartment and room ID.', 400);
 		}
 
@@ -3317,10 +3447,17 @@ JS
 
 		// update settings
 		$settings['apartment_relations'] = $relations;
-		$this->saveSettings($settings);
+		
+		/**
+		 * Since this report supports multiple profiles, settings should be saved
+		 * on the active profile, and if not empty, saving will be successful.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		$this->saveSettings($settings, true, $this->getActiveProfile());
 
 		// return the current relations
-		return ['relations' => $relations];
+		return ['relations' => $settings['apartment_relations']];
 	}
 
 	/**
@@ -3394,20 +3531,60 @@ JS
 	 */
 	protected function valueFiller($val, $len)
 	{
-		$len = empty($len) || (int)$len <= 0 ? strlen($val) : (int)$len;
+		$val = (string) $val;
+
+		$len = empty($len) || (int) $len <= 0 ? $this->stringLength($val) : (int) $len;
 
 		//clean up $val in case there is still a CR or LF
 		$val = str_replace(array("\r\n", "\r", "\n"), '', $val);
 		
-		if (strlen($val) < $len) {
-			while (strlen($val) < $len) {
+		if ($this->stringLength($val) < $len) {
+			while ($this->stringLength($val) < $len) {
 				$val .= ' ';
 			}
-		} elseif (strlen($val) > $len) {
-			$val = substr($val, 0, $len);
+		} elseif ($this->stringLength($val) > $len) {
+			$val = $this->subString($val, 0, $len);
 		}
 
 		return $val;
+	}
+
+	/**
+	 * Ensures a proper calculation of a string length with multi-byte chars.
+	 * 
+	 * @param 	string 	$str 	The string to measure.
+	 * 
+	 * @return 	int
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected function stringLength(string $str)
+	{
+		if (function_exists('mb_strlen')) {
+			return mb_strlen($str, 'UTF-8');
+		}
+
+		return strlen($str);
+	}
+
+	/**
+	 * Ensures to obtain a proper sub-string with multi-byte chars.
+	 * 
+	 * @param 	string 	$str 		The string to measure.
+	 * @param 	int 	$offset 	The string reading offset.
+	 * @param 	?int 	$length 	Optional length of string.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected function subString(string $str, int $offset, ?int $length = null)
+	{
+		if (function_exists('mb_substr')) {
+			return mb_substr($str, $offset, $length, 'UTF-8');
+		}
+
+		return substr($str, $offset, $length);
 	}
 
 	/**
@@ -3725,7 +3902,7 @@ JS
 	 */
 	private function findVboMatchingRoomId($id_apt, $apt_name, array $vbo_rooms, array $relations)
 	{
-		if (!$id_apt) {
+		if (!strlen((string) $id_apt)) {
 			return 0;
 		}
 

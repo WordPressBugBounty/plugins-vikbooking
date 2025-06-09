@@ -57,11 +57,4 @@ abstract class VBOPlatformUriAware implements VBOPlatformUriInterface
 		// rebuild URL
 		return JUri::root() . $path;
 	}
-
-	/**
-	 * Returns the platform base path.
-	 *
-	 * @return 	string
-	 */
-	abstract protected function getAbsolutePath();
 }

@@ -126,7 +126,7 @@ function vboChangeMultiRoomSearch(type) {
 var chatenabled = <?php echo $chat_enabled; ?>;
 var precheckinenabled = <?php echo $precheckin_enabled; ?>;
 
-jQuery(document).ready(function() {
+jQuery(function() {
 
 	jQuery('input[name="chatenabled"]').change(function() {
 		if (chatenabled < 0) {
@@ -768,7 +768,7 @@ jQuery(document).ready(function() {
 								jQuery('#adminForm').submit();
 							}
 						}
-						jQuery(document).ready(function() {
+						jQuery(function() {
 							jQuery('.vbo-preferred-countries-sortlist').sortable();
 							jQuery('.vbo-preferred-countries-sortlist').disableSelection();
 						});

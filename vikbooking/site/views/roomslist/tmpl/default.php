@@ -77,7 +77,7 @@ foreach ($rooms as $r) {
 	}
 }
 $vikfx = '
-jQuery(document).ready(function() {
+jQuery(function() {
 ';
 foreach ($gallery_data as $num => $gallery) {
 	$vikfx .= '

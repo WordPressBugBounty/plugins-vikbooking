@@ -535,6 +535,7 @@ class VikBookingController extends JControllerVikBooking
 		$tot_taxes = 0;
 		$tot_city_taxes = 0;
 		$tot_fees = 0;
+		$tot_damage_dep = 0;
 		$rooms_costs_map = [];
 		$is_package = (bool)(count($pkg) > 0);
 		if ($is_package === true) {
@@ -709,6 +710,8 @@ class VikBookingController extends JControllerVikBooking
 					$tot_city_taxes += $opt_minus_iva;
 				} elseif ($actopt[0]['is_fee'] == 1) {
 					$tot_fees += $opt_minus_iva;
+				} elseif ($opt_params['damagedep'] ?? 0) {
+					$tot_damage_dep += $opt_minus_iva;
 				}
 				// VBO 1.11 - always calculate the amount of tax no matter if this is already a tax or a fee
 				if ($tmpopr == $realcost) {
@@ -801,11 +804,11 @@ class VikBookingController extends JControllerVikBooking
 								 * @since 	1.16.8 (J) - 1.6.8 (WP) with coupon before taxes, discounted amount calculation is an equal subtration.
 								 */
 								$prev_isdue = $isdue;
-								$tot_net = ($isdue - $tot_taxes - $tot_city_taxes - $tot_fees);
+								$tot_net = ($isdue - $tot_taxes - $tot_city_taxes - $tot_fees - $tot_damage_dep);
 								$coupondiscount = ($coupon['excludetaxes'] ? $tot_net : $isdue) * $coupon['value'] / 100;
 								$isdue = ($coupon['excludetaxes'] ? $tot_net : $isdue) * $minuscoupon / 100;
 								$tot_taxes = $coupon['excludetaxes'] ? ($tot_taxes * ($tot_net - $coupondiscount) / $tot_net) : $tot_taxes;
-								$isdue += $coupon['excludetaxes'] ? ($tot_taxes + $tot_city_taxes + $tot_fees) : 0;
+								$isdue += $coupon['excludetaxes'] ? ($tot_taxes + $tot_city_taxes + $tot_fees + $tot_damage_dep) : 0;
 								$coupondiscount = abs($prev_isdue - $isdue);
 							} else {
 								// total value
@@ -1068,6 +1071,9 @@ class VikBookingController extends JControllerVikBooking
 			$booking_record->tot_taxes = (float)$tot_taxes;
 			$booking_record->tot_city_taxes = (float)$tot_city_taxes;
 			$booking_record->tot_fees = (float)$tot_fees;
+			if ($tot_damage_dep) {
+				$booking_record->tot_damage_dep = (float) $tot_damage_dep;
+			}
 			$booking_record->phone = $phone_number;
 			$booking_record->pkg = $is_package === true ? (int)$pkg['id'] : null;
 			$booking_record->split_stay = !empty($split_stay) ? 1 : 0;
@@ -1362,7 +1368,7 @@ class VikBookingController extends JControllerVikBooking
 				$mod_paymcount++;
 			}
 
-			$q = "UPDATE `#__vikbooking_orders` SET `custdata`=".$dbo->quote($custdata).",`ts`='".$nowts."',`days`=".$dbo->quote($pdays).",`checkin`=".$dbo->quote($pcheckin).",`checkout`=".$dbo->quote($pcheckout).",`custmail`=".$dbo->quote($useremail).",`ujid`='".$currentUser->id."',`coupon`=".($usedcoupon === true ? $dbo->quote($strcouponeff) : "NULL").",`roomsnum`='".count($rooms)."',`total`='".$isdue."',`channel`=".(is_array($vcmchanneldata) ? $dbo->quote($vcmchanneldata['name']) : (!empty($mod_booking['channel']) ? $dbo->quote($mod_booking['channel']) : 'NULL')).",`paymcount`=".$mod_paymcount.",`adminnotes`=".$dbo->quote($mod_notes).",`lang`=".$dbo->quote($langtag).",`country`=".(!empty($usercountry) ? $dbo->quote($usercountry) : 'NULL').",`tot_taxes`='".$tot_taxes."',`tot_city_taxes`='".$tot_city_taxes."',`tot_fees`='".$tot_fees."',`phone`=".$dbo->quote($phone_number).",`pkg`=".($is_package === true ? (int)$pkg['id'] : "NULL")." WHERE `id`=".(int)$mod_booking['id'].";";
+			$q = "UPDATE `#__vikbooking_orders` SET `custdata`=".$dbo->quote($custdata).",`ts`='".$nowts."',`days`=".$dbo->quote($pdays).",`checkin`=".$dbo->quote($pcheckin).",`checkout`=".$dbo->quote($pcheckout).",`custmail`=".$dbo->quote($useremail).",`ujid`='".$currentUser->id."',`coupon`=".($usedcoupon === true ? $dbo->quote($strcouponeff) : "NULL").",`roomsnum`='".count($rooms)."',`total`='".$isdue."',`channel`=".(is_array($vcmchanneldata) ? $dbo->quote($vcmchanneldata['name']) : (!empty($mod_booking['channel']) ? $dbo->quote($mod_booking['channel']) : 'NULL')).",`paymcount`=".$mod_paymcount.",`adminnotes`=".$dbo->quote($mod_notes).",`lang`=".$dbo->quote($langtag).",`country`=".(!empty($usercountry) ? $dbo->quote($usercountry) : 'NULL').",`tot_taxes`='".$tot_taxes."',`tot_city_taxes`='".$tot_city_taxes."',`tot_fees`='".$tot_fees."',`tot_damage_dep`='".$tot_damage_dep."',`phone`=".$dbo->quote($phone_number).",`pkg`=".($is_package === true ? (int)$pkg['id'] : "NULL")." WHERE `id`=".(int)$mod_booking['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 
@@ -1425,6 +1431,9 @@ class VikBookingController extends JControllerVikBooking
 			$booking_record->tot_taxes = (float)$tot_taxes;
 			$booking_record->tot_city_taxes = (float)$tot_city_taxes;
 			$booking_record->tot_fees = (float)$tot_fees;
+			if ($tot_damage_dep) {
+				$booking_record->tot_damage_dep = (float) $tot_damage_dep;
+			}
 			$booking_record->phone = $phone_number;
 			$booking_record->pkg = $is_package === true ? (int)$pkg['id'] : null;
 			$booking_record->split_stay = !empty($split_stay) ? 1 : 0;
@@ -1906,6 +1915,7 @@ class VikBookingController extends JControllerVikBooking
 		$tot_taxes = 0;
 		$tot_city_taxes = 0;
 		$tot_fees = 0;
+		$tot_damage_dep = 0;
 		$pricestr = [];
 		$optstr = [];
 		foreach ($orderrooms as $kor => $or) {
@@ -1956,6 +1966,11 @@ class VikBookingController extends JControllerVikBooking
 					$actopt = $dbo->loadAssocList();
 					if ($actopt) {
 						$vbo_tn->translateContents($actopt, '#__vikbooking_optionals');
+
+						// option params
+						$opt_params = !empty($actopt[0]['oparams']) ? json_decode($actopt[0]['oparams'], true) : [];
+						$opt_params = is_array($opt_params) ? $opt_params : [];
+
 						$chvar = '';
 						if (!empty($actopt[0]['ageintervals']) && $or['children'] > 0 && strstr($stept[1], '-') != false) {
 							$optagenames = VikBooking::getOptionIntervalsAges($actopt[0]['ageintervals']);
@@ -2024,6 +2039,8 @@ class VikBookingController extends JControllerVikBooking
 							$tot_city_taxes += $opt_minus_tax;
 						} elseif ($actopt[0]['is_fee'] == 1) {
 							$tot_fees += $opt_minus_tax;
+						} elseif ($opt_params['damagedep'] ?? 0) {
+							$tot_damage_dep += $opt_minus_tax;
 						}
 						// always calculate the amount of tax no matter if this is already a tax or a fee
 						if ($tmpopr == $realcost) {

@@ -181,7 +181,7 @@ function vboValidateReview() {
 	}
 	return true;
 }
-jQuery(document).ready(function() {
+jQuery(function() {
 	jQuery('.vbo-review-star').hover(
 		function() {
 			var rating = parseInt(jQuery(this).attr('data-starid'));

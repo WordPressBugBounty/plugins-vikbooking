@@ -19,6 +19,57 @@ defined('ABSPATH') or die('No script kiddies please!');
 abstract class JHtmlVikbooking
 {
 	/**
+	 * Helper method used to obtain a shorten version of the given text.
+	 * 
+	 * Even if a maximum threshold is provided, this doesn't mean that the
+	 * length of the resulting text will be exactly equal to that amount.
+	 * This beacuse the function doesn't break words.
+	 * 
+	 * @param   string    $text  The text to shorten.
+	 * @param   int|null  $max   The maximum number of allowed characters.
+	 * 
+	 * @return  string
+	 * 
+	 * @since   1.8
+	 */
+	public static function shorten(string $text, ?int $max = null): string
+	{
+		// add a white space after the closure of any tag
+		$text = preg_replace_callback("/(<\/[a-z0-9\-]+>)|(\s*\/\s*>)/", function($match) {
+			return $match[0] . " ";
+		}, $text);
+
+		// get rid of HTML tags
+		$text = strip_tags($text);
+
+		// remove duplicate white spaces and replace new lines with spaces
+		$text = preg_replace("/(\s{2,})|(\R+)/", ' ', $text);
+
+		// calculate total length of the text
+		$len = strlen($text);
+
+		// Check whether we should take a substring of the text.
+		// Reserve an additional 25% of characters to avoid breaking the
+		// text too close to the end of the string.
+		if ($max && $len > $max * 1.25) {
+			// explode the string in words
+			$chunks = explode(' ', $text);
+
+			$text = '';
+
+			// keep adding words until we reach the maximum threshold
+			while ($chunks && strlen($text) < $max) {
+				$text .= array_shift($chunks) . ' ';
+			}
+
+			// get rid of trailing special characters and add the ellipsis
+			$text = rtrim($text, '.,?!;:#\'"([{ ') . '...';
+		}
+
+		return $text;
+	}
+
+	/**
 	 * Calculates the maximum upload file size and returns string with unit or the size in bytes.
 	 *
 	 * @param   bool          $unitOutput  This parameter determines whether the return value

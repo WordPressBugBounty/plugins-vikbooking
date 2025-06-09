@@ -309,6 +309,10 @@ class VikBookingAdminWidgetBulkMessaging extends VikBookingAdminWidget
 			VBOHttpDocument::getInstance()->close(500, JText::translate('VBO_PLEASE_FILL_FIELDS'));
 		}
 
+		// inject the customer information
+		$customer = VikBooking::getCPinInstance()->getCustomerFromBooking($booking['id']);
+		$booking['customer'] = $customer;
+
 		if ($index === 0) {
 			// update widget's settings with last message and subject
 			$this->widgetSettings->last_subject = $subject;
@@ -410,11 +414,11 @@ class VikBookingAdminWidgetBulkMessaging extends VikBookingAdminWidget
 	 * Main method to invoke the widget. Contents will be loaded
 	 * through AJAX requests, not via PHP when the page loads.
 	 * 
-	 * @param 	VBOMultitaskData 	$data
+	 * @param 	?VBOMultitaskData 	$data
 	 * 
 	 * @return 	void
 	 */
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;
@@ -1171,11 +1175,15 @@ HTML
 		VikBooking::getConditionalRulesInstance()
 			->set(array('booking', 'rooms'), array($booking, $booking_rooms))
 			->parseTokens($tpl);
-		//
+
+		// normalize customer details
+		if (empty($booking['customer_name']) && !empty($booking['customer'])) {
+			$booking['customer_name'] = trim($booking['first_name'] . ' ' . $booking['last_name']);
+		}
 
 		$vbo_df = VikBooking::getDateFormat();
 		$df = $vbo_df == "%d/%m/%Y" ? 'd/m/Y' : ($vbo_df == "%m/%d/%Y" ? 'm/d/Y' : 'Y-m-d');
-		$tpl = str_replace('{customer_name}', $booking['customer_name'], $tpl);
+		$tpl = str_replace('{customer_name}', ($booking['customer_name'] ?: ''), $tpl);
 		$tpl = str_replace('{booking_id}', $booking['id'], $tpl);
 		$tpl = str_replace('{checkin_date}', date($df, $booking['checkin']), $tpl);
 		$tpl = str_replace('{checkout_date}', date($df, $booking['checkout']), $tpl);
@@ -1206,7 +1214,7 @@ HTML
 		$tpl = str_replace('{total_paid}', VikBooking::numberFormat($booking['totpaid']), $tpl);
 		$remaining_bal = $booking['total'] - $booking['totpaid'];
 		$tpl = str_replace('{remaining_balance}', VikBooking::numberFormat($remaining_bal), $tpl);
-		$tpl = str_replace('{customer_pin}', $booking['customer_pin'], $tpl);
+		$tpl = str_replace('{customer_pin}', (($booking['customer_pin'] ?? '') ?: ($booking['customer']['pin'] ?? '')), $tpl);
 
 		$use_sid = empty($booking['sid']) && !empty($booking['idorderota']) ? $booking['idorderota'] : $booking['sid'];
 

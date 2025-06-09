@@ -1063,7 +1063,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 			$checkout_info = getdate($order['checkout']);
 			$checkout_midnight = mktime(23, 59, 59, $checkout_info['mon'], $checkout_info['mday'], $checkout_info['year']);
 			if (time() < $checkout_midnight) {
-				if (stripos($plain_log, 'card number') !== false && strpos($plain_log, '****') !== false) {
+				if ((stripos($plain_log, 'card number') !== false && strpos($plain_log, '****') !== false) || !strcasecmp($channel_source, 'Booking.com')) {
 					/*
 					 * Log contains credit card details.
 					 * Build the URI for the administrator section of VCM according to the platform.
@@ -1254,7 +1254,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 		jQuery('#adminForm').submit();
 	}
 
-	if (jQuery.isFunction(jQuery.fn.tooltip)) {
+	if (typeof jQuery.fn.tooltip === 'function') {
 		jQuery(".hasTooltip").tooltip();
 	} else {
 		jQuery.fn.tooltip = function(){};

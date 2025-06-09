@@ -39,7 +39,7 @@ function vboUpdateIconPreview() {
 	}
 	jQuery('.vbo-carat-fonticon-preview').html(preview_cont);
 }
-jQuery(document).ready(function() {
+jQuery(function() {
 	jQuery('#idrooms').select2();
 	if (jQuery('#vbo-preset-icons').length) {
 		jQuery('#vbo-preset-icons').select2();

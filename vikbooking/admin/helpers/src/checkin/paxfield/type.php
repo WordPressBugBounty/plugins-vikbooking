@@ -86,6 +86,22 @@ abstract class VBOCheckinPaxfieldType
 	}
 
 	/**
+	 * Method automatically called to validate the guest registration data at field-type level.
+	 * Custom pax field type objects can override this method to implement their own validation.
+	 * 
+	 * @return 	void
+	 * 
+	 * @throws 	Exception
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function validateGuestRegistrationData()
+	{
+		// do nothing by default
+		return;
+	}
+
+	/**
 	 * Composes the class attribute for the current field.
 	 * 
 	 * @return 	string 	the class attribute of the field.

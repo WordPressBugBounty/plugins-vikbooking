@@ -633,7 +633,7 @@ class VikBookingReportIstatLazioRadar extends VikBookingReport
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
 		$js = 'var reportActiveCell = null, reportObj = {};
-		jQuery(document).ready(function() {
+		jQuery(function() {
 			jQuery(".vbo-report-datepicker:input").datepicker({
 				maxDate: 0,
 				dateFormat: "'.$this->getDateFormat('jui').'",
@@ -925,7 +925,7 @@ class VikBookingReportIstatLazioRadar extends VikBookingReport
 		);
 
 		// total rooms units ("camere")
-		$total_rooms_units = $this->countRooms();
+		$total_rooms_units = $this->countRooms() ?: 1;
 
 		//loop over the bookings to build the rows of the report
 		foreach ($bookings as $gbook) {

@@ -55,7 +55,7 @@ class VikBookingConditionalRuleBookingDates extends VikBookingConditionalRule
 			// some date-picker calendars may need to have their default value populated when the document is ready
 			?>
 		<script type="text/javascript">
-			jQuery(document).ready(function() {
+			jQuery(function() {
 				jQuery('#<?php echo $this->inputID('from_date'); ?>').val('<?php echo $this->getParam('from_date', ''); ?>').attr('data-alt-value', '<?php echo $this->getParam('from_date', ''); ?>');
 				jQuery('#<?php echo $this->inputID('to_date'); ?>').val('<?php echo $this->getParam('to_date', ''); ?>').attr('data-alt-value', '<?php echo $this->getParam('to_date', ''); ?>');
 			});

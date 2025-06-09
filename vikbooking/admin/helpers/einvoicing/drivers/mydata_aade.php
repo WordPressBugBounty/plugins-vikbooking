@@ -2104,27 +2104,30 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 							$agestept = explode('-', $stept[1]);
 							$stept[1] = $agestept[0];
 							$chvar = $agestept[1];
-							if (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 1) {
-								// percentage value of the adults tariff
-								if ($is_package || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
-									$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
-								} else {
-									$display_rate = !empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost'];
-									$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
+							$realcost = 0;
+							if (!empty($chvar)) {
+								if (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 1) {
+									// percentage value of the adults tariff
+									if ($is_package || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
+										$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
+									} else {
+										$display_rate = !empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost'];
+										$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
+									}
+								} elseif (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 2) {
+									// percentage value of room base cost
+									if ($is_package || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
+										$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
+									} else {
+										$display_rate = isset($tars[$num]['room_base_cost']) ? $tars[$num]['room_base_cost'] : (!empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost']);
+										$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
+									}
 								}
-							} elseif (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 2) {
-								// percentage value of room base cost
-								if ($is_package || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
-									$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
-								} else {
-									$display_rate = isset($tars[$num]['room_base_cost']) ? $tars[$num]['room_base_cost'] : (!empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost']);
-									$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
-								}
+								$actopt[0]['chageintv'] = $chvar;
+								$actopt[0]['name'] .= ' ('.$optagenames[($chvar - 1)].')';
+								$actopt[0]['quan'] = $stept[1];
+								$realcost = (intval($actopt[0]['perday']) == 1 ? (floatval($optagecosts[($chvar - 1)]) * $or['days'] * $stept[1]) : (floatval($optagecosts[($chvar - 1)]) * $stept[1]));
 							}
-							$actopt[0]['chageintv'] = $chvar;
-							$actopt[0]['name'] .= ' ('.$optagenames[($chvar - 1)].')';
-							$actopt[0]['quan'] = $stept[1];
-							$realcost = (intval($actopt[0]['perday']) == 1 ? (floatval($optagecosts[($chvar - 1)]) * $or['days'] * $stept[1]) : (floatval($optagecosts[($chvar - 1)]) * $stept[1]));
 						} else {
 							$actopt[0]['quan'] = $stept[1];
 							// VBO 1.11 - options percentage cost of the room total fee

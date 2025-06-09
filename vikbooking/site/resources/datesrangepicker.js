@@ -1,5 +1,5 @@
 /**
- * VikBooking - DatesRangePicker v1.2.2.
+ * VikBooking - DatesRangePicker v1.2.3.
  * Copyright (C) 2025 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -946,6 +946,9 @@
 			setTimeout(() => {
 				_mouseEnter(checkin);
 			}, 100);
+		} else {
+			// add class to the check-out field to identify the trigger
+			$(checkout).addClass('vbo-drp-inp-trigger');
 		}
 	}
 

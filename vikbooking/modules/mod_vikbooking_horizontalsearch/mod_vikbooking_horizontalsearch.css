@@ -285,7 +285,7 @@
 }
 .vbo-horizsearch-humanformat-wrap .hasDatepicker, .vbo-horizsearch-inquiryformat-wrap .hasDatepicker {
 	position: absolute;
-	z-index: 10000;
+	z-index: 2147483647;
 	width: auto;
 }
 .vbo-horizsearch-humanformat-wrap .vbmodhorsearch-hum-dates-wrap > div {

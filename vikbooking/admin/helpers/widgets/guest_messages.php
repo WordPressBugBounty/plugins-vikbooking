@@ -723,7 +723,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		];
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;

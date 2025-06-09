@@ -400,6 +400,145 @@ class VikBookingCustomersPin
 	}
 
 	/**
+	 * Returns the customer verification data for the given booking ID.
+	 * Verification data is used to store guest verification values.
+	 * 
+	 * @param 	int 	$bid 	The booking record ID.
+	 * 
+	 * @return 	array 			Either an empty array or a JSON-decoded array.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function getBookingVerificationData(int $bid)
+	{
+		$this->dbo->setQuery(
+			$this->dbo->getQuery(true)
+				->select($this->dbo->qn('verification_data'))
+				->from($this->dbo->qn('#__vikbooking_customers_orders'))
+				->where($this->dbo->qn('idorder') . ' = ' . $bid)
+		);
+
+		$data = $this->dbo->loadResult();
+
+		if (empty($data)) {
+			return [];
+		}
+
+		return (array) json_decode($data, true);
+	}
+
+	/**
+	 * Updates the customer verification data for the given booking ID.
+	 * Verification data is used to store guest verification values.
+	 * 
+	 * @param 	int 	$bid 	The booking record ID.
+	 * @param 	mixed 	$data 	The data to set, JSON-encoded string, array or object.
+	 * @param 	bool 	$merge 	True for adding the data to the existing verification data.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @throws 	InvalidArgumentException
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function setBookingVerificationData(int $bid, $data, bool $merge = false)
+	{
+		if ($merge && (is_array($data) || is_object($data))) {
+			$data = array_merge($this->getBookingVerificationData($bid), (array) $data);
+		}
+
+		if (!is_null($data) && !is_scalar($data)) {
+			$data = json_encode($data);
+		}
+
+		if (!is_string($data)) {
+			throw new InvalidArgumentException('Invalid verification data.', 400);
+		}
+
+		$this->dbo->setQuery(
+			$this->dbo->getQuery(true)
+				->update($this->dbo->qn('#__vikbooking_customers_orders'))
+				->set($this->dbo->qn('verification_data') . ' = ' . $this->dbo->q($data))
+				->where($this->dbo->qn('idorder') . ' = ' . $bid)
+		);
+
+		$this->dbo->execute();
+
+		return (bool) $this->dbo->getAffectedRows();
+	}
+
+	/**
+	 * Returns the customer identity data for the given booking ID.
+	 * Identity data is used to store guest identity values.
+	 * 
+	 * @param 	int 	$bid 	The booking record ID.
+	 * 
+	 * @return 	array 			Either an empty array or a JSON-decoded array.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function getBookingIdentityData(int $bid)
+	{
+		$this->dbo->setQuery(
+			$this->dbo->getQuery(true)
+				->select($this->dbo->qn('identity'))
+				->from($this->dbo->qn('#__vikbooking_customers_orders'))
+				->where($this->dbo->qn('idorder') . ' = ' . $bid)
+		);
+
+		$data = $this->dbo->loadResult();
+
+		if (empty($data)) {
+			return [];
+		}
+
+		return (array) json_decode($data, true);
+	}
+
+	/**
+	 * Updates the customer identity data for the given booking ID.
+	 * Identity data is used to store guest identity values.
+	 * 
+	 * @param 	int 	$bid 	The booking record ID.
+	 * @param 	mixed 	$data 	The data to set: null, string URI, array or object.
+	 * @param 	bool 	$merge 	True for adding the data to the existing identity data.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @throws 	InvalidArgumentException
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function setBookingIdentityData(int $bid, $data, bool $merge = false)
+	{
+		if (is_string($data) && preg_match('/^http/', $data)) {
+			// always cast the string URI to an array
+			$data = (array) $data;
+		}
+
+		if ($merge && (is_array($data) || is_object($data))) {
+			$data = array_merge($this->getBookingIdentityData($bid), (array) $data);
+		}
+
+		if (!is_null($data) && !is_scalar($data)) {
+			$data = json_encode($data);
+		} elseif (!is_null($data)) {
+			throw new InvalidArgumentException('Invalid identity data.', 400);
+		}
+
+		$this->dbo->setQuery(
+			$this->dbo->getQuery(true)
+				->update($this->dbo->qn('#__vikbooking_customers_orders'))
+				->set($this->dbo->qn('identity') . ' = ' . (is_null($data) ? 'NULL' : $this->dbo->q($data)))
+				->where($this->dbo->qn('idorder') . ' = ' . $bid)
+		);
+
+		$this->dbo->execute();
+
+		return (bool) $this->dbo->getAffectedRows();
+	}
+
+	/**
 	 * Checks whether a customer with the same email address already exists
 	 * Returns false or the record of the existing customer
 	 * 
@@ -851,9 +990,6 @@ class VikBookingCustomersPin
 
 	private function pricesTaxIncluded()
 	{
-		if (!class_exists('VikBooking')) {
-			require_once(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'helpers'.DIRECTORY_SEPARATOR.'lib.vikbooking.php');
-		}
 		return VikBooking::ivaInclusa();
 	}
 

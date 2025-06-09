@@ -34,11 +34,11 @@ $datesep = VikBooking::getDateSeparator();
 				<h3><?php echo JText::translate('VBOPROCOLLECTDIRECTBOOK'); ?></h3>
 				<h4><?php echo JText::translate('VBOPROBOOKINGENGINEPMS'); ?></h4>
 				<ul>
-					<li><?php VikBookingIcons::e('check'); ?> <span><?php echo JText::translate('VBOPROADVONE'); ?></li>
-					<li><?php VikBookingIcons::e('check'); ?> <span><?php echo JText::translate('VBOPROADVTWO'); ?></span> </li>
-					<li><?php VikBookingIcons::e('check'); ?> <span><?php echo JText::translate('VBOPROADVTHREE'); ?></span> </li>
+					<li><?php VikBookingIcons::e('check'); ?> <span><?php echo JText::translate('VBOPROADVONE'); ?></span></li>
+					<li><?php VikBookingIcons::e('check'); ?> <span><?php echo JText::translate('VBOPROADVTWO'); ?></span></li>
+					<li><?php VikBookingIcons::e('check'); ?> <span><?php echo JText::translate('VBOPROADVTHREE'); ?></span></li>
 				</ul>
-				<a href="https://vikwp.com/plugin/vikbooking?utm_source=free_version&utm_medium=vbo&utm_campaign=gotopro" id="vikwpgotoget" class="vikwp-btn-link"><?php VikBookingIcons::e('rocket'); ?> <?php echo JText::translate('VBOGOTOPROBTN'); ?></a>
+				<a href="https://vikwp.com/plugin/vikbooking?utm_source=free_version&utm_medium=vbo&utm_campaign=gotopro" id="vikwpgotoget" class="vikwp-btn-link" target="_blank"><?php VikBookingIcons::e('rocket'); ?> <?php echo JText::translate('VBOGOTOPROBTN'); ?></a>
 			</div>
 			<div class="vikwppro-header-img">
 				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/bookings.png" alt="<?php echo JText::translate('VBOPROADVONE'); ?>" />
@@ -80,7 +80,7 @@ $datesep = VikBooking::getDateSeparator();
 				<p><?php echo JText::translate('VBOPROWHYCRONJOBDESC'); ?></p>
 			</div>
 			<div class="viwppro-feats-img">
-				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vik-booking-automatize-email-tasks.jpg" alt="<?php echo JText::translate('VBOPROWHYCRONJOB'); ?>" />
+				<img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vik-booking-automatize-email-tasks.webp" alt="<?php echo JText::translate('VBOPROWHYCRONJOB'); ?>" />
 			</div>
 		</div>
 
@@ -225,7 +225,7 @@ $datesep = VikBooking::getDateSeparator();
 					<a href="https://e4jconnect.com/free-channel-manager-trial?utm_source=free_version&utm_medium=vbo&utm_campaign=gotopro" class="vikwp-pro-trial btn btn-green" target="_blank"><?php echo JText::translate('VBOPROVCMTRIAL'); ?></a>
 				</div>
 			</div>
-			<div class="viwpro-e4jc-img"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vcm-synch-img.jpg" title="e4jConnect Vik Channel Manager" /></div>
+			<div class="viwpro-e4jc-img"><img src="<?php echo VBO_ADMIN_URI; ?>resources/images/pro/vcm-synch-img.webp" title="e4jConnect Vik Channel Manager" /></div>
 		</div>
 		<div class="viwpro-e4jc-channels">
 			<div class="viwpro-e4jc-channels-intro"><h3><?php echo JText::translate('VBOPROVCMADSOMECHAV'); ?></h3></div>

@@ -272,7 +272,7 @@ class VikBookingReportIstatSitra extends VikBookingReport
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
 		$js = 'var reportActiveCell = null, reportObj = {};
-		jQuery(document).ready(function() {
+		jQuery(function() {
 			//prepare main filters
 			jQuery(".vbo-report-datepicker:input").datepicker({
 				maxDate: "+1m",

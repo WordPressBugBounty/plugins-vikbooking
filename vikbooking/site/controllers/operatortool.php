@@ -400,4 +400,127 @@ class VikBookingControllerOperatortool extends JControllerAdmin
         // send response to output
         VBOHttpDocument::getInstance()->json(['newThreads' => $threads]);
     }
+
+    /**
+     * Base endpoint to generate an iCal calendar file for the task manager events (tasks)
+     * of an operator. The authentication is performed through GET via the iCal URL.
+     * 
+     * @since   1.18.0 (J) - 1.8.0 (WP)
+     */
+    public function tm_ical()
+    {
+        $app = JFactory::getApplication();
+
+        // gather request values for authentication (base64(id:md5(auth_code)))
+        $operator_signature = base64_decode(urldecode((string) $app->input->getBase64('opsid', '')));
+
+        // validate signature syntax
+        if (!preg_match('/^([0-9]+):([0-9a-f]{32})$/i', $operator_signature, $matches)) {
+            VBOHttpDocument::getInstance($app)->close(400, 'Bad URL.');
+        }
+
+        $operatorId = (int) $matches[1];
+        $operatorHashedCode = $matches[2];
+
+        // get the operator record by ID
+        $record = VikBooking::getOperatorInstance()->getOne($operatorId);
+
+        // attempt to perform a manual authentication
+        if (!$record || md5((string) $record['code']) != $operatorHashedCode || !VikBooking::getOperatorInstance()->authOperator($record['code'])) {
+            VBOHttpDocument::getInstance($app)->close(401, 'Unauthorized');
+        }
+
+        // the name of the tool to access
+        $tool = 'task_manager';
+
+        try {
+            // obtain data from the validation of the current operator and tool permissions
+            list($operator, $permissions, $tool_uri) = VikBooking::getOperatorInstance()->authOperatorToolData($tool);
+        } catch (Exception $e) {
+            // abort
+            VBOHttpDocument::getInstance($app)->close($e->getCode(), $e->getMessage());
+        }
+
+        // check from the permissions whether tasks can be accepted by the operator,
+        // hence null assigness should be included - use a different filter otherwise
+        $tasksFilterName = ((bool) $permissions->get('accept_tasks', 0)) ? 'operator' : 'assignee';
+
+        // get operator (future) tasks list for one year worth of dates
+        $tasks = VBOTaskModelTask::getInstance()->filterItems([
+            $tasksFilterName => $operator['id'],
+            'dates' => sprintf('%s:%s', date('Y-m-d'), date('Y-m-d', strtotime('+1 year'))),
+        ]);
+
+        // send headers to output the calendar
+        header('Content-type: text/calendar; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . sprintf('%d-%s-%s', $operator['id'], (string) $operator['first_name'], date('Y-m-d')) . '.ics');
+
+        // build and send to output the calendar content
+        echo VBOTaskOperatorIcal::getInstance()
+            ->setOperator($operator)
+            ->setPermissions($permissions)
+            ->setTool($tool)
+            ->setToolUri($tool_uri)
+            ->setEvents($tasks)
+            ->toString();
+
+        // close the application
+        $app->close();
+    }
+
+    /**
+     * AJAX endpoint to render a layout file from an operator tool.
+     * 
+     * @return  void
+     */
+    public function renderLayout()
+    {
+        $app = JFactory::getApplication();
+
+        if (!JSession::checkToken()) {
+            // missing CSRF-proof token
+            VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
+        }
+
+        $tool = $app->input->getString('tool', '');
+        $type = $app->input->getString('type', '');
+        $data = (array) $app->input->get('data', [], 'array');
+
+        try {
+            // obtain data from the validation of the current operator and tool permissions
+            list($operator, $permissions, $tool_uri) = VikBooking::getOperatorInstance()->authOperatorToolData($tool);
+        } catch (Exception $e) {
+            // abort
+            VBOHttpDocument::getInstance($app)->close($e->getCode(), $e->getMessage());
+        }
+
+        if (empty($type)) {
+            // invalid layout requested
+            VBOHttpDocument::getInstance($app)->close(404, sprintf('Could not find the layout [%s] to render.', $type));
+        }
+
+        // fetch the requested layout
+        $layout_data = [
+            'tool'        => $tool,
+            'operator'    => $operator,
+            'permissions' => $permissions,
+            'tool_uri'    => $tool_uri,
+            'data'        => $data,
+        ];
+
+        try {
+            $layout_html = JLayoutHelper::render($type, $layout_data, null, [
+                'component' => 'com_vikbooking',
+                'client'    => 'site',
+            ]);
+        } catch (Exception $e) {
+            // raise the error caught
+            VBOHttpDocument::getInstance($app)->close($e->getCode() ?: 500, $e->getMessage());
+        }
+
+        // send the response to output
+        VBOHttpDocument::getInstance($app)->json([
+            'html' => $layout_html,
+        ]);
+    }
 }

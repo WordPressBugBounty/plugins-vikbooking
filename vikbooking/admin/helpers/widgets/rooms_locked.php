@@ -38,7 +38,7 @@ class VikBookingAdminWidgetRoomsLocked extends VikBookingAdminWidget
 		$this->widgetStyleName = 'orange';
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		$dbo = JFactory::getDbo();
 		

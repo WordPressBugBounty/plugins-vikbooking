@@ -38,7 +38,7 @@ class VikBookingAdminWidgetOrphanDates extends VikBookingAdminWidget
 		$this->widgetStyleName = 'red';
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		$vbo_auth_pricing = JFactory::getUser()->authorise('core.vbo.pricing', 'com_vikbooking');
 		if (!$vbo_auth_pricing) {

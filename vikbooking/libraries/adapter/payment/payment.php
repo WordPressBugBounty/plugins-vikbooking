@@ -805,6 +805,136 @@ abstract class JPayment
 	}
 
 	/**
+	 * Checks whether the payment method allows off-session capturing.
+	 *
+	 * @return 	boolean
+	 *
+	 * @since 	10.1.63
+	 */
+	public function isOffSessionCaptureSupported()
+	{
+		// not supported by default
+		return false;
+	}
+
+	/**
+	 * Performs the off-session capture transaction.
+	 *
+	 * This method triggers the ACTION below to manipulate the payment details
+	 * before they are used to execute the capture:
+	 * - payment_before_offsession_capture
+	 *
+	 * This method triggers the ACTION below to manipulate the
+	 * response evaluated by the capture:
+	 * - payment_after_offsession_capture
+	 *
+	 * @return 	mixed 	An object describing the status of the transaction.
+	 *
+	 * @uses 	isOffSessionCaptureSupported()
+	 * @uses 	doOffSessionCapture()
+	 *
+	 * @since 	10.1.63
+	 */
+	public function offSessionCapture()
+	{
+		// make sure off-session capturing is supported
+		if (!$this->isOffSessionCaptureSupported())
+		{
+			// not supported
+			throw new Exception('Off session capturing not supported', 405);
+		}
+
+		$status = new JPaymentStatus();
+
+		/**
+		 * Plugins can manipulate the properties of this object.
+		 * Fires before the off-session capturing is made.
+		 * Global hook accessible by any drivers.
+		 *
+		 * @param 	self 	A reference to this object.
+		 *
+		 * @since 	10.1.63
+		 */
+		do_action($this->getHook('payment_before_offsession_capture'), array($this));
+
+		/**
+		 * Plugins can manipulate the properties of this object.
+		 * Fires before the off-session capturing is made.
+		 * Hook specific for the current driver.
+		 *
+		 * @param 	self 	A reference to this object.
+		 *
+		 * @since 	10.1.63
+		 */
+		do_action($this->getDriverHook('payment_before_offsession_capture'), array($this));
+
+		// children payments will perform the off-session capturing
+		$this->doOffSessionCapture($status);
+
+		$response = null;
+
+		/**
+		 * Plugins can manipulate the response object to return.
+		 * By filling the &$response variable, this method will return
+		 * it instead of the default &$status one.
+		 * Fires after completing the off-session capturing.
+		 * Hook specific for the current driver.
+		 *
+		 * @param 	self 			A reference to this object.
+		 * @param 	JPaymentStatus 	A reference to the status object.
+		 * @param 	mixed 			A reference to the final response (null by default).
+		 *
+		 * @since 	10.1.63
+		 */
+		do_action_ref_array($this->getDriverHook('payment_after_offsession_capture'), array($this, $status, &$response));
+
+		/**
+		 * Plugins can manipulate the response object to return.
+		 * By filling the &$response variable, this method will return
+		 * it instead of the default &$status one.
+		 * Fires after completing the off-session capturing.
+		 * Global hook accessible by any drivers.
+		 *
+		 * @param 	self 			A reference to this object.
+		 * @param 	JPaymentStatus 	A reference to the status object.
+		 * @param 	mixed 			A reference to the final response (null by default).
+		 *
+		 * @since 	10.1.63
+		 */
+		do_action_ref_array($this->getHook('payment_after_offsession_capture'), array($this, $status, &$response));
+
+		if (is_null($response))
+		{
+			// no hook fired, the response will be equal to the status object
+			$response = $status;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Off-session capturing implementor.
+	 * Children classes can inherit this method to use the API of the
+	 * payment in order to perform an off-session capturing.
+	 *
+	 * @param 	JPaymentStatus 	$status 	The status object. In case the capturing was 
+	 * 										successful, you should invoke: $status->verified().
+	 *
+	 * @return 	void
+	 *
+	 * @see 	JPaymentStatus
+	 * 
+	 * @see 	Visibility must be public.
+	 *
+	 * @since 	10.1.63
+	 */
+	public function doOffSessionCapture(JPaymentStatus $status)
+	{
+		// do nothing as a plugin may
+		// not support off-session capturing
+	}
+
+	/**
 	 * Returns the final hook that will be used for actions
 	 * and filters. This hook can be accessed by any plugin.
 	 *

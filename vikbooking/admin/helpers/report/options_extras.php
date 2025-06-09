@@ -129,9 +129,9 @@ class VikBookingReportOptionsExtras extends VikBookingReport
 		//jQuery code for the datepicker calendars and select2
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
-		$js = 'jQuery(document).ready(function() {
+		$js = 'jQuery(function() {
 			jQuery(".vbo-report-datepicker:input").datepicker({
-				maxDate: 0,
+				maxDate: "+2 years",
 				dateFormat: "'.$this->getDateFormat('jui').'",
 				onSelect: vboReportCheckDates
 			});

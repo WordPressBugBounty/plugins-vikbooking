@@ -125,7 +125,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		$period_date = VikBooking::sayMonth($info_arr['mon']) . ' ' . $info_arr['year'];
 
 		// invoke availability helper class
-		$av_helper = VikBooking::getAvailabilityInstance();
+		$av_helper = VikBooking::getAvailabilityInstance(true);
 
 		// get all rooms and tax rates
 		$all_rooms = $av_helper->loadRooms();
@@ -248,6 +248,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 												<button type="button" class="btn btn-secondary vbo-widget-bookscal-checkoutdt-trigger"><?php VikBookingIcons::e('calendar'); ?></button>
 											</div>
 										</div>
+										<span class="vbo-param-setting-comment vbo-widget-bookscal-nights-counter" style="display: none;"></span>
 									</div>
 								</div>
 
@@ -573,6 +574,15 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 			}, 100);
 			<?php
 		}
+
+		// check if a new booking was forced to be created
+		if ((bool) $this->getOption('newbook', 0)) {
+			?>
+			setTimeout(() => {
+				vboWidgetBookCalsNewBooking('<?php echo $wrapper; ?>');
+			}, 150);
+			<?php
+		}
 		?>
 
 		</script>
@@ -636,7 +646,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		}
 
 		// invoke availability helper class
-		$av_helper = VikBooking::getAvailabilityInstance();
+		$av_helper = VikBooking::getAvailabilityInstance(true);
 
 		// collect booking information
 		$booking_details = [];
@@ -951,12 +961,29 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		<div class="vbo-calendar-cfields-filler" data-wrapper="<?php echo $wrapper; ?>">
 			<div class="vbo-calendar-cfields-topcont">
 				<div class="vbo-calendar-cfields-search">
-					<label for="vbo-searchcust<?php echo $wrapper; ?>"><?php echo JText::translate('VBOSEARCHEXISTCUST'); ?></label>
-					<span id="vbo-searchcust-loading<?php echo $wrapper; ?>" class="vbo-searchcust-loading">
-						<i class="vboicn-hour-glass"></i>
-					</span>
-					<input type="text" id="vbo-searchcust<?php echo $wrapper; ?>" class="vbo-searchcust" autocomplete="off" value="" placeholder="<?php echo htmlspecialchars(JText::translate('VBOSEARCHCUSTBY')); ?>" size="35" />
-					<div id="vbo-searchcust-res<?php echo $wrapper; ?>" class="vbo-searchcust-res"></div>
+					<div class="vbo-singleselect-inline-elems-wrap vbo-search-elems-wrap">
+					<?php
+					/**
+					 * Display a search elements dropdown for searching customers.
+					 * 
+					 * @since 	1.18.0 (J) - 1.8.0 (WP)
+					 */
+					echo $this->vbo_app->renderSearchElementsDropDown([
+						'id' => 'vbo-widget-books-cal-search-customer-' . $wrapper,
+						'elements' => 'customers',
+						'placeholder' => JText::translate('VBOSEARCHEXISTCUST'),
+						'allow_clear' => true,
+						'attributes'  => [
+							'name' => 'widget_books_cal[id_customer]',
+						],
+						'style_selection' => true,
+						'selection_class' => 'vbo-sel2-selected-search-elem-full',
+						'selection_event' => 'vbo-widget-books-cal-choose-customer-' . $wrapper,
+						'load_assets' => false,
+						'width' => '300px',
+					]);
+					?>
+					</div>
 				</div>
 			</div>
 			<div class="vbo-calendar-cfields-inner vbo-widget-bookscal-cfields-inner">
@@ -1040,185 +1067,10 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		</div>
 
 		<script type="text/javascript">
-
-			/**
-			 * Pool of customers previous information collected.
-			 */
-			window['customers_search_vals<?php echo $wrapper; ?>'] = {};
-
-			/**
-			 * Search among the customers for the given keyword.
-			 */
-			function vboWidgetBooksCalCustomerSearch(words) {
-				jQuery('#vbo-searchcust-res<?php echo $wrapper; ?>').hide().html('');
-				jQuery('#vbo-searchcust-loading<?php echo $wrapper; ?>').show();
-
-				VBOCore.doAjax(
-					"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=searchcustomer'); ?>",
-					{
-						kw: words,
-						selector: 'vbo-widget-custsearchres-entry',
-						no_script: 1,
-						tmpl: "component"
-					},
-					(cont) => {
-						// parse the response
-						if (cont) {
-							// populate values
-							var obj_res = typeof cont === 'string' ? JSON.parse(cont) : cont;
-							window['customers_search_vals<?php echo $wrapper; ?>'] = obj_res[0];
-							jQuery('#vbo-searchcust-res<?php echo $wrapper; ?>').html(obj_res[1]);
-
-							setTimeout(() => {
-								// de-register listeners
-								jQuery('#vbo-searchcust<?php echo $wrapper; ?>').off('keydown');
-								jQuery('#vbo-searchcust-res<?php echo $wrapper; ?>').find('.vbo-widget-custsearchres-entry').off('hover');
-
-								// register listeners
-								var vboCust = jQuery('#vbo-searchcust-res<?php echo $wrapper; ?>').find('.vbo-widget-custsearchres-entry');
-								var vboCustSelected = null;
-								jQuery('#vbo-searchcust<?php echo $wrapper; ?>').keydown(function(e) {
-									if (e.which === 40) {
-										if (vboCustSelected) {
-											vboCustSelected.removeClass('vbo-widget-custsearchres-entry-highligthed');
-											next = vboCustSelected.next();
-											if (next.length > 0) {
-												vboCustSelected = next.addClass('vbo-widget-custsearchres-entry-highligthed');
-											} else {
-												vboCustSelected = vboCust.eq(0).addClass('vbo-widget-custsearchres-entry-highligthed');
-											}
-										} else {
-											vboCustSelected = vboCust.eq(0).addClass('vbo-widget-custsearchres-entry-highligthed');
-										}
-									} else if (e.which === 38) {
-										if (vboCustSelected) {
-											vboCustSelected.removeClass('vbo-widget-custsearchres-entry-highligthed');
-											next = vboCustSelected.prev();
-											if (next.length > 0) {
-												vboCustSelected = next.addClass('vbo-widget-custsearchres-entry-highligthed');
-											} else {
-												vboCustSelected = vboCust.last().addClass('vbo-widget-custsearchres-entry-highligthed');
-											}
-										} else {
-											vboCustSelected = vboCust.last().addClass('vbo-widget-custsearchres-entry-highligthed');
-										}
-									} else if (e.which === 13) {
-										if (vboCustSelected) {
-											vboCustSelected.trigger('click');
-										}
-									}
-								});
-
-								jQuery('#vbo-searchcust-res<?php echo $wrapper; ?>').find('.vbo-widget-custsearchres-entry').hover(function() {
-									if (vboCustSelected) {
-										vboCustSelected.removeClass('vbo-widget-custsearchres-entry-highligthed');
-										vboCustSelected = null;
-									}
-									vboCustSelected = jQuery(this).addClass('vbo-widget-custsearchres-entry-highligthed');
-								}, function() {
-									if (vboCustSelected) {
-										vboCustSelected.removeClass('vbo-widget-custsearchres-entry-highligthed');
-										vboCustSelected = null;
-									}
-									jQuery(this).removeClass('vbo-widget-custsearchres-entry-highligthed');
-								});
-							}, 300);
-						} else {
-							window['customers_search_vals<?php echo $wrapper; ?>'] = {};
-							jQuery("#vbo-searchcust-res<?php echo $wrapper; ?>").html("----");
-						}
-						jQuery("#vbo-searchcust-res<?php echo $wrapper; ?>").show();
-						jQuery("#vbo-searchcust-loading<?php echo $wrapper; ?>").hide();
-					},
-					(error) => {
-						jQuery("#vbo-searchcust-loading<?php echo $wrapper; ?>").hide();
-						console.error(error);
-						alert(error.responseText);
-					}
-				);
-			}
-
-			/**
-			 * Register keyup event listener with a debounce technique for searching customers.
-			 */
-			document.getElementById('vbo-searchcust<?php echo $wrapper; ?>').addEventListener('keyup', VBOCore.debounceEvent((e) => {
-				var keywords = jQuery("#vbo-searchcust<?php echo $wrapper; ?>").val();
-				var chars = keywords ? keywords.length : '';
-				// we prefer e.key, as e.keyCode is deprecated
-				var key_pressed = e.key || e.keyCode;
-				var rgx = new RegExp(/^[A-Za-z0-9]$/);
-				if (chars > 1 && key_pressed) {
-					if (key_pressed == 'Enter' || key_pressed == 13 || rgx.test(key_pressed)) {
-						vboWidgetBooksCalCustomerSearch(keywords);
-					}
-				} else {
-					if (jQuery("#vbo-searchcust-res<?php echo $wrapper; ?>").is(":visible")) {
-						jQuery("#vbo-searchcust-res<?php echo $wrapper; ?>").hide();
-					}
-				}
-			}, 600));
-
-			/**
-			 * Register the click event over the customer search results.
-			 */
-			jQuery(document).on('click', '#vbo-searchcust-res<?php echo $wrapper; ?> .vbo-widget-custsearchres-entry', function() {
-				var custid 		  = jQuery(this).attr('data-custid');
-				var custemail 	  = jQuery(this).attr('data-email');
-				var custphone 	  = jQuery(this).attr('data-phone');
-				var custcountry   = jQuery(this).attr('data-country');
-				var custfirstname = jQuery(this).attr('data-firstname');
-				var custlastname  = jQuery(this).attr('data-lastname');
-
-				// set customer ID
-				jQuery('#vbo-widget-bookscal-cfield-custid<?php echo $wrapper; ?>').val(custid);
-
-				// check previous custom fields
-				if (window['customers_search_vals<?php echo $wrapper; ?>'].hasOwnProperty(custid)) {
-					jQuery.each(window['customers_search_vals<?php echo $wrapper; ?>'][custid], function(cfid, cfval) {
-						var fill_field = jQuery('#cfield' + cfid + '<?php echo $wrapper; ?>');
-						if (fill_field.length) {
-							// set previous value
-							fill_field.val(cfval);
-						}
-					});
-				}
-
-				// always populate basic information on custom fields
-				var fields_wrap = jQuery('.vbo-calendar-cfields-filler[data-wrapper="<?php echo $wrapper; ?>"]');
-
-				if (custcountry.length) {
-					if (custcountry.length > 3) {
-						fields_wrap.find('select.vbo-calendar-cfield-country').val(custcountry);
-					} else {
-						var country_opt = fields_wrap.find('select.vbo-calendar-cfield-country').find('option[data-ccode="' + custcountry + '"]');
-						if (country_opt.length) {
-							fields_wrap.find('select.vbo-calendar-cfield-country').val(country_opt.attr('value'));
-						}
-					}
-				}
-				fields_wrap.find('input[data-isnominative="1"]').each(function(k, v) {
-					if (k == 0) {
-						jQuery(this).val(custfirstname);
-						return true;
-					}
-					if (k == 1) {
-						jQuery(this).val(custlastname);
-						return true;
-					}
-					return false;
-				});
-				fields_wrap.find('input[data-isemail="1"]').val(custemail);
-				fields_wrap.find('input[data-isphone="1"]').val(custphone);
-
-				// set customer upon the selection just made
-				vboWidgetBooksCalSetCustomer('<?php echo $wrapper; ?>');
-			});
-
 			// focus search customer input field
 			setTimeout(() => {
-				jQuery('#vbo-searchcust<?php echo $wrapper; ?>').focus();
+				jQuery('#vbo-widget-books-cal-search-customer-<?php echo $wrapper; ?>').select2('open');
 			}, 500);
-
 		</script>
 		<?php
 
@@ -1411,7 +1263,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 
 		// access the information about the derived rate plans
 		$derived_rates_info = [];
-		foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
+		foreach (VikBooking::getAvailabilityInstance(true)->loadRatePlans() as $rate_plan) {
 			if ($rate_plan['derived_id'] && $rate_plan['derived_data']) {
 				// build derived information string
 				$derived_str = ($rate_plan['parent_rate_name'] ?? '') . ' ';
@@ -1518,6 +1370,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 	public function preload()
 	{
 		// load assets
+		$this->vbo_app->loadSelect2();
 		$this->vbo_app->loadDatePicker();
 		$this->vbo_app->loadDatesRangePicker();
 		$this->vbo_app->loadPhoneInputFieldAssets();
@@ -1539,17 +1392,36 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		JText::script('VBOUPDRATESONCHANNELS');
 		JText::script('VBOVCMRATESRES');
 		JText::script('VBO_IS_DERIVED_RATE');
+		JText::script('VBDAYS');
+	}
+
+	/**
+	 * @inheritDoc
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function getWidgetDetails()
+	{
+		// get common widget details from parent abstract class
+		$details = parent::getWidgetDetails();
+
+		// append the modal rendering information
+		$details['modal'] = [
+			'add_class' => 'vbo-modal-taller',
+		];
+
+		return $details;
 	}
 
 	/**
 	 * Main method to invoke the widget. Contents will be loaded
 	 * through AJAX requests, not via PHP when the page loads.
 	 * 
-	 * @param 	VBOMultitaskData 	$data
+	 * @param 	?VBOMultitaskData 	$data
 	 * 
 	 * @return 	void
 	 */
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;
@@ -1569,7 +1441,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		}
 
 		// invoke availability helper class
-		$av_helper = VikBooking::getAvailabilityInstance();
+		$av_helper = VikBooking::getAvailabilityInstance(true);
 
 		// get all rooms
 		$all_rooms = $av_helper->loadRooms();
@@ -1584,10 +1456,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		$currencysymb = VikBooking::getCurrencySymb();
 		list($currency_digits, $currency_decimals, $currency_thousands) = explode(':', VikBooking::getNumberFormatData());
 
-		/**
-		 * This widget can make use of the Select2 jQuery plugin, but we do not preload it in
-		 * order to save resources. If any other widget has preloaded Select2, JS will detect it.
-		 */
+		// determine whether select2 is needed for the room selection
 		$use_nice_select = 0;
 		if (count($all_rooms) > 1) {
 			// turn flag on
@@ -1710,7 +1579,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 							</select>
 						</div>
 						<div class="vbo-widget-booskcal-newbook">
-							<button type="button" class="btn btn-success vbo-widget-booskcal-newbook-start" onclick="vboWidgetBookCalsNewBooking('<?php echo $wrapper_id; ?>');"><?php VikBookingIcons::e('plus-circle'); ?> <?php echo JText::translate('VBO_NEW_BOOKING'); ?></button>
+							<button type="button" class="btn btn-primary vbo-widget-booskcal-newbook-start" onclick="vboWidgetBookCalsNewBooking('<?php echo $wrapper_id; ?>');"><?php VikBookingIcons::e('plus-circle'); ?> <?php echo JText::translate('VBO_NEW_BOOKING'); ?></button>
 							<button type="button" class="btn btn-success vbo-widget-booskcal-newbook-id" data-bookingid="" onclick="vboWidgetBookCalsOpenNewBooking('<?php echo $wrapper_id; ?>');" style="display: none;"><?php VikBookingIcons::e('check-circle'); ?> <span></span></button>
 						</div>
 					</div>
@@ -3180,6 +3049,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				widget_instance.find('.vbo-widget-booskcal-mday-wrap').hide();
 				widget_instance.find('.vbo-widget-booskcal-newbook-wrap').show().attr('data-ymd', current_ymd).attr('data-roomid', current_rid);
 
+				// empty selected nights counter
+				widget_instance.find('.vbo-widget-bookscal-nights-counter').hide().text('');
+
 				if (current_ymd) {
 					// set the check-in date
 					var ymd_parts = current_ymd.split('-');
@@ -3452,6 +3324,65 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 			}
 
 			/**
+			 * Counts the nights of stay from the given stay dates.
+			 */
+			function vboWidgetBooksCalCalcNights(checkindate, checkoutdate) {
+				let vbo_df = '<?php echo $this->getDateFormat('date'); ?>';
+
+				let checkin_parts = checkindate.split('/');
+				let checkout_parts = checkoutdate.split('/');
+
+				let vbcheckind = new Date();
+				let vbcheckoutd = new Date();
+
+				if (vbo_df == "d/m/Y") {
+					let vbinmonth = parseInt(checkin_parts[1]);
+					vbinmonth = vbinmonth - 1;
+					let vbinday = parseInt(checkin_parts[0], 10);
+					vbcheckind = new Date(checkin_parts[2], vbinmonth, vbinday);
+					let vboutmonth = parseInt(checkout_parts[1]);
+					vboutmonth = vboutmonth - 1;
+					let vboutday = parseInt(checkout_parts[0], 10);
+					vbcheckoutd = new Date(checkout_parts[2], vboutmonth, vboutday);
+				} else if (vbo_df == "m/d/Y") {
+					let vbinmonth = parseInt(checkin_parts[0]);
+					vbinmonth = vbinmonth - 1;
+					let vbinday = parseInt(checkin_parts[1], 10);
+					vbcheckind = new Date(checkin_parts[2], vbinmonth, vbinday);
+					let vboutmonth = parseInt(checkout_parts[0]);
+					vboutmonth = vboutmonth - 1;
+					let vboutday = parseInt(checkout_parts[1], 10);
+					vbcheckoutd = new Date(checkout_parts[2], vboutmonth, vboutday);
+				} else {
+					let vbinmonth = parseInt(checkin_parts[1]);
+					vbinmonth = vbinmonth - 1;
+					let vbinday = parseInt(checkin_parts[2], 10);
+					vbcheckind = new Date(checkin_parts[0], vbinmonth, vbinday);
+					let vboutmonth = parseInt(checkout_parts[1]);
+					vboutmonth = vboutmonth - 1;
+					let vboutday = parseInt(checkout_parts[2], 10);
+					vbcheckoutd = new Date(checkout_parts[0], vboutmonth, vboutday);
+				}
+
+				let vbdivider = 1000 * 60 * 60 * 24;
+				let vbints = vbcheckind.getTime();
+				let vboutts = vbcheckoutd.getTime();
+
+				if (vboutts > vbints) {
+					let utc1 = Date.UTC(vbcheckind.getFullYear(), vbcheckind.getMonth(), vbcheckind.getDate());
+					let utc2 = Date.UTC(vbcheckoutd.getFullYear(), vbcheckoutd.getMonth(), vbcheckoutd.getDate());
+					let vbnights = Math.ceil((utc2 - utc1) / vbdivider);
+					if (!isNaN(vbnights) && vbnights > 0) {
+						// return the properly calculated nights of stay
+						return vbnights;
+					}
+				}
+
+				// return 0 when the nights of stay cannot be calculated
+				return 0;
+			}
+
+			/**
 			 * Calculates the website rates according to the input values.
 			 */
 			function vboWidgetBooksCalGetWebsiteRates(wrapper) {
@@ -3474,6 +3405,15 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				var adults = widget_instance.find('.vbo-widget-bookscal-adults').val();
 				var children = widget_instance.find('.vbo-widget-bookscal-children').val();
 				var units = widget_instance.find('.vbo-widget-bookscal-units').val();
+
+				// empty selected nights counter
+				widget_instance.find('.vbo-widget-bookscal-nights-counter').hide().text('');
+				if (checkinfdate && checkoutfdate) {
+					let tot_sel_nights = vboWidgetBooksCalCalcNights(checkinfdate, checkoutfdate);
+					if (tot_sel_nights) {
+						widget_instance.find('.vbo-widget-bookscal-nights-counter').text(Joomla.JText._('VBDAYS') + ': ' + tot_sel_nights).show();
+					}
+				}
 
 				if (is_closing || !room_id || !checkinfdate || !checkoutfdate) {
 					// do not proceed
@@ -3777,6 +3717,68 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				// load data by injecting the current booking ID
 				vboWidgetBooksCalLoad(wrapper, 0, page_bid);
 			}
+
+			/**
+			 * Handles the selection of a customer to assign to a new booking.
+			 */
+			function vboWidgetBooksCalHandleCustomerSelection(e) {
+				if (!e?.detail?.element?.id) {
+					return;
+				}
+
+				let custid 		  = e.detail.element.id;
+				let custemail 	  = e.detail.element?.email;
+				let custphone 	  = e.detail.element?.phone;
+				let custcountry   = e.detail.element?.country;
+				let custfirstname = e.detail.element?.first_name;
+				let custlastname  = e.detail.element?.last_name;
+
+				// set customer ID
+				jQuery('#vbo-widget-bookscal-cfield-custid<?php echo $wrapper_id; ?>').val(custid);
+
+				// check previous custom fields
+				if (e.detail.element?.cfields && typeof e.detail.element.cfields === 'object') {
+					for (const [cfid, cfval] of Object.entries(e.detail.element.cfields)) {
+						let fill_field = document.querySelector('#cfield' + cfid + '<?php echo $wrapper_id; ?>');
+						if (fill_field && cfval) {
+							// set previous value
+							fill_field.value = cfval;
+						}
+					}
+				}
+
+				// always populate basic information on custom fields
+				let fields_wrap = jQuery('.vbo-calendar-cfields-filler[data-wrapper="<?php echo $wrapper_id; ?>"]');
+
+				if (custcountry) {
+					if (custcountry.length > 3) {
+						fields_wrap.find('select.vbo-calendar-cfield-country').val(custcountry);
+					} else {
+						let country_opt = fields_wrap.find('select.vbo-calendar-cfield-country').find('option[data-ccode="' + custcountry + '"]');
+						if (country_opt.length) {
+							fields_wrap.find('select.vbo-calendar-cfield-country').val(country_opt.attr('value'));
+						}
+					}
+				}
+
+				fields_wrap.find('input[data-isnominative="1"]').each(function(k, v) {
+					if (k == 0) {
+						jQuery(this).val(custfirstname);
+						return true;
+					}
+					if (k == 1) {
+						jQuery(this).val(custlastname);
+						return true;
+					}
+					return false;
+				});
+
+				fields_wrap.find('input[data-isemail="1"]').val(custemail);
+				fields_wrap.find('input[data-isphone="1"]').val(custphone);
+
+				// do NOT set customer upon the selection just made, because data may need to be manually adjusted
+				// vboWidgetBooksCalSetCustomer('<?php echo $wrapper_id; ?>');
+			}
 			
 		</script>
 			<?php
@@ -3827,6 +3829,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 					}
 				});
 
+				// subscribe to the event for choosing a customer to assign to a new booking
+				document.addEventListener('vbo-widget-books-cal-choose-customer-<?php echo $wrapper_id; ?>', vboWidgetBooksCalHandleCustomerSelection);
+
 			<?php
 			if ($js_modal_id) {
 				// widget can be dismissed through the modal
@@ -3839,6 +3844,9 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 							bid: vbo_widget_books_cal_last_new_bid
 						});
 					}
+
+					// remove the event for handling the selection of a customer
+					document.removeEventListener('vbo-widget-books-cal-choose-customer-<?php echo $wrapper_id; ?>', vboWidgetBooksCalHandleCustomerSelection);
 				});
 				<?php
 			}
@@ -3937,7 +3945,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		$booking_checkout_dt = date('Y-m-d', $booking_info['checkout']);
 
 		// access the availability helper object
-		$av_helper = VikBooking::getAvailabilityInstance()
+		$av_helper = VikBooking::getAvailabilityInstance(true)
 			->setStayDates($booking_checkin_dt, $booking_checkout_dt);
 
 		// get stay date timestamps

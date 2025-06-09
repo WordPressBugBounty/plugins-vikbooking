@@ -38,7 +38,7 @@ class VikBookingAdminWidgetTodayRoomsOccupancy extends VikBookingAdminWidget
 		$this->widgetStyleName = 'green';
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		$vbo_auth_bookings = JFactory::getUser()->authorise('core.vbo.bookings', 'com_vikbooking');
 		$busy = VikBooking::getAdminWidgetsInstance()->loadBusyRecordsUnclosed();

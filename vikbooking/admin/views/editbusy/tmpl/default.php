@@ -1912,7 +1912,7 @@ foreach ($js_cal_def_vals as $js_cal_def_val) {
 		jQuery(this).closest('.vbo-editbooking-room-pricetype').addClass('vbo-editbooking-room-pricetype-active');
 	});
 });
-if (jQuery.isFunction(jQuery.fn.tooltip)) {
+if (typeof jQuery.fn.tooltip === 'function') {
 	jQuery(".hasTooltip").tooltip();
 }
 </script>

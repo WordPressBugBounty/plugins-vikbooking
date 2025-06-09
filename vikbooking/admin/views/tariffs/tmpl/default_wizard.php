@@ -73,7 +73,7 @@ function showVboWizard() {
 	});
 	vbodialog_on = true;
 }
-jQuery(document).ready(function() {
+jQuery(function() {
 <?php
 if (empty($this->rows)) {
 	?>

@@ -226,7 +226,7 @@ foreach ($langs as $ltag => $lang) {
 				}
 				$tn_value = '';
 				$tn_class = ' vbo-missing-translation';
-				if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, $lang_record_tn[$reference_id]['content']) && strlen($lang_record_tn[$reference_id]['content'][$field])) {
+				if (array_key_exists($reference_id, ($lang_record_tn ?? [])) && array_key_exists($field, ($lang_record_tn[$reference_id]['content'] ?? [])) && strlen($lang_record_tn[$reference_id]['content'][$field])) {
 					if (in_array($type, array('text', 'textarea', 'html'))) {
 						$tn_class = ' vbo-field-translated';
 					} else {

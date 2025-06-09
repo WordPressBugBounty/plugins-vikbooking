@@ -679,7 +679,7 @@ class VikBookingInstaller
 				</div>
 
 				<script type="text/javascript">
-				jQuery(document).ready(function() {
+				jQuery(function() {
 					jQuery('#vbo-update-warning').on('click', '.notice-dismiss', function(event, el) {
 						var numWeeks = 1;
 						if (typeof localStorage !== 'undefined') {

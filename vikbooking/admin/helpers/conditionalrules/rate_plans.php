@@ -90,7 +90,7 @@ class VikBookingConditionalRuleRatePlans extends VikBookingConditionalRule
 		?>
 		
 		<script type="text/javascript">
-			jQuery(document).ready(function() {
+			jQuery(function() {
 				jQuery('#<?php echo $this->inputID('rplans'); ?>').select2();
 				jQuery('#<?php echo $this->inputID('otarplans'); ?>').select2();
 			});

@@ -38,7 +38,7 @@ class VikBookingAdminWidgetNextBookings extends VikBookingAdminWidget
 		$this->widgetStyleName = 'light-orange';
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		$dbo = JFactory::getDbo();
 

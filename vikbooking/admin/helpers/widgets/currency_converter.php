@@ -66,7 +66,7 @@ class VikBookingAdminWidgetCurrencyConverter extends VikBookingAdminWidget
 
 		if (empty($from_currency) || empty($to_currency)) {
 			// use the website default currency
-			$from_currency = VikBooking::getCurrencyName();
+			$from_currency = VikBooking::getCurrencyName($iso = true);
 
 			// use the default to currency
 			$to_currency = !strcasecmp($from_currency, 'EUR') ? 'USD' : 'EUR';
@@ -159,7 +159,7 @@ class VikBookingAdminWidgetCurrencyConverter extends VikBookingAdminWidget
 		$this->vbo_app->loadSelect2();
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;
@@ -178,7 +178,7 @@ class VikBookingAdminWidgetCurrencyConverter extends VikBookingAdminWidget
 		}
 
 		// the website default currency
-		$def_currency = !empty($this->widgetSettings->from_currency) ? $this->widgetSettings->from_currency : VikBooking::getCurrencyName();
+		$def_currency = !empty($this->widgetSettings->from_currency) ? $this->widgetSettings->from_currency : VikBooking::getCurrencyName($iso = true);
 
 		// the default to currency
 		$def_to_currency = !strcasecmp($def_currency, 'EUR') ? 'USD' : 'EUR';

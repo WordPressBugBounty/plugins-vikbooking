@@ -254,7 +254,7 @@ class VBOTaxonomyFinance
 	 * 
 	 * @throws 	Exception
 	 */
-	public function getStats($from, $to, $rooms = [], $type = 'stay_dates')
+	public function getStats($from, $to, array $rooms = [], $type = 'stay_dates')
 	{
 		$dbo = JFactory::getDbo();
 
@@ -283,53 +283,55 @@ class VBOTaxonomyFinance
 		// the associative array of statistics to collect and return
 		$stats = [
 			// booking ids involved
-			'bids' 			=> [],
+			'bids'            => [],
 			// total number of room units counted for stats
-			'room_units' 	=> $total_room_units,
+			'room_units'      => $total_room_units,
 			// total number of room units times the number of nights in the range
-			'tot_inventory' => ($total_room_units * $total_range_nights),
+			'tot_inventory'   => ($total_room_units * $total_range_nights),
 			// number of rooms booked
-			'rooms_booked' 	=> 0,
+			'rooms_booked'    => 0,
 			// number of bookings found
-			'tot_bookings' 	=> 0,
+			'tot_bookings'    => 0,
 			// total number of nights booked (proportionally adjusted according to affected dates)
-			'nights_booked' => 0,
+			'nights_booked'   => 0,
 			// percent value
-			'occupancy' 	=> 0,
+			'occupancy'       => 0,
 			// average length of stay
-			'avg_los' 		=> 0,
+			'avg_los'         => 0,
 			// points of sale revenue (revenue divided by each individual ota and ibe)
-			'pos_revenue' 	=> [],
+			'pos_revenue'     => [],
 			// list of countries with ranking
-			'country_ranks' => [],
+			'country_ranks'   => [],
 			// ibe revenue net
-			'ibe_revenue' 	=> 0,
+			'ibe_revenue'     => 0,
 			// otas revenue net (no matter if commissions were applied)
-			'ota_revenue' 	=> 0,
+			'ota_revenue'     => 0,
 			// total refunded amounts (never deducted)
-			'tot_refunds' 	=> 0,
+			'tot_refunds'     => 0,
 			// average daily rate
-			'adr' 			=> 0,
+			'adr'             => 0,
 			// revenue per available room
-			'revpar' 		=> 0,
+			'revpar'          => 0,
 			// average booking window
-			'abw' 			=> 0,
+			'abw'             => 0,
 			// amount of taxes
-			'taxes' 		=> 0,
+			'taxes'           => 0,
+			// amount of damage deposits
+			'damage_deposits' => 0,
 			// commissions (amount)
-			'cmms' 			=> 0,
+			'cmms'            => 0,
 			// net revenue before tax (otas + ibe)
-			'revenue' 		=> 0,
+			'revenue'         => 0,
 			// gross revenue after tax
-			'gross_revenue' => 0,
+			'gross_revenue'   => 0,
 			// otas total before tax (same as ota_revenue, but only if ota commissions were applied)
-			'ota_tot_net' 	=> 0,
+			'ota_tot_net'     => 0,
 			// otas commissions
-			'ota_cmms' 		=> 0,
+			'ota_cmms'        => 0,
 			// percent value for average ota commissions amount
-			'ota_avg_cmms' 	=> 0,
+			'ota_avg_cmms'    => 0,
 			// commission savings amount
-			'cmm_savings' 	=> 0,
+			'cmm_savings'     => 0,
 			// total cancelled reservations
 			'tot_cancellations' => 0,
 			// cancelled reservation IDs
@@ -348,6 +350,7 @@ class VBOTaxonomyFinance
 			'o.checkin',
 			'o.checkout',
 			'o.totpaid',
+			'o.coupon',
 			'o.roomsnum',
 			'o.total',
 			'o.idorderota',
@@ -356,6 +359,7 @@ class VBOTaxonomyFinance
 			'o.tot_taxes',
 			'o.tot_city_taxes',
 			'o.tot_fees',
+			'o.tot_damage_dep',
 			'o.cmms',
 			'o.refund',
 			'or.idorder',
@@ -365,15 +369,10 @@ class VBOTaxonomyFinance
 			'or.cust_idiva',
 			'or.extracosts',
 			'or.room_cost',
-			'ob.idbusy',
 			'c.country_name',
 		]));
-		$q->select($dbo->qn('b.checkin', 'room_checkin'));
-		$q->select($dbo->qn('b.checkout', 'room_checkout'));
 		$q->from($dbo->qn('#__vikbooking_orders', 'o'));
 		$q->leftjoin($dbo->qn('#__vikbooking_ordersrooms', 'or') . ' ON ' . $dbo->qn('or.idorder') . ' = ' . $dbo->qn('o.id'));
-		$q->leftjoin($dbo->qn('#__vikbooking_ordersbusy', 'ob') . ' ON ' . $dbo->qn('ob.idorder') . ' = ' . $dbo->qn('o.id'));
-		$q->leftjoin($dbo->qn('#__vikbooking_busy', 'b') . ' ON ' . $dbo->qn('b.id') . ' = ' . $dbo->qn('ob.idbusy'));
 		$q->leftjoin($dbo->qn('#__vikbooking_countries', 'c') . ' ON ' . $dbo->qn('c.country_3_code') . ' = ' . $dbo->qn('o.country'));
 		$q->where($dbo->qn('o.total') . ' > 0');
 		$q->where($dbo->qn('o.closure') . ' = 0');
@@ -392,13 +391,18 @@ class VBOTaxonomyFinance
 			$q->where($dbo->qn('o.ts') . ' <= ' . $to_ts);
 		}
 
-		if (is_array($rooms) && $rooms) {
-			$rooms = array_map('intval', $rooms);
-			$q->where($dbo->qn('or.idroom') . ' IN (' . implode(', ', $rooms) . ')');
+		/**
+		 * Do not filter the room booking records by room ID, but always join them, to improve accuracy with calculations.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		if ($rooms) {
+			// $q->where($dbo->qn('or.idroom') . ' IN (' . implode(', ', array_map('intval', $rooms)) . ')');
 		}
 
 		$q->order($dbo->qn('o.checkin') . ' ASC');
 		$q->order($dbo->qn('o.id') . ' ASC');
+		$q->order($dbo->qn('or.id') . ' ASC');
 
 		$dbo->setQuery($q);
 		$records = $dbo->loadAssocList();
@@ -407,6 +411,54 @@ class VBOTaxonomyFinance
 			// no bookings found, do not proceed
 			return $stats;
 		}
+
+		/**
+		 * Join the busy records afterwards to support accurate calculations for split stays or early departures/late arrivals.
+		 * This is also needed to support multi-room reservations without joining the busy records together with the room records.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		$busy_joined = [];
+		foreach ($records as &$booking) {
+			if (strcasecmp($booking['status'], 'confirmed')) {
+				// we only want to target confirmed bookings
+				continue;
+			}
+
+			// build cache signature for busy records joined
+			$booking_room_signature = $booking['id'] . '-' . $booking['idroom'];
+
+			// build the db query
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->select($dbo->qn('ob.idbusy'))
+					->select($dbo->qn('b.checkin', 'room_checkin'))
+					->select($dbo->qn('b.checkout', 'room_checkout'))
+					->from($dbo->qn('#__vikbooking_ordersbusy', 'ob'))
+					->leftjoin($dbo->qn('#__vikbooking_busy', 'b') . ' ON ' . $dbo->qn('b.id') . ' = ' . $dbo->qn('ob.idbusy'))
+					->where($dbo->qn('ob.idorder') . ' = ' . (int) $booking['id'])
+					->where($dbo->qn('b.idroom') . ' = ' . (int) $booking['idroom'])
+					->order($dbo->qn('b.id') . ' ASC')
+			);
+
+			// either fetch the records or use the previously cached ones to support multi-room bookings with equal room IDs
+			$busy_joined[$booking_room_signature] = $busy_joined[$booking_room_signature] ?? $dbo->loadAssocList();
+
+			// get the busy record to process for the current booking-room by shifting the list
+			$process_busy = array_shift($busy_joined[$booking_room_signature]);
+
+			if (!$process_busy) {
+				continue;
+			}
+
+			// inject busy details
+			$booking['idbusy'] = $process_busy['idbusy'];
+			$booking['room_checkin'] = $process_busy['room_checkin'];
+			$booking['room_checkout'] = $process_busy['room_checkout'];
+		}
+
+		// unset last reference and cached values
+		unset($booking, $busy_joined);
 
 		/**
 		 * Immediately count cancellations and unset the records found.
@@ -438,6 +490,7 @@ class VBOTaxonomyFinance
 			if (!isset($bookings[$b['id']])) {
 				$bookings[$b['id']] = [];
 			}
+
 			// calculate the effective from and to stay timestamps for this room (by supporting split stays or early departures/late arrivals)
 			$room_checkin  = !empty($b['room_checkin']) && $b['room_checkin'] != $b['checkin'] ? $b['room_checkin'] : $b['checkin'];
 			$room_checkout = !empty($b['room_checkout']) && $b['room_checkout'] != $b['checkout'] ? $b['room_checkout'] : $b['checkout'];
@@ -447,6 +500,7 @@ class VBOTaxonomyFinance
 			$b['stay_to_ts']   = mktime(23, 59, 59, $out_info['mon'], ($out_info['mday'] - 1), $out_info['year']);
 			$b['stay_nights']  = $room_checkin != $b['checkin'] || $room_checkout != $b['checkout'] ? $av_helper->countNightsOfStay($room_checkin, $room_checkout) : $b['days'];
 			$b['stay_nights']  = $b['stay_nights'] < 1 ? 1 : $b['stay_nights'];
+
 			// push room-booking
 			$bookings[$b['id']][] = $b;
 		}
@@ -473,25 +527,53 @@ class VBOTaxonomyFinance
 			$stats['tot_bookings']++;
 			$los_counter += $booking[0]['days'];
 
-			// use default total values
-			$booking_rooms 		 = count($booking);
-			$room_total 		 = $booking[0]['total'];
-			$room_cmms 			 = $booking[0]['cmms'];
-			$room_refund 		 = $booking[0]['refund'];
-			$room_tot_taxes 	 = $booking[0]['tot_taxes'];
-			$room_tot_city_taxes = $booking[0]['tot_city_taxes'];
-			$room_tot_fees 		 = $booking[0]['tot_fees'];
+			// count rooms booked within the reservation
+			$booking_rooms = count($booking);
+
+			// define the total booking amount for multi-room reservations
+			$multi_room_total = 0;
+
+			if ($rooms && $booking[0]['roomsnum'] > 1) {
+				// when filters applied to multi-room bookings, count the effective number of rooms involved
+				$booking_rooms = count(array_intersect(array_column($booking, 'idroom'), $rooms));
+
+				// overwrite room total amount when filtering by listing(s)
+				foreach ($booking as $room_booking) {
+					if (!in_array($room_booking['idroom'], $rooms)) {
+						continue;
+					}
+					if ($room_booking['cust_cost'] > 0) {
+						$multi_room_total += $room_booking['cust_cost'];
+					} elseif ($room_booking['room_cost'] > 0) {
+						$multi_room_total += $room_booking['room_cost'];
+					}
+				}
+			}
 
 			// point of sale name
 			$pos_name = null;
 
 			// parse all rooms booked
 			foreach ($booking as $room_booking) {
+				if ($rooms && !in_array($room_booking['idroom'], $rooms)) {
+					// room booked is excluded from filters
+					continue;
+				}
+
 				// increase rooms booked
 				$stats['rooms_booked']++;
 
 				// number of nights affected
 				$los_affected = $room_booking['stay_nights'];
+
+				// use default total values
+				$room_total 		 = $multi_room_total ?: $room_booking['total'];
+				$room_cmms 			 = $room_booking['cmms'];
+				$room_refund 		 = $room_booking['refund'];
+				$room_tot_taxes 	 = $room_booking['tot_taxes'];
+				$room_tot_city_taxes = $room_booking['tot_city_taxes'];
+				$room_tot_damage_dep = $room_booking['tot_damage_dep'];
+				$room_tot_fees 		 = $room_booking['tot_fees'];
 
 				// check if amounts must be calculated proportionally for the range of dates requested
 				if ($type == 'stay_dates' && ($room_booking['stay_from_ts'] < $from_ts || $room_booking['stay_to_ts'] > $to_ts)) {
@@ -504,20 +586,23 @@ class VBOTaxonomyFinance
 					$room_refund 		 = $room_refund * $los_affected / $room_booking['stay_nights'];
 					$room_tot_taxes 	 = $room_tot_taxes * $los_affected / $room_booking['stay_nights'];
 					$room_tot_city_taxes = $room_tot_city_taxes * $los_affected / $room_booking['stay_nights'];
+					$room_tot_damage_dep = $room_tot_damage_dep * $los_affected / $room_booking['stay_nights'];
 					$room_tot_fees 		 = $room_tot_fees * $los_affected / $room_booking['stay_nights'];
 				}
 
-				// apply average values per room booked
+				// apply average values per room booked (with filters or booked in total)
 				$room_total 		 /= $booking_rooms;
 				$room_cmms 			 /= $booking_rooms;
 				$room_refund 		 /= $booking_rooms;
 				$room_tot_taxes 	 /= $booking_rooms;
 				$room_tot_city_taxes /= $booking_rooms;
+				$room_tot_damage_dep /= $room_booking['roomsnum'];
 				$room_tot_fees 		 /= $booking_rooms;
 
 				// calculate and sum average values per room booked
-				$tot_net = $room_total - (float)$room_tot_taxes - (float)$room_tot_city_taxes - (float)$room_tot_fees - (float)$room_cmms;
-				$stats['revenue'] += $tot_net;
+				$tot_net = $multi_room_total ?: ($room_total - (float) $room_tot_taxes - (float) $room_tot_city_taxes - (float) $room_tot_fees - (float) $room_tot_damage_dep - (float) $room_cmms);
+				$tot_revenue = $multi_room_total ? ($tot_net / $booking_rooms) : $tot_net;
+				$stats['revenue'] += $tot_revenue;
 				$stats['gross_revenue'] += $room_total;
 				$stats['nights_booked'] += $los_affected;
 
@@ -533,19 +618,19 @@ class VBOTaxonomyFinance
 						$country_map[$country_code] = $room_booking['country_name'];
 					}
 				}
-				$countries[$country_code] += $tot_net;
+				$countries[$country_code] += $tot_revenue;
 
 				if (!empty($room_booking['idorderota']) && !empty($room_booking['channel'])) {
-					$stats['ota_revenue'] += $tot_net;
+					$stats['ota_revenue'] += $tot_revenue;
 					if ($room_cmms > 0) {
-						$stats['ota_tot_net'] += $tot_net;
+						$stats['ota_tot_net'] += $tot_revenue;
 						$stats['ota_cmms'] += $room_cmms;
 					}
 					// set pos name
 					$channel_parts = explode('_', $room_booking['channel']);
 					$pos_name = trim($channel_parts[0]);
 				} else {
-					$stats['ibe_revenue'] += $tot_net;
+					$stats['ibe_revenue'] += $tot_revenue;
 					// set pos name
 					$pos_name = 'website';
 				}
@@ -554,10 +639,11 @@ class VBOTaxonomyFinance
 				if (!isset($pos_pool[$pos_name])) {
 					$pos_pool[$pos_name] = 0;
 				}
-				$pos_pool[$pos_name] += $tot_net;
+				$pos_pool[$pos_name] += $tot_revenue;
 
-				$stats['taxes'] += (float)$room_tot_taxes + (float)$room_tot_city_taxes + (float)$room_tot_fees;
-				$stats['cmms'] += (float)$room_cmms;
+				$stats['taxes'] += (float) $room_tot_taxes + (float) $room_tot_city_taxes + (float) $room_tot_fees;
+				$stats['damage_deposits'] += (float) $room_tot_damage_dep;
+				$stats['cmms'] += (float) $room_cmms;
 				$stats['tot_refunds'] += $room_refund;
 			}
 
@@ -634,7 +720,7 @@ class VBOTaxonomyFinance
 		}
 
 		// sort countries revenue
-		if (count($countries) && $stats['revenue'] > 0) {
+		if ($countries && $stats['revenue'] > 0) {
 			// apply sorting descending
 			arsort($countries);
 			// build readable values

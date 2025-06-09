@@ -63,7 +63,7 @@ class VikBookingAdminWidgetBackgroundTasks extends VikBookingAdminWidget
 	/**
 	 * @inheritDoc
 	 */
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		$schedules = [];
 
@@ -105,11 +105,6 @@ class VikBookingAdminWidgetBackgroundTasks extends VikBookingAdminWidget
 			[
 				'schedules' => $schedules,
 				'log' => htmlentities($log),
-			],
-			null,
-			[
-				'client' => 'administrator',
-				'component' => 'com_vikbooking',
 			]
 		);
 	}

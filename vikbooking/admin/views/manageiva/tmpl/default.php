@@ -105,7 +105,7 @@ if (count($row)) {
 </div>
 
 <script type="text/javascript">
-jQuery(document).ready(function() {
+jQuery(function() {
 	jQuery(".vbo-link-add").click(function() {
 		jQuery("#breakdown-cont").append(jQuery("#add-breakdown").html());
 	});

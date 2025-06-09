@@ -577,7 +577,7 @@ class VikBookingAdminWidgetCheckAvailability extends VikBookingAdminWidget
 		$this->vbo_app->loadDatePicker();
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;

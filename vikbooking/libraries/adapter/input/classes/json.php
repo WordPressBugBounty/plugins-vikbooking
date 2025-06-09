@@ -33,7 +33,7 @@ class JInputJSON extends JInput
 	 * @param   array  $source   Source data (Optional, default is the raw HTTP input decoded from JSON)
 	 * @param   array  $options  Array of configuration parameters (Optional)
 	 */
-	public function __construct(array $source = null, array $options = array())
+	public function __construct(?array $source = null, array $options = array())
 	{
 		if (isset($options['filter']))
 		{

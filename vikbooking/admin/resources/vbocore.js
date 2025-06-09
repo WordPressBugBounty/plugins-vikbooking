@@ -1,5 +1,5 @@
 /**
- * VikBooking Core v1.7.7
+ * VikBooking Core v1.8.0
  * Copyright (C) 2025 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -7,15 +7,21 @@
 (function($, w) {
 	'use strict';
 
+	/**
+	 * AJAX loading of Views may reload the already existing options, so we cache them when available.
+	 */
+	var CORE_OPTIONS = typeof VBOCore !== 'undefined' ? VBOCore?.options : null;
+
+	/**
+	 * VBOCore class implementation.
+	 */
 	w['VBOCore'] = class VBOCore {
 
 		/**
 		 * Proxy to support static injection of params.
 		 */
 		constructor(params) {
-			if (typeof params === 'object') {
-				VBOCore.setOptions(params);
-			}
+			VBOCore.setOptions(params);
 		}
 
 		/**
@@ -26,11 +32,32 @@
 		 * @return 	self
 		 */
 		static setOptions(params) {
-			if (typeof params === 'object') {
+			if (params != null && typeof params === 'object') {
 				VBOCore.options = Object.assign(VBOCore.options, params);
 			}
 
 			return VBOCore;
+		}
+
+		/**
+		 * Fires a given function when the DOM content has loaded.
+		 * 
+		 * @param 	function 	fireFn 	The function to fire when the document is ready.
+		 * 
+		 * @return 	undefined
+		 */
+		static DOMLoaded(fireFn) {
+			if (typeof fireFn !== 'function') {
+				throw new Error('Invalid argument provided');
+			}
+
+			if (document.readyState === 'loading') {
+				// register event because DOMContentLoaded hasn't finished yet
+				document.addEventListener('DOMContentLoaded', fireFn);
+			} else {
+				// DOMContentLoaded event has fired already
+				fireFn();
+			}
 		}
 
 		/**
@@ -2439,27 +2466,29 @@
 		 */
 		static displayModal(options, bindDetails) {
 			var def_options = {
-				suffix: 	     (Math.floor(Math.random() * 100000)) + '',
+				suffix:          (Math.floor(Math.random() * 100000)) + '',
 				extra_class:     null,
-				header: 		 true,
-				title: 		     '',
-				body: 		     '',
+				header:          true,
+				title:           '',
+				body:            '',
 				body_prepend:    false,
 				lock_scroll:     false,
-				draggable: 		 false,
+				draggable:       false,
 				enlargeable:     false,
 				minimizeable:    false,
+				escape_dismiss:  true,
 				footer_left:     null,
 				footer_right:    null,
 				resize_event:    null,
 				dismiss_event:   null,
-				dismissed_event: null,
-				onDismiss: 	     null,
+				dismissed_event: 'vbo-modal-dismissed',
+				onDismiss:       null,
 				onMinimize:      null,
 				onRestore:       null,
 				loading_event:   null,
 				loading_body:    VBOCore.options.default_loading_body,
-				event_data: 	 null,
+				progress_event:  null,
+				event_data:      null,
 			};
 
 			if (options.event_data && typeof options.event_data === 'object') {
@@ -2481,6 +2510,10 @@
 				if (options.loading_event) {
 					// we can now un-register from the loading event until a new modal is displayed and will register to it again
 					document.removeEventListener(options.loading_event, modal_handle_loading_event_fn);
+					if (options.progress_event) {
+						// we can now un-register from the progress event
+						document.removeEventListener(options.progress_event, modal_handle_progress_event_fn);
+					}
 				}
 
 				// check if we should fire the given modal dismissed event
@@ -2526,6 +2559,37 @@
 
 				// append backdrop loading to modal content
 				modal_content.prepend(modal_loading);
+			};
+
+			// create the modal progress event handler function
+			const modal_handle_progress_event_fn = (e) => {
+				if (!e || !e.detail || !e.detail.progress_content) {
+					// do not proceed
+					return;
+				}
+
+				// identify the current loading backdrop body
+				let backdrop_body = modal_content.find('.vbo-modal-overlay-content-backdrop-body');
+				if (!backdrop_body.length) {
+					// loading body not found
+					return;
+				}
+
+				let backdrop_txt_el = $('<div></div>').addClass('vbo-modal-overlay-content-backdrop-text');
+				if (typeof e.detail.progress_content === 'string') {
+					backdrop_txt_el.html(e.detail.progress_content);
+				} else {
+					backdrop_txt_el.append(e.detail.progress_content);
+				}
+
+				let backdrop_txt_old = backdrop_body.find('.vbo-modal-overlay-content-backdrop-text');
+				if (backdrop_txt_old.length) {
+					// remove the previous text element
+					backdrop_txt_old.remove();
+				}
+
+				// set the loading progress content
+				backdrop_body.append(backdrop_txt_el);
 			};
 
 			// create the modal enlarge (toggle) function
@@ -2770,15 +2834,21 @@
 					VBOCore.emitEvent(options.dismiss_event);
 				};
 
-				// listen to the Escape keyup event to dismiss the modal
-				// listen on window to allow admin-widgets to prevent the default behavior and stop the propagation
-				window.addEventListener('keyup', vbo_core_dismiss_event_modal_escape);
+				if (options.escape_dismiss) {
+					// listen to the Escape keyup event to dismiss the modal
+					// listen on window to allow admin-widgets to prevent the default behavior and stop the propagation
+					window.addEventListener('keyup', vbo_core_dismiss_event_modal_escape);
+				}
 			}
 
 			// register to the toggle-loading event
 			if (options.loading_event) {
 				// let a function handle it so that removing the event listener will be doable
 				document.addEventListener(options.loading_event, modal_handle_loading_event_fn);
+				if (options.progress_event) {
+					// let a function handle the progress event so that removing the listener will be doable
+					document.addEventListener(options.progress_event, modal_handle_progress_event_fn);
+				}
 			}
 
 			// append (or prepend) modal to body
@@ -3174,6 +3244,79 @@
 		}
 
 		/**
+		 * Formats a date object by accepting "Y", "m" and "d".
+		 * 
+		 * @param 	Date 	date 	The date object to format.
+		 * @param 	string 	format 	The date format to use.
+		 * 
+		 * @return 	string
+		 */
+		static formatDate(date, format) {
+			if (!date instanceof Date) {
+				throw new Error('Invalid date object given.');
+			}
+
+			if (!format || typeof format !== 'string') {
+				// default to military format
+				format = 'Y-m-d';
+			}
+
+			let year = date.getFullYear();
+			let month = (date.getMonth() + 1) + '';
+			let mday = (date.getDate()) + '';
+
+			month = month.length < 2 ? '0' + month : month;
+			mday = mday.length < 2 ? '0' + mday : mday;
+
+			// use a regex to capture the date separator and format identifiers
+			const regexp = /^([ymd])([\s\.\-\/])([ymd])([\s\.\-\/])([ymd])$/gi;
+
+			// turn the iterable iterator object into an array by using the spread syntax
+			let formatArray = [...format.matchAll(regexp)];
+
+			if (!formatArray.length || !Array.isArray(formatArray[0]) || formatArray[0].length != 6) {
+				throw new Error('Invalid date format given.');
+			}
+
+			let firstIdentifier = (formatArray[0][1] + '').toLowerCase();
+			let separatorChar = formatArray[0][2];
+			let secondIdentifier = (formatArray[0][3] + '').toLowerCase();
+			let thirdIdentifier = (formatArray[0][5] + '').toLowerCase();
+
+			if (!separatorChar) {
+				throw new Error('Invalid date format separator given.');
+			}
+
+			let dateParts = [];
+
+			if (firstIdentifier == 'y') {
+				dateParts.push(year);
+			} else if (firstIdentifier == 'm') {
+				dateParts.push(month);
+			} else {
+				dateParts.push(mday);
+			}
+
+			if (secondIdentifier == 'y') {
+				dateParts.push(year);
+			} else if (secondIdentifier == 'm') {
+				dateParts.push(month);
+			} else {
+				dateParts.push(mday);
+			}
+
+			if (thirdIdentifier == 'y') {
+				dateParts.push(year);
+			} else if (thirdIdentifier == 'm') {
+				dateParts.push(month);
+			} else {
+				dateParts.push(mday);
+			}
+
+			return dateParts.join(separatorChar);
+		}
+
+		/**
 		 * Proxy to access the VBOCurrency object.
 		 * 
 		 * @param 	object 	options The currency options.
@@ -3202,7 +3345,7 @@
 	 * 
 	 * @var  object
 	 */
-	VBOCore.options = {
+	VBOCore.options = CORE_OPTIONS || {
 		is_vbo: 				false,
 		is_vcm: 				false,
 		cms: 					'wordpress',
@@ -3357,6 +3500,9 @@
 		return ok;
 	}
 
+	/**
+	 * VBOCurrency class implementation.
+	 */
 	w['VBOCurrency'] = class VBOCurrency {
 		/**
 		 * Singleton entry-point.
@@ -3562,6 +3708,9 @@
 		}
 	}
 
+	/**
+	 * VBOAdminDock class implementation.
+	 */
 	w['VBOAdminDock'] = class VBOAdminDock {
 		/**
 		 * Singleton entry-point.
@@ -3680,6 +3829,9 @@
 		 * @return 	bool 			True if the localStorage was updated or false.
 		 */
 		removeDockElement(index) {
+			// access the previous element
+			let previousElement = this._elements[index];
+
 			// splice the elements list
 			this._elements.splice(index, 1);
 
@@ -3698,10 +3850,56 @@
 				});
 			}
 
+			if (previousElement && previousElement.id == '_tmp' && typeof previousElement?.details?.persist_id === 'string') {
+				// we have removed a temporary dock element with persisting data so try to clear the localStorage
+				VBOCore.storageRemoveItem(this._storageId + '.' + previousElement.details.persist_id);
+			}
+
 			// update dock elements on localStorage
 			let updated = VBOCore.storageSetItem(this._storageId, this._elements);
 
 			return updated;
+		}
+
+		/**
+		 * Removes the first dock element found from the given ID.
+		 * 
+		 * @param 	number 	id 	The dock element type ID.
+		 * 
+		 * @return 	bool 	True if element was found, removed and updated on localStorage.
+		 */
+		removeDockElementById(id) {
+			let remove_index = this.getDockElementById(id);
+
+			if (remove_index >= 0) {
+				return this.removeDockElement(remove_index);
+			}
+
+			return false;
+		}
+
+		/**
+		 * Returns the index of the first dock element found from the given ID.
+		 * 
+		 * @param 	string 	id 	The dock element type ID.
+		 * 
+		 * @return 	number 		The index found or -1 if nothing is found.
+		 */
+		getDockElementById(id) {
+			let index_found = -1;
+
+			this._elements.forEach((element, index) => {
+				if (index_found >= 0) {
+					return;
+				}
+
+				if (element.id == id) {
+					index_found = index;
+					return;
+				}
+			});
+
+			return index_found;
 		}
 
 		/**
@@ -3881,6 +4079,114 @@
 		}
 
 		/**
+		 * Builds a temporary dock element node.
+		 * 
+		 * @param   object      details 	The element details.
+		 * @param   object      data 		The element data, usually an array of objects.
+		 * @param   number      index 		The element index number.
+		 * @param   function    restoreFn 	The callback for restoring the data.
+		 * @param 	function 	destroyFn 	The callback for destroying the data.
+		 * @param   number  	badge 		Optional badge number to set.
+		 * 
+		 * @return  HTMLElement
+		 */
+		buildDockTemporaryElement(details, data, index, restoreFn, destroyFn, badge) {
+			if (!details?.id || details.id != '_tmp') {
+				throw new Error('Invalid temporary element data.');
+			}
+
+			const dataId = '_tmp';
+
+			const element = document.createElement('div');
+			element.classList.add('vbo-admin-dock-element');
+			element.setAttribute('data-id', dataId);
+			element.setAttribute('data-index', index);
+			element.setAttribute('data-badge-count', (badge || ''));
+
+			let content = document.createElement('div');
+			content.classList.add('vbo-admin-dock-element-cont');
+			content.addEventListener('click', (e) => {
+				// get content target
+				let target = e.target;
+				if (!target.matches('.vbo-admin-dock-element-cont')) {
+					target = target.closest('.vbo-admin-dock-element-cont');
+				}
+
+				// reset badge count
+				target.closest('.vbo-admin-dock-element').setAttribute('data-badge-count', '');
+
+				if (typeof restoreFn === 'function') {
+					this._elements.forEach((dockEl) => {
+						if (dockEl.id == dataId) {
+							// invoke the callback by passing the current element data
+							restoreFn(dockEl?.data);
+
+							// abort
+							return;
+						}
+					});
+				}
+
+				// remove element from DOM
+				let elementIndex = element.getAttribute('data-index');
+				element.remove();
+
+				// remove element index from dock
+				this.removeDockElement(elementIndex);
+			});
+
+			let content_icon = document.createElement('span');
+			content_icon.classList.add('vbo-admin-dock-element-icn');
+			if (details?.style) {
+				content_icon.classList.add('vbo-admin-widget-style-' + details.style);
+			}
+			if (details?.icon) {
+				content_icon.innerHTML = details.icon;
+			}
+
+			let content_name = document.createElement('span');
+			content_name.classList.add('vbo-admin-dock-element-name');
+			content_name.innerText = details?.name || '';
+
+			let dismiss = document.createElement('span');
+			dismiss.classList.add('vbo-admin-dock-element-dismiss');
+			dismiss.innerHTML = '&times;';
+			dismiss.addEventListener('click', (e) => {
+				if (typeof destroyFn === 'function') {
+					this._elements.forEach((dockEl) => {
+						if (dockEl.id == dataId) {
+							// invoke the callback by passing the current element data
+							destroyFn(dockEl?.data);
+
+							// abort
+							return;
+						}
+					});
+				}
+
+				// remove element from DOM
+				let elementIndex = element.getAttribute('data-index');
+				element.remove();
+
+				// remove element index from dock
+				this.removeDockElement(elementIndex);
+			});
+
+			// append to content
+			content.appendChild(content_icon);
+			content.appendChild(content_name);
+
+			// append content to element
+			element.appendChild(content);
+
+			// append dismiss to element
+			element.appendChild(dismiss);
+
+			// return the HTMLElement object
+			return element;
+		}
+
+		/**
 		 * Adds a widget to the dock.
 		 * 
 		 * @param  object       details    The widget details.
@@ -3888,7 +4194,7 @@
 		 * @param  HTMLElement  body       Optional widget modal body to restore.
 		 * @param  function     destroyFn  Optional dismiss callback.
 		 */
-		addWidget(details, data, body, destroyFn, restoreFn) {
+		addWidget(details, data, body, destroyFn) {
 			if (!VBOCore.options.widget_ajax_uri) {
 				throw new Error('Wrong environment');
 			}
@@ -3921,6 +4227,155 @@
 		}
 
 		/**
+		 * Adds temporary data to the dock. Data will NOT persist on the same localStorage key.
+		 * Originally introduced to handle the rates update requests within a queue.
+		 * 
+		 * @param 	object 		details 	The data details.
+		 * @param 	object 		data 		The data to store, usually an array of objects.
+		 * @param 	function 	restoreFn 	The callback for restoring the data.
+		 * @param 	function 	destroyFn 	The callback for destroying the data.
+		 * @param 	number 		badge 		Optional badge number to set.
+		 */
+		addTemporaryData(details, data, restoreFn, destroyFn, badge) {
+			if (!VBOCore.options.widget_ajax_uri) {
+				throw new Error('Wrong environment');
+			}
+
+			if (typeof details !== 'object') {
+				details = {};
+			}
+
+			// temporary data will always get a private ID to avoid duplicate entries in the dock
+			details.id = '_tmp';
+
+			// check if the same temporary data element type exists
+			let previousElement = null;
+			let previousIndex = null;
+			this.getElements().forEach((element, index) => {
+				if (previousElement) {
+					return;
+				}
+				if (element.id == details.id) {
+					// previous temporary data element type found
+					previousElement = element;
+					previousIndex = index;
+					return;
+				}
+			});
+
+			if (!previousElement) {
+				// add temporary element to dock in the DOM at first
+				this.getDockNode().appendChild(
+					this.buildDockTemporaryElement(details, data, this._elements.length, restoreFn, destroyFn, (badge ? badge : (Array.isArray(data) ? data.length : null)))
+				);
+
+				// push dock element after it was added to the DOM
+				this._elements.push({
+					id: details.id,
+					details: Object.assign({}, details),
+					data: Array.isArray(data) ? [...data] : Object.assign({}, data),
+				});
+			} else {
+				// update previous temporary data element type
+				let updatedData = Array.isArray(data) && Array.isArray(previousElement.data) ? [...previousElement.data].concat([...data]) : [...data];
+				let updatedBadge = badge ? badge : (Array.isArray(updatedData) ? updatedData.length : previousElement.badge);
+
+				// update existing dock element
+				this._elements[previousIndex] = {
+					id: details.id,
+					details: Object.assign({}, previousElement.details, details),
+					data: updatedData,
+				};
+
+				if (updatedBadge) {
+					// update DOM element
+					let dom_elements = this.getDockNode().querySelectorAll('.vbo-admin-dock-element');
+					this._elements.forEach((element, cur_index) => {
+						if (!dom_elements[cur_index] || dom_elements[cur_index].getAttribute('data-id') != element.id) {
+							return;
+						}
+						if (dom_elements[cur_index].getAttribute('data-id') != details.id) {
+							return;
+						}
+						// update badge attribute
+						dom_elements[cur_index].setAttribute('data-badge-count', updatedBadge);
+					});
+				}
+			}
+
+			// ensure dock is visible
+			this.showDock();
+
+			if (details.persist_id && typeof details.persist_id === 'string') {
+				// update dock element on a different localStorage key at last
+				VBOCore.storageSetItem(this._storageId + '.' + details.persist_id, (previousIndex ? this._elements[previousIndex] : this._elements[this._elements.length - 1]));
+			}
+		}
+
+		/**
+		 * Loads temporary data onto the dock by using an ID and type identifier.
+		 * Originally introduced to handle the rates update requests within a queue.
+		 * 
+		 * @param 	object 		details 	The data details to load.
+		 * @param 	function 	restoreFn 	The callback for restoring the data.
+		 * @param 	function 	destroyFn 	The callback for destroying the data.
+		 * @param 	number 		badge 		Optional badge number to set.
+		 * 
+		 * @return 	any 					Data object loaded on success or null.
+		 */
+		loadTemporaryData(details, restoreFn, destroyFn, badge) {
+			if (!VBOCore.options.widget_ajax_uri) {
+				throw new Error('Wrong environment');
+			}
+
+			if (typeof details !== 'object' || !details.id || !details.persist_id || typeof details.persist_id !== 'string') {
+				return null;
+			}
+
+			// temporary data will always get a private ID to avoid duplicate entries in the dock
+			details.id = '_tmp';
+
+			// check if the same temporary data element type exists
+			let previousElement = null;
+			this.getElements().forEach((element, index) => {
+				if (previousElement) {
+					return;
+				}
+				if (element.id == details.id) {
+					// previous temporary data element type found
+					previousElement = element;
+					return;
+				}
+			});
+
+			if (previousElement) {
+				// temporary data already loaded in dock
+				return previousElement;
+			}
+
+			// load the requested temporary and persisting data
+			let storageElement = VBOCore.storageGetItem(this._storageId + '.' + details.persist_id);
+
+			try {
+				if (typeof storageElement === 'string') {
+					storageElement = JSON.parse(storageElement);
+				}
+			} catch(e) {
+				storageElement = null;
+			}
+
+			if (!storageElement || typeof storageElement !== 'object' || !storageElement.data) {
+				return null;
+			}
+
+			// add the temporary data just loaded to the dock
+			this.addTemporaryData(Object.assign({}, (storageElement.details || {}), details), storageElement.data, restoreFn, destroyFn, badge);
+
+			// return the data loaded
+			return storageElement;
+		}
+
+		/**
 		 * Returns the current dock elements.
 		 * 
 		 * @return   Array
@@ -3930,7 +4385,7 @@
 		}
 
 		/**
-		 * Loads dock elements from localStorage and populates them, if any.
+		 * Loads widget dock elements from localStorage and populates them, if any.
 		 */
 		loadDockElements() {
 			let storageElements = VBOCore.storageGetItem(this._storageId) || [];
@@ -3947,6 +4402,20 @@
 				// set current elements
 				this._elements = storageElements;
 			}
+
+			// scan all elements to ensure no temporary data was stored upon deleting or adding new widgets
+			this._elements.forEach((element, index) => {
+				if (element?.id == '_tmp') {
+					// splice the elements list
+					this._elements.splice(index, 1);
+
+					// update dock elements on localStorage by only keeping real widgets
+					VBOCore.storageSetItem(this._storageId, this._elements);
+
+					// abort
+					return;
+				}
+			});
 
 			if (this._elements.length) {
 				// populate dock elements

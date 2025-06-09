@@ -114,6 +114,66 @@ final class VBORoomHelper extends JObject
 	}
 
 	/**
+	 * Calculates the effective Min LOS from the Rates Table
+	 * for the given room and rate plan ID.
+	 * 
+	 * @param 	int 	$idroom 	the ID of the room-type on the website.
+	 * @param 	int 	$idprice 	the ID of the rate plan on the website.
+	 * 
+	 * @return 	int 				the effective Min LOS or 0.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public static function calcEffectiveMinLOS($idroom, $idprice)
+	{
+		if (empty($idroom) || empty($idprice)) {
+			return 0;
+		}
+
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('MIN(' . $dbo->qn('days') . ')')
+				->from($dbo->qn('#__vikbooking_dispcost'))
+				->where($dbo->qn('idroom') . ' = ' . (int) $idroom)
+				->where($dbo->qn('idprice') . ' = ' . (int) $idprice)
+		, 0, 1);
+
+		return (int) $dbo->loadResult();
+	}
+
+	/**
+	 * Calculates the effective Max LOS from the Rates Table
+	 * for the given room and rate plan ID.
+	 * 
+	 * @param 	int 	$idroom 	the ID of the room-type on the website.
+	 * @param 	int 	$idprice 	the ID of the rate plan on the website.
+	 * 
+	 * @return 	int 				the effective Max LOS or 0.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public static function calcEffectiveMaxLOS($idroom, $idprice)
+	{
+		if (empty($idroom) || empty($idprice)) {
+			return 0;
+		}
+
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('MAX(' . $dbo->qn('days') . ')')
+				->from($dbo->qn('#__vikbooking_dispcost'))
+				->where($dbo->qn('idroom') . ' = ' . (int) $idroom)
+				->where($dbo->qn('idprice') . ' = ' . (int) $idprice)
+		, 0, 1);
+
+		return (int) $dbo->loadResult();
+	}
+
+	/**
 	 * Gets the available room upgrade options, if any.
 	 * 
 	 * @param 	VikBookingTranslator 	$vbo_tn 	the translator object.

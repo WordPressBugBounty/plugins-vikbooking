@@ -75,7 +75,8 @@ jQuery(function() {
 		dateFormat: "$juidf",
 		changeMonth: true,
 		changeYear: true,
-		yearRange: "$year_range_str"
+		yearRange: "$year_range_str",
+		maxDate: "0d",
 	});
 });
 </script>

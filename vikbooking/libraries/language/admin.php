@@ -2229,10 +2229,10 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Types of Price', 'vikbooking');
 				break;
 			case 'VBPARAMSEASONCALENDARPRICESANY':
-				$result = __('Show All', 'vikbooking');
+				$result = __('Show all', 'vikbooking');
 				break;
 			case 'VBPARAMSEASONCALENDARPRICESLOW':
-				$result = __('Show Lowest', 'vikbooking');
+				$result = __('Show lowest', 'vikbooking');
 				break;
 			case 'VBPARAMSEASONCALENDARLOS':
 				$result = __('Length of Stay', 'vikbooking');
@@ -7654,6 +7654,444 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_AITOOL_ORPHAN_DATES':
 				$result = __('Orphan dates', 'vikbooking');
+				break;
+			case 'VBO_DAMAGE_DEPOSIT':
+				$result = __('Damage deposit', 'vikbooking');
+				break;
+			case 'VBO_TOT_DAMAGE_DEPOSITS':
+				$result = __('Total Damage Deposits', 'vikbooking');
+				break;
+			case 'VBO_FOREIGN_COUNTRIES':
+				$result = __('Foreign countries', 'vikbooking');
+				break;
+			case 'VBO_TASK_MANAGER':
+				$result = __('Task Manager', 'vikbooking');
+				break;
+			case 'VBO_TITLE_TASK_MANAGER':
+				$result = __('Vik Booking - Task Manager', 'vikbooking');
+				break;
+			case 'VBO_TASK_DRIVER_CLEANING':
+				$result = __('Housekeeping & Cleaning', 'vikbooking');
+				break;
+			case 'VBO_TASK_DRIVER_MAINTENANCE':
+				$result = __('Maintenance', 'vikbooking');
+				break;
+			case 'VBO_TASKS':
+				$result = __('Tasks', 'vikbooking');
+				break;
+			case 'VBO_AUTO_SCHEDULING':
+				$result = __('Automatic scheduling', 'vikbooking');
+				break;
+			case 'VBO_AUTO_SCHEDULING_BOOKINGS_HELP':
+				$result = __('If enabled, for every new booking, modification or cancellation, cleaning tasks will be automatically scheduled.', 'vikbooking');
+				break;
+			case 'VBO_AUTO_ASSIGNMENT':
+				$result = __('Automatic assignment', 'vikbooking');
+				break;
+			case 'VBO_AUTO_ASSIGNMENT_HELP':
+				$result = __('If enabled, cleaning tasks will be automatically assigned to the first available operator, if any.', 'vikbooking');
+				break;
+			case 'VBO_SCHEDULING':
+				$result = __('Scheduling', 'vikbooking');
+				break;
+			case 'VBO_FREQUENCY':
+				$result = __('Frequency', 'vikbooking');
+				break;
+			case 'VBO_TURNOVER':
+				$result = __('Turnover', 'vikbooking');
+				break;
+			case 'VBO_DAILY':
+				$result = __('Daily', 'vikbooking');
+				break;
+			case 'VBO_WEEKLY':
+				$result = __('Weekly', 'vikbooking');
+				break;
+			case 'VBO_MONTHLY':
+				$result = __('Monthly', 'vikbooking');
+				break;
+			case 'VBO_EVERY_2_DAYS':
+				$result = __('Every two days', 'vikbooking');
+				break;
+			case 'VBO_EVERY_3_DAYS':
+				$result = __('Every three days', 'vikbooking');
+				break;
+			case 'VBO_HIDE_ALL':
+				$result = __('Hide all', 'vikbooking');
+				break;
+			case 'VBO_PROJECT_AREA':
+				$result = __('Project / Area', 'vikbooking');
+				break;
+			case 'VBO_PROJECTS_AREAS':
+				$result = __('Projects / Areas', 'vikbooking');
+				break;
+			case 'VBO_TASK_DRIVER_SPRINTBOARD':
+				$result = __('Sprint Board', 'vikbooking');
+				break;
+			case 'VBO_NEW_TASK':
+				$result = __('New task', 'vikbooking');
+				break;
+			case 'VBO_TAGS':
+				$result = __('Tags', 'vikbooking');
+				break;
+			case 'VBO_TAGS_PLACEHOLDER':
+				$result = __('Select tags or create new ones', 'vikbooking');
+				break;
+			case 'VBO_TAG':
+				$result = __('Tag', 'vikbooking');
+				break;
+			case 'VBO_COLOR':
+				$result = __('Color', 'vikbooking');
+				break;
+			case 'VBO_TITLE':
+				$result = __('Title', 'vikbooking');
+				break;
+			case 'VBO_ASSIGNEES':
+				$result = __('Assignees', 'vikbooking');
+				break;
+			case 'VBO_DUE_DATE':
+				$result = __('Due', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_GROUP_TYPE_SCHEDULED':
+				$result = __('Scheduled', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_GROUP_TYPE_ONGOING':
+				$result = __('Ongoing', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_GROUP_TYPE_CLOSED':
+				$result = __('Closed', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_TYPE_PENDING':
+				$result = __('Pending', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_TYPE_NOTSTARTED':
+				$result = __('Not started', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_TYPE_ACCEPTED':
+				$result = __('Accepted', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_TYPE_INPROGRESS':
+				$result = __('In progress', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_TYPE_PAUSED':
+				$result = __('Paused', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_TYPE_COMPLETED':
+				$result = __('Completed', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_TYPE_CANCELLED':
+				$result = __('Cancelled', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_TYPE_ARCHIVED':
+				$result = __('Archived', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUSES':
+				$result = __('Task statuses', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUSES_PLACEHOLDER':
+				$result = __('Select some task status options', 'vikbooking');
+				break;
+			case 'VBO_TASK':
+				$result = __('Task', 'vikbooking');
+				break;
+			case 'VBO_WORK_DAYS':
+				$result = __('Work days', 'vikbooking');
+				break;
+			case 'VBO_WORK_DAYS_OFF':
+				$result = __('Days off', 'vikbooking');
+				break;
+			case 'VBO_WORK_DAYS_ON':
+				$result = __('Extra work days', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_CLEANING_TURNOVER':
+				$result = __('Turnover Cleaning', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_MAINTENANCE_TURNOVER':
+				$result = __('Turnover Maintenance', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_CLEANING_DAILY':
+				$result = __('Daily Cleaning', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_MAINTENANCE_DAILY':
+				$result = __('Daily Maintenance', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_CLEANING_WEEKLY':
+				$result = __('Weekly Cleaning', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_MAINTENANCE_WEEKLY':
+				$result = __('Weekly Maintenance', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_CLEANING_MONTHLY':
+				$result = __('Monthly Cleaning', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_MAINTENANCE_MONTHLY':
+				$result = __('Monthly Maintenance', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTTM':
+				$result = __('Task Manager', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTNT':
+				$result = __('Tasks created', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTMT':
+				$result = __('Tasks modified', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTCT':
+				$result = __('Tasks cancelled', 'vikbooking');
+				break;
+			case 'VBO_BOARD':
+				$result = __('Board', 'vikbooking');
+				break;
+			case 'VBO_LIST':
+				$result = __('List', 'vikbooking');
+				break;
+			case 'VBO_ADD_TITLE':
+				$result = __('Add Title', 'vikbooking');
+				break;
+			case 'VBO_ASSIGNEE':
+				$result = __('Assignee', 'vikbooking');
+				break;
+			case 'VBO_UNASSIGNED':
+				$result = __('Unassigned', 'vikbooking');
+				break;
+			case 'VBO_THIS_WEEK':
+				$result = __('This week', 'vikbooking');
+				break;
+			case 'VBO_THIS_MONTH':
+				$result = __('This month', 'vikbooking');
+				break;
+			case 'VBO_CUSTOM':
+				$result = __('Custom', 'vikbooking');
+				break;
+			case 'VBO_NO_MORE_RECORDS':
+				$result = __('There are no more records.', 'vikbooking');
+				break;
+			case 'VBO_LOAD_MORE':
+				$result = __('Load more', 'vikbooking');
+				break;
+			case 'VBO_DURATION':
+				$result = __('Duration', 'vikbooking');
+				break;
+			case 'VBO_DEF_TASK_DURATION':
+				$result = __('Default task duration', 'vikbooking');
+				break;
+			case 'VBO_DEF_TASK_DURATION_HELP':
+				$result = __('The default duration in minutes for the tasks.', 'vikbooking');
+				break;
+			case 'VBO_BEGIN_DATE':
+				$result = __('Started', 'vikbooking');
+				break;
+			case 'VBO_FINISH_DATE':
+				$result = __('Finished', 'vikbooking');
+				break;
+			case 'VBO_ACCEPT_TASKS':
+				$result = __('Accept tasks', 'vikbooking');
+				break;
+			case 'VBO_ADD_TO_QUEUE':
+				$result = __('Add to queue', 'vikbooking');
+				break;
+			case 'VBO_PENDING_QUEUE':
+				$result = __('Pending Updates', 'vikbooking');
+				break;
+			case 'VBO_CHAT_YOU':
+				$result = __('You', 'vikbooking');
+				break;
+			case 'VBO_CHAT_TEXTAREA_PLACEHOLDER':
+				$result = __('Type your message...', 'vikbooking');
+				break;
+			case 'VBO_CHAT_SENDING_ERR':
+				$result = __('An error occurred while sending the message. Please, try again.', 'vikbooking');
+				break;
+			case 'VBO_ATTACH':
+				$result = __('Attach Files', 'vikbooking');
+				break;
+			case 'VBO_W_OPERATORSCHAT_TITLE':
+				$result = __('Operators Chat', 'vikbooking');
+				break;
+			case 'VBO_W_OPERATORSCHAT_DESCR':
+				$result = __('The operators chat interface to handle conversations about various contexts.', 'vikbooking');
+				break;
+			case 'VBO_CHAT_SEE_TASK':
+				$result = __('View task', 'vikbooking');
+				break;
+			case 'VBO_CHAT_THREADS_EMPTY_TITLE':
+				$result = __('No conversation started yet.', 'vikbooking');
+				break;
+			case 'VBO_CHAT_THREADS_EMPTY_SUBTITLE':
+				$result = __('You can start a new conversation from pages that support an internal chat system, such as the task management page.', 'vikbooking');
+				break;
+			case 'VBO_CHAT_CONV_EMPTY_SUBTITLE':
+				$result = __('Choose a thread to open the chat.', 'vikbooking');
+				break;
+			case 'VBO_CHAT_MESSAGE_MAIL_NOTIFICATION_SUBJECT':
+				$result = _x('{context} - New message from {sender}', 'Template string with placeholder tags', 'vikbooking');
+				break;
+			case 'VBO_CHAT_MESSAGE_MAIL_NOTIFICATION_BODY':
+				$result = _x('<p>Hi {recipient},</p><p>{sender} left a message in the <strong>{context}</strong> conversation.</p><p>{sender} said:</p><blockquote>{message}</blockquote><br><br><p>Please respond by visiting the following link:<br><a href="{url}" target="_blank">{url}</a></p>', 'Template string with placeholder and HTML tags', 'vikbooking');
+				break;
+			case 'VBO_CHAT_MESSAGE_MAIL_NOTIFICATION_NOCONT':
+				$result = __('- Blank message -', 'vikbooking');
+				break;
+			case 'VBO_SEARCH_TASKS':
+				$result = __('Search Tasks', 'vikbooking');
+				break;
+			case 'VBO_TASK_NO_ASSIGNEES':
+				$result = __('No assignees', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_TITLE_CHANGED':
+				$result = _x('Title changed from <strong>%s</strong> to <strong>%s</strong>.', 'Task title modified.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_DESCRIPTION_CHANGED':
+				$result = __('Notes changed.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_STATUS_CHANGED':
+				$result = _x('Status changed from %s to %s.', 'Task status modified.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_DUEDATE_CHANGED':
+				$result = _x('Due date changed from <em>%s</em> to <em>%s</em>.', 'Task due date modified.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_BOOKING_ADDED':
+				$result = _x('Assigned booking %s.', 'Assigned booking number to task.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_BOOKING_REMOVED':
+				$result = _x('Unassigned booking %s.', 'Unassigned previous booking number from task.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_BOOKING_CHANGED':
+				$result = _x('Booking changed from %s to %s.', 'Task booking assigned modified.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_TAG_ADDED':
+				$result = _x('Added %s tag.', 'Added "Turnover Cleaning" tag.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_TAGS_ADDED':
+				$result = _x('Added tags %s and %s.', 'Added tags "Turnover Cleaning", "Deep Cleaning" and "Important".', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_TAG_REMOVED':
+				$result = _x('Removed %s tag.', 'Removed "Important" tag.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_TAGS_REMOVED':
+				$result = _x('Removed tags %s and %s.', 'Removed tags "Turnover Cleaning", "Deep Cleaning" and "Important".', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_ASSIGNEE_ADDED':
+				$result = __('Added %s to assignees.', 'Added "John Smith" to assignees.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_ASSIGNEES_ADDED':
+				$result = _x('Added %s and %s to assignees.', 'Added "John Smith", "John Doe" and "Jane Doe" to assignees.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_ASSIGNEE_REMOVED':
+				$result = _x('Removed %s from assignees.', 'Removed "Jane Doe" from assignees.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_ASSIGNEES_REMOVED':
+				$result = _x('Removed %s and %s from assignees.', 'Removed "John Smith", "John Doe" and "Jane Doe" from assignees.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_ROOM_ADDED':
+				$result = _x('Assigned listing <strong>%s</strong>.', 'Assigned listing to task.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_ROOM_REMOVED':
+				$result = _x('Unassigned listing <strong>%s</strong>.', 'Unassigned previous listing from task.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_ROOM_CHANGED':
+				$result = _x('Listing changed from <strong>%s</strong> to <strong>%s</strong>.', 'Task listing assigned modified.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_TRACKER_TASK_CREATED':
+				$result = __('Task created.', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_SHOW_ACTIVITIES':
+				$result = __('Show activities', 'vikbooking');
+				break;
+			case 'VBO_HISTORY_HIDE_ACTIVITIES':
+				$result = __('Hide activities', 'vikbooking');
+				break;
+			case 'VBO_SCHEDULED_ACTIVITY':
+				$result = __('Scheduled activity', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_WRITER_TM_DEF_PROMPT':
+				$result = __('Describe the important notes for a listing cleaning task.', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUS_CHANGED_MESSAGE':
+				$result = __('I\'ve changed the task status to %s.', 'vikbooking');
+				break;
+			case 'VBO_TM_AREAS_BLANK_TITLE':
+				$result = __('No Projects/Areas Available', 'vikbooking');
+				break;
+			case 'VBO_TM_AREAS_BLANK_SUBTITLE':
+				$result = __('Create a new project/area to start organizing your tasks.', 'vikbooking');
+				break;
+			case 'VBO_TM_AREAS_BLANK_ADD_BTN':
+				$result = __('New project/area', 'vikbooking');
+				break;
+			case 'VBO_CRON_OPERATORS_REMINDER':
+				$result = __('Operators reminder', 'vikbooking');
+				break;
+			case 'VBO_YOUR_UPCOMING_TASKS':
+				$result = __('Your upcoming tasks', 'vikbooking');
+				break;
+			case 'VBO_TASK_STATUSES_DESC':
+				$result = __('Select the eligible statuses for the tasks of this project.', 'vikbooking');
+				break;
+			case 'VBO_TASK_TAGS_DESC':
+				$result = __('Tags are useful to categorize your tasks.', 'vikbooking');
+				break;
+			case 'VBO_TASK_OPERATORS_DESC':
+				$result = __('Select the eligible operators for the project.', 'vikbooking');
+				break;
+			case 'VBO_TASK_LISTINGS_DESC':
+				$result = __('Select the eligible listings for the project.', 'vikbooking');
+				break;
+			case 'VBO_TASK_AREA_PRIVATE':
+				$result = __('Private', 'vikbooking');
+				break;
+			case 'VBO_TASK_AREA_PRIVATE_HELP':
+				$result = __('Private projects are not visible to operators.', 'vikbooking');
+				break;
+			case 'VBO_TASK_NOTIF_SCHEDULING_UNASSIGNED_TITLE':
+				$result = __('Task assignment failure', 'vikbooking');
+				break;
+			case 'VBO_TASK_NOTIF_SCHEDULING_UNASSIGNED_SUMMARY':
+				$result = __('Could not assign task "%s" to any operator.', 'vikbooking');
+				break;
+			case 'VBO_OPERATOR_NO_TOOL_PERMS':
+				$result = __('No capabilities for the current operator to access this resource. Click the save button to grant the permissions.', 'vikbooking');
+				break;
+			case 'VBO_DAY_OFF':
+				$result = __('Day off', 'vikbooking');
+				break;
+			case 'VBO_WORKING_HOURS':
+				$result = __('Working hours', 'vikbooking');
+				break;
+			case 'VBO_EXCEPTIONS':
+				$result = __('Exceptions', 'vikbooking');
+				break;
+			case 'VBO_WORK_DAYS_WEEK_HELP':
+				$result = __('Set the default weekly workdays. The number of working hours per day is used by the Task Manager to automatically assign tasks to the operator based on their estimated duration.', 'vikbooking');
+				break;
+			case 'VBO_WORK_DAYS_EXCEPTIONS_HELP':
+				$result = __('Set exceptions to the default schedule by defining specific days off or additional availability for particular dates.', 'vikbooking');
+				break;
+			case 'VBO_CHANGE_LINENS':
+				$result = __('Change Linens', 'vikbooking');
+				break;
+			case 'VBO_SUPERVISOR_REVIEW':
+				$result = __('Supervisor Review', 'vikbooking');
+				break;
+			case 'VBO_DEEP_CLEANING':
+				$result = __('Deep Cleaning', 'vikbooking');
+				break;
+			case 'VBO_INSPECTION_NEEDED':
+				$result = __('Inspection Needed', 'vikbooking');
+				break;
+			case 'VBO_GUEST_REQUEST':
+				$result = __('Guest Request', 'vikbooking');
+				break;
+			case 'VBO_MAINTENANCE_ALERT':
+				$result = __('Maintenance Alert', 'vikbooking');
+				break;
+			case 'VBO_NO_SERVICE_REQUESTED':
+				$result = __('No Service Requested', 'vikbooking');
+				break;
+			case 'VBO_HIGH_PRIORITY':
+				$result = __('High Priority', 'vikbooking');
+				break;
+			case 'VBO_CHARGE_AUTHORIZED_CARD':
+				$result = __('Charge Authorized Card', 'vikbooking');
 				break;
 		}
 

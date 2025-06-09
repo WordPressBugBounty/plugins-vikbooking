@@ -336,6 +336,26 @@ class VikBookingBuilder
 				'transaction' => $status->transaction,
 			);
 		}, 10, 3);
+
+		// manipulate response to be compliant with the off-session capturing requests
+		add_action('payment_after_offsession_capture_vikbooking', function($payment, $status, &$response)
+		{
+			/**
+			 * Transaction property can be used to perform refunds, and it's collected
+			 * and returned during charge/capture transactions only.
+			 * 
+			 * @since 	1.8.0
+			 */
+
+			// manipulate the response to be compliant with any platform
+			$response = array(
+				'verified' 	  => (int) $status->isVerified(),
+				'tot_paid' 	  => $status->amount,
+				'tot_fees' 	  => $status->fees ?? null,
+				'log'	   	  => $status->log ?? null,
+				'transaction' => $status->transaction ?? null,
+			);
+		}, 10, 3);
 	}
 
 	/**
@@ -533,6 +553,19 @@ class VikBookingBuilder
 		 */
 		add_action('vikbooking_before_import_backup', function($manifest, $path) use ($hasShortcodes)
 		{
+			if (!function_exists('is_plugin_active')) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
+			/**
+			 * Abort the backup import process in case Rank Math SEO plugin is installed and active.
+			 * 
+			 * @since 1.8
+			 */
+			if (is_plugin_active('seo-by-rank-math/rank-math.php')) {
+				throw new Exception('The <strong>Rank Math SEO</strong> plugin appears to be installed on your website. Before proceeding with the restoration, it is necessary to deactivate this plugin. Once the data installation is complete, you will be able to re-enable it.', 409);
+			}
+
 			// check whether the manifest includes the shortcodes installation
 			$manifest->shortcodes = $hasShortcodes($manifest);
 

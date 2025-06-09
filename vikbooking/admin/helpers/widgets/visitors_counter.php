@@ -91,7 +91,7 @@ class VikBookingAdminWidgetVisitorsCounter extends VikBookingAdminWidget
 		echo implode(';', array($tot_today, $tot_month, $tot_last_month, $pcent_month));
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;
@@ -246,7 +246,7 @@ class VikBookingAdminWidgetVisitorsCounter extends VikBookingAdminWidget
 				);
 			}
 
-			jQuery(document).ready(function() {
+			jQuery(function() {
 				// run the AJAX request when the page loads
 				vboWidgetVscCountVisitors();
 

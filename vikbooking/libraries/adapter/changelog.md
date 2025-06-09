@@ -1,5 +1,40 @@
 # Framework Changelog
 
+### 10.1.63
+
+*Release date - 9 June 2025*
+
+##### ADD
+
+* Added support for off session charge in payment framework.
+
+##### BUG FIXES
+
+* Improved the chosen rendering for the system dropdowns.
+* Compatibility improvements for PHP 8.4.
+
+---
+
+### 10.1.62
+
+*Release date - 7 May 2025*
+
+##### BUG FIXES
+
+* Fixed an issue that was no longer setting the SMTP properties of a PHPMailer object.
+
+---
+
+### 10.1.61
+
+*Release date - 3 April 2025*
+
+##### BUG FIXES
+
+* Fixed an issue that was no longer updating the properties of a PHPMailer object.
+
+---
+
 ### 10.1.60
 
 *Release date - 24 February 2025*

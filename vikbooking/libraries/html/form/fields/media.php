@@ -57,7 +57,7 @@ JText::script('JMEDIA_SELECT');
 
 <script>
 	
-	jQuery(document).ready(function($) {
+	jQuery(function($) {
 		var file_frame;
 		var multiple = <?php echo $multiple ? 'true' : 'false'; ?>;
 

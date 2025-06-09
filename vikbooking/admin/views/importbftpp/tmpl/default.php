@@ -294,7 +294,7 @@ function vboToggleAllResImport(doimport) {
 	});
 }
 
-jQuery(document).ready(function() {
+jQuery(function() {
 	if (jQuery('#vbo-importbftpp-plugins-sel').length) {
 		jQuery('#vbo-importbftpp-plugins-sel').select2();
 	}

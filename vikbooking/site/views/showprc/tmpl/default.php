@@ -109,7 +109,7 @@ foreach ($this->rooms as $num => $r) {
 	}
 }
 $vikfx = '
-jQuery(document).ready(function() {
+jQuery(function() {
 ';
 foreach ($gallery_data as $num => $gallery) {
 	$vikfx .= '

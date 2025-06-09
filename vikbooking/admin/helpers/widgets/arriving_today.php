@@ -46,7 +46,7 @@ class VikBookingAdminWidgetArrivingToday extends VikBookingAdminWidget
 		$this->widgetStyleName = 'light-red';
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;

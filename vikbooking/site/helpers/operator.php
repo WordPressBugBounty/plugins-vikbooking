@@ -25,6 +25,14 @@ final class VikBookingOperator
 	protected static $instance = null;
 
 	/**
+	 * A cache array holding all the existing operators.
+	 * 
+	 * @var array[]
+	 * @since 1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected $operators = null;
+
+	/**
 	 * The various tool permission types.
 	 *
 	 * @var 	array
@@ -62,23 +70,37 @@ final class VikBookingOperator
 
 	/**
 	 * Returns the list of all the operators.
+	 * 
+	 * @param 	array 	$ids 	Optional list of IDs to filter.
 	 *
 	 * @return 	array 	The list of operators
+	 * 
+	 * @since   1.18.0 (J) - 1.8.0 (WP) The method now caches all the operators to prevent duplicate queries.
 	 */
-	public function getAll()
+	public function getAll(array $ids = [])
 	{
 		$dbo = JFactory::getDbo();
 
-		$operators = [];
-		
-		$q = "SELECT * FROM `#__vikbooking_operators` ORDER BY `first_name` ASC, `last_name` ASC;";
-		$dbo->setQuery($q);
-		$all = $dbo->loadAssocList();
-		foreach ($all as $o) {
-			$operators[$o['id']] = $o;
+		if (is_null($this->operators)) {
+			$this->operators = [];
+
+			$q = $dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_operators'))
+				->order($dbo->qn('first_name') . ' ASC')
+				->order($dbo->qn('last_name') . ' ASC');
+
+			$dbo->setQuery($q);
+
+			foreach ($dbo->loadAssocList() as $o) {
+				$this->operators[$o['id']] = $o;
+			}
 		}
 
-		return $operators;
+		// take only the operators matching the specified query
+		return array_filter($this->operators, function($o) use ($ids) {
+			return !$ids || in_array($o['id'], $ids);
+		});
 	}
 
 	/**
@@ -106,8 +128,41 @@ final class VikBookingOperator
 		}
 
 		$operator['perms'] = !empty($operator['perms']) ? (array) json_decode($operator['perms'], true) : [];
+		$operator['work_days_week'] = !empty($operator['work_days_week']) ? (array) json_decode($operator['work_days_week'], true) : [];
+		$operator['work_days_exceptions'] = !empty($operator['work_days_exceptions']) ? (array) json_decode($operator['work_days_exceptions'], true) : [];
 
 		return $operator;
+	}
+
+	/**
+	 * Returns a list of operators compatible for rendering them as elements.
+	 * 
+	 * @param 	array 	$ids 	Optional list of IDs to filter.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function getElements(array $ids = [])
+	{
+		$elements = [];
+
+		foreach ($this->getAll($ids) as $operator) {
+			// check for operator's avatar picture
+			$operator_pic = $operator['pic'] ?: '';
+			if ($operator_pic) {
+				$operator_pic = strpos($operator_pic, 'http') === 0 ? $operator_pic : VBO_SITE_URI . 'resources/uploads/' . $operator_pic;
+			}
+
+			// push operator element
+			$elements[] = [
+				'id'      => $operator['id'],
+				'name'    => ltrim($operator['first_name'] . ' ' . $operator['last_name']),
+				'img_uri' => $operator_pic,
+			];
+		}
+
+		return $elements;
 	}
 
 	/**
@@ -126,8 +181,7 @@ final class VikBookingOperator
 		}
 
 		foreach ($operators as $k => $v) {
-			$perms = !empty($v['perms']) ? json_decode($v['perms'], true) : [];
-			$perms = !is_array($perms) ? [] : $perms;
+			$perms = !empty($v['perms']) && is_string($v['perms']) ? (array) json_decode($v['perms'], true) : [];
 			$operators[$k]['perms'] = $perms;
 			$enabled = false;
 			foreach ($perms as $perm) {
@@ -224,7 +278,12 @@ final class VikBookingOperator
 		$session = JFactory::getSession();
 		$cookie  = JFactory::getApplication()->input->cookie;
 
-		$q = "SELECT * FROM `#__vikbooking_operators` WHERE `code`=" . $dbo->q($code);
+		/**
+		 * The operators authentication process is now case sensitive.
+		 * 
+		 * @since 1.18 (J) - 1.8 (WP)
+		 */
+		$q = "SELECT * FROM `#__vikbooking_operators` WHERE BINARY `code` = " . $dbo->q($code);
 		$dbo->setQuery($q, 0, 1);
 		$operator = $dbo->loadAssoc();
 
@@ -543,6 +602,45 @@ final class VikBookingOperator
 						'asset_options' => [
 							'placeholder' => JText::translate('VBCOUPONALLVEHICLES'),
 							'allowClear'  => true,
+						],
+					],
+				],
+				// this native tool is rendered through a layout thanks to a callback
+				'rendering_type' => 'layout',
+				'rendering_callback' => function ($tool, $operator, $permissions, $tool_uri) {
+					VikBooking::getOperatorInstance()->renderNativeToolLayout($tool, $operator, $permissions, $tool_uri);
+				},
+			],
+			'task_manager' => [
+				'name'        => JText::translate('VBO_TASK_MANAGER'),
+				'icon'        => '<i class="' . VikBookingIcons::i('tasks') . '"></i>',
+				'permissions' => [
+					'accept_tasks' => [
+						'type'    => 'select',
+						'label'   => JText::translate('VBO_ACCEPT_TASKS'),
+						'options' => [
+							1 => JText::translate('VBYES'),
+							0 => JText::translate('VBNO'),
+						],
+					],
+				],
+				// this native tool is rendered through a layout thanks to a callback
+				'rendering_type' => 'layout',
+				'rendering_callback' => function ($tool, $operator, $permissions, $tool_uri) {
+					VikBooking::getOperatorInstance()->renderNativeToolLayout($tool, $operator, $permissions, $tool_uri);
+				},
+			],
+			'work_days' => [
+				'name'        => JText::translate('VBO_WORK_DAYS'),
+				'icon'        => '<i class="' . VikBookingIcons::i('toolbox') . '"></i>',
+				'permissions' => [
+					'work_days_exceptions' => [
+						'type'    => 'select',
+						'label'   => JText::translate('VBO_EXCEPTIONS'),
+						'help'    => implode(' - ', [JText::translate('VBO_WORK_DAYS_OFF'), JText::translate('VBO_WORK_DAYS_ON')]),
+						'options' => [
+							1 => JText::translate('VBYES'),
+							0 => JText::translate('VBNO'),
 						],
 					],
 				],

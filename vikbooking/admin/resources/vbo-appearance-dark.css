@@ -16,6 +16,7 @@
     --vbo-body-bg-color: #0f1216;
     --vbo-main-bg-color: #0f1216;
     --vbo-body-text-color: rgba(255, 255, 255, 0.87);
+    --vbo-table-light-grey: #373737;
     
     /* main bg and text color */
     --vbo-container-text-color:rgba(255, 255, 255, 0.87);
@@ -53,28 +54,85 @@
     /* General Colors */
     --vbo-red-color: #da5f5f;
     --vbo-red-color-hover: #f38a8a;
+
     --vbo-orange-color: #d09754;
     --vbo-orange-color-hover: #be8340;
+    
     --vbo-green-color: #489e48;
     --vbo-green-color-hover: #428242;
     --vbo-green-color-focus: #65c265;
+    
     --vbo-light-green-color: #4e754c;
 	--vbo-light-green-color-hover: #365335;
+    
     --vbo-blue-color: #2f6f8e;
     --vbo-blue-color-hover: #498fb3;
+    
     --vbo-gold-color: #ccc450;
 	--vbo-purple-color: #b746df;
     --vbo-ai-color: #8b5fe8;
     
     /* Notification Status */
     --vbo-info-bg: #5488b0;
+    --vbo-info-txt: #d5d5d5;
     --vbo-info-border: #4e7891;
+
     --vbo-warning-bg: #ffe8bb;
     --vbo-warning-bg-txt: #df7212;
     --vbo-warning-border: #d99323;
+    
     --vbo-error-bg: #eab0b0;
 	--vbo-error-txt: #800;
     --vbo-error-border: #ea6060;
+
+    /* Tag colors */
+	--vbo-tag-red-bg: #de555373;
+	--vbo-tag-red-txt: #d5d5d5;
+	--vbo-tag-red-border: #2e2423;
+
+	--vbo-tag-green-bg: #2d996480;
+	--vbo-tag-green-txt: #eee;
+	--vbo-tag-green-border: #182c18;
+
+    --vbo-tag-olive-bg: #A7C08B8A;
+	--vbo-tag-olive-txt: #E5EEDC;
+	--vbo-tag-olive-border: #2f3d1f;
+
+	--vbo-tag-blue-bg: #3372a980;
+	--vbo-tag-blue-txt: #c6cae1;
+	--vbo-tag-blue-border: #112a50;
+
+	--vbo-tag-ocean-bg: #29a4d081;
+	--vbo-tag-ocean-txt: #fff;
+	--vbo-tag-ocean-border: #1e414b;
+
+	--vbo-tag-brown-bg: #b8654373;
+	--vbo-tag-brown-txt: #ffeae3;
+	--vbo-tag-brown-border: #3a2d24;
+
+	--vbo-tag-yellow-bg: #fab14380;
+	--vbo-tag-yellow-txt: #f7e6c0;
+	--vbo-tag-yellow-border: #322d1c;
+
+	--vbo-tag-orange-bg: #e97e2373;
+	--vbo-tag-orange-txt: #ffe1c3;
+	--vbo-tag-orange-border: #341e0f;
+
+	--vbo-tag-purple-bg: #b572f570;
+	--vbo-tag-purple-txt: #e1e1e1;
+	--vbo-tag-purple-border: #3b2349;
+
+	--vbo-tag-pink-bg: #dc4c9166;
+	--vbo-tag-pink-txt: #f9f9f9;
+	--vbo-tag-pink-border: #361424;
+
+	--vbo-tag-black-bg: #a6a6a621;
+	--vbo-tag-black-txt: #bebebe;
+	--vbo-tag-black-border: #929292;
+
+	--vbo-tag-gray-bg: #fff3;
+	--vbo-tag-gray-txt: #ece6e6;
+	--vbo-tag-gray-border: #7e7e7e;
 
     /* VCM Chat Message */
     --vcm-chat-background: #0b1117;
@@ -573,13 +631,13 @@ code, kbd {
 }
 .chat-conversation .chat-message .speech-bubble.received {
     background: #3c404c !important;
-    border-color: #3c404c;
+    border-color: #3c404c !important;
     color: #fff !important;
 }
 .chat-conversation .chat-message .speech-bubble.sent {
     background: #003f75 !important;
-    color: #fff;
-    border-color: #003f75;
+    color: #fff !important;
+    border-color: #003f75 !important;
 }
 .chat-input-footer .chat-uploads-bar .chat-attachment {
     background-color: var(--vbo-light-color-btn) !important;
@@ -587,7 +645,7 @@ code, kbd {
 }
 .chat-conversation .chat-message .speech-bubble.sent.ai-reply:before {
     background: #000b15 !important;
-    border-color: #003f75;
+    border-color: #003f75 !important;
 }
 .chat-conversation .chat-message .speech-bubble.sent ~ .reactions {
     background: #003f75 !important;
@@ -600,8 +658,9 @@ code, kbd {
 .chat-conversation .chat-message .speech-bubble.sent:not(.is-attachment) a {
     color: #fff;
 }
-.vbo-w-guestmessages-message-new {
-    background: #283d62; 
+.vbo-w-guestmessages-message-new,
+.vbo-chat-interface .vbo-chat-threads .chat-thread[data-read="0"] {
+    background: #283d62 !important;
 }
 /* VikBooking Telephone */
 .iti__country-list {
@@ -612,8 +671,8 @@ code, kbd {
     background-color: var(--vbo-light-color-btn);
 }
 /* Content Builder */
-.ql-toolbar.ql-snow + .ql-container.ql-snow  {
-    background: var(--vbo-middle-color-btn);
+.ql-toolbar.ql-snow + .ql-container.ql-snow, .vbo-tm-panel-editor {
+    background: var(--vbo-middle-color-btn) !important;
 }
 
 /* @Joomla */
@@ -891,7 +950,7 @@ body.admin .label-warning, .label-warning, .badge-warning {
 
 /* Dropdown Context Menu */
 .vik-context-menu.vbo-dropdown-cxmenu {
-    background: var(--vbo-main-bg-color);
+    background: var(--vbo-config-bg-color);
 }
 
 /* Joomla4 */
@@ -1160,4 +1219,65 @@ joomla-toolbar-button .dropdown-menu  {
 /* AI channel */
 .aitools-message-addon .vbo-ai-source-badge-details {
     color: #fff;
+}
+
+/* Color Tags */
+.vbo-tagcolors-elems-wrap .red, .vbo-tm-color.red, .vbo-colortag-circle.red {
+	background-color: var(--vbo-tag-red-bg);
+	border-color: var(--vbo-tag-red-border);
+}
+.vbo-tagcolors-elems-wrap .green, .vbo-tm-color.green, .vbo-colortag-circle.green {
+	background-color: var(--vbo-tag-green-bg);
+	border-color: var(--vbo-tag-green-border);
+}
+.vbo-tagcolors-elems-wrap .olive, .vbo-tm-color.olive, .vbo-colortag-circle.olive {
+	background-color: var(--vbo-tag-olive-bg);
+	border-color: var(--vbo-tag-olive-border);
+}
+.vbo-tagcolors-elems-wrap .blue, .vbo-tm-color.blue, .vbo-colortag-circle.blue {
+	background-color: var(--vbo-tag-blue-bg);
+	border-color: var(--vbo-tag-blue-border);
+}
+.vbo-tagcolors-elems-wrap .ocean, .vbo-tm-color.ocean, .vbo-colortag-circle.ocean {
+	background-color: var(--vbo-tag-ocean-bg);
+	border-color: var(--vbo-tag-ocean-border);
+}
+.vbo-tagcolors-elems-wrap .brown, .vbo-tm-color.brown, .vbo-colortag-circle.brown {
+	background-color: var(--vbo-tag-brown-bg);
+	border-color: var(--vbo-tag-brown-border);
+}
+.vbo-tagcolors-elems-wrap .yellow, .vbo-tm-color.yellow, .vbo-colortag-circle.yellow {
+	background-color: var(--vbo-tag-yellow-bg);
+	border-color: var(--vbo-tag-yellow-border);
+}
+.vbo-tagcolors-elems-wrap .orange, .vbo-tm-color.orange, .vbo-colortag-circle.orange {
+	background-color: var(--vbo-tag-orange-bg);
+	border-color: var(--vbo-tag-orange-border);
+}
+.vbo-tagcolors-elems-wrap .purple, .vbo-tm-color.purple, .vbo-colortag-circle.purple {
+	background-color: var(--vbo-tag-purple-bg);
+	border-color: var(--vbo-tag-purple-border);
+}
+.vbo-tagcolors-elems-wrap .pink, .vbo-tm-color.pink, .vbo-colortag-circle.pink {
+	background-color: var(--vbo-tag-pink-bg);
+	border-color: var(--vbo-tag-pink-border);
+}
+.vbo-tagcolors-elems-wrap .black, .vbo-tm-color.black, .vbo-colortag-circle.black {
+	background-color: var(--vbo-tag-black-bg);
+	border-color: var(--vbo-tag-black-border);
+}
+.vbo-tagcolors-elems-wrap .gray, .vbo-tm-color.gray, .vbo-colortag-circle.gray {
+	background-color: var(--vbo-tag-gray-bg);
+	border-color: var(--vbo-tag-gray-border);
+}
+
+/* Task Manager */
+.vbo-history-timeline .history-timeline-change {
+    border-color: #3076b3;
+}
+.vbo-history-timeline .history-timeline-change .change-icon {
+    background: #3076b3;
+}
+.vbo-history-timeline .history-timeline-change .change-details .change-events-list {
+    background: #4f4f4f;   
 }

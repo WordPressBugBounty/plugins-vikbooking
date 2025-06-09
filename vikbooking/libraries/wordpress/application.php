@@ -508,7 +508,7 @@ if (!class_exists('VikApplication'))
 				$data = $options ? json_encode($options) : '{}';
 				JFactory::getDocument()->addScriptDeclaration(
 <<<JS
-jQuery(document).ready(function() {
+jQuery(function() {
 	jQuery('$selector').popover($data);
 });
 JS

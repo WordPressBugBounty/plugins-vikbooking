@@ -1354,6 +1354,9 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 		// codigo municipio list
 		$municipio_codes_list = VBOCheckinPaxfieldTypeSpainMunicipio::loadMunicipioCodes();
 
+		// codigo municipio 6-digit list
+		$municipio_sixdigit_codes_list = VBOCheckinPaxfieldTypeSpainMunicipio::loadMunicipioSixDigitCodes();
+
 		// loop over the bookings to build the rows of the report
 		$from_info = getdate($from_ts);
 		foreach ($bookings as $gbook) {
@@ -1536,7 +1539,18 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 					'callback' => function($val) {
 						return $this->sexo[$val] ?? 'O';
 					},
-					'no_export_callback' => 1,
+					'export_callback' => function($val) {
+						if ($val == 'H') {
+							// for "Hombre" return "M" (Male)
+							return 'M';
+						}
+						if ($val == 'M') {
+							// for "Mujer" return "F" (Female)
+							return 'F';
+						}
+						// return "O" (Other) by default
+						return 'O';
+					},
 					'value' => $spain_gender,
 				));
 
@@ -1586,7 +1600,29 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 					'callback' => function($val) {
 						return empty($val) ? '?' : $val;
 					},
-					'no_export_callback' => 1,
+					'export_callback' => function($val) {
+						if (empty($val)) {
+							// other documents
+							return 'O';
+						}
+						if ($val == 'NIF' || $val == 'DNI' || $val == 'TIE') {
+							// NIF / DNI / TIE
+							return 'D';
+						}
+						if ($val == 'NIE') {
+							// NIE
+							return 'N';
+						}
+						if ($val == 'PAS') {
+							// PAS
+							return 'P';
+						}
+						if ($val == 'OTRO') {
+							// OTRO
+							return 'O';
+						}
+						return $val;
+					},
 					'value' => $doctype,
 				));
 
@@ -1613,7 +1649,7 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 						return empty($val) ? '?' : $val;
 					},
 					'no_export_callback' => 1,
-					'value' => $docnum,
+					'value' => trim($docnum),
 				));
 
 				// número de soporte del documento
@@ -1664,7 +1700,7 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 					),
 					'callback' => function($val) {
 						if (!empty($val) && is_numeric($val)) {
-							return date('Y-m-d', $val);
+							return date('Ymd', $val);
 						}
 						return $val ?: '?';
 					},
@@ -1757,7 +1793,25 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 					'callback' => function($val) use ($municipio_codes_list) {
 						return empty($val) ? '?' : ($municipio_codes_list[$val] ?? $val);
 					},
-					'no_export_callback' => 1,
+					'export_callback' => function($val) use ($municipio_codes_list, $municipio_sixdigit_codes_list) {
+						// the 6-digit municipality code is required for export, so we try to map it
+						if (strlen((string) $val) === 6 || !isset($municipio_codes_list[$val])) {
+							return $val;
+						}
+						if (strlen((string) $val) === 5) {
+							// must be the 5-digit municipality code from SES Hospedajes, try to map it with the 6 digit
+							$municipio_name = $municipio_codes_list[$val];
+							foreach ($municipio_sixdigit_codes_list as $sixd_code => $sixd_municipio_name) {
+								if (!strcasecmp($municipio_name, $sixd_municipio_name)) {
+									return $sixd_code;
+								}
+								if (!strcasecmp(preg_replace('/[^a-z]/i', '', $municipio_name), preg_replace('/[^a-z]/i', '', $sixd_municipio_name))) {
+									return $sixd_code;
+								}
+							}
+						}
+						return $val;
+					},
 					'value' => $municipio,
 				));
 
@@ -1904,7 +1958,14 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 					'callback' => function($val) {
 						return $val ?: '---';
 					},
-					'no_export_callback' => 1,
+					'export_callback' => function($val) {
+						if (substr((string) $val, 0, 1) == '+') {
+							// phone number should not include the + symbol
+							$val = substr($val, 1);
+						}
+						// maximum allowed length is 20 chars
+						return substr((string) $val, 0, 20);
+					},
 					'value' => $phone,
 				));
 
@@ -2206,7 +2267,8 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 		$file_content = '';
 
 		// add first line (LÍNEA AGRUPACIÓN) to text file content
-		$file_content .= implode($data_separator, [0, count($this->rows)]) . $lines_separator;
+		// use 0 for the line identifier, then the number of establishments, which is 1 by default
+		$file_content .= implode($data_separator, [0, 1]) . $lines_separator;
 
 		// add second line (LÍNEA ESTABLECIMIENTO) to text file content
 		$file_content .= implode($data_separator, [
@@ -2257,7 +2319,7 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 				$guest_line = [2];
 
 				// tell whether the guest is Spanish
-				$is_spanish = !empty($row_data['doctype']) && !strcasecmp($row_data['doctype'], 'NIF');
+				$is_spanish = !empty($row_data['doctype']) && (!strcasecmp($row_data['doctype'], 'NIF') || !strcasecmp($row_data['doctype'], 'D'));
 
 				// Número de documento español
 				$guest_line[] = $is_spanish ? $row_data['docnum'] : '';
@@ -2283,17 +2345,17 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 				}
 
 				// Primer apellido (main/first last name)
-				$guest_line[] = $last_name_one;
+				$guest_line[] = strtoupper($this->transliterateToAscii($last_name_one));
 
 				// Segundo apellido (second last name)
 				if ($last_name_one != $last_name_two || $is_spanish) {
-					$guest_line[] = $last_name_two;
+					$guest_line[] = strtoupper($this->transliterateToAscii($last_name_two));
 				} else {
 					$guest_line[] = '';
 				}
 
 				// Nombre (first name)
-				$guest_line[] = $row_data['first_name'];
+				$guest_line[] = strtoupper($this->transliterateToAscii((string) $row_data['first_name']));
 
 				// Sexo
 				$guest_line[] = $row_data['gender'];
@@ -2415,7 +2477,9 @@ class VikBookingReportEsMossosDesquadra extends VikBookingReport
 
 		foreach ($row as $field) {
 			$field_val = $field['value'];
-			if (!($field['no_export_callback'] ?? 0) && is_callable($field['callback'] ?? null)) {
+			if (!($field['no_export_callback'] ?? 0) && is_callable($field['export_callback'] ?? null)) {
+				$field_val = $field['export_callback']($field_val);
+			} elseif (!($field['no_export_callback'] ?? 0) && is_callable($field['callback'] ?? null)) {
 				$field_val = $field['callback']($field_val);
 			}
 			$row_data[$field['key']] = $field_val;

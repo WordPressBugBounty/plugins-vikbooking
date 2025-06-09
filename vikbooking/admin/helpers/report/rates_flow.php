@@ -235,7 +235,7 @@ class VikBookingReportRatesFlow extends VikBookingReport
 			}
 		}
 
-		$js = 'jQuery(document).ready(function() {
+		$js = 'jQuery(function() {
 			jQuery(".vbo-report-datepicker:input").datepicker({
 				'.(!empty($mindate) ? 'minDate: "'.date($df, $mindate).'", ' : '').'
 				'.(!empty($maxdate) ? 'maxDate: "'.date($df, $maxdate).'", ' : '').'

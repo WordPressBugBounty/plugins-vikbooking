@@ -224,6 +224,318 @@ class VikBookingControllerBookings extends JControllerAdmin
 	}
 
 	/**
+	 * AJAX endpoint to dynamically search for bookings. Compatible with select2.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function bookings_search()
+	{
+		if (!JSession::checkToken()) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
+		$dbo = JFactory::getDbo();
+		$app = JFactory::getApplication();
+
+		$booking_key = trim($app->input->getString('term', ''));
+		$booking_status = array_values(array_filter((array) $app->input->get('status', [], 'array')));
+
+		$response = [
+			'results' => [],
+			'pagination' => [
+				'more' => false,
+			],
+		];
+
+		if (empty($booking_key)) {
+			// output the JSON object with no results
+			VBOHttpDocument::getInstance($app)->json($response);
+		}
+
+		// attempt to detect a booking ID
+		$booking_id = 0;
+		if (preg_match("/^[0-9]+$/", $booking_key)) {
+			// only numbers should be a booking ID
+			$booking_id = $booking_key;
+		} elseif (preg_match('/^(?=.*?\d)(?=.*?[A-Z])[A-Z\d]+$/', $booking_key)) {
+			/**
+			 * Matched both numbers and upper-case letters, so it has to be an OTA booking ID, not a customer name.
+			 * Regex breakdown:
+			 * beginning of string
+			 * lookahead for at least one digit
+			 * lookahead for at least one upper-case letter
+			 * match one or more upper-case letters or digits
+			 * end of string
+			 */
+			$booking_id = $booking_key;
+		}
+
+		// start the query
+		$q = $dbo->getQuery(true)
+			->select([
+				$dbo->qn('o.id'),
+				$dbo->qn('o.custdata'),
+				$dbo->qn('o.days'),
+				$dbo->qn('o.status'),
+				$dbo->qn('o.checkin'),
+				$dbo->qn('o.checkout'),
+				$dbo->qn('o.idorderota'),
+				$dbo->qn('o.channel'),
+				$dbo->qn('c.first_name'),
+				$dbo->qn('c.last_name'),
+				$dbo->qn('c.pic'),
+			])
+			->from($dbo->qn('#__vikbooking_orders', 'o'))
+			->leftJoin($dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $dbo->qn('co.idorder') . ' = ' . $dbo->qn('o.id'))
+			->leftJoin($dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $dbo->qn('c.id') . ' = ' . $dbo->qn('co.idcustomer'))
+			->where($dbo->qn('o.closure') . ' = 0');
+
+		if ($booking_status) {
+			// filter by booking status
+			if (count($booking_status) === 1) {
+				// single booking status
+				$q->where($dbo->qn('o.status') . ' = ' . $dbo->q($booking_status[0]));
+			} else {
+				// multiple booking statuses
+				$q->where($dbo->qn('o.status') . ' IN (' . implode(', ', array_map([$dbo, 'q'], $booking_status)) . ')');
+			}
+		}
+
+		if (!empty($booking_id)) {
+			// search by booking ID or OTA booking ID only
+			if (preg_match("/^[0-9]+$/", (string) $booking_id)) {
+            	// only numbers could be both website and OTA
+				$q->andWhere([
+					$dbo->qn('o.id') . ' = ' . (int) $booking_id,
+					$dbo->qn('o.idorderota') . ' = ' . $dbo->q($booking_id),
+				], $glue = 'OR');
+			} else {
+				// alphanumeric IDs can only belong to an OTA reservation
+            	$q->where($dbo->qn('o.idorderota') . ' = ' . $dbo->q($booking_id));
+			}
+		} else {
+			// search by different values
+			if (stripos($booking_key, 'id:') === 0) {
+				// search by ID or OTA ID
+				$seek_parts = explode('id:', $booking_key);
+				$seek_value = trim($seek_parts[1]);
+				$q->andWhere([
+					$dbo->qn('o.id') . ' = ' . $dbo->q($seek_value),
+					$dbo->qn('o.idorderota') . ' = ' . $dbo->q($seek_value),
+				], $glue = 'OR');
+			} elseif (stripos($booking_key, 'otaid:') === 0) {
+				// search by OTA Booking ID
+				$seek_parts = explode('otaid:', $booking_key);
+				$seek_value = trim($seek_parts[1]);
+				$q->where($dbo->qn('o.idorderota') . ' = ' . $dbo->q($seek_value));
+			} elseif (stripos($booking_key, 'coupon:') === 0) {
+				// search by coupon code
+				$seek_parts = explode('coupon:', $booking_key);
+				$seek_value = trim($seek_parts[1]);
+				$q->where($dbo->qn('o.coupon') . ' LIKE ' . $dbo->q("%{$seek_value}%"));
+			} elseif (stripos($booking_key, 'name:') === 0) {
+				// search by customer nominative
+				$seek_parts = explode('name:', $booking_key);
+				$seek_value = trim($seek_parts[1]);
+				$q->where('CONCAT_WS(\' \', ' . $dbo->qn('c.first_name') . ', ' . $dbo->qn('c.last_name') . ') LIKE ' . $dbo->q("%{$seek_value}%"));
+			} elseif (strpos($booking_key, '@') !== false) {
+				// search by customer email
+				$q->where($dbo->qn('o.custmail') . ' = ' . $dbo->q($booking_key));
+			} elseif (strpos($booking_key, '+') === 0) {
+				// search by customer phone
+				$q->where($dbo->qn('o.phone') . ' = ' . $dbo->q($booking_key));
+			} else {
+				// seek for various values
+				if (preg_match("/^[a-z\s]+$/i", (string) $booking_key)) {
+					// when only letters (or spaces) look only for the customer name
+					$q->where('CONCAT_WS(\' \', ' . $dbo->qn('c.first_name') . ', ' . $dbo->qn('c.last_name') . ') LIKE ' . $dbo->q("%{$booking_key}%"));
+				} else {
+					// look for both customer name and booking ID
+					$q->andWhere([
+						'CONCAT_WS(\' \', ' . $dbo->qn('c.first_name') . ', ' . $dbo->qn('c.last_name') . ') LIKE ' . $dbo->q("%{$booking_key}%"),
+						$dbo->qn('o.id') . ' = ' . $dbo->q($booking_key),
+						$dbo->qn('o.idorderota') . ' = ' . $dbo->q($booking_key),
+					], $glue = 'OR');
+				}
+			}
+		}
+
+		// order by most recent bookings
+		$q->order($dbo->qn('id') . ' DESC');
+
+		$dbo->setQuery($q);
+
+		// set results found
+		$response['results'] = $dbo->loadAssocList();
+
+		// default icon for website reservations
+		$source_def_icon_cls = VikBookingIcons::i('hotel');
+
+		// map the results with the required properties
+		$response['results'] = array_map(function($booking) use ($source_def_icon_cls) {
+			// build "text" property
+			$text = $booking['id'];
+			if (!empty($booking['first_name'])) {
+				// use customer nominative when available
+				$text = trim($booking['first_name'] . ' ' . $booking['last_name']);
+			} elseif (!empty($booking['custdata'])) {
+				$text = VikBooking::getFirstCustDataField($booking['custdata']);
+			}
+			$booking['text'] = $text;
+
+			// build "img" property
+			if (!empty($booking['pic'])) {
+				// use guest profile picture
+				$booking['img'] = strpos($booking['pic'], 'http') === 0 ? $booking['pic'] : VBO_SITE_URI . 'resources/uploads/' . $booking['pic'];
+			} elseif (!empty($booking['channel'])) {
+				// use channel logo
+				$ch_logo_obj = VikBooking::getVcmChannelsLogo($booking['channel'], true);
+				$booking['img'] = is_object($ch_logo_obj) ? $ch_logo_obj->getTinyLogoURL() : '';
+			}
+
+			if (empty($booking['img'])) {
+				// always set an empty string
+				$booking['img'] = '';
+				// set the default icon class
+				$booking['icon_class'] = $source_def_icon_cls;
+			}
+
+			// return the mapped booking element
+			return $booking;
+		}, $response['results']);
+
+		// output the JSON encoded object with results found
+		VBOHttpDocument::getInstance()->json($response);
+	}
+
+	/**
+	 * AJAX endpoint to dynamically search for customers and build elements. Compatible with select2.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function customer_elements_search()
+	{
+		if (!JSession::checkToken()) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
+		$dbo = JFactory::getDbo();
+		$app = JFactory::getApplication();
+
+		$search_key = trim($app->input->getString('term', ''));
+
+		$response = [
+			'results' => [],
+			'pagination' => [
+				'more' => false,
+			],
+		];
+
+		if (empty($search_key)) {
+			// output the JSON object with no results
+			VBOHttpDocument::getInstance($app)->json($response);
+		}
+
+		// start the query
+		$q = $dbo->getQuery(true)
+			->select('*')
+			->from($dbo->qn('#__vikbooking_customers'))
+			->where(1);
+
+		if (preg_match('/^[a-z0-9\.\-\_]+\@[a-z0-9\.\-\_]+\.[a-z0-9\.\-\_]+$/i', $search_key)) {
+			// full email address detected
+			$q->where($dbo->qn('email') . ' = ' . $dbo->q($search_key));
+		} else {
+			// search by different values
+			$seek_clauses = [];
+
+			// search by nominative
+			$seek_clauses[] = 'CONCAT_WS(" ", ' . $dbo->qn('first_name') . ', ' . $dbo->qn('last_name') . ') LIKE ' . $dbo->q('%' . $search_key . '%');
+
+			// search by company name
+			$seek_clauses[] = $dbo->qn('company') . ' LIKE ' . $dbo->q('%' . $search_key . '%');
+
+			if (preg_match('/^\+?[0-9\s]+$/i', $search_key)) {
+				// search by phone number
+				$seek_clauses[] = $dbo->qn('phone') . ' = ' . $dbo->q($search_key);
+			}
+
+			if (strpos($search_key, '@') !== false) {
+				// search by email address
+				$seek_clauses[] = $dbo->qn('email') . ' LIKE ' . $dbo->q('%' . $search_key . '%');
+			}
+
+			if (preg_match('/[0-9]+/', $search_key)) {
+				// search by company VAT number
+				$seek_clauses[] = $dbo->qn('vat') . ' = ' . $dbo->q($search_key);
+
+				// search by PIN code
+				$seek_clauses[] = $dbo->qn('pin') . ' = ' . $dbo->q($search_key);
+			}
+
+			// set multiple search clauses
+			$q->andWhere($seek_clauses, 'OR');
+		}
+
+		// order by customer nominative
+		$q->order($dbo->qn('first_name') . ' ASC');
+		$q->order($dbo->qn('last_name') . ' ASC');
+
+		$dbo->setQuery($q);
+
+		// set results found
+		$response['results'] = $dbo->loadAssocList();
+
+		// default icon for customers
+		$source_def_icon_cls = VikBookingIcons::i('user');
+
+		// map the results with the required properties
+		$response['results'] = array_map(function($customer) use ($source_def_icon_cls) {
+			// build "text" property
+			$customer['text'] = trim($customer['first_name'] . ' ' . $customer['last_name']);
+
+			// build "img" property
+			if (!empty($customer['pic'])) {
+				// use customer profile picture
+				$customer['img'] = strpos($customer['pic'], 'http') === 0 ? $customer['pic'] : VBO_SITE_URI . 'resources/uploads/' . $customer['pic'];
+			} elseif (!empty($customer['country']) && is_file(implode(DIRECTORY_SEPARATOR, [VBO_ADMIN_PATH, 'resources', 'countries', $customer['country'] . '.png']))) {
+				// use customer country flag
+				$customer['img'] = VBO_ADMIN_URI . 'resources/countries/' . $customer['country'] . '.png';
+				$customer['img_title'] = $customer['country'];
+			}
+
+			if (empty($customer['img'])) {
+				// always set an empty string
+				$customer['img'] = '';
+				// set the default icon class
+				$customer['icon_class'] = $source_def_icon_cls;
+			}
+
+			// handle custom fields
+			if (!empty($customer['cfields'])) {
+				$custom_fields = (array) json_decode($customer['cfields'], true);
+				if ($custom_fields) {
+					$customer['cfields'] = $custom_fields;
+				}
+			}
+			if (!is_array($customer['cfields']) || !$customer['cfields']) {
+				// ensure this is a null value
+				$customer['cfields'] = null;
+			}
+
+			// return the mapped customer element
+			return $customer;
+		}, $response['results']);
+
+		// output the JSON encoded object with results found
+		VBOHttpDocument::getInstance()->json($response);
+	}
+
+	/**
 	 * Regular task to update the status of a cancelled booking to pending (stand-by).
 	 * 
 	 * @return 	void

@@ -2,8 +2,8 @@
 /**
  * @package     VikBooking
  * @subpackage  com_vikbooking
- * @author      Alessio Gaggii - e4j - Extensionsforjoomla.com
- * @copyright   Copyright (C) 2018 e4j - Extensionsforjoomla.com. All rights reserved.
+ * @author      Alessio Gaggii - E4J srl
+ * @copyright   Copyright (C) 2025 E4J srl. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com
  */
@@ -37,13 +37,32 @@ class VikBookingViewOverv extends JViewVikBooking
 		$pmnum = VikRequest::getInt('mnum', '', 'request');
 		$cmnum = $cookie->get('vbOvwMnum', '', 'string');
 		$punits_show_type = VikRequest::getString('units_show_type', '', 'request');
+
 		// category filter
 		$pcategory_id = VikRequest::getString('category_id', '', 'request');
 		$scategory_id = $session->get('vbOvwCatid', 0);
 		$pcategory_id = !strlen($pcategory_id) && !empty($scategory_id) ? $scategory_id : $pcategory_id;
 		$session->set('vbOvwCatid', $pcategory_id);
-		//
-		
+
+		/**
+		 * Apply task manager filters.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		$tmfilters = (array) $app->input->get('tmfilters', [], 'array');
+		if (empty($pmonth)) {
+			// overwrite the first month to display
+			if (($tmfilters['dates'] ?? '') && preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}\s?:\s?[0-9]{4}-[0-9]{2}-[0-9]{2}$/', (string) $tmfilters['dates'])) {
+				// custom range of dates filter will overwrite the current month to display
+				$dparts = explode(':', $tmfilters['dates']);
+				$begin_ts = strtotime(trim($dparts[0]));
+				$pmonth = strtotime(date('Y-m-01', $begin_ts));
+			} elseif (($tmfilters['calendar_month'] ?? '') && preg_match('/01$/', (string) $tmfilters['calendar_month'])) {
+				// overwrite the current month to display
+				$pmonth = strtotime($tmfilters['calendar_month']) ?: $pmonth;
+			}
+		}
+
 		$pbmode = VikRequest::getString('bmode', '', 'request');
 		if (!empty($pbmode) && ($pbmode == 'classic' || $pbmode == 'tags')) {
 			VikRequest::setCookie('vbTagsMode', $pbmode, (time() + (86400 * 365)), '/');
@@ -53,7 +72,7 @@ class VikBookingViewOverv extends JViewVikBooking
 			$pbmode = (!empty($cbmode) && ($cbmode == 'classic' || $cbmode == 'tags') ? $cbmode : 'classic');
 			VikRequest::setCookie('vbTagsMode', $pbmode, (time() + (86400 * 365)), '/');
 			$session->set('vbTagsMode', $pbmode);
-		}	
+		}
 		
 		if (!empty($punits_show_type)) {
 			$session->set('vbUnitsShowType', $punits_show_type);

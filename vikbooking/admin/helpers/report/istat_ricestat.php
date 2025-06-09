@@ -1413,25 +1413,65 @@ class VikBookingReportIstatRicestat extends VikBookingReport
 	 */
 	protected function loadNazioni()
 	{
-		$nazioni = array();
+		$nazioni = [];
 
-		$csv = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'Nazioni.csv';
+		$csv = dirname(__FILE__).DIRECTORY_SEPARATOR.'Nazioni.csv';
 		$rows = file($csv);
 		foreach ($rows as $row) {
 			if (empty($row)) {
 				continue;
 			}
-
 			$v = explode(';', $row);
 			if (count($v) != 3) {
 				continue;
 			}
 
+			// trim values
+			$v[0] = trim($v[0]);
+			$v[1] = trim($v[1]);
+			$v[2] = trim($v[2]);
+			
 			$nazioni[$v[0]]['name'] = $v[1];
 			$nazioni[$v[0]]['three_code'] = $v[2];
+
 		}
 
 		return $nazioni;
+	}
+
+	/**
+	 * Returns the key of the state selected by the user, if any.
+	 * 
+	 * @param 	string 	$country 	The selected country code.
+	 *
+ 	 * @return 	string
+	 */
+	protected function checkCountry($country)
+	{
+		$found = false;
+		$staval = '';
+
+		if (!$this->nazioni) {
+			$this->nazioni = $this->loadNazioni();
+		}
+
+		if ($country && isset($this->nazioni[$country])) {
+			return $country;
+		}
+
+		foreach ($this->nazioni as $key => $value) {
+			if (trim($value['three_code']) == trim($country)) {
+				$staval = $key;
+				$found = true;
+				break;
+			}
+		}
+
+		if ($found !== true) {
+			$staval = '';
+		}
+
+		return $staval;
 	}
 
 	private function initReservations()

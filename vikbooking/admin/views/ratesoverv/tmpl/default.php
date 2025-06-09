@@ -16,7 +16,6 @@ $roomrows = $this->roomrows;
 $seasoncal_nights = $this->seasons_cal_nights;
 $seasons_cal = $this->seasons_cal;
 $tsstart = $this->tsstart;
-$roomrates = $this->roomrates;
 
 // JS lang defs
 JText::script('VBO_BOOKNOW');
@@ -60,7 +59,10 @@ $juidf = $vbo_df == "%d/%m/%Y" ? 'dd/mm/yy' : ($vbo_df == "%m/%d/%Y" ? 'mm/dd/yy
 $currencysymb = VikBooking::getCurrencySymb();
 list($currency_digits, $currency_decimals, $currency_thousands) = explode(':', VikBooking::getNumberFormatData());
 
+// immediately define the maximum visible days
 $MAX_DAYS = $this->max_days;
+
+// check-in/out times
 $pcheckinh = 0;
 $pcheckinm = 0;
 $pcheckouth = 0;
@@ -76,27 +78,61 @@ if (is_array($timeopst)) {
 }
 
 /**
- * Check if season records should be preloaded. Beware of the
- * hundreds of MBs of server's memory that could be used for
- * pre-loading and pre-caching records in favour of CPU.
+ * Check if season records should be preloaded. Beware of the hundreds of MBs of server's memory
+ * that could be used for pre-loading and pre-caching records in favour of CPU.
  * 
  * @since 	1.16.10 (J) - 1.6.10 (WP)
+ * @since 	1.18.0 (J) - 1.8.0 (WP) seasons caching is enabled by default for better performances.
  */
-$cached_seasons = [];
-$cmd_precache_seasons = JFactory::getApplication()->input->getInt('pre_cache_seasons');
-$can_precache_seasons = $cmd_precache_seasons === 1 ? 1 : VBOFactory::getConfig()->getInt('pre_cache_seasons', 0);
-if ($cmd_precache_seasons === 0 || $cmd_precache_seasons === 1) {
-	// update configuration record
-	VBOFactory::getConfig()->set('pre_cache_seasons', $cmd_precache_seasons);
-	$can_precache_seasons = $cmd_precache_seasons;
-}
-if ($can_precache_seasons) {
-	$from_info = getdate($tsstart);
-	$season_from_ts = mktime($pcheckinh, $pcheckinm, 0, $from_info['mon'], $from_info['mday'], $from_info['year']);
-	$season_to_ts = mktime($pcheckouth, $pcheckoutm, 0, $from_info['mon'], $from_info['mday'] + $MAX_DAYS, $from_info['year']);
-	$cached_seasons = VikBooking::getDateSeasonRecords($season_from_ts, $season_to_ts, $this->req_room_ids);
+$from_info = getdate($tsstart);
+$season_from_ts = mktime($pcheckinh, $pcheckinm, 0, $from_info['mon'], $from_info['mday'], $from_info['year']);
+$season_to_ts = mktime($pcheckouth, $pcheckoutm, 0, $from_info['mon'], $from_info['mday'] + $MAX_DAYS, $from_info['year']);
+$cached_seasons = VikBooking::getDateSeasonRecords($season_from_ts, $season_to_ts, $this->req_room_ids);
+// update configuration record
+VBOFactory::getConfig()->set('pre_cache_seasons', 1);
+
+/**
+ * In order to improve the performances, we parse all listing rates at once, as long as season records were cached.
+ * This is only performed over the first (main) room rate plan, because multiple rate plans are not compatible.
+ * 
+ * @since 	1.18.0 (J) - 1.8.0 (WP)
+ */
+$main_room_rates = array_map(function($rrate) {
+	// convert a possible multi-rate-plan listing into a single-rate-plan listing
+	return [$rrate[0]];
+}, $this->roomrates);
+$current_rates_pool = [];
+$iter_date = $from_info;
+$cell_count = 0;
+while ($cell_count < $MAX_DAYS) {
+	$day_key = date('Y-m-d', $iter_date[0]);
+	$today_tsin = mktime($pcheckinh, $pcheckinm, 0, $iter_date['mon'], $iter_date['mday'], $iter_date['year']);
+	$today_tsout = mktime($pcheckouth, $pcheckoutm, 0, $iter_date['mon'], ($iter_date['mday'] + 1), $iter_date['year']);
+
+	$listing_tars = VikBooking::applySeasonalPrices($main_room_rates, $today_tsin, $today_tsout, $cached_seasons);
+
+	// scan the tariff results
+	foreach ($listing_tars as $listing_id => $tars) {
+		// initialize listing rates, if needed
+		if (!isset($current_rates_pool[$listing_id])) {
+			$current_rates_pool[$listing_id] = [];
+		}
+
+		// set rate for this listing and day (associative by rate plan id - just one)
+		$current_rates_pool[$listing_id][$day_key] = array_combine(array_column($tars, 'idprice'), array_values($tars));
+	}
+
+	// increase cells counter
+	$cell_count++;
+
+	// go to next day
+	$iter_date = getdate(mktime(0, 0, 0, $iter_date['mon'], ($iter_date['mday'] + 1), $iter_date['year']));
 }
 
+// free memory up
+unset($main_room_rates);
+
+// build environment data
 $mb_support  = function_exists('mb_substr');
 $short_wdays = [
 	JText::translate('VBSUNDAY'),
@@ -458,7 +494,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 							$cell_count++;
 						}
 						?>
-							<td class="vbo-roverv-gonext-cell" data-rid="<?php echo $rid; ?>" rowspan="<?php echo count($roomrates[$rid]) + 3; ?>">
+							<td class="vbo-roverv-gonext-cell" data-rid="<?php echo $rid; ?>" rowspan="<?php echo count($this->roomrates[$rid]) + 3; ?>">
 								<div class="vbo-roverv-gonext-cell-inner">
 									<button type="button" class="btn vbo-config-btn vbo-config-btn-rounded vbo-config-btn-large" onclick="vboDisplayNextDays(this);"><?php VikBookingIcons::e('angle-double-right'); ?></button>
 								</div>
@@ -467,7 +503,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 					<?php
 					$room_obp_overrides = [];
 					$closed_roomrateplans = VikBooking::getRoomRplansClosingDates($roomrow['id']);
-					foreach ($roomrates[$rid] as $roomrate) {
+					foreach ($this->roomrates[$rid] as $roomrate) {
 						$nowts = getdate($tsstart);
 						$cell_count = 0;
 						$rplan_minlos = !empty($roomrate['minlos']) && $roomrate['minlos'] > 0 ? $roomrate['minlos'] : 0;
@@ -523,10 +559,18 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 							$id_block = "cell-".$nowts['mday'].'-'.$nowts['mon']."-".$nowts['year']."-".$roomrate['idprice']."-".$roomrate['idroom'];
 							$dclass .= ' day-block';
 
-							$today_tsin = mktime($pcheckinh, $pcheckinm, 0, $nowts['mon'], $nowts['mday'], $nowts['year']);
-							$today_tsout = mktime($pcheckouth, $pcheckoutm, 0, $nowts['mon'], ($nowts['mday'] + 1), $nowts['year']);
+							$day_key = date('Y-m-d', $nowts[0]);
 
-							$tars = VikBooking::applySeasonsRoom([$roomrate], $today_tsin, $today_tsout, [], $cached_seasons);
+							if ($current_rates_pool[$rid][$day_key][$roomrate['idprice']] ?? []) {
+								// rates were loaded already
+								$tars = [$current_rates_pool[$rid][$day_key][$roomrate['idprice']]];
+							} else {
+								// load rates
+								$today_tsin = mktime($pcheckinh, $pcheckinm, 0, $nowts['mon'], $nowts['mday'], $nowts['year']);
+								$today_tsout = mktime($pcheckouth, $pcheckoutm, 0, $nowts['mon'], ($nowts['mday'] + 1), $nowts['year']);
+
+								$tars = VikBooking::applySeasonsRoom([$roomrate], $today_tsin, $today_tsout, [], $cached_seasons);
+							}
 
 							// store the OBP overrides for this day and rate plan
 							if (!empty($tars[0]['occupancy_ovr'])) {
@@ -580,7 +624,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 
 							// check for OBP overrides
 							$compare_obp_ovr = [];
-							if (isset($room_obp_overrides[$nowts[0]]) && count($room_obp_overrides[$nowts[0]]) === count($roomrates[$rid])) {
+							if (isset($room_obp_overrides[$nowts[0]]) && count($room_obp_overrides[$nowts[0]]) === count($this->roomrates[$rid])) {
 								// the OBP overrides affect all room rate plans, make sure the overrides are identical though
 								$compare_obp_ovr = $room_obp_overrides[$nowts[0]][0]['obp'];
 								foreach ($room_obp_overrides[$nowts[0]] as $room_obp_override) {
@@ -917,7 +961,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 					</tbody>
 				</table>
 			</div>
-			<div class="vbo-ratesoverview-period-container">
+			<div class="vbo-ratesoverview-period-container" style="<?php echo $collapse_status ? 'display: none;' : ''; ?>">
 				<div class="vbo-ratesoverview-period-inner">
 					<div class="vbo-ratesoverview-period-lbl">
 						<span><?php echo JText::translate('VBOROVWSELPERIOD'); ?></span>
@@ -965,7 +1009,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 									<div class="vbo-ratesoverview-period-cal-cmd-inner">
 										<select class="vbo-selperiod-rplanid" onchange="vboUpdateRplan(this);">
 										<?php
-										foreach ($roomrates[$rid] as $krr => $roomrate) {
+										foreach ($this->roomrates[$rid] as $krr => $roomrate) {
 											?>
 											<option value="<?php echo $roomrate['idprice']; ?>" data-defrate="<?php echo $roomrate['cost']; ?>"<?php echo $krr < 1 ? ' selected="selected"' : ''; ?>><?php echo $roomrate['name']; ?></option>
 											<?php
@@ -3395,10 +3439,10 @@ function vboToggleCollapse() {
 	var expand = jQuery('input[name="vbo_collapse"]').is(':checked');
 	var collapse = expand ? 0 : 1;
 	if (expand) {
-		jQuery('.vbo-ratesoverview-roomsel-entry-calc-inner, .vbo-roverv-forecast-inner').show();
+		jQuery('.vbo-ratesoverview-roomsel-entry-calc-inner, .vbo-roverv-forecast-inner, .vbo-ratesoverview-period-container').show();
 		jQuery('.vbo-ratesoverview-top-container').removeClass('collapsed');
 	} else {
-		jQuery('.vbo-ratesoverview-roomsel-entry-calc-inner, .vbo-roverv-forecast-inner').hide();
+		jQuery('.vbo-ratesoverview-roomsel-entry-calc-inner, .vbo-roverv-forecast-inner, .vbo-ratesoverview-period-container').hide();
 		jQuery('.vbo-ratesoverview-top-container').addClass('collapsed');
 	}
 	var nd = new Date();

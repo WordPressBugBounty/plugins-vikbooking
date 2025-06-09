@@ -191,7 +191,7 @@ echo JHtml::fetch(
 
 <script>
 
-	jQuery(document).ready(function() {
+	jQuery(function() {
 
 		jQuery('#vik_booking_rss .feed-details a').on('click', function() {
 			// get parent <li>

@@ -73,7 +73,7 @@ if (!empty($this->room['moreimgs'])) {
 			$lim_photos = 4;
 			foreach ($gallery_data as $mimg) {
 				?>
-				<a href="<?php echo $mimg['big']; ?>" style="<?php echo ++$printed > $lim_photos ? 'display: none;' : ''; ?>">
+				<a href="<?php echo $mimg['big']; ?>" target="_blank" style="<?php echo ++$printed > $lim_photos ? 'display: none;' : ''; ?>">
 					<img src="<?php echo $mimg['thumb']; ?>" alt="<?php echo $this->escape($mimg['alt']); ?>" title="<?php echo $this->escape($mimg['caption']); ?>"/>
 				</a>
 				<?php

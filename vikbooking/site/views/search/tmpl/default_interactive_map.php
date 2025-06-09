@@ -145,13 +145,14 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 
 	// compose markers parties
 	foreach ($this->res as $party_num => $party_rooms) {
-		$markers_parties->{$party_num} = array();
+		$markers_parties->{$party_num} = [];
+		$rooms_in_party = [];
 		foreach ($party_rooms as $party_room) {
 			foreach ($party_room as $room_rplan) {
 				if (empty($room_rplan['idroom']) || !isset($rooms_geo_params[$room_rplan['idroom']])) {
 					continue;
 				}
-				if (!in_array($room_rplan['idroom'], $markers_parties->{$party_num})) {
+				if (!in_array($room_rplan['idroom'], $rooms_in_party)) {
 					$raw_roomcost = $tax_summary ? $room_rplan['cost'] : VikBooking::sayCostPlusIva($room_rplan['cost'], $room_rplan['idprice']);
 					// build room info object
 					$room_info = new stdClass;
@@ -176,6 +177,7 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 					}
 					// push room info
 					array_push($markers_parties->{$party_num}, $room_info);
+					$rooms_in_party[] = $room_rplan['idroom'];
 				}
 				// we parse just the first rate plan
 				break;
@@ -683,7 +685,7 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 		}
 	}
 
-	jQuery(document).ready(function() {
+	jQuery(function() {
 
 		// init interactive geo map with markers
 		vboInitInteractiveGeoMap();

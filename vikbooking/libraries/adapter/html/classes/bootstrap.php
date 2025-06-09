@@ -171,11 +171,11 @@ abstract class JHtmlBootstrap
 
 		$data = $params ? json_encode($params) : '{}';
 		JFactory::getDocument()->addScriptDeclaration(
-<<<JS
-jQuery(document).ready(function() {
+<<<JAVASCRIPT
+jQuery(function() {
 	jQuery('$selector').popover($data);
 });
-JS
+JAVASCRIPT
 		);
 
 		// set static array
@@ -228,11 +228,11 @@ JS
 
 		$data = $params ? json_encode($params) : '{}';
 		JFactory::getDocument()->addScriptDeclaration(
-<<<JS
-jQuery(document).ready(function() {
+<<<JAVASCRIPT
+jQuery(function() {
 	jQuery('$selector').tooltip($data);
 });
-JS
+JAVASCRIPT
 		);
 
 		// set static array

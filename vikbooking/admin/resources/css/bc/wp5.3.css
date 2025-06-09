@@ -49,6 +49,7 @@ input, textarea, select, .wp-core-ui select {
 	line-height: 2em;
 	min-height: 40px;
 	padding: 5px 34px 5px 10px !important;
+	border-radius: var(--vbo-field-radius);
 	border-color: #ddd;
 }
 select.vbo-select-small {
@@ -124,4 +125,9 @@ i.icon-new::before {
 }
 .vbo-link-btn-small {
 	padding: 6px 10px;
+}
+#adminForm .btn-group.vbo-smstpl-bgroup button.btn {
+	height: auto;
+	margin: 3px;
+	padding: 6px 14px;
 }

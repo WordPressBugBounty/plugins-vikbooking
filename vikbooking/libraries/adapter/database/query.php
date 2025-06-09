@@ -136,9 +136,9 @@ class JDatabaseQuery
 	/**
 	 * Class constructor.
 	 *
-	 * @param   JDatabase  $db  The database driver.
+	 * @param  JDatabase  $db  The database driver.
 	 */
-	public function __construct(JDatabase $dbo = null)
+	public function __construct(?JDatabase $dbo = null)
 	{
 		if (is_null($dbo))
 		{

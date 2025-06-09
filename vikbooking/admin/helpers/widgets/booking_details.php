@@ -675,6 +675,54 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 						<?php
 					}
 
+					/**
+					 * Check if the booking has got some tasks assigned.
+					 * 
+					 * @since 	1.18.0 (J) - 1.8.0 (WP)
+					 */
+					$taskManager  = VBOFactory::getTaskManager();
+					$bookingTasks = VBOTaskModelTask::getInstance()->filterItems(['id_order' => $details['id']]);
+					if ($bookingTasks) {
+						?>
+					<div class="vbo-params-fieldset vbo-widget-bookdets-tasks-list">
+						<div class="vbo-params-fieldset-label"><?php echo JText::translate('VBO_TASK_MANAGER'); ?></div>
+						<div class="vbo-bookingdet-tasks-list">
+						<?php
+						foreach ($bookingTasks as $taskRecord) {
+							$task = VBOTaskTaskregistry::getInstance((array) $taskRecord);
+							?>
+							<div class="vbo-bookingdet-task-details" data-task-id="<?php echo $task->getID(); ?>">
+								<div class="vbo-bookingdet-task-detail" data-type="info">
+									<span class="vbo-bookingdet-task-title"><?php echo $task->getTitle(); ?></span>
+									<span class="vbo-bookingdet-task-sub-title"><?php echo $task->getAreaName($task->getAreaID()); ?></span>
+								</div>
+							<?php
+							$taskUnreadMessages = (bool) $task->get('hasUnreadMessages', false);
+							if ($taskUnreadMessages) {
+								?>
+								<div class="vbo-bookingdet-task-detail" data-type="unread-messages">
+									<span class="unread-message-dot"><?php VikBookingIcons::e('comment'); ?></span>
+								</div>
+								<?php
+							}
+							if ($taskManager->statusTypeExists($task->getStatus())) {
+								$taskStatus = $taskManager->getStatusTypeInstance($task->getStatus());
+								?>
+								<div class="vbo-bookingdet-task-detail" data-type="status">
+									<span class="vbo-tm-task-status-badge vbo-tm-color <?php echo $taskStatus->getColor(); ?>" data-status="<?php echo JHtml::fetch('esc_attr', $taskStatus->getEnum()); ?>"><?php echo $taskStatus->getName(); ?></span>
+								</div>
+								<?php
+							}
+							?>
+							</div>
+							<?php
+						}
+						?>
+						</div>
+					</div>
+						<?php
+					}
+
 					// check if this booking has got a reminder
 					$reminders_helper = VBORemindersHelper::getInstance();
 					$has_reminders 	  = $reminders_helper->bookingHasReminder($details['id']);
@@ -831,10 +879,7 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 								];
 
 								// render the permissions layout
-								echo JLayoutHelper::render('customer.dropfiles', $layout_data, null, [
-									'component' => 'com_vikbooking',
-									'client' 	=> 'administrator',
-								]);
+								echo JLayoutHelper::render('customer.dropfiles', $layout_data);
 								?>
 								</div>
 							</div>
@@ -854,8 +899,8 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 						<?php
 						$max_display_records = 3;
 						foreach ($history_list as $hind => $hist) {
-							$html_descr = strpos($hist['descr'], '<') !== false ? $hist['descr'] : nl2br($hist['descr']);
-							$text_descr = strip_tags($hist['descr']);
+							$html_descr = strpos((string) $hist['descr'], '<') !== false ? $hist['descr'] : nl2br((string) $hist['descr']);
+							$text_descr = strip_tags((string) $hist['descr']);
 							$text_lines = preg_split("/[\r\n]/", $text_descr);
 							$read_more  = false;
 							if ($text_lines && count($text_lines) > 1) {
@@ -1155,6 +1200,130 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 					vbo_widget_bookdets_action_btn.closest('.vbo-widget-push-notification-action').show();
 				}
 
+				// register click event on the booking task(s)
+				document.querySelector('#<?php echo $wrapper; ?>').querySelectorAll('.vbo-bookingdet-task-details[data-task-id]').forEach((task) => {
+					const taskId = task.getAttribute('data-task-id');
+					task.addEventListener('click', (e) => {
+						// define the modal cancel button
+						let cancel_btn = jQuery('<button></button>')
+							.attr('type', 'button')
+							.addClass('btn')
+							.text(<?php echo json_encode(JText::translate('VBANNULLA')); ?>)
+							.on('click', () => {
+								VBOCore.emitEvent('vbo-tm-edittask-dismiss');
+							});
+
+						// define the modal save button
+						let save_btn = jQuery('<button></button>')
+							.attr('type', 'button')
+							.addClass('btn btn-success')
+							.text(<?php echo json_encode(JText::translate('VBSAVE')); ?>)
+							.on('click', function() {
+								// disable button to prevent double submissions
+								let submit_btn = jQuery(this);
+								submit_btn.prop('disabled', true);
+
+								// start loading animation
+								VBOCore.emitEvent('vbo-tm-edittask-loading');
+
+								// get form data
+								const taskForm = new FormData(document.querySelector('#vbo-tm-task-manage-form'));
+
+								// build query parameters for the request
+								let qpRequest = new URLSearchParams(taskForm);
+
+								// make sure the request always includes the assignees query parameter, even if the list is empty
+								if (!qpRequest.has('data[assignees][]')) {
+									qpRequest.append('data[assignees][]', []);
+								}
+
+								// make sure the request always includes the tags query parameter, even if the list is empty
+								if (!qpRequest.has('data[tags][]')) {
+									qpRequest.append('data[tags][]', []);
+								}
+
+								// make the request
+								VBOCore.doAjax(
+									"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=taskmanager.updateTask'); ?>",
+									qpRequest.toString(),
+									(resp) => {
+										// dismiss the modal on success
+										VBOCore.emitEvent('vbo-tm-edittask-dismiss');
+
+										// reload the current booking
+										vboWidgetBookDetsLoad('<?php echo $wrapper; ?>');
+									},
+									(error) => {
+										// display error message
+										alert(error.responseText);
+
+										// re-enable submit button
+										submit_btn.prop('disabled', false);
+
+										// stop loading
+										VBOCore.emitEvent('vbo-tm-edittask-loading');
+									}
+								);
+							});
+
+						// display modal
+						let modalBody = VBOCore.displayModal({
+							suffix:         'tm_edittask_modal',
+							title:          <?php echo json_encode(JText::translate('VBO_TASK')); ?> + ' #' + taskId,
+							extra_class:    'vbo-modal-rounded vbo-modal-taller vbo-modal-large',
+							body_prepend:   true,
+							lock_scroll:    true,
+							escape_dismiss: false,
+							footer_left:    cancel_btn,
+							footer_right:   save_btn,
+							loading_event:  'vbo-tm-edittask-loading',
+							dismiss_event:  'vbo-tm-edittask-dismiss',
+						});
+
+						// start loading animation
+						VBOCore.emitEvent('vbo-tm-edittask-loading');
+
+						// make the request
+						VBOCore.doAjax(
+							"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=taskmanager.renderLayout'); ?>",
+							{
+								type: 'tasks.managetask',
+								data: {
+									task_id: taskId,
+									form_id: 'vbo-tm-task-manage-form',
+								},
+							},
+							(resp) => {
+								// stop loading
+								VBOCore.emitEvent('vbo-tm-edittask-loading');
+
+								try {
+									// decode the response (if needed), and append the content to the modal body
+									let obj_res = typeof resp === 'string' ? JSON.parse(resp) : resp;
+									modalBody.append(obj_res['html']);
+								} catch (err) {
+									console.error('Error decoding the response', err, resp);
+								}
+							},
+							(error) => {
+								// display error message
+								alert(error.responseText);
+
+								// stop loading
+								VBOCore.emitEvent('vbo-tm-edittask-loading');
+							}
+						);
+					});
+				});
+
+			<?php
+			if ($open_task = $this->getOption('task_id', 0)) {
+				?>
+				document.querySelector('#<?php echo $wrapper; ?> .vbo-bookingdet-task-details[data-task-id="<?php echo $open_task; ?>"]').click();
+				<?php
+			}
+			?>
+
 			});
 		<?php
 		if ($from_push) {
@@ -1188,11 +1357,11 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 	 * Main method to invoke the widget. Contents will be loaded
 	 * through AJAX requests, not via PHP when the page loads.
 	 * 
-	 * @param 	VBOMultitaskData 	$data
+	 * @param 	?VBOMultitaskData 	$data
 	 * 
 	 * @return 	void
 	 */
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;

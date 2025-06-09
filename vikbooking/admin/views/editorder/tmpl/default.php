@@ -48,6 +48,9 @@ $dbo = JFactory::getDbo();
 $vbo_app = VikBooking::getVboApplication();
 $vbo_app->loadVisualEditorAssets();
 
+// preload chat assets
+VBOFactory::getChatMediator()->useAssets();
+
 /**
  * This View can render within a modal the "bookingcheckin" View, and with WP
  * this is loaded via AJAX. In order to not interfere or reset the contextual menu,
@@ -64,6 +67,7 @@ if (VBOPlatformDetection::isWordPress()) {
 $canDo = JFactory::getUser();
 $vbo_auth_bookings = $canDo->authorise('core.vbo.bookings', 'com_vikbooking');
 
+$booking_has_damage_dep = 0;
 $currencyname = VikBooking::getCurrencyName();
 $currencysymb = VikBooking::getCurrencySymb();
 $after_tax = VikBooking::ivaInclusa();
@@ -145,6 +149,7 @@ if (is_int($daysdiff)) {
 		}
 	}
 }
+
 $otachannel = '';
 $otachannel_name = '';
 $otachannel_bid = '';
@@ -159,6 +164,18 @@ if (!empty($row['channel'])) {
 		$otachannel = $otaccparts[0];
 	}
 	$otacurrency = strlen($row['chcurrency']) > 0 ? $row['chcurrency'] : '';
+}
+
+/**
+ * Tell whether the current reservation has or may have a CC/VCC available.
+ */
+$may_have_cc_details = false;
+if (!empty($row['paymentlog']) && stripos($row['paymentlog'], 'card number') !== false && strpos($row['paymentlog'], '****') !== false) {
+	// turn flag on for partial card details available
+	$may_have_cc_details = true;
+} elseif (!empty($row['channel']) && !strcasecmp($otachannel_name, 'Booking.com')) {
+	// the CM may be able to retrieve the CC details via API
+	$may_have_cc_details = true;
 }
 
 $status_type = '';
@@ -452,21 +469,46 @@ function toggleDiscount(elem) {
 		}
 
 		/**
-		 * Check whether the booking can be refunded.
+		 * Check whether the booking can be refunded or charged through an off-session capturing.
 		 * 
 		 * @since 	1.14 (J) - 1.4.0 (WP)
+		 * @since 	1.18.0 (J) - 1.8.0 (WP) added support to off-session capturing.
 		 */
 
-		// refundable up to 7 days after check-out day
+		// refundable/capturable up to 7 days after check-out day
 		$max_refund_ts = mktime(23, 59, 59, $checkout_info['mon'], ($checkout_info['mday'] + 7), $checkout_info['year']);
+
 		// current payment driver must be set
 		$tn_driver = is_array($payment) ? $payment['file'] : null;
+
 		// transaction data validation callback
 		$tn_data_callback = function($data) use ($tn_driver) {
 			return (is_object($data) && isset($data->driver) && basename($data->driver, '.php') == basename($tn_driver, '.php'));
 		};
 		$prev_tn_data = $history_obj->getEventsWithData(array('P0', 'PN'), $tn_data_callback);
-		$refundable = ($row['status'] != 'standby' && $max_refund_ts >= time() && is_array($prev_tn_data) && count($prev_tn_data));
+
+		// whether it's refundable/capturable
+		$refundable = ($row['status'] != 'standby' && !empty($row['totpaid']) && $max_refund_ts >= time() && is_array($prev_tn_data) && $prev_tn_data);
+		$off_session_capturing = ($row['status'] != 'standby' && $max_refund_ts >= time() && is_array($prev_tn_data) && array_filter($prev_tn_data, function($data) {
+			return is_object($data) && ($data->future_usage ?? null);
+		}));
+
+		if ($off_session_capturing) {
+			?>
+			<div class="vbo-bookdet-wrap">
+				<div class="vbo-bookdet-head">
+					<span><?php echo JText::translate('VBO_CREDIT_CARD'); ?></span>
+				</div>
+				<div class="vbo-bookdet-foot">
+					<button type="button" class="btn btn-small vbo-config-btn vbo-offsessioncapture-btn" onclick="VBOCore.handleDisplayWidgetNotification({widget_id: 'virtual_terminal'}, {bid: <?php echo $row['id']; ?>});">
+						<?php VikBookingIcons::e('credit-card'); ?>
+						<?php echo JText::translate('VBO_W_VIRTUALTERMINAL_TITLE'); ?>
+					</button>
+				</div>
+			</div>
+			<?php
+		}
+
 		if ($refundable) {
 			// prepare modal (refundtn) with a custom function to trigger the opening
 			array_push($vbo_modals_html, $vbo_app->getJmodalHtml('vbo-refund-tn', JText::translate('VBO_ISSUE_REFUND')));
@@ -489,14 +531,13 @@ function toggleDiscount(elem) {
 					<span><?php echo JText::translate('VBO_ISSUE_REFUND'); ?></span>
 				</div>
 				<div class="vbo-bookdet-foot">
-					<button type="button" class="btn btn-small btn-danger vbo-dorefund-btn"<?php echo count($refunds) ? ' data-totrefunds="' . count($refunds) . '"' : ''; ?> onclick="vboOpenJModalRefund('vbo-refund-tn', 'index.php?option=com_vikbooking&task=refundtn&cid[]=<?php echo $row['id']; ?>&tmpl=component');">
+					<button type="button" class="btn btn-small btn-danger vbo-dorefund-btn"<?php echo $refunds ? ' data-totrefunds="' . count($refunds) . '"' : ''; ?> onclick="vboOpenJModalRefund('vbo-refund-tn', 'index.php?option=com_vikbooking&task=refundtn&cid[]=<?php echo $row['id']; ?>&tmpl=component');">
 						<?php echo JText::translate('VBO_REFUND'); ?>
 					</button>
 				</div>
 			</div>
 			<?php
 		}
-		//
 
 		if (!$printreceipt && !empty($row['channel'])) {
 			$ota_logo_img = VikBooking::getVcmChannelsLogo($row['channel']);
@@ -991,7 +1032,7 @@ JS
 				return (is_object($data) && !empty($data->av_type));
 			};
 			$prev_ir_data = $history_obj->getEventsWithData('IR', $ir_data_callback, true);
-			if (is_array($prev_ir_data) && count($prev_ir_data)) {
+			if (is_array($prev_ir_data) && $prev_ir_data) {
 				// display a message about the availability type at the time of creation of the inquiry reservation
 
 				// parse original stay dates into DateTime objects
@@ -1053,7 +1094,7 @@ JS
 				</div>
 				<?php
 			}
-			if ((array_key_exists(1, $tars) && count($tars[1]) > 0) || ($is_package || $is_cust_cost)) {
+			if ((array_key_exists(1, $tars) && $tars[1]) || ($is_package || $is_cust_cost)) {
 
 				if (VBOPlatformDetection::isWordPress()) {
 					/**
@@ -1072,7 +1113,7 @@ JS
 				</div>
 				<?php
 			}
-			if (($row['status'] == "confirmed" || ($row['status'] == "standby" && !empty($row['custmail']))) && ((array_key_exists(1, $tars) && count($tars[1]) > 0) || ($is_package || $is_cust_cost))) {
+			if (($row['status'] == "confirmed" || ($row['status'] == "standby" && !empty($row['custmail']))) && ((array_key_exists(1, $tars) && $tars[1]) || ($is_package || $is_cust_cost))) {
 				?>
 				<div class="vbo-bookingdet-command">
 					<button class="btn vbo-config-btn" type="button" onclick="document.location.href='index.php?option=com_vikbooking&task=resendordemail&cid[]=<?php echo $row['id']; ?>';"><?php VikBookingIcons::e('envelope'); ?> <?php echo JText::translate('VBRESENDORDEMAIL'); ?></button>
@@ -1213,9 +1254,63 @@ JS
 			</div>
 		</div>
 
+		<?php
+		/**
+		 * Check if the booking has got some tasks assigned.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		$taskManager  = VBOFactory::getTaskManager();
+		$bookingTasks = VBOTaskModelTask::getInstance()->filterItems(['id_order' => $row['id']]);
+		?>
+
 		<div class="vbo-bookingdet-tab-cont" id="vbo-tab-details" style="display: block;">
 			<div class="vbo-bookingdet-innercontainer">
 				<div class="vbo-bookingdet-customer">
+				<?php
+				if ($bookingTasks) {
+					?>
+					<div class="vbo-bookingdet-detcont vbo-bookingdet-detcont-tm vbo-hidein-print">
+						<div class="vbo-bookingdet-lblcont">
+							<label><?php echo JText::translate('VBO_TASK_MANAGER'); ?></label>
+						</div>
+						<div class="vbo-bookingdet-inpwrap vbo-bookingdet-tasks-list">
+						<?php
+						foreach ($bookingTasks as $taskRecord) {
+							$task = VBOTaskTaskregistry::getInstance((array) $taskRecord);
+							?>
+							<div class="vbo-bookingdet-task-details" data-task-id="<?php echo $task->getID(); ?>">
+								<div class="vbo-bookingdet-task-detail" data-type="info">
+									<span class="vbo-bookingdet-task-title"><?php echo $task->getTitle(); ?></span>
+									<span class="vbo-bookingdet-task-sub-title"><?php echo $task->getAreaName($task->getAreaID()); ?></span>
+								</div>
+							<?php
+							$taskUnreadMessages = (bool) $task->get('hasUnreadMessages', false);
+							if ($taskUnreadMessages) {
+								?>
+								<div class="vbo-bookingdet-task-detail" data-type="unread-messages">
+									<span class="unread-message-dot"><?php VikBookingIcons::e('comment'); ?></span>
+								</div>
+								<?php
+							}
+							if ($taskManager->statusTypeExists($task->getStatus())) {
+								$taskStatus = $taskManager->getStatusTypeInstance($task->getStatus());
+								?>
+								<div class="vbo-bookingdet-task-detail" data-type="status">
+									<span class="vbo-tm-task-status-badge vbo-tm-color <?php echo $taskStatus->getColor(); ?>" data-status="<?php echo $this->escape($taskStatus->getEnum()); ?>"><?php echo $taskStatus->getName(); ?></span>
+								</div>
+								<?php
+							}
+							?>
+							</div>
+							<?php
+						}
+						?>
+						</div>
+					</div>
+					<?php
+				}
+				?>
 					<div class="vbo-bookingdet-detcont<?php echo $row['closure'] > 0 ? ' vbo-bookingdet-closure' : ''; ?>">
 					<?php
 					$custdata_parts = explode("\n", $row['custdata']);
@@ -1642,8 +1737,8 @@ JS
 									<div class="vbo-bookingdet-summary-room-wrap">
 										<div class="vbo-bookingdet-summary-roomnum"><?php VikBookingIcons::e($room_icon); ?> <?php echo JText::translate('VBEDITORDERTHREE').' '.$num; ?></div>
 									<?php
-									//Room Specific Unit
-									if (!$row['closure'] && $row['status'] == "confirmed" && !empty($or['params'])) {
+									// Room Specific Unit
+									if ((!$row['closure'] || ($row['closure'] && count($rooms) === 1) && !empty($or['roomindex'])) && $row['status'] == "confirmed" && !empty($or['params'])) {
 										$room_params = json_decode($or['params'], true);
 										$arr_features = array();
 										$unavailable_indexes = VikBooking::getRoomUnitNumsUnavailable($row, $or['idroom']);
@@ -1660,7 +1755,7 @@ JS
 												}
 											}
 										}
-										if (count($arr_features)) {
+										if ($arr_features) {
 											// $or['id'] equals to the ID of each matching record in _ordersrooms
 											?>
 										<div class="vbo-bookingdet-summary-roomnum-chunit">
@@ -1688,7 +1783,7 @@ JS
 										$age_str = '';
 										if (!empty($arrpeople[$num]['children_age'])) {
 											$json_child = json_decode($arrpeople[$num]['children_age'], true);
-											if (is_array($json_child) && isset($json_child['age']) && is_array($json_child['age']) && count($json_child['age'])) {
+											if (is_array($json_child) && isset($json_child['age']) && is_array($json_child['age']) && $json_child['age']) {
 												$age_str = ' '.JText::sprintf('VBORDERCHILDAGES', implode(', ', $json_child['age']));
 											}
 										}
@@ -1779,7 +1874,7 @@ JS
 									<?php
 								}
 
-								if ($row['split_stay'] && count($room_stay_dates) && isset($room_stay_dates[$ind]) && $room_stay_dates[$ind]['idroom'] == $or['idroom']) {
+								if ($row['split_stay'] && $room_stay_dates && isset($room_stay_dates[$ind]) && $room_stay_dates[$ind]['idroom'] == $or['idroom']) {
 									// print split stay information for this room
 									$room_stay_checkin  = !empty($room_stay_dates[$ind]['checkin_ts']) ? $room_stay_dates[$ind]['checkin_ts'] : $room_stay_dates[$ind]['checkin'];
 									$room_stay_checkout = !empty($room_stay_dates[$ind]['checkout_ts']) ? $room_stay_dates[$ind]['checkout_ts'] : $room_stay_dates[$ind]['checkout'];
@@ -1793,7 +1888,7 @@ JS
 										</div>
 									</div>
 									<?php
-								} elseif (!$row['split_stay'] && count($room_stay_records) && isset($room_stay_records[$ind]) && $room_stay_records[$ind]['idroom'] == $or['idroom']) {
+								} elseif (!$row['split_stay'] && $room_stay_records && isset($room_stay_records[$ind]) && $room_stay_records[$ind]['idroom'] == $or['idroom']) {
 									// print modified stay dates information for this room
 									$room_stay_checkin  = $room_stay_records[$ind]['checkin'];
 									$room_stay_checkout = $room_stay_records[$ind]['checkout'];
@@ -1841,6 +1936,15 @@ JS
 									if (!$actopt) {
 										continue;
 									}
+
+									// option params
+									$opt_params = !empty($actopt[0]['oparams']) ? json_decode($actopt[0]['oparams'], true) : [];
+									$opt_params = is_array($opt_params) ? $opt_params : [];
+									if ($opt_params['damagedep'] ?? 0) {
+										// turn flag on
+										$booking_has_damage_dep = 1;
+									}
+
 									$counter++;
 									$chvar = '';
 									if (!empty($actopt[0]['ageintervals']) && $or['children'] > 0 && strstr($stept[1], '-') != false) {
@@ -1997,7 +2101,7 @@ JS
 						//Taxes Breakdown (only if tot_taxes is greater than 0)
 						$tax_breakdown = array();
 						$base_aliq = 0;
-						if (count($all_id_prices) > 0 && $row['tot_taxes'] > 0) {
+						if ($all_id_prices && $row['tot_taxes'] > 0) {
 							//only last type of price assuming that the tax breakdown is equivalent in case of different rates
 							$q = "SELECT `p`.`id`,`p`.`name`,`p`.`idiva`,`t`.`aliq`,`t`.`breakdown` FROM `#__vikbooking_prices` AS `p` LEFT JOIN `#__vikbooking_iva` `t` ON `p`.`idiva`=`t`.`id` WHERE `p`.`id`=".intval(array_pop($all_id_prices))." LIMIT 1;";
 							$dbo->setQuery($q);
@@ -2005,7 +2109,7 @@ JS
 							if ($breakdown_info) {
 								if (!empty($breakdown_info['breakdown']) && !empty($breakdown_info['aliq'])) {
 									$tax_breakdown = json_decode($breakdown_info['breakdown'], true);
-									$tax_breakdown = is_array($tax_breakdown) && count($tax_breakdown) > 0 ? $tax_breakdown : array();
+									$tax_breakdown = is_array($tax_breakdown) && $tax_breakdown ? $tax_breakdown : array();
 									$base_aliq = $breakdown_info['aliq'];
 								}
 							}
@@ -2048,7 +2152,7 @@ JS
 											<span class="vbdiscenter-label"><?php echo JText::translate('VBTOTALVAT'); ?>:</span><span class="vbdiscenter-value"><?php echo $currencyname; ?> <input type="number" step="any" name="tot_taxes" value="<?php echo $row['tot_taxes']; ?>" size="4"/></span>
 										</div>
 									<?php
-									if (count($tax_breakdown)) {
+									if ($tax_breakdown) {
 										foreach ($tax_breakdown as $tbkk => $tbkv) {
 											$tax_break_cost = $row['tot_taxes'] * floatval($tbkv['aliq']) / $base_aliq;
 											?>
@@ -2068,6 +2172,16 @@ JS
 										<div class="vbdiscenter-entry">
 											<span class="vbdiscenter-label hasTooltip"<?php echo !empty($otachannel_name) ? ' title="'.$otachannel_name.'"' : ''; ?>><?php echo JText::translate('VBTOTALCOMMISSIONS'); ?>:</span><span class="vbdiscenter-value"><?php echo $currencyname; ?> <input type="number" step="any" name="cmms" value="<?php echo $row['cmms']; ?>" size="4"/></span>
 										</div>
+									<?php
+									if ($booking_has_damage_dep) {
+										// allow to overwrite (or see) the amount of damage deposit
+										?>
+										<div class="vbdiscenter-entry">
+											<span class="vbdiscenter-label"><?php echo JText::translate('VBO_DAMAGE_DEPOSIT'); ?>:</span><span class="vbdiscenter-value"><?php echo $currencyname; ?> <input type="number" step="any" name="tot_damage_dep" value="<?php echo $row['tot_damage_dep']; ?>" min="0" size="4"/></span>
+										</div>
+										<?php
+									}
+									?>
 										<div class="vbdiscenter-entry">
 											<span class="vbdiscenter-label"><?php echo JText::translate('VBAPPLYDISCOUNT'); ?>:</span><span class="vbdiscenter-value"><?php echo $currencyname; ?> <input type="number" step="any" name="admindisc" value="<?php echo isset($expcoupon) ? (float)$expcoupon[1] : ''; ?>" size="4"/></span>
 										</div>
@@ -2143,7 +2257,7 @@ JS
 							<?php
 							}
 						}
-						if (!$printreceipt && $row['status'] == 'confirmed' && VikBooking::multiplePayments() && is_array($payment) && !empty($payment['id']) && $row['checkout'] > time()) {
+						if (!$printreceipt && $row['status'] == 'confirmed' && VikBooking::multiplePayments() && is_array($payment) && !empty($payment['id']) && $row['checkout'] > strtotime('-10 days')) {
 							/**
 							 * The amount payable can be modified by the admin.
 							 * 
@@ -2483,7 +2597,7 @@ JS
 
 						if (!empty($row['paymentlog'])) {
 							$paylogs_lbl = JText::translate('VBPAYMENTLOGTOGGLE');
-							if (stripos($row['paymentlog'], 'card number') !== false && strpos($row['paymentlog'], '****') !== false) {
+							if ($may_have_cc_details) {
 								$paylogs_lbl = JText::translate('VBO_CREDIT_CARD');
 							}
 							?>
@@ -2917,8 +3031,7 @@ JS
 								 * @since 	1.13
 								 */
 								$cardlimit = mktime(23, 59, 59, $checkout_info['mon'], ($checkout_info['mday'] + 10), $checkout_info['year']);
-								$plain_log = htmlspecialchars($row['paymentlog']);
-								if (time() < $cardlimit && stripos($plain_log, 'card number') !== false && strpos($plain_log, '****') !== false) {
+								if (time() < $cardlimit && $may_have_cc_details) {
 									// log contains credit card details
 									// prepare modal (Credit Card Details)
 									array_push($vbo_modals_html, $vbo_app->getJmodalHtml('vbo-vcm-pcid', JText::translate('GETFULLCARDDETAILS'), '', 'width: 80%; height: 60%; margin-left: -40%; top: 20% !important;'));
@@ -3295,7 +3408,7 @@ JS
 							// render the reporting-invalidcc layout
 							echo JLayoutHelper::render('reporting.invalidcc', $layout_data, null, [
 								'component' => 'com_vikchannelmanager',
-								'client' 	=> 'administrator',
+								'client'    => 'admin',
 							]);
 							?>
 								</div>
@@ -3583,7 +3696,7 @@ foreach ($vbo_modals_html as $modalhtml) {
 
 <script type="text/javascript">
 var vbo_print_only = false;
-if (jQuery.isFunction(jQuery.fn.tooltip)) {
+if (typeof jQuery.fn.tooltip === 'function') {
 	jQuery(".hasTooltip").tooltip();
 }
 function vboDisplaySendSMS() {
@@ -3916,6 +4029,123 @@ jQuery(function() {
 			group:   '<?php echo !empty($row['idorderota']) && !empty($row['channel']) ? 'otas' : 'website'; ?>',
 			idorder: '<?php echo $row['id']; ?>',
 		}
+	});
+
+	// register click event on the booking task(s)
+	document.querySelectorAll('.vbo-bookingdet-task-details[data-task-id]').forEach((task) => {
+		const taskId = task.getAttribute('data-task-id');
+		task.addEventListener('click', (e) => {
+			e.stopPropagation();
+			// define the modal cancel button
+			let cancel_btn = jQuery('<button></button>')
+				.attr('type', 'button')
+				.addClass('btn')
+				.text(Joomla.JText._('VBANNULLA'))
+				.on('click', () => {
+					VBOCore.emitEvent('vbo-tm-edittask-dismiss');
+				});
+
+			// define the modal save button
+			let save_btn = jQuery('<button></button>')
+				.attr('type', 'button')
+				.addClass('btn btn-success')
+				.text(Joomla.JText._('VBSAVE'))
+				.on('click', function() {
+					// disable button to prevent double submissions
+					let submit_btn = jQuery(this);
+					submit_btn.prop('disabled', true);
+
+					// start loading animation
+					VBOCore.emitEvent('vbo-tm-edittask-loading');
+
+					// get form data
+					const taskForm = new FormData(document.querySelector('#vbo-tm-task-manage-form'));
+
+					// build query parameters for the request
+					let qpRequest = new URLSearchParams(taskForm);
+
+					// make sure the request always includes the assignees query parameter, even if the list is empty
+					if (!qpRequest.has('data[assignees][]')) {
+						qpRequest.append('data[assignees][]', []);
+					}
+
+					// make sure the request always includes the tags query parameter, even if the list is empty
+					if (!qpRequest.has('data[tags][]')) {
+						qpRequest.append('data[tags][]', []);
+					}
+
+					// make the request
+					VBOCore.doAjax(
+						"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=taskmanager.updateTask'); ?>",
+						qpRequest.toString(),
+						(resp) => {
+							// dismiss the modal on success
+							VBOCore.emitEvent('vbo-tm-edittask-dismiss');
+
+							// reload the page
+							location.reload();
+						},
+						(error) => {
+							// display error message
+							alert(error.responseText);
+
+							// re-enable submit button
+							submit_btn.prop('disabled', false);
+
+							// stop loading
+							VBOCore.emitEvent('vbo-tm-edittask-loading');
+						}
+					);
+				});
+
+			// display modal
+			let modalBody = VBOCore.displayModal({
+				suffix:         'tm_edittask_modal',
+				title:          <?php echo json_encode(JText::translate('VBO_TASK')); ?> + ' #' + taskId,
+				extra_class:    'vbo-modal-rounded vbo-modal-taller vbo-modal-large',
+				body_prepend:   true,
+				lock_scroll:    true,
+				escape_dismiss: false,
+				footer_left:    cancel_btn,
+				footer_right:   save_btn,
+				loading_event:  'vbo-tm-edittask-loading',
+				dismiss_event:  'vbo-tm-edittask-dismiss',
+			});
+
+			// start loading animation
+			VBOCore.emitEvent('vbo-tm-edittask-loading');
+
+			// make the request
+			VBOCore.doAjax(
+				"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=taskmanager.renderLayout'); ?>",
+				{
+					type: 'tasks.managetask',
+					data: {
+						task_id: taskId,
+						form_id: 'vbo-tm-task-manage-form',
+					},
+				},
+				(resp) => {
+					// stop loading
+					VBOCore.emitEvent('vbo-tm-edittask-loading');
+
+					try {
+						// decode the response (if needed), and append the content to the modal body
+						let obj_res = typeof resp === 'string' ? JSON.parse(resp) : resp;
+						modalBody.append(obj_res['html']);
+					} catch (err) {
+						console.error('Error decoding the response', err, resp);
+					}
+				},
+				(error) => {
+					// display error message
+					alert(error.responseText);
+
+					// stop loading
+					VBOCore.emitEvent('vbo-tm-edittask-loading');
+				}
+			);
+		});
 	});
 
 });

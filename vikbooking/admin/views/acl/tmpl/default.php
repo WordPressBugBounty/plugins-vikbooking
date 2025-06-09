@@ -94,7 +94,7 @@ $ignores = array('administrator');
 
 <script>
 
-	jQuery(document).ready(function() {
+	jQuery(function() {
 
 		jQuery('#role-select').on('change', function() {
 			jQuery('.acl-role-container').hide();

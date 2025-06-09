@@ -648,7 +648,8 @@ JText::script('VBO_PLEASE_WAIT');
 			dateFormat: "<?php echo $juidf; ?>",
 			changeMonth: true,
 			changeYear: true,
-			yearRange: "<?php echo (date('Y') - 100) . ':' . date('Y'); ?>"
+			yearRange: "<?php echo (date('Y') - 100) . ':' . date('Y'); ?>",
+			maxDate: "0d",
 		});
 
 		/**

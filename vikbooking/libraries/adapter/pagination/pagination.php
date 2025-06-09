@@ -191,15 +191,15 @@ class JPagination
 		{
 			// include script to handle pagination events
 			JFactory::getDocument()->addScriptDeclaration(
-<<<JS
-jQuery(document).ready(function() {
+<<<JAVASCRIPT
+jQuery(function() {
 	Joomla.getPagination('{$data['prefix']}')
 		.setTotal({$data['total']})
 		.setLimit({$data['lim']})
 		.setStart({$data['lim0']})
 		.setListener(document.adminForm);
 });
-JS
+JAVASCRIPT
 			);
 
 			$data['links']['first'] = 'href="javascript: void(0);" onclick="Joomla.getPagination(\'' . $data['prefix'] . '\').first();"';
@@ -244,7 +244,7 @@ JS
 	 *
 	 * @return 	array 	The resulting data array.
 	 */
-	protected function buildPaginationData(array &$data = null)
+	protected function buildPaginationData(?array &$data = null)
 	{
 		if (is_null($data))
 		{

@@ -228,6 +228,17 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 
 	/**
 	 * @inheritDoc
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function allowsProfileSettings()
+	{
+		// allow multiple report profile settings
+		return true;
+	}
+
+	/**
+	 * @inheritDoc
 	 */
 	public function getSettingFields()
 	{
@@ -2434,8 +2445,15 @@ JS
 		$pfiller = VikRequest::getString('filler', '', 'request', VIKREQUEST_ALLOWRAW);
 		$pfiller = !empty($pfiller) ? (array) json_decode($pfiller, true) : [];
 
+		// determine the XML namespace to use
+		if ($export_type === 'checkin') {
+			$xmlns = 'http://www.neg.hospedajes.mir.es/altaParteHospedaje';
+		} else {
+			$xmlns = 'http://www.neg.hospedajes.mir.es/altaReservaHospedaje';
+		}
+
 		// start building the XML
-		$xml = $this->loadXmlSoap('<alt:peticion xmlns:alt="http://www.neg.hospedajes.mir.es/altaParteHospedaje"></alt:peticion>');
+		$xml = $this->loadXmlSoap('<alt:peticion xmlns:alt="' . $xmlns . '"></alt:peticion>');
 
 		// add main child common node (no value, empty namespace)
 		$solicitud = $xml->addChild('solicitud', null, '');
@@ -3296,7 +3314,7 @@ XML;
 	 * 
 	 * @throws 	Exception
 	 */
-	protected function postMessage($message, array $settings = null)
+	protected function postMessage($message, array $settings = [])
 	{
 		if (!$settings) {
 			// load report settings

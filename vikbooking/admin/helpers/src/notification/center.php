@@ -162,7 +162,7 @@ final class VBONotificationCenter
 	 * @param 	array 	$filters 	optional list of column filters.
 	 * @param 	int 	$min_id 	optional minimum notification ID.
 	 */
-	public function loadNotifications(int $start = 0, int $lim = null, array $filters = [], int $min_id = 0)
+	public function loadNotifications(int $start = 0, int $lim = 0, array $filters = [], int $min_id = 0)
 	{
 		$dbo = JFactory::getDbo();
 
@@ -458,6 +458,7 @@ final class VBONotificationCenter
 		$record->type 	    = $notification->getType();
 		$record->title 	    = $notification->getTitle();
 		$record->summary    = $notification->getSummary();
+		$record->avatar     = $notification->getAvatar();
 		$record->cta_data   = $notification->getCallToActionData();
 		$record->idorder    = $notification->getReservationID();
 		$record->idorderota = $notification->getOTAReservationID();

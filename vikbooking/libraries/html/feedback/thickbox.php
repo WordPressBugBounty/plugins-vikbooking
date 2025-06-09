@@ -236,7 +236,7 @@ $options[] = array(
 </div>
 
 <script>
-	jQuery(document).ready(function() {
+	jQuery(function() {
 
 		jQuery('#vikbooking-feedback-form .form-field input[name="feedback_type"]').on('change', function() {
 			var radio = jQuery('#vikbooking-feedback-form input[name="feedback_type"]:checked');

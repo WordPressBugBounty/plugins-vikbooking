@@ -172,7 +172,7 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 	/**
 	 * Checks for new notifications by using the previous preloaded watch-data.
 	 * 
-	 * @param 	VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
+	 * @param 	?VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
 	 * 
 	 * @return 	array 						data object to watch next and notifications array.
 	 * 
@@ -180,7 +180,7 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP)
 	 */
-	public function getNotifications(VBONotificationWatchdata $watch_data = null)
+	public function getNotifications(?VBONotificationWatchdata $watch_data = null)
 	{
 		// default empty values
 		$watch_next    = null;
@@ -269,7 +269,7 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 	 * Checks for new events to be dispatched by using the previous preloaded watch-data.
 	 * This method is called after getNotifications(), so we avoid querying the DB.
 	 * 
-	 * @param 	VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
+	 * @param 	?VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
 	 * 
 	 * @return 	array 						list of event objects to dispatch, if any.
 	 * 
@@ -277,7 +277,7 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 	 * 
 	 * @since 	1.17.6 (J) - 1.7.6 (WP)
 	 */
-	public function getNotificationEvents(VBONotificationWatchdata $watch_data = null)
+	public function getNotificationEvents(?VBONotificationWatchdata $watch_data = null)
 	{
 		if (!$this->new_guest_messages) {
 			return [];
@@ -489,7 +489,7 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 		echo '1';
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;

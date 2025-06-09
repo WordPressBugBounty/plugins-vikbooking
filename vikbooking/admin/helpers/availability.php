@@ -1100,13 +1100,13 @@ class VikBookingAvailability
 	 * visibility should be public so that other Views could use just this method.
 	 * 
 	 * @param 	array 	$room_ids 	list of unavailable, yet compatible, room IDs.
-	 * @param 	array 	$busy_list 	optional list of busy records for the involved dates.
+	 * @param 	?array 	$busy_list 	optional list of busy records for the involved dates.
 	 * 
 	 * @return 	array 				associative list of available split stays, or empty array.
 	 * 
 	 * @since 	1.16.0 (J) - 1.6.0 (WP)
 	 */
-	public function findSplitStays(array $room_ids = [], array $busy_list = null)
+	public function findSplitStays(array $room_ids = [], ?array $busy_list = null)
 	{
 		if (!$room_ids) {
 			return [];

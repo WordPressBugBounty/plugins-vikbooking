@@ -1556,7 +1556,7 @@ if ($geo_supported) {
 			//
 		}
 
-		jQuery(document).ready(function() {
+		jQuery(function() {
 			
 			// display geocoding params, if necessary
 			vboToggleGeoParams();

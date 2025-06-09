@@ -1744,6 +1744,39 @@ class VBOModelReservation extends JObject
 	}
 
 	/**
+	 * Attempts to get the most recent transaction data for an off-session capturing.
+	 * 
+	 * @param 	string 	$tn_driver 	Optional payment processor driver name.
+	 * 
+	 * @return 	object[] 			Eligible transaction data list or empty array.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function getOffSessionTransactionData(string $tn_driver = '')
+	{
+		// transaction data validation callback
+		$tn_data_callback = function($data) use ($tn_driver) {
+			return (is_object($data) && isset($data->driver) && (!$tn_driver || basename($data->driver, '.php') == basename($tn_driver, '.php')) && ($data->future_usage ?? null));
+		};
+
+		// get previous transactions (in date ascending order)
+		$prev_tn_data = (array) VikBooking::getBookingHistoryInstance($this->get('id', 0))->getEventsWithData(['P0', 'PN'], $tn_data_callback);
+
+		if (!$prev_tn_data) {
+			return [];
+		}
+
+		// return the eligible transaction data list in reverse order
+		return array_reverse(array_values(array_filter(array_map(function($data) {
+			if (is_array($data)) {
+				// cast to object
+				$data = (object) $data;
+			}
+			return is_object($data) ? $data : null;
+		}, $prev_tn_data))));
+	}
+
+	/**
 	 * Attempts to get the credit card value pairs from the current booking.
 	 * 
 	 * @return 	array 	Associative list of CC value-pairs, if any.
@@ -1798,6 +1831,12 @@ class VBOModelReservation extends JObject
 					}
 				}
 			}
+		}
+
+		// check if we have already a full VCC
+		if (($remote_cc_data['card_number'] ?? '') && strlen(preg_replace('/[^0-9]/', '', (string) $remote_cc_data['card_number'])) >= 15) {
+			// do not merge any local data and return the full VCC details
+			return $remote_cc_data;
 		}
 
 		// merge remotely decoded CC details with parsed payment log (if any)

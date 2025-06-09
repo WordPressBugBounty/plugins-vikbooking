@@ -69,6 +69,7 @@ VikBookingLoader::import('bc.error');
 VikBookingLoader::import('bc.mvc');
 VikBookingLoader::import('layout.helper');
 VikBookingLoader::import('lite.manager');
+VikBookingLoader::import('lite.vcm.manager');
 VikBookingLoader::import('system.body');
 VikBookingLoader::import('system.builder');
 VikBookingLoader::import('system.cron');

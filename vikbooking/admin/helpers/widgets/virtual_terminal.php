@@ -110,23 +110,27 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 			}
 		}
 
-		// check if direct charge is supported by the current payment processor
-		if (!$this->getPaymentProcessor($booking_info)) {
+		// ensure a valid payment processor is assigned to the reservation
+		if (!($processor = $this->getPaymentProcessor($booking_info))) {
 			// unable to proceed due to unsupported transaction
 			return [
 				'html' => '<p class="err">' . JText::translate('VBO_PAY_PROCESS_NO_DIRECT_CHARGE') . '</p>',
 			];
 		}
 
+		// tell whether off-session capturing is supported
+		$off_session_capturing = method_exists($processor, 'isOffSessionCaptureSupported') && $processor->isOffSessionCaptureSupported();
+		$off_session_tn_data = $off_session_capturing ? VBOModelReservation::getInstance($booking_info, true)->getOffSessionTransactionData() : [];
+
 		// make sure the permissions are met
-		if ($this->vcm_exists && !JFactory::getUser()->authorise('core.admin', 'com_vikchannelmanager')) {
+		if ($this->vcm_exists && !JFactory::getUser()->authorise('core.admin', 'com_vikchannelmanager') && !$off_session_tn_data) {
 			// insufficient permissions to handle CC details
 			return [
 				'html' => '<p class="err">' . JText::translate('JERROR_ALERTNOAUTHOR') . '</p>',
 			];
 		}
 
-		// get the reservation credit card value pairs
+		// get the reservation credit card value pairs, if any
 		$cc_value_pairs = VBOModelReservation::getInstance($booking_info, true)->getCardValuePairs();
 
 		// currency code
@@ -161,12 +165,21 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 		 * Consider calculating an outstanding balance in case of previous payments.
 		 * 
 		 * @since 	1.16.7 (J) - 1.6.7 (WP)
+		 * @since 	1.18.0 (J) - 1.8.0 (WP) added support to amount raw for off-session capture.
 		 */
 		$default_total = $booking_info['total'];
 		if ($booking_info['totpaid'] > 0 && $booking_info['totpaid'] < $booking_info['total']) {
 			// default to the outstanding balance
 			$default_total = $booking_info['total'] - $booking_info['totpaid'];
 		}
+
+		if (!$booking_info['totpaid'] && $off_session_tn_data && ($off_session_tn_data[0]->amount_raw ?? null)) {
+			// default to the payable amount at the time of payment, unless empty
+			$default_total = ((float) $off_session_tn_data[0]->amount_raw) ?: $booking_info['total'];
+		}
+
+		// tell whether we only have an off-session transaction to capture
+		$only_off_session = $off_session_tn_data && !$cc_value_pairs;
 
 		// start output buffering
 		ob_start();
@@ -190,46 +203,78 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 				</div>
 			</div>
 
-			<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-cardholder">
-				<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-cardholder">
-					<div class="vbo-vterminal-cc-lbl"><?php echo JText::translate('VBISNOMINATIVE'); ?></div>
+		<?php
+		if ($off_session_tn_data) {
+			// when an off-session transaction is available, display the capture button
+			?>
+			<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-submit" data-tn-type="off-session">
+				<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-submit" data-tn-type="off-session">
 					<div class="vbo-vterminal-cc-val">
-						<input type="text" autocomplete="off" value="<?php echo isset($known_tn_vals['name']) ? JHtml::fetch('esc_attr', $cc_value_pairs['name']) : ''; ?>" data-vt-cc-field="cardholder" />
+						<button type="button" class="btn vbo-config-btn" onclick="vboWidgetVTerminalOffSessionCharge('<?php echo $wrapper; ?>');"><?php VikBookingIcons::e('credit-card'); ?> <?php echo JText::translate('VBO_CHARGE_AUTHORIZED_CARD'); ?></button>
 					</div>
 				</div>
 			</div>
+			<?php
+		}
+		?>
 
-			<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-ccpan">
-				<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-ccpan">
-					<div class="vbo-vterminal-cc-lbl"><?php echo JText::translate('VBO_CC_NUMBER'); ?></div>
-					<div class="vbo-vterminal-cc-val vbo-vterminal-cc-val-withlogo">
-						<input type="text" autocomplete="off" value="<?php echo isset($known_tn_vals['card_number']) ? JHtml::fetch('esc_attr', $cc_value_pairs['card_number']) : ''; ?>" data-vt-cc-field="card_number" />
-						<span class="vbo-vterminal-cc-type-logo"></span>
-					</div>
-				</div>
-			</div>
+			<div class="vbo-vterminal-cc-group-cardwrap"<?php echo $off_session_tn_data ? ' data-has-offsession="1"' : ''; ?>>
 
-			<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-ccextra">
-				<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-ccexpiry">
-					<div class="vbo-vterminal-cc-lbl"><?php echo JText::translate('VBO_CC_EXPIRY_DT'); ?></div>
-					<div class="vbo-vterminal-cc-val">
-						<input type="text" autocomplete="off" placeholder="MM/YYYY" value="<?php echo isset($known_tn_vals['expiration_date']) ? JHtml::fetch('esc_attr', $cc_value_pairs['expiration_date']) : ''; ?>" data-vt-cc-field="expiry" />
+			<?php
+			if ($off_session_tn_data) {
+				// add a label for using the card
+				?>
+				<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-usecard">
+					<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-usecard">
+						<div class="vbo-vterminal-cc-lbl"><?php echo JText::translate('VBO_CREDIT_CARD') . ($only_off_session ? ' - ' . JText::translate('VBMAINPAYMENTSNEW') : ''); ?></div>
 					</div>
 				</div>
-				<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-cvc">
-					<div class="vbo-vterminal-cc-lbl"><?php echo JText::translate('VBO_CC_CVV'); ?></div>
-					<div class="vbo-vterminal-cc-val">
-						<input type="text" autocomplete="off" value="<?php echo isset($known_tn_vals['cvv']) ? JHtml::fetch('esc_attr', $cc_value_pairs['cvv']) : ''; ?>" data-vt-cc-field="cvv" />
-					</div>
-				</div>
-			</div>
+				<?php
+			}
+			?>
 
-			<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-submit">
-				<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-submit">
-					<div class="vbo-vterminal-cc-val">
-						<button type="button" class="btn vbo-config-btn" onclick="vboWidgetVTerminalChargeCard('<?php echo $wrapper; ?>');"><?php VikBookingIcons::e('credit-card'); ?> <?php echo JText::translate('VBO_CC_DOCHARGE'); ?></button>
+				<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-cardholder">
+					<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-cardholder">
+						<div class="vbo-vterminal-cc-lbl"><?php echo JText::translate('VBISNOMINATIVE'); ?></div>
+						<div class="vbo-vterminal-cc-val">
+							<input type="text" autocomplete="off" value="<?php echo isset($known_tn_vals['name']) ? JHtml::fetch('esc_attr', $cc_value_pairs['name']) : ''; ?>" data-vt-cc-field="cardholder" />
+						</div>
 					</div>
 				</div>
+
+				<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-ccpan">
+					<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-ccpan">
+						<div class="vbo-vterminal-cc-lbl"><?php echo JText::translate('VBO_CC_NUMBER'); ?></div>
+						<div class="vbo-vterminal-cc-val vbo-vterminal-cc-val-withlogo">
+							<input type="text" autocomplete="off" value="<?php echo isset($known_tn_vals['card_number']) ? JHtml::fetch('esc_attr', $cc_value_pairs['card_number']) : ''; ?>" data-vt-cc-field="card_number" />
+							<span class="vbo-vterminal-cc-type-logo"></span>
+						</div>
+					</div>
+				</div>
+
+				<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-ccextra">
+					<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-ccexpiry">
+						<div class="vbo-vterminal-cc-lbl"><?php echo JText::translate('VBO_CC_EXPIRY_DT'); ?></div>
+						<div class="vbo-vterminal-cc-val">
+							<input type="text" autocomplete="off" placeholder="MM/YYYY" value="<?php echo isset($known_tn_vals['expiration_date']) ? JHtml::fetch('esc_attr', $cc_value_pairs['expiration_date']) : ''; ?>" data-vt-cc-field="expiry" />
+						</div>
+					</div>
+					<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-cvc">
+						<div class="vbo-vterminal-cc-lbl"><?php echo JText::translate('VBO_CC_CVV'); ?></div>
+						<div class="vbo-vterminal-cc-val">
+							<input type="text" autocomplete="off" value="<?php echo isset($known_tn_vals['cvv']) ? JHtml::fetch('esc_attr', $cc_value_pairs['cvv']) : ''; ?>" data-vt-cc-field="cvv" />
+						</div>
+					</div>
+				</div>
+
+				<div class="vbo-vterminal-cc-row-group vbo-vterminal-cc-row-group-submit" data-tn-type="direct-charge">
+					<div class="vbo-vterminal-cc-row vbo-vterminal-cc-row-submit" data-tn-type="direct-charge">
+						<div class="vbo-vterminal-cc-val">
+							<button type="button" class="btn vbo-config-btn" onclick="vboWidgetVTerminalChargeCard('<?php echo $wrapper; ?>');"><?php VikBookingIcons::e('credit-card'); ?> <?php echo JText::translate('VBO_CC_DOCHARGE'); ?></button>
+						</div>
+					</div>
+				</div>
+
 			</div>
 
 		<?php
@@ -448,7 +493,7 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 		$dbo = JFactory::getDbo();
 
 		// get the amount paid
-		$tn_amount = isset($array_result['tot_paid']) ? (float)$array_result['tot_paid'] : null;
+		$tn_amount = isset($array_result['tot_paid']) ? (float) $array_result['tot_paid'] : null;
 
 		// get the log string, if any
 		$tn_log = !empty($array_result['log']) ? $array_result['log'] : '';
@@ -503,10 +548,159 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 			// check event data payload to store
 			if (is_array($tn_data)) {
 				// set key
-				$tn_data['processing_fees'] = (float)$array_result['tot_fees'];
+				$tn_data['processing_fees'] = (float) $array_result['tot_fees'];
 			} elseif (is_object($tn_data)) {
 				// set property
-				$tn_data->processing_fees = (float)$array_result['tot_fees'];
+				$tn_data->processing_fees = (float) $array_result['tot_fees'];
+			}
+		}
+
+		// current admin-user
+		$now_user = JFactory::getUser();
+
+		// Booking History
+		$ev_descr = JText::translate('VBO_W_VIRTUALTERMINAL_TITLE') . " - {$pay_process_name} ({$now_user->name})";
+		VikBooking::getBookingHistoryInstance()->setBid($booking_info['id'])->setExtraData($tn_data)->store('P' . ($booking_info['paymcount'] > 0 ? 'N' : '0'), $ev_descr);
+
+		return [
+			'success' => 1,
+			'log' 	  => $tn_log,
+		];
+	}
+
+	/**
+	 * Custom method for this widget only to debit a credit card off-session.
+	 * 
+	 * @return 	?array
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function doOffSessionCapture()
+	{
+		$app = JFactory::getApplication();
+
+		$wrapper  = $app->input->getString('wrapper', '');
+		$bid 	  = $app->input->getUInt('bid', 0);
+		$amount   = $app->input->getFloat('amount', 0);
+		$currency = $app->input->getString('currency', '');
+
+		if (!$bid || !$amount) {
+			// booking ID and amount are mandatory
+			VBOHttpDocument::getInstance()->close(500, JText::translate('VBPEDITBUSYONE'));
+		}
+
+		// get booking details
+		$booking_info = VikBooking::getBookingInfoFromID($bid);
+
+		if (!$booking_info) {
+			// booking record not found
+			VBOHttpDocument::getInstance()->close(404, JText::translate('VBPEDITBUSYONE'));
+		}
+
+		// collect the previous transaction data list
+		$tn_data = VBOModelReservation::getInstance($booking_info, true)->getOffSessionTransactionData();
+		if (!$tn_data) {
+			// previous transaction data not found
+			VBOHttpDocument::getInstance()->close(400, 'Missing previous transaction data');
+		}
+
+		// set the amount to capture and transaction data before accessing the payment processor
+		$booking_info['total_to_pay'] = $amount;
+		$booking_info['tn_currency']  = $currency;
+		$booking_info['transaction']  = $tn_data[0];
+
+		// get the eligible payment processor
+		$processor = $this->getPaymentProcessor($booking_info);
+
+		if (!$processor) {
+			VBOHttpDocument::getInstance()->close(500, JText::translate('VBO_PAY_PROCESS_NO_DIRECT_CHARGE'));
+		}
+
+		// default transaction response
+		$array_result = [
+			'verified' => 0,
+		];
+
+		try {
+			// perform the transaction
+			$array_result = $processor->offSessionCapture();
+		} catch (Exception $e) {
+			// set error message
+			$array_result['log'] = sprintf(JText::translate('VBO_CC_TN_ERROR') . " \n%s", $e->getMessage());
+		}
+
+		if ($array_result['verified'] != 1) {
+			// erroneous response
+			if (!empty($array_result['log']) && is_string($array_result['log'])) {
+				VBOHttpDocument::getInstance()->close(500, $array_result['log']);
+			} else {
+				VBOHttpDocument::getInstance()->close(500, 'Operation failed');
+			}
+		}
+
+		// valid transaction response!
+
+		// update booking details
+		$dbo = JFactory::getDbo();
+
+		// get the amount paid
+		$tn_amount = isset($array_result['tot_paid']) ? (float) $array_result['tot_paid'] : null;
+
+		// get the log string, if any
+		$tn_log = !empty($array_result['log']) ? $array_result['log'] : '';
+
+		// update record
+		$upd_record = new stdClass;
+		$upd_record->id = $booking_info['id'];
+		if ($tn_amount) {
+			// update amount paid
+			$upd_record->totpaid = $booking_info['totpaid'] + $tn_amount;
+			// update payable amount (if needed)
+			$new_payable = $booking_info['payable'] - $tn_amount;
+			$new_payable = $new_payable < 0 ? 0 : $new_payable;
+			$upd_record->payable = $new_payable;
+		}
+		if ($tn_log) {
+			$upd_record->paymentlog = $booking_info['paymentlog'] . "\n\n" . date('c') . "\n" . $tn_log;
+		}
+		$upd_record->paymcount = ((int) $booking_info['paymcount'] + 1);
+
+		// update reservation record
+		$dbo->updateObject('#__vikbooking_orders', $upd_record, 'id');
+
+		// payment processor name
+		$pay_process_name = $this->payment_method ? $this->payment_method['name'] : 'CC Manual Charge (Off-Session)';
+
+		// handle transaction data to eventually support a later transaction of type refund
+		$tn_data = isset($array_result['transaction']) ? $array_result['transaction'] : null;
+		if ($tn_amount) {
+			// check event data payload to store
+			if (is_array($tn_data)) {
+				// set key
+				$tn_data['amount_paid'] = $tn_amount;
+			} elseif (is_object($tn_data)) {
+				// set property
+				$tn_data->amount_paid = $tn_amount;
+			} elseif (!$tn_data) {
+				// build an array (we add the payment name because we know there is no other transaction data)
+				$tn_data = [
+					'amount_paid' 	 => $tn_amount,
+					'payment_method' => $pay_process_name,
+				];
+			}
+		}
+
+		/**
+		 * Check if the payment processor returned the information about the amount of processing fees.
+		 */
+		if ($tn_data && isset($array_result['tot_fees']) && $array_result['tot_fees']) {
+			// check event data payload to store
+			if (is_array($tn_data)) {
+				// set key
+				$tn_data['processing_fees'] = (float) $array_result['tot_fees'];
+			} elseif (is_object($tn_data)) {
+				// set property
+				$tn_data->processing_fees = (float) $array_result['tot_fees'];
 			}
 		}
 
@@ -538,11 +732,11 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 	 * Main method to invoke the widget. Contents will be loaded
 	 * through AJAX requests, not via PHP when the page loads.
 	 * 
-	 * @param 	VBOMultitaskData 	$data
+	 * @param 	?VBOMultitaskData 	$data
 	 * 
 	 * @return 	void
 	 */
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;
@@ -675,7 +869,7 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 				}
 
 				// the trigger button
-				var charge_cmd = widget_instance.find('.vbo-vterminal-cc-row-submit').find('button');
+				var charge_cmd = widget_instance.find('.vbo-vterminal-cc-row-submit[data-tn-type="direct-charge"]').find('button');
 
 				// disable button
 				charge_cmd.prop('disabled', true);
@@ -726,6 +920,81 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 
 							// check if we need to dismiss the modal widget
 							var js_modal_id = widget_instance.attr('data-modalid');
+							if (js_modal_id) {
+								setTimeout(() => {
+									// dismiss modal widget
+									VBOCore.emitEvent('vbo-dismiss-widget-modal' + js_modal_id);
+								}, 1500);
+							}
+						} catch(err) {
+							console.error('could not parse JSON response', err, response);
+						}
+					},
+					(error) => {
+						// display error message
+						alert(error.responseText);
+						// restore button
+						charge_cmd.prop('disabled', false);
+						charge_cmd.find('i').replaceWith(vbo_vt_icon_error);
+					}
+				);
+			}
+
+			/**
+			 * Performs the request to charge a pre-authorized card (off-session).
+			 */
+			function vboWidgetVTerminalOffSessionCharge(wrapper) {
+				let widget_instance = jQuery('#' + wrapper);
+				if (!widget_instance.length) {
+					return false;
+				}
+
+				// the trigger button
+				let charge_cmd = widget_instance.find('.vbo-vterminal-cc-row-submit[data-tn-type="off-session"]').find('button');
+
+				// disable button
+				charge_cmd.prop('disabled', true);
+
+				if (VBOCore.options.default_loading_body) {
+					// show loading spinner
+					charge_cmd.find('i').replaceWith(VBOCore.options.default_loading_body);
+				}
+
+				// get the booking ID for the transaction
+				let force_bid = widget_instance.attr('data-pagebid');
+
+				// the widget method to call
+				let call_method = 'doOffSessionCapture';
+
+				// make a request to load the bookings calendar
+				VBOCore.doAjax(
+					"<?php echo $this->getExecWidgetAjaxUri(); ?>",
+					{
+						widget_id: "<?php echo $this->getIdentifier(); ?>",
+						call: call_method,
+						return: 1,
+						bid: force_bid,
+						currency: widget_instance.find('input[data-vt-cc-field="currency"]').val(),
+						amount: widget_instance.find('input[data-vt-cc-field="amount"]').val(),
+						wrapper: wrapper,
+						tmpl: "component"
+					},
+					(response) => {
+						try {
+							let obj_res = typeof response === 'string' ? JSON.parse(response) : response;
+							if (!obj_res.hasOwnProperty(call_method)) {
+								console.error('Unexpected JSON response', obj_res);
+								return false;
+							}
+
+							// turn flag on
+							vbo_widget_vt_last_tn = 1;
+
+							// update button status
+							charge_cmd.removeClass('vbo-config-btn').addClass('btn-success').html(vbo_vt_icon_success + ' ' + Joomla.JText._('VBOUPLOADFILEDONE'));
+
+							// check if we need to dismiss the modal widget
+							let js_modal_id = widget_instance.attr('data-modalid');
 							if (js_modal_id) {
 								setTimeout(() => {
 									// dismiss modal widget
@@ -1019,7 +1288,7 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 				// show loading skeletons
 				vboWidgetVTerminalFormSkeleton('<?php echo $wrapper_id; ?>');
 
-				// when document is ready, load bookings calendar for this widget's instance
+				// when document is ready, load terminal form for this widget's instance
 				vboWidgetVTerminalFormLoad('<?php echo $wrapper_id; ?>', '<?php echo $page_bid; ?>');
 
 				// subscribe to the multitask-panel-open event
@@ -1027,7 +1296,7 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 					vboWidgetVTerminalMultitaskOpen('<?php echo $wrapper_id; ?>');
 				});
 
-				// subscribe to the multitask-panel-close event to emit the event for the lastly created booking ID
+				// subscribe to the multitask-panel-close event to propagate the event for new transaction
 				document.addEventListener(VBOCore.multitask_close_event, function() {
 					if (vbo_widget_vt_last_tn) {
 						// emit the event with data for anyone who is listening to it
@@ -1067,7 +1336,7 @@ class VikBookingAdminWidgetVirtualTerminal extends VikBookingAdminWidget
 	 * @param 	array 	$booking 	the reservation record as an associative array.
 	 * @param 	array 	$card 		the card details collected through the Virtual Terminal.
 	 * 
-	 * @return 	object|null 		the payment processor dispatcher instance or null.
+	 * @return 	?object 			the payment processor dispatcher instance or null.
 	 */
 	protected function getPaymentProcessor(array $booking, array $card = [])
 	{

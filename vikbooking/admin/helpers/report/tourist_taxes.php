@@ -131,7 +131,7 @@ class VikBookingReportTouristTaxes extends VikBookingReport
 		//jQuery code for the datepicker calendars and select2
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
-		$js = 'jQuery(document).ready(function() {
+		$js = 'jQuery(function() {
 			jQuery(".vbo-report-datepicker:input").datepicker({
 				'.(!empty($mincheckin) ? 'minDate: "'.date($df, $mincheckin).'", ' : '').'
 				'.(!empty($maxcheckout) ? 'maxDate: "'.date($df, $maxcheckout).'", ' : '').'

@@ -21,12 +21,12 @@ abstract class VikBookingLayoutHelper
 	/**
 	 * Renders the system messages.
 	 *
-	 * @param 	array 	 $queue  The messages queue.
+	 * @param 	?array 	 $queue  The messages queue.
 	 * @param 	boolean  $echo 	 True to echo the layout, false to return it.
 	 *
 	 * @return 	mixed 	 True when the layout is echoed, otherwise the layout string.
 	 */
-	public static function renderSystemMessages(array $queue = null, $echo = true)
+	public static function renderSystemMessages(?array $queue = null, $echo = true)
 	{
 		$app = JFactory::getApplication();
 

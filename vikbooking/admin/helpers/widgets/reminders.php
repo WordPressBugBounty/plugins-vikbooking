@@ -520,11 +520,11 @@ class VikBookingAdminWidgetReminders extends VikBookingAdminWidget
 	 * Main method to invoke the widget. Contents will be loaded
 	 * through AJAX requests, not via PHP when the page loads.
 	 * 
-	 * @param 	VBOMultitaskData 	$data 	multitask data object.
+	 * @param 	?VBOMultitaskData 	$data 	multitask data object.
 	 * 
 	 * @return 	void
 	 */
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;

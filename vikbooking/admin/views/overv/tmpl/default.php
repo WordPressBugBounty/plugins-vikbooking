@@ -2,8 +2,8 @@
 /**
  * @package     VikBooking
  * @subpackage  com_vikbooking
- * @author      Alessio Gaggii - e4j - Extensionsforjoomla.com
- * @copyright   Copyright (C) 2018 e4j - Extensionsforjoomla.com. All rights reserved.
+ * @author      Alessio Gaggii - E4J srl
+ * @copyright   Copyright (C) 2025 E4J srl. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com
  */
@@ -17,8 +17,14 @@ $tsstart = $this->tsstart;
 $lim0 = $this->lim0;
 $navbut = $this->navbut;
 
-$vbo_auth_pricing = JFactory::getUser()->authorise('core.vbo.pricing', 'com_vikbooking');
+$app = JFactory::getApplication();
 $vbo_app = VikBooking::getVboApplication();
+
+// load context menu assets
+$vbo_app->loadContextMenuAssets();
+
+$vbo_auth_pricing = JFactory::getUser()->authorise('core.vbo.pricing', 'com_vikbooking');
+
 JHtml::fetch('script', VBO_SITE_URI.'resources/jquery-ui.min.js');
 JHtml::fetch('script', VBO_ADMIN_URI.'resources/js_upload/jquery.stickytableheaders.min.js');
 
@@ -83,7 +89,7 @@ $show_type = $session->get('vbUnitsShowType', '');
 $mnum = $session->get('vbOvwMnum', '1');
 $mnum = intval($mnum);
 $pcategory_id = $session->get('vbOvwCatid', 0);
-$cookie = JFactory::getApplication()->input->cookie;
+$cookie = $app->input->cookie;
 $cookie_uleft = $cookie->get('vboAovwUleft', '', 'string');
 $cookie_sticky_heads = $cookie->get('vboAovwStheads', 'off', 'string');
 $colortags = VikBooking::loadBookingsColorTags();
@@ -168,7 +174,7 @@ function vboUnitsLeftOrBooked() {
 	nd.setTime(nd.getTime() + (365*24*60*60*1000));
 	document.cookie = "vboAovwUleft="+set_to+"; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
 }
-if (jQuery.isFunction(jQuery.fn.tooltip)) {
+if (typeof jQuery.fn.tooltip === 'function') {
 	jQuery(".hasTooltip").tooltip();
 } else {
 	jQuery.fn.tooltip = function(){};
@@ -261,55 +267,111 @@ var vboRdayNotes = <?php echo json_encode($this->rdaynotes); ?>;
 			}
 		</script>
 	<?php
-	if ((count($rows) * $mnum) > 10) {
+	if ((count($rows) * $mnum) > 10 || $tags_view_supported === true) {
+		// group into an apposite context menu the layout and view types
 		?>
+		<script type="text/javascript">
+			const vboOvervLayoutBtns = [];
+		<?php
+		if ((count($rows) * $mnum) > 10) {
+			// push buttons to choose between the scroll or table layout
+			?>
+			vboOvervLayoutBtns.push({
+				class: 'btngroup',
+				text: <?php echo json_encode(JText::translate('VBO_LAYOUT')); ?>,
+				disabled: true,
+			});
+			vboOvervLayoutBtns.push({
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBO_SCROLL')); ?>,
+				icon: '<?php echo $cookie_sticky_heads == 'off' ? VikBookingIcons::i('check-square') : VikBookingIcons::i('far fa-square'); ?>',
+				action: (root, event) => {
+					vboToggleStickyTableHeaders(0);
+					document.vboverview.submit();
+				},
+			});
+			vboOvervLayoutBtns.push({
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBO_TABLE')); ?>,
+				icon: '<?php echo empty($cookie_sticky_heads) || $cookie_sticky_heads == 'on' ? VikBookingIcons::i('check-square') : VikBookingIcons::i('far fa-square'); ?>',
+				action: (root, event) => {
+					vboToggleStickyTableHeaders(1);
+					document.vboverview.submit();
+				},
+				separator: <?php echo $tags_view_supported === true ? 'true' : 'false'; ?>,
+			});
+			<?php
+		}
+		if ($tags_view_supported === true) {
+			// push buttons to choose between classic or tags view
+			?>
+			vboOvervLayoutBtns.push({
+				class: 'btngroup',
+				text: <?php echo json_encode(JText::translate('VBMENUTHREE')); ?>,
+				disabled: true,
+			});
+			vboOvervLayoutBtns.push({
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBOAVOVWBMODECLASSIC')); ?>,
+				icon: '<?php echo $pbmode != 'tags' ? VikBookingIcons::i('check-square') : VikBookingIcons::i('far fa-square'); ?>',
+				action: (root, event) => {
+					let inp = document.createElement('input');
+					inp.setAttribute('type', 'hidden');
+					inp.setAttribute('name', 'bmode');
+					inp.value = 'classic';
+					document.vboverview.append(inp);
+					document.vboverview.submit();
+				},
+			});
+			vboOvervLayoutBtns.push({
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBOAVOVWBMODETAGS')); ?>,
+				icon: '<?php echo $pbmode == 'tags' ? VikBookingIcons::i('check-square') : VikBookingIcons::i('far fa-square'); ?>',
+				action: (root, event) => {
+					let inp = document.createElement('input');
+					inp.setAttribute('type', 'hidden');
+					inp.setAttribute('name', 'bmode');
+					inp.value = 'tags';
+					document.vboverview.append(inp);
+					document.vboverview.submit();
+				},
+			});
+			<?php
+		}
+		?>
+
+			jQuery(function() {
+
+				// define the context menu for the actions button
+		        jQuery('.vbo-context-menu-overview-layout').vboContextMenu({
+		            placement: 'bottom-left',
+		            buttons: vboOvervLayoutBtns,
+		        });
+
+			});
+		</script>
+
 		<div class="btn-group pull-left">
-			<select name="stickytheads" onchange="vboToggleStickyTableHeaders(this.value);">
-				<optgroup label="<?php echo JHtml::fetch('esc_attr', JText::translate('VBO_LAYOUT')); ?>">
-					<option value="1"<?php echo empty($cookie_sticky_heads) || $cookie_sticky_heads == 'on' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_TABLE'); ?></option>
-					<option value="0"<?php echo $cookie_sticky_heads == 'off' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_SCROLL'); ?></option>
-				</optgroup>
-			</select>
+			<button type="button" class="btn vbo-context-menu-btn vbo-context-menu-btn-raw vbo-context-menu-overview-layout">
+				<span class="vbo-context-menu-lbl"><?php echo JText::translate('VBO_LAYOUT'); ?></span>
+				<span class="vbo-context-menu-ico"><?php VikBookingIcons::e('sort-down'); ?></span>
+			</button>
 		</div>
 		<?php
 	}
 
-	if ($tags_view_supported === true) {
 	?>
 		<div class="btn-group pull-left">
-			<div class="vbo-overview-tagsorclassic">
-				<select name="bmode" onchange="document.vboverview.submit();">
-					<option value="classic"><?php echo JText::translate('VBOAVOVWBMODECLASSIC'); ?></option>
-					<option value="tags"<?php echo $pbmode == 'tags' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBOAVOVWBMODETAGS'); ?></option>
-				</select>
-			</div>
 		<?php
-		if ($pbmode == 'tags' && $colortags) {
-			?>
-			<div class="vbo-overview-tagslegend">
-				<span class="vbo-overview-tagslegend-lbl"><?php echo JText::translate('VBOAVOVWBMODETAGSLBL'); ?></span>
-			<?php
-			foreach ($colortags as $ctagk => $ctagv) {
-				?>
-				<div class="vbo-overview-legend-tag">
-					<div class="vbo-colortag-circle hasTooltip" style="background-color: <?php echo $ctagv['color']; ?>;" title="<?php echo JText::translate($ctagv['name']); ?>"></div>
-				</div>
-				<?php
-			}
-			?>
-			</div>
-			<?php
-		}
+		// display overview context-menu
+		echo JLayoutHelper::render('overview.actions', ['caller' => 'overv', 'rooms' => $rows]);
 		?>
 		</div>
-	<?php
-	}
-	?>
 		<div class="btn-group pull-right">
 			<select name="units_show_type" id="uleftorbooked" onchange="vboUnitsLeftOrBooked();"><option value="units-booked"<?php echo (!empty($cookie_uleft) && $cookie_uleft == 'units-booked' ? ' selected="selected"' : ''); ?>><?php echo JText::translate('VBOVERVIEWUBOOKEDFILT'); ?></option><option value="units-left"<?php echo $show_type == 'units-left' || (!empty($cookie_uleft) && $cookie_uleft == 'units-left') ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBOVERVIEWULEFTFILT'); ?></option></select>
 		</div>
 		<div class="btn-group pull-right vbo-avov-legend">
-			<span class="vbo-overview-legend-init"><?php echo JText::translate('VBOVERVIEWLEGEND'); ?></span>
+			<!-- <span class="vbo-overview-legend-init"><?php echo JText::translate('VBOVERVIEWLEGEND'); ?></span> -->
 			<div class="vbo-overview-legend-red">
 				<span class="vbo-overview-legend-box">&nbsp;</span>
 				<span class="vbo-overview-legend-title"><?php echo JText::translate('VBOVERVIEWLEGRED'); ?></span>
@@ -328,6 +390,23 @@ var vboRdayNotes = <?php echo json_encode($this->rdaynotes); ?>;
 			</div>
 		</div>
 	</div>
+<?php
+// propagate the current task manager filters
+foreach ((array) $app->input->get('tmfilters', [], 'array') as $tm_filter_key => $tm_filter_val) {
+	if (is_scalar($tm_filter_val)) {
+		?>
+	<input type="hidden" name="tmfilters[<?php echo $tm_filter_key; ?>]" value="<?php echo JHtml::fetch('esc_attr', $tm_filter_val); ?>" />
+		<?php
+	} elseif (is_array($tm_filter_val) && $tm_filter_val && array_keys($tm_filter_val) == range(0, count($tm_filter_val) - 1)) {
+		// add support for linear arrays
+		foreach ($tm_filter_val as $tm_filter_val_sub) {
+			?>
+	<input type="hidden" name="tmfilters[<?php echo $tm_filter_key; ?>][]" value="<?php echo JHtml::fetch('esc_attr', $tm_filter_val_sub); ?>" />
+			<?php
+		}
+	}
+}
+?>
 </form>
 
 <?php
@@ -339,7 +418,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 	?>
 <div class="vbo-overv-montable-wrap">
 	<div class="vbo-table-responsive">
-		<table class="vboverviewtable vbo-roverview-table vbo-table <?php echo $cookie_sticky_heads == 'off' ? 'vbo-overv-sticky-table-head-off' : 'vbo-overv-sticky-table-head-on'; ?>" data-table-index="<?php echo ($mind - 1); ?>">
+		<table class="vboverviewtable vbo-roverview-table vbo-table <?php echo $cookie_sticky_heads == 'off' ? 'vbo-overv-sticky-table-head-off' : 'vbo-overv-sticky-table-head-on'; ?>" data-table-index="<?php echo ($mind - 1); ?>" data-month-from="<?php echo date('Y-m-01', $curts[0]); ?>" data-month-to="<?php echo date('Y-m-t', $curts[0]); ?>">
 			<thead>
 				<tr class="vboverviewtablerowone">
 					<th class="bluedays skip-bluedays-click vbo-overview-month"><?php echo $monthname . " " . $curts['year']; ?></th>
@@ -370,7 +449,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 				$is_subunit = array_key_exists('unit_index', $room);
 
 				?>
-				<tr class="vboverviewtablerow<?php echo $is_subunit ? ' vboverviewtablerow-subunit' : ''; ?><?php echo ($is_subunit || $room['units'] == 1) && $cookie_sticky_heads == 'off' ? ' vbo-overv-row-snake' : ''; ?>"<?php echo $is_subunit ? ' data-subroomid="' . $room['id'] . '-' . $room['unit_index'] . '"' : ''; ?>>
+				<tr class="vboverviewtablerow<?php echo $is_subunit ? ' vboverviewtablerow-subunit' : ''; ?><?php echo ($is_subunit || $room['units'] == 1) && $cookie_sticky_heads == 'off' ? ' vbo-overv-row-snake' : ''; ?>"<?php echo !$is_subunit ? ' data-roomid="' . $room['id'] . '"' : ''; ?><?php echo $is_subunit ? ' data-subroomid="' . $room['id'] . '-' . $room['unit_index'] . '"' : ''; ?>>
 				<?php
 				if ($is_subunit) {
 					?>
@@ -381,7 +460,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 					<?php
 				} else {
 					?>
-					<td class="roomname" data-roomid="<?php echo $room['id']; ?>">
+					<td class="roomname" data-roomid="<?php echo $room['id']; ?>" data-units="<?php echo $room['units']; ?>">
 						<span class="vbo-overview-room-info">
 							<span class="vbo-overview-roomunits"><?php echo $room['units']; ?></span>
 							<span class="vbo-overview-roomname"><?php echo $room['name']; ?></span>
@@ -655,7 +734,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 										// make sure the alt attribute is not too long in case of broken images
 										$booking_avatar_alt = !empty($booking_avatar_alt) && strlen($booking_avatar_alt) > 15 ? '...' . substr($booking_avatar_alt, -12) : $booking_avatar_alt;
 										// append booking avatar image
-										$customer_descr .= '<span class="vbo-tableaux-booking-avatar"><img src="' . $booking_avatar_src . '" class="vbo-tableaux-booking-avatar-img" ' . (!empty($booking_avatar_alt) ? 'alt="' . htmlspecialchars($booking_avatar_alt) . '" ' : '') . '/></span>';
+										$customer_descr .= '<span class="vbo-tableaux-booking-avatar"><img src="' . $booking_avatar_src . '" class="vbo-tableaux-booking-avatar-img" decoding="async" loading="lazy" ' . (!empty($booking_avatar_alt) ? 'alt="' . htmlspecialchars($booking_avatar_alt) . '" ' : '') . '/></span>';
 									}
 
 									// customer name
@@ -707,7 +786,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 													// make sure the alt attribute is not too long in case of broken images
 													$booking_avatar_alt = !empty($booking_avatar_alt) && strlen($booking_avatar_alt) > 15 ? '...' . substr($booking_avatar_alt, -12) : $booking_avatar_alt;
 													// append booking avatar image
-													$customer_descr .= '<span class="vbo-tableaux-booking-avatar"><img src="' . $booking_avatar_src . '" class="vbo-tableaux-booking-avatar-img" ' . (!empty($booking_avatar_alt) ? 'alt="' . htmlspecialchars($booking_avatar_alt) . '" ' : '') . '/></span>';
+													$customer_descr .= '<span class="vbo-tableaux-booking-avatar"><img src="' . $booking_avatar_src . '" class="vbo-tableaux-booking-avatar-img" decoding="async" loading="lazy" ' . (!empty($booking_avatar_alt) ? 'alt="' . htmlspecialchars($booking_avatar_alt) . '" ' : '') . '/></span>';
 												}
 											}
 											// set customer nominative built
@@ -854,20 +933,41 @@ function vboJModalHideCallback() {
 		location.reload();
 	}
 }
-function vboCallOpenJModal(identif, baseurl) {
+function vboCallOpenJModal(identif, baseurl, options) {
+	options = typeof options !== 'object' ? {} : options;
+
 	if (last_room_click && last_room_click.length) {
 		baseurl += '&cid[]='+last_room_click;
+		options.room_id = last_room_click;
 		last_room_click = '';
 	}
 	if (last_date_click && last_date_click.length) {
 		baseurl += '&checkin='+last_date_click;
+		options.checkin = last_date_click;
 		last_date_click = '';
 	}
 	if (next_date_click && next_date_click.length) {
 		baseurl += '&checkout='+next_date_click;
+		options.checkout = next_date_click;
 		next_date_click = '';
 	}
-	vboOpenJModal(identif, baseurl);
+
+	// determine what type of modal to render
+	if (<?php echo VBOFactory::getConfig()->getBool('overv_newbook_legacy_modal', false) ? 'true' : 'false'; ?>) {
+		// use the ("legacy") modal from Bootstrap rendering the View calendar within an iFrame
+		vboOpenJModal(identif, baseurl);
+	} else {
+		// by default we rely on the VikBooking's native modal to render the admin-widget "bookings_calendar"
+		VBOCore.handleDisplayWidgetNotification({
+			widget_id: 'bookings_calendar',
+		}, {
+			id_room: options?.room_id || null,
+			offset: options?.checkin || null,
+			day: options?.checkin || null,
+			checkout: options?.checkout || null,
+			newbook: 1,
+		});
+	}
 }
 </script>
 <?php
@@ -1238,8 +1338,8 @@ function registerHoveringTooltip(that) {
 		celldata.push(elem.attr('data-day'));
 	}
 	hovtimer = setTimeout(() => {
-		if (isdragging) {
-			// prevent tooltip from popping up if dragging
+		if (isdragging || (vboActionRoomRateData && vboActionRoomRateData?.start)) {
+			// prevent tooltip from popping up if dragging or if selecting room rates
 			unregisterHoveringTooltip();
 
 			return;
@@ -2201,7 +2301,7 @@ jQuery(function() {
 		last_room_click = '';
 		last_date_click = '';
 		next_date_click = '';
-		vboCallOpenJModal('vbo-new-res', 'index.php?option=com_vikbooking&task=calendar&cid[]='+roomid+'&checkin='+curday+'&overv=1&tmpl=component');
+		vboCallOpenJModal('vbo-new-res', 'index.php?option=com_vikbooking&task=calendar&cid[]='+roomid+'&checkin='+curday+'&overv=1&tmpl=component', {room_id: roomid, checkin: curday});
 	});
 
 	jQuery(document.body).on('click', 'td.busy, td.notbusy, td.busytmplock, td.subroom-busy', function(e) {
@@ -2363,7 +2463,7 @@ jQuery(function() {
 							var rday_booking_html = '';
 							rday_booking_html += '<div class="vbo-dashboard-guest-activity-avatar">' + "\n";
 							if (obj_res[b]['avatar_src']) {
-								rday_booking_html += '<img class="vbo-dashboard-guest-activity-avatar-profile" src="' + obj_res[b]['avatar_src'] + '" alt="' + obj_res[b]['avatar_alt'] + '" />' + "\n";
+								rday_booking_html += '<img class="vbo-dashboard-guest-activity-avatar-profile" src="' + obj_res[b]['avatar_src'] + '" alt="' + obj_res[b]['avatar_alt'] + '" decoding="async" loading="lazy" />' + "\n";
 							} else if (obj_res[b]['closure']) {
 								rday_booking_html += closure_i + "\n";
 							} else {
@@ -2666,7 +2766,11 @@ jQuery(function() {
 	/* Default state for sticky table heads */
 	vboToggleStickyTableHeaders(<?php echo (count($rows) * $mnum) > 10 && $cookie_sticky_heads != 'off' ? 1 : 0; ?>);
 
-	// check orphans (only if not disabled with the cookie)
+	/**
+	 * Check orphans (only if not disabled with the cookie).
+	 * 
+	 * @deprecated 	1.18.0 (J) - 1.8.0 (WP) disabled with the "false" condition below.
+	 */
 	var hideorphans = false;
 	var buiscuits = document.cookie;
 	if (buiscuits.length) {
@@ -2675,7 +2779,7 @@ jQuery(function() {
 			hideorphans = true;
 		}
 	}
-	if (!hideorphans && <?php echo $vbo_auth_pricing ? 'true' : 'false'; ?>) {
+	if (false && !hideorphans && <?php echo $vbo_auth_pricing ? 'true' : 'false'; ?>) {
 		// make the request
 
 		VBOCore.doAjax(

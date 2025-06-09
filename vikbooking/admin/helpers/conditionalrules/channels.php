@@ -57,7 +57,7 @@ class VikBookingConditionalRuleChannels extends VikBookingConditionalRule
 		</div>
 		
 		<script type="text/javascript">
-			jQuery(document).ready(function() {
+			jQuery(function() {
 				jQuery('#<?php echo $this->inputID('channels'); ?>').select2();
 			});
 		</script>

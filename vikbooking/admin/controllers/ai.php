@@ -105,4 +105,42 @@ class VikBookingControllerAi extends JControllerAdmin
         // output the result content
         VBOHttpDocument::getInstance($app)->json(['content' => $content]);
     }
+
+    /**
+     * AJAX endpoint to extract a list of appropriate tags from a task manager task.
+     * 
+     * @return  void
+     * 
+     * @since   1.18.0 (J) - 1.8.0 (WP)
+     */
+    public function extractTaskTags()
+    {
+        $app = JFactory::getApplication();
+
+        if (!JSession::checkToken()) {
+            VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
+        }
+
+        try {
+            // validate AI service capabilities
+            $this->auditServiceCapabilities();
+
+            // let the AI model service extract the tags
+            $tags = (new VCMAiModelService)->extractTaskTags([
+                'area_id' => $app->input->getUInt('area_id', 0),
+                'task_id' => $app->input->getUInt('task_id', 0),
+                'task_title' => $app->input->getString('task_title', ''),
+                'task_notes' => $app->input->getString('task_notes', '', 'raw'),
+                'booking_id' => $app->input->getUInt('booking_id', 0),
+                'listing_id' => $app->input->getUInt('listing_id', 0),
+            ]);
+        } catch (Exception $e) {
+            VBOHttpDocument::getInstance($app)->close($e->getCode(), $e->getMessage());
+        } catch (Throwable $e) {
+            VBOHttpDocument::getInstance($app)->close($e->getCode() ?: 500, $e->getMessage() ?: 'Unrecoverable error');
+        }
+
+        // output the result tags
+        VBOHttpDocument::getInstance($app)->json(['tags' => $tags]);
+    }
 }

@@ -49,7 +49,7 @@ $pidcat = $app->getUserStateFromRequest("vbo.rooms.idcat", 'idcat', 0, 'int');
 				?>
 				</select>
 			</div>
-			<div class="btn-group pull-left input-append">
+			<div class="btn-group pull-left input-append btn-group-right-el">
 				<input type="text" name="rname" id="rname" value="<?php echo $prname; ?>" size="40" placeholder="<?php echo JText::translate('VBPVIEWROOMONE'); ?>"/>
 				<button type="button" class="btn btn-secondary" onclick="document.roomsform.submit();"><i class="icon-search"></i></button>
 			</div>

@@ -542,8 +542,8 @@ abstract class JHtml
 		$data['showTime'] = $showTime;
 
 		JFactory::getDocument()->addScriptDeclaration(
-<<<JS
-jQuery(document).ready(function() {
+<<<JAVASCRIPT
+jQuery(function() {
 
 	var sel_format = "$format";
 	var df_separator = sel_format[1];
@@ -566,7 +566,7 @@ jQuery(document).ready(function() {
 		jQuery('input[name="$name"]:input').focus();
 	});
 });
-JS
+JAVASCRIPT
 		);
 
 		/**

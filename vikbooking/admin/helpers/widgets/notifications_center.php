@@ -97,13 +97,13 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 	 * Checks for new notifications by using the previous preloaded watch-data.
 	 * This widget will actually never dispatch any notifications, but only events.
 	 * 
-	 * @param 	VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
+	 * @param 	?VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
 	 * 
 	 * @return 	array 						data object to watch next and notifications array.
 	 * 
 	 * @see 	preload()
 	 */
-	public function getNotifications(VBONotificationWatchdata $watch_data = null)
+	public function getNotifications(?VBONotificationWatchdata $watch_data = null)
 	{
 		// default empty values
 		$watch_next    = null;
@@ -128,13 +128,13 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 	/**
 	 * Checks for new events to be dispatched by using the previous preloaded watch-data.
 	 * 
-	 * @param 	VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
+	 * @param 	?VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
 	 * 
 	 * @return 	array 						list of event objects to dispatch, if any.
 	 * 
 	 * @see 	preload()
 	 */
-	public function getNotificationEvents(VBONotificationWatchdata $watch_data = null)
+	public function getNotificationEvents(?VBONotificationWatchdata $watch_data = null)
 	{
 		if (!$watch_data) {
 			return [];
@@ -404,11 +404,11 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 	/**
 	 * Main method to invoke the widget.
 	 * 
-	 * @param 	VBOMultitaskData 	$data
+	 * @param 	?VBOMultitaskData 	$data
 	 * 
 	 * @return 	void
 	 */
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;
@@ -1561,8 +1561,15 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				$group_badge_icon = 'bullhorn';
 				$group_badge_cls  = 'vbo-badge-group-lightblue';
 			} elseif (!strcasecmp($notif->group, 'operators')) {
-				$group_badge_icon = 'broom';
+				$group_badge_icon = 'user-tie';
 				$group_badge_cls  = 'vbo-badge-group-orange';
+				if (in_array($notif->type, ['chat.newmessage'])) {
+					$group_badge_icon = 'comment-dots';
+				}
+				if ($notif->type == 'task.unassigned') {
+					$group_badge_icon = 'tasks';
+					$group_badge_cls  = 'vbo-badge-group-red';
+				}
 			} elseif (!strcasecmp($notif->group, 'reports')) {
 				$group_badge_icon = 'cash-register';
 				if (strpos($notif->type, 'error') !== false) {
@@ -1594,7 +1601,14 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 							// use customer profile picture
 							?>
 							<span class="vbo-widget-notifscenter-cpic-zoom">
-								<img src="<?php echo strpos($notif->customer_pic, 'http') === 0 ? $notif->customer_pic : VBO_SITE_URI . 'resources/uploads/' . $notif->customer_pic; ?>" data-caption="<?php echo JHtml::fetch('esc_attr', (string) $notif->customer_name); ?>" />
+								<img src="<?php echo strpos($notif->customer_pic, 'http') === 0 ? $notif->customer_pic : VBO_SITE_URI . 'resources/uploads/' . $notif->customer_pic; ?>" data-caption="<?php echo JHtml::fetch('esc_attr', (string) $notif->customer_name); ?>" decoding="async" loading="lazy" />
+							</span>
+							<?php
+						} elseif (!empty($notif->avatar)) {
+							// use notification avatar
+							?>
+							<span class="vbo-widget-notifscenter-cpic-zoom">
+								<img src="<?php echo strpos($notif->avatar, 'http') === 0 ? $notif->avatar : JUri::root() . $notif->avatar; ?>" decoding="async" loading="lazy" />
 							</span>
 							<?php
 						} elseif (!empty($channel_logo)) {

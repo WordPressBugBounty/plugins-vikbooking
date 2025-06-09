@@ -131,6 +131,25 @@ final class VBONotificationElements extends JObject
 	}
 
 	/**
+	 * Returns the notification avatar URI.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function getAvatar()
+	{
+		// access the notification avatar
+		$avatar = (string) $this->get('avatar', '');
+
+		// turn full internal URIs into relative URIs
+		$avatar = str_replace(JUri::root(), '', $avatar);
+
+		// ensure the maximum length of 256 chars is respected
+		return $this->shortenString($avatar, 256);
+	}
+
+	/**
 	 * Builds and returns the notification call-to-action data.
 	 * 
 	 * @return 	null|string
@@ -334,7 +353,7 @@ final class VBONotificationElements extends JObject
 	 * 
 	 * @return 	string
 	 */
-	private function shortenString(string $value, int $length, string $fallback = null)
+	private function shortenString(string $value, int $length, string $fallback = '')
 	{
 		if (strlen($value) <= $length || $length <= 0) {
 			// length is safe

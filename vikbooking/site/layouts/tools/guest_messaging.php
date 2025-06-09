@@ -12,7 +12,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 
 /**
  * Obtain vars from arguments received in the layout file.
- * This is the layout file for the "finance" operator tool.
+ * This is the layout file for the "guest_messaging" operator tool.
  * 
  * @var string 	$tool 		   The tool identifier.
  * @var array 	$operator      The operator record accessing the tool.

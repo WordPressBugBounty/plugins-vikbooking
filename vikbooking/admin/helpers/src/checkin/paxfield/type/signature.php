@@ -325,4 +325,34 @@ HTML;
 		// return the necessary HTML string to display the field
 		return $field_html;
 	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function validateGuestRegistrationData()
+	{
+		if ($this->field->getGuestNumber() != 1 || VikBooking::isAdmin()) {
+			// no validation needed
+			return;
+		}
+
+		// get the booking record involved
+		$booking = $this->field->getBooking();
+
+		// get the customer record
+		$customer = VikBooking::getCPinInstance()->getCustomerFromBooking($booking['id'] ?? 0);
+
+		if (!$booking || !$customer) {
+			// do not raise an error when data is missing
+			return;
+		}
+
+		if (empty($customer['signature'])) {
+			// the contract was not signed, raise an error
+			throw new Exception(JText::translate('VBO_PRECHECKIN_SIGN_DOCUMENT'), 400);
+		}
+
+		// all good
+		return;
+	}
 }

@@ -77,19 +77,6 @@ input[type=checkbox]:checked:before {
 	margin: 0 !important;
 	color: initial !important;
 }
-.input-append .hasDatepicker {
-	border-top-right-radius: 0 !important;
-	border-bottom-right-radius: 0 !important;
-	border-color: var(--vbo-config-border-color);
-}
-.input-append .hasDatepicker:focus {
-	box-shadow: 0 0 0 1px transparent;
-}
-.input-append .vbodatepicker-trig-icon {
-	border-top-left-radius: 0 !important;
-	border-bottom-left-radius: 0 !important;
-	border-left: 0;
-}
 
 .btn-toolbar {
 	/* WP5 */
@@ -107,7 +94,7 @@ input[type=checkbox]:checked:before {
 textarea, input[type="text"], input[type="password"], input[type="datetime"], input[type="datetime-local"], input[type="date"], input[type="month"], input[type="time"], 
 input[type="week"], input[type="number"], input[type="email"], input[type="url"], input[type="search"], input[type="tel"], input[type="color"], .uneditable-input{
 	border: 1px solid var(--vbo-config-border-color);
-	border-radius: 3px;
+	border-radius: var(--vbo-field-radius);
 	padding: 5px 10px;
 }
 .vbo-trackings-filters .pull-right .btn {
@@ -132,7 +119,7 @@ select {
 .wp-calendar-box {
 	background: var(--vbo-input-style);
 	border: 1px solid var(--vbo-config-border-color);
-	border-radius: 2px;
+	border-radius: var(--vbo-field-radius);
 	padding: 4px 6px 4px 0;
 	display: inline-block;
 	vertical-align: top;
@@ -376,7 +363,7 @@ i.icon-image:before {
 	padding: 10px 12px;
 	font-size: 13px;
 	line-height: 18px;
-	border-radius: 3px;
+	border-radius: var(--vbo-field-radius);
 	cursor: pointer;
 }
 .btn:hover {
@@ -390,9 +377,7 @@ i.icon-image:before {
 .btn.btn-small {
     padding: 2px 10px;
     font-size: 12px;
-    -webkit-border-radius: 3px;
-    -moz-border-radius: 3px;
-    border-radius: 3px;
+    border-radius: var(--vbo-field-radius);
 }
 .btn-secondary {
 	color: var(--vbo-config-title-color);
@@ -445,7 +430,7 @@ a.btn {
 	margin: 0;
 }
 .input-append .btn {
-	border-radius: 3px;
+	border-radius: var(--vbo-field-radius);
 	padding: 9.5px 12px;
 	font-size: 14px;
 	cursor: pointer;
@@ -717,9 +702,6 @@ input[type="number"], #vbo-addnumnight, #vbo-numnights, #vbo-numadults, #vbo-num
 /*** Availability Overview ***/
 .vbo-overview-roomunits {
 	line-height: 20px;
-}
-.vbo-overlay-fests-addnew .vbo-overlay-fests-addnew-elem  {
-	margin: 5px 0 8px;
 }
 
 /*** Room New/Edit Page ***/
@@ -1371,6 +1353,118 @@ h1.vikwp-download-error {
 	text-align: right;
 	padding: 0 10px 10px 0;
 }
+
+.vbo-modal-widget_modal-wrap .viwppro-cnt.vcm-adv {
+	width: 100%;
+	margin: 0;
+}
+.vbo-modal-widget_modal-wrap .viwppro-cnt.vcm-adv:not(.ai) .vikwppro-header-inner > div:last-child {
+	padding: 20px 20px 0px 0;
+}
+.vbo-modal-widget_modal-wrap .viwppro-cnt.vcm-adv:not(.ai) .vikwppro-header-inner > div:first-child {
+	padding: 20px 30px 0px 20px;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header {
+	background: var(--vbo-config-bg-color);
+	border-radius: 20px;
+}
+.viwppro-cnt.vcm-adv .vikwppro-bottom-img {
+	padding: 0 40px 40px;
+	text-align: center;
+}
+.viwppro-cnt.vcm-adv .vikwppro-bottom-img img {
+	max-width: 800px;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-inner {
+	background: transparent;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-inner > div {
+	flex: 1;
+	align-self: center;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-notice {
+	text-align: center;
+	padding-top: 20px;
+	font-style: italic;
+	font-size: 16px;
+	font-weight: normal;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-text {
+	color: var(--vbo-container-text-color);
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-inner > div:first-child {
+	padding: 40px 30px 40px 40px;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-inner > div:last-child {
+	padding: 40px 40px 40px 0;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-text h2 {
+	color: var(--vbo-config-title-color);
+	font-style: initial;
+	line-height: 1.4em;
+	font-size: 24px;
+	font-weight: bold;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-text h3 {
+	color: var(--vbo-config-title-color);
+	font-size: 16px;
+	line-height: 1.3em;
+	font-weight: normal;
+	margin-bottom: 20px;
+	opacity: .85;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-text p {
+	color: var(--vbo-config-title-color);
+	opacity: .85;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-text ul {
+	margin-bottom: 30px;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-text ul li:not(:last-child) {
+	margin-bottom: 12px;
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-text ul li i {
+	width: 22px;
+}
+.viwppro-cnt.vcm-adv .vikwp-btn-link {
+	background: #55C381;
+	border: 0;
+	border-radius: 6px;
+	text-transform: initial;
+	font-weight: 500;
+}
+.viwppro-cnt.vcm-adv .vikwp-btn-link:hover {
+	background: #3D9F64;
+	color: var(--vbo-contrast-text-color);
+}
+.viwppro-cnt.vcm-adv .vikwp-btn-link:active, .viwppro-cnt.vcm-adv .vikwp-btn-link:focus {
+	color: var(--vbo-contrast-text-color);
+}
+.viwppro-cnt.vcm-adv .vikwppro-header-img img {
+	box-shadow: none;
+}
+
+.vbo-sidepanel-container .vbo-sidepanel-active-widgets .vbo-admin-widgets-container-small .vikwppro-header-inner, .vbo-dashboard-fullcontainer .vikwppro-header-inner {
+	flex-wrap: wrap;
+}
+.vbo-sidepanel-container .vbo-sidepanel-active-widgets .vbo-admin-widgets-container-small .viwppro-cnt.vcm-adv, .vbo-dashboard-fullcontainer .viwppro-cnt.vcm-adv {
+	width: 100%;
+	margin: 20px auto;
+}
+.vbo-sidepanel-container .vbo-sidepanel-active-widgets .vbo-admin-widgets-container-small .viwppro-cnt.vcm-adv .vikwppro-header-inner > div, .vbo-dashboard-fullcontainer .viwppro-cnt.vcm-adv .vikwppro-header-inner > div {
+	flex-basis: 100%;
+}
+.vbo-sidepanel-container .vbo-sidepanel-active-widgets .vbo-admin-widgets-container-small .viwppro-cnt.vcm-adv .vikwppro-header-text h2, .vbo-dashboard-fullcontainer .viwppro-cnt.vcm-adv .vikwppro-header-text h2 {
+	font-size: 20px;
+}
+.vbo-sidepanel-container .vbo-sidepanel-active-widgets .vbo-admin-widgets-container-small .viwppro-cnt.vcm-adv .vikwppro-header-inner > div:first-child, .vbo-dashboard-fullcontainer .viwppro-cnt.vcm-adv .vikwppro-header-inner > div:first-child {
+    padding: 0 20px 25px;
+}
+.vbo-sidepanel-container .vbo-sidepanel-active-widgets .vbo-admin-widgets-container-small .viwppro-cnt.vcm-adv .vikwppro-header-inner > div:last-child, .vbo-dashboard-fullcontainer .viwppro-cnt.vcm-adv .vikwppro-header-inner > div:last-child {
+	padding: 0 20px 25px;
+}
+/* End Go to PRO page */
+
 .vbo-bookingdet-summary-total, .vbo-bookingdet-summary-total td {
 	background: var(--vbo-light-color-btn);
 }
@@ -1390,7 +1484,7 @@ h1.vikwp-download-error {
 	height: auto;	
 }
 .vbo-smstpl-bgroup button:last-child, .vbo-smstpl-bgroup button:first-child {
-	border-radius: .25rem !important;
+	border-radius: var(--vbo-field-radius) !important;
 }
 /* Deposit Overrides modal */
 .new_depovr_container span > input[type="number"] {
@@ -1543,8 +1637,34 @@ h1.vikwp-download-error {
 	.viwppro-feats-row .viwppro-feats-img {
 		text-align: center;
 	}
-	.viwppro-feats-text {
-		padding: 0 30px 5px;
+}
+@media screen and (max-width : 1150px) {
+	.viwppro-cnt.vcm-adv .vikwppro-header-inner {
+		flex-wrap: wrap;
+	}
+	.viwppro-cnt.vcm-adv .vikwppro-header-inner > div {
+		flex-basis: 100%;
+	}
+	.viwppro-cnt.vcm-adv .vikwppro-header-inner > div:first-child {
+		padding: 0 10px 25px;
+		flex-basis: 100%;
+		text-align: left;
+	}
+	.viwppro-cnt.vcm-adv .vikwppro-header-inner > div:last-child {
+		padding: 0 30px 25px;
+	}
+	.viwppro-cnt.vcm-adv .vikwppro-header-inner > .vikwppro-header-img {
+		order: 2;
+	}
+	.viwppro-cnt.vcm-adv .vikwppro-header-inner > .vikwppro-header-img img {
+		margin-top: 0;
+	}
+	.viwppro-cnt.vcm-adv .vikwppro-header-text h2 {
+		font-size: 22px;
+		line-height: 1.2em;
+	}	
+	.viwppro-cnt.vcm-adv .vikwppro-header-notice {
+		padding-top: 0;
 	}
 }
 @media screen and (max-width : 1024px) {
@@ -1571,6 +1691,9 @@ h1.vikwp-download-error {
 	.viwpro-e4jc .viwpro-e4jc-img {
 		text-align: center;
 		margin: 10px 0;
+	}
+	.viwppro-cnt.vcm-adv .vikwppro-bottom-img img {
+		max-width: 100%;
 	}
 }
 @media screen and (max-width : 980px) {	

@@ -130,7 +130,19 @@ abstract class VikBookingAdminWidget
 	 */
 	public function preflight()
 	{
-		return true;
+		/**
+		 * Trigger event to let external plugins to choose whether this widget should be supported or not.
+		 * 
+		 * @param   string  $widgetId  The widget identifier.
+		 * 
+		 * @return  bool    False to drop support to this widget.
+		 * 
+		 * @since   1.18 (J) - 1.8 (WP)
+		 */
+		$results = VBOFactory::getPlatform()->getDispatcher()->filter('onPreflightAdminWidget', [$this->widgetId]);
+
+		// supported only in case none of the plugins attached to this event returned FALSE
+		return !in_array(false, $results, true);
 	}
 
 	/**
@@ -245,7 +257,7 @@ abstract class VikBookingAdminWidget
 	 * of emitting browser notifications, can override this method. The last data
 	 * to watch should be returned during the preloading. To be used with list().
 	 * 
-	 * @param 	VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
+	 * @param 	?VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
 	 * 
 	 * @return 	array 						data object to watch next and notifications array.
 	 * 
@@ -253,7 +265,7 @@ abstract class VikBookingAdminWidget
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP)
 	 */
-	public function getNotifications(VBONotificationWatchdata $watch_data = null)
+	public function getNotifications(?VBONotificationWatchdata $watch_data = null)
 	{
 		$watch_next = null;
 		$notifications = null;
@@ -266,7 +278,7 @@ abstract class VikBookingAdminWidget
 	 * Extending classes needing to periodically watch for new events
 	 * and capable of emitting browser events, can override this method.
 	 * 
-	 * @param 	VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
+	 * @param 	?VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
 	 * 
 	 * @return 	array 						list of browser events to emit.
 	 * 
@@ -274,7 +286,7 @@ abstract class VikBookingAdminWidget
 	 * 
 	 * @since 	1.16.8 (J) - 1.6.8 (WP)
 	 */
-	public function getNotificationEvents(VBONotificationWatchdata $watch_data = null)
+	public function getNotificationEvents(?VBONotificationWatchdata $watch_data = null)
 	{
 		return [];
 	}
@@ -388,11 +400,11 @@ abstract class VikBookingAdminWidget
 	 * Extending Classes should define this method to render the actual
 	 * output of the admin widget. Multitask data can be passed along.
 	 * 
-	 * @param 	VBOMultitaskData 	$data 	optional multitask data object.
+	 * @param 	?VBOMultitaskData 	$data 	optional multitask data object.
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP) type hint added for $data argument.
 	 */
-	abstract public function render(VBOMultitaskData $data = null);
+	abstract public function render(?VBOMultitaskData $data = null);
 
 	/**
 	 * Returns the default icon for a widget.

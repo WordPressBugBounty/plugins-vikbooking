@@ -206,7 +206,7 @@ class VBOPlatformOrgJoomlaUri extends VBOPlatformUriAware
 	 *
 	 * @return 	string
 	 */
-	protected function getAbsolutePath()
+	public function getAbsolutePath()
 	{
 		return JPATH_SITE;
 	}

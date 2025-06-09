@@ -285,7 +285,7 @@ class VBOCurrencyOta extends JObject
 		}
 
 		// load default currency from VikBooking
-		$this->currency_name = VikBooking::getCurrencyName();
+		$this->currency_name = VikBooking::getCurrencyName($iso = true);
 
 		return $this->currency_name;
 	}

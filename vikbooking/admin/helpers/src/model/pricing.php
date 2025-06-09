@@ -55,6 +55,8 @@ class VBOModelPricing extends JObject
 	 * @return 	array
 	 * 
 	 * @throws 	Exception
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP) added support for multiple room IDs and faster processing.
 	 */
 	public function getRoomRates(array $options)
 	{
@@ -67,6 +69,7 @@ class VBOModelPricing extends JObject
 		$id_price  = (int) ($options['id_price'] ?? 0);
 		$all_rplans   = (bool) ($options['all_rplans'] ?? false);
 		$restrictions = (bool) ($options['restrictions'] ?? true);
+		$id_rooms = array_values(array_filter(array_map('intval', (array) ($options['id_rooms'] ?? []))));
 
 		if (!$from_date || !$to_date) {
 			// must be in Y-m-d format
@@ -78,15 +81,12 @@ class VBOModelPricing extends JObject
 			throw new InvalidArgumentException('Invalid dates received.', 400);
 		}
 
-		if (!$id_room) {
+		if (!$id_room && !$id_rooms) {
 			throw new InvalidArgumentException('Room record ID is mandatory.', 400);
 		}
 
-		/**
-		 * Disable season records caching because new rates will have to be re-calculated
-		 * for the response by checking the same exact dates.
-		 */
-		VikBooking::setSeasonsCache(false);
+		// collect the list of room IDs involved
+		$listing_ids = array_values(array_filter(array_merge([$id_room], $id_rooms)));
 
 		// load check-in and check-out times
 		list($checkin_h, $checkin_m, $checkout_h, $checkout_m) = VBOModelReservation::getInstance()->loadCheckinOutTimes();
@@ -95,87 +95,98 @@ class VBOModelPricing extends JObject
 		$vbo_df = VikBooking::getDateFormat();
 		$df = $vbo_df == "%d/%m/%Y" ? 'd/m/Y' : ($vbo_df == "%m/%d/%Y" ? 'm/d/Y' : 'Y/m/d');
 
-		if (!$all_rplans) {
-			// get room rates either from the provided rate plan ID or by fetching the main one
-			if (!$id_price) {
-				// load all rate plans
-				$all_rate_plans = VikBooking::getAvailabilityInstance(true)->loadRatePlans();
+		// get room rates either from the provided rate plan ID or by fetching the main one
+		if (!$all_rplans && !$id_price) {
+			// load all rate plans
+			$all_rate_plans = VikBooking::getAvailabilityInstance(true)->loadRatePlans();
 
-				// use the first (main) rate plan ID after the automatic sorting
-				foreach ($all_rate_plans as $all_rate_plan) {
-					$id_price = $all_rate_plan['id'];
-					break;
-				}
+			// use the first (main) rate plan ID after the automatic sorting
+			foreach ($all_rate_plans as $all_rate_plan) {
+				$id_price = $all_rate_plan['id'];
+				break;
 			}
 
 			if (!$id_price) {
 				throw new Exception('No rate plans configured.', 500);
 			}
-
-			// read the rates for the lowest number of nights for a specific rate plan ID
-			$q = "SELECT `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name` 
-				FROM `#__vikbooking_dispcost` AS `r` 
-				INNER JOIN (
-					SELECT MIN(`days`) AS `min_days` 
-					FROM `#__vikbooking_dispcost` 
-					WHERE `idroom`=" . $id_room . " AND `idprice`=" . $id_price . " 
-					GROUP BY `idroom`
-				) AS `r2` ON `r`.`days`=`r2`.`min_days` 
-				LEFT JOIN `#__vikbooking_prices` `p` ON `p`.`id`=`r`.`idprice` AND `p`.`id`=" . $id_price . " 
-				WHERE `r`.`idroom`=" . $id_room . " AND `r`.`idprice`=" . $id_price . " 
-				GROUP BY `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name` 
-				ORDER BY `r`.`days` ASC, `r`.`cost` ASC;";
-		} else {
-			// get room rates from all rate plans configured for the given room
-			// read the rates for the lowest number of nights for all rate plans
-			$q = "SELECT `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name` 
-				FROM `#__vikbooking_dispcost` AS `r` 
-				INNER JOIN (
-					SELECT MIN(`days`) AS `min_days` 
-					FROM `#__vikbooking_dispcost` 
-					WHERE `idroom`=" . $id_room . " 
-					GROUP BY `idroom`
-				) AS `r2` ON `r`.`days`=`r2`.`min_days` 
-				LEFT JOIN `#__vikbooking_prices` `p` ON `p`.`id`=`r`.`idprice` 
-				WHERE `r`.`idroom`=" . $id_room . " 
-				GROUP BY `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name` 
-				ORDER BY `r`.`days` ASC, `r`.`cost` ASC;";
 		}
 
-		// load room rates from db
-		$dbo->setQuery($q);
-		$roomrates = $dbo->loadAssocList();
+		// pool of room rates
+		$pool_roomrates = [];
 
-		foreach ($roomrates as $rrk => $rrv) {
-			$roomrates[$rrk]['cost'] = round(($rrv['cost'] / $rrv['days']), 2);
-			$roomrates[$rrk]['days'] = 1;
+		// iterate over all listing IDs to obtain the respective room rates
+		foreach ($listing_ids as $listing_id) {
+			if (!$all_rplans) {
+				// read the rates for the lowest number of nights for a specific rate plan ID
+				$q = "SELECT `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name` 
+					FROM `#__vikbooking_dispcost` AS `r` 
+					INNER JOIN (
+						SELECT MIN(`days`) AS `min_days` 
+						FROM `#__vikbooking_dispcost` 
+						WHERE `idroom`=" . $listing_id . " AND `idprice`=" . $id_price . " 
+						GROUP BY `idroom`
+					) AS `r2` ON `r`.`days`=`r2`.`min_days` 
+					LEFT JOIN `#__vikbooking_prices` `p` ON `p`.`id`=`r`.`idprice` AND `p`.`id`=" . $id_price . " 
+					WHERE `r`.`idroom`=" . $listing_id . " AND `r`.`idprice`=" . $id_price . " 
+					GROUP BY `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name` 
+					ORDER BY `r`.`days` ASC, `r`.`cost` ASC;";
+			} else {
+				// get room rates from all rate plans configured for the given room
+				// read the rates for the lowest number of nights for all rate plans
+				$q = "SELECT `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name` 
+					FROM `#__vikbooking_dispcost` AS `r` 
+					INNER JOIN (
+						SELECT MIN(`days`) AS `min_days` 
+						FROM `#__vikbooking_dispcost` 
+						WHERE `idroom`=" . $listing_id . " 
+						GROUP BY `idroom`
+					) AS `r2` ON `r`.`days`=`r2`.`min_days` 
+					LEFT JOIN `#__vikbooking_prices` `p` ON `p`.`id`=`r`.`idprice` 
+					WHERE `r`.`idroom`=" . $listing_id . " 
+					GROUP BY `r`.`id`,`r`.`idroom`,`r`.`days`,`r`.`idprice`,`r`.`cost`,`p`.`name` 
+					ORDER BY `r`.`days` ASC, `r`.`cost` ASC;";
+			}
+
+			// load room rates from db
+			$dbo->setQuery($q);
+			$roomrates = $dbo->loadAssocList();
+
+			foreach ($roomrates as $rrk => $rrv) {
+				$roomrates[$rrk]['cost'] = round(($rrv['cost'] / $rrv['days']), 2);
+				$roomrates[$rrk]['days'] = 1;
+			}
+
+			if ($roomrates) {
+				// set room rates to the pool
+				$pool_roomrates[$listing_id] = $roomrates;
+			}
 		}
 
-		if (!$roomrates) {
+		if (!$pool_roomrates) {
 			// terminate the process by throwing an error
 			throw new UnexpectedValueException('No rates found for the given room ID.', 400);
 		}
 
 		// fetch all restrictions, if requested
-		$all_restrictions = $restrictions ? VikBooking::loadRestrictions(true, [$id_room]) : [];
+		$all_restrictions = $restrictions ? VikBooking::loadRestrictions(true, $listing_ids) : [];
 
 		// calculate global minimum stay
 		$glob_minlos = VikBooking::getDefaultNightsCalendar();
 		$glob_minlos = $glob_minlos < 1 ? 1 : $glob_minlos;
 
-		// read current room rates
-		$current_rates = [];
-
 		// dates involved
 		$start_ts = strtotime($from_date);
 		$end_ts = strtotime($to_date);
+
+		// read current room rates
+		$current_rates_pool = [];
 
 		/**
 		 * Preload seasonal records in favour of CPU usage, but against RAM usage.
 		 * 
 		 * @since 	1.17.2 (J) - 1.7.2 (WP)
 		 */
-		$cached_seasons = VikBooking::getDateSeasonRecords($start_ts, ($end_ts + ($checkout_h * 3600)), [$id_room]);
+		$cached_seasons = VikBooking::getDateSeasonRecords($start_ts, ($end_ts + ($checkout_h * 3600)), $listing_ids);
 
 		// loop through all the requested range of dates
 		$infostart = getdate($start_ts);
@@ -186,34 +197,85 @@ class VBOModelPricing extends JObject
 			$today_tsout = VikBooking::getDateTimestamp(date($df, $tomorrow_ts), $checkout_h, $checkout_m);
 			$today_mid_ts = mktime(0, 0, 0, $infostart['mon'], $infostart['mday'], $infostart['year']);
 
-			// calculate tariffs for this day
-			$tars = VikBooking::applySeasonsRoom($roomrates, $today_tsin, $today_tsout, [], $cached_seasons);
+			// current day key
+			$day_key = date('Y-m-d', $infostart[0]);
 
-			foreach ($tars as $index => $tar) {
-				// apply rounding to 2 decimals at most
-				$tars[$index]['cost'] = round($tar['cost'], 2);
+			if (count($pool_roomrates) > 1 && !$all_rplans) {
+				// process all listings at once through the cached season records in case of
+				// multiple listings and single rate plan to reduce the work load
+				$listing_tars = VikBooking::applySeasonalPrices($pool_roomrates, $today_tsin, $today_tsout, $cached_seasons);
 
-				// set formatted cost
-				$tars[$index]['formatted_cost'] = VikBooking::numberFormat($tar['cost']);
-
-				// calculate restrictions
-				$tars[$index]['restrictions'] = [];
-				if ($restrictions) {
-					$restr = VikBooking::parseSeasonRestrictions($today_mid_ts, $tomorrow_ts, 1, $all_restrictions);
-					if (!$restr) {
-						$restr = ['minlos' => $glob_minlos];
+				// scan the tariff results
+				foreach ($listing_tars as $listing_id => $tars) {
+					// initialize listing rates, if needed
+					if (!isset($current_rates_pool[$listing_id])) {
+						$current_rates_pool[$listing_id] = [];
 					}
-					// set day restrictions
-					$tars[$index]['restrictions'] = $restr;
-				}
-			}
 
-			if (!$all_rplans) {
-				// set rate for this day (single rate plan)
-				$current_rates[(date('Y-m-d', $infostart[0]))] = $tars[0];
+					foreach ($tars as $index => $tar) {
+						// apply rounding to 2 decimals at most
+						$tars[$index]['cost'] = round($tar['cost'], 2);
+
+						// set formatted cost
+						$tars[$index]['formatted_cost'] = VikBooking::numberFormat($tar['cost']);
+
+						// calculate restrictions
+						$tars[$index]['restrictions'] = [];
+						if ($restrictions) {
+							$restr = VikBooking::parseSeasonRestrictions($today_mid_ts, $tomorrow_ts, 1, $all_restrictions);
+							if (!$restr) {
+								$restr = ['minlos' => $glob_minlos];
+							}
+							// set day restrictions
+							$tars[$index]['restrictions'] = $restr;
+						}
+					}
+
+					// set rate for this day (single rate plan)
+					$current_rates_pool[$listing_id][$day_key] = $tars[0];
+				}
 			} else {
-				// set rates for this day (all rate plans)
-				$current_rates[(date('Y-m-d', $infostart[0]))] = $tars;
+				// iterate over all listing IDs involved
+				foreach ($listing_ids as $listing_id) {
+					if (!isset($pool_roomrates[$listing_id])) {
+						continue;
+					}
+
+					// initialize listing rates, if needed
+					if (!isset($current_rates_pool[$listing_id])) {
+						$current_rates_pool[$listing_id] = [];
+					}
+
+					// calculate listing tariffs for this day
+					$tars = VikBooking::applySeasonsRoom($pool_roomrates[$listing_id], $today_tsin, $today_tsout, [], $cached_seasons);
+
+					foreach ($tars as $index => $tar) {
+						// apply rounding to 2 decimals at most
+						$tars[$index]['cost'] = round($tar['cost'], 2);
+
+						// set formatted cost
+						$tars[$index]['formatted_cost'] = VikBooking::numberFormat($tar['cost']);
+
+						// calculate restrictions
+						$tars[$index]['restrictions'] = [];
+						if ($restrictions) {
+							$restr = VikBooking::parseSeasonRestrictions($today_mid_ts, $tomorrow_ts, 1, $all_restrictions);
+							if (!$restr) {
+								$restr = ['minlos' => $glob_minlos];
+							}
+							// set day restrictions
+							$tars[$index]['restrictions'] = $restr;
+						}
+					}
+
+					if (!$all_rplans) {
+						// set rate for this day (single rate plan)
+						$current_rates_pool[$listing_id][$day_key] = $tars[0];
+					} else {
+						// set rates for this day (all rate plans)
+						$current_rates_pool[$listing_id][$day_key] = $tars;
+					}
+				}
 			}
 
 			// go to next day
@@ -223,8 +285,13 @@ class VBOModelPricing extends JObject
 		// free memory up
 		unset($cached_seasons);
 
-		// return the calculated rates
-		return $current_rates;
+		if ($id_room && isset($current_rates_pool[$id_room])) {
+			// single listing room rates requested
+			return $current_rates_pool[$id_room];
+		}
+
+		// return the calculated rates for all listings
+		return $current_rates_pool;
 	}
 
 	/**
@@ -677,6 +744,32 @@ class VBOModelPricing extends JObject
 					$current_maxlos = $max_los;
 					$current_cta = $cta_wdays;
 					$current_ctd = $ctd_wdays;
+				}
+			}
+
+			/**
+			 * Ensure the room and rate plan effective min/max LOS is applied (room-rate level restrictions).
+			 * 
+			 * @since 	1.18.0 (J) - 1.8.0 (WP)
+			 */
+			if (is_int($current_minlos) && $current_minlos > 0) {
+				$effective_min_los = VBORoomHelper::calcEffectiveMinLOS($id_room, $now_id_price);
+				$effective_max_los = VBORoomHelper::calcEffectiveMaxLOS($id_room, $now_id_price);
+
+				// if we have a weekly rate plan, the minimum stay should always be forced regardless of room-level restrictions
+				if ($effective_min_los > 1 && $current_minlos < $effective_min_los) {
+					$current_minlos = $effective_min_los;
+				}
+
+				// if we have a one-night rate plan, the maximum stay should always be 1 regardless of room-level restrictions
+				if ($effective_max_los === 1) {
+					$current_minlos = $effective_max_los;
+					$current_maxlos = $effective_max_los;
+				}
+
+				// ensure the minimum stay is less than or equal to the maximum stay
+				if (is_int($current_maxlos) && $current_maxlos > 0 && $current_minlos > $current_maxlos) {
+					$current_minlos = $current_maxlos;
 				}
 			}
 

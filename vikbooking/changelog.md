@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.8.0
+
+*Release date - 10 June 2025*
+
+- Major framework update.
+- Various improvements to PMS reports.
+- PMS report auto-export functions with support for multiple account profiles.
+- Operators work days, exceptions and days off.
+- New operators tool for managing the work days.
+- Task Manager framework introduced.
+- Housekeeping and Maintenance automated tasks scheduling.
+- Task Manager projects for sprint board.
+- Private tasks for administrators.
+- New operator permissions for tasks management.
+- New admin widget "Operators Chat".
+- Various task manager layouts: board, list, calendar and bookings overview.
+- iCal calendar subscription for operator tasks with multiple formats.
+- Various history framework improvements.
+- New notifications center category for Operators.
+- New WebPush Notifications for operator activities.
+- Multi-calendar functionalities in availability overview for managing rates and restrictions.
+- Matrix selection of multiple dates and listings to handle multiple rate update queues.
+- Added support for off-session transactions through the Virtual Terminal (Stripe required).
+- New Channel Manager capabilities for Virtual Credit Cards received from OTA reservations.
+- Guest message reactions for OTA messaging (Channel Manager required).
+- Generative AI improvements (Channel Manager required).
+- Major improvements to electronic invoicing framework for an easier customization.
+- Various improvements to pre-check-in framework.
+- JS core major refactoring.
+- Improved support up to PHP 8.4
+- New back-end and front-end styling.
+
 ## 1.7.8
 
 *Release date - 12 March 2025*

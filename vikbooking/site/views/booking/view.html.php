@@ -337,6 +337,13 @@ class VikbookingViewBooking extends JViewVikBooking
 				->getEventsWithData('PN', function($data) {
 					return (is_object($data) && !empty($data->damage_deposit));
 				});
+			if (!$prev_dd_payments) {
+				// check also the first payment event in case of OTA bookings
+				$prev_dd_payments = VikBooking::getBookingHistoryInstance($order['id'])
+					->getEventsWithData('P0', function($data) {
+						return (is_object($data) && !empty($data->damage_deposit));
+					});
+			}
 		}
 
 		/**

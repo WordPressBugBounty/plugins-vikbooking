@@ -42,7 +42,7 @@ $pactive_tab = VikRequest::getString('vbo_active_tab', 'vbo-trackings-tabcont-li
 
 ?>
 <script type="text/javascript">
-jQuery(document).ready(function() {
+jQuery(function() {
 	jQuery('.vbo-trackings-togglesubrow-cont').click(function() {
 		var toggler = jQuery(this).find('i.vbo-trackings-togglesubrow');
 		var elem = toggler.closest('.vbo-trackings-table-body-row').find('.vbo-trackings-table-body-subrow');
@@ -191,7 +191,7 @@ if (empty($rows)) {
 	if (count($missing_ips)) {
 		?>
 	<script type="text/javascript">
-	jQuery(document).ready(function() {
+	jQuery(function() {
 		var jqxhr = jQuery.ajax({
 			type: "POST",
 			url: "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=getgeoinfo'); ?>",

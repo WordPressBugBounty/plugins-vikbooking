@@ -33,7 +33,7 @@ class JHttp
 	 * @param 	JRegistry  $options   Client options object. If the registry contains any headers.* elements,
 	 *                                these will be added to the request headers.
 	 */
-	public function __construct(JRegistry $options = null)
+	public function __construct(?JRegistry $options = null)
 	{
 		$this->options = isset($options) ? $options : new JRegistry;
 	}
@@ -78,7 +78,7 @@ class JHttp
 	 *
 	 * @uses 	request()
 	 */
-	public function options($url, array $headers = null, $timeout = null)
+	public function options($url, ?array $headers = null, $timeout = null)
 	{
 		if (is_null($headers))
 		{
@@ -154,7 +154,7 @@ class JHttp
 	 *
 	 * @uses 	request()
 	 */
-	public function put($url, $data, array $headers = null, $timeout = null)
+	public function put($url, $data, ?array $headers = null, $timeout = null)
 	{
 		if (is_null($headers))
 		{
@@ -180,7 +180,7 @@ class JHttp
 	 *
 	 * @uses 	request()
 	 */
-	public function delete($url, array $headers = null, $timeout = null)
+	public function delete($url, ?array $headers = null, $timeout = null)
 	{
 		if (is_null($headers))
 		{
@@ -204,7 +204,7 @@ class JHttp
 	 *
 	 * @uses 	request()
 	 */
-	public function trace($url, array $headers = null, $timeout = null)
+	public function trace($url, ?array $headers = null, $timeout = null)
 	{
 		if (is_null($headers))
 		{
@@ -231,7 +231,7 @@ class JHttp
 	 *
 	 * @uses 	request()
 	 */
-	public function patch($url, $data, array $headers = null, $timeout = null)
+	public function patch($url, $data, ?array $headers = null, $timeout = null)
 	{
 		if (is_null($headers))
 		{

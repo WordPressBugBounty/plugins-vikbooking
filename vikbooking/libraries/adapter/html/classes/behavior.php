@@ -210,8 +210,8 @@ JS
 		$loaded = 1;
 
 		JFactory::getDocument()->addScriptDeclaration(
-<<<JS
-jQuery(document).ready(function() {
+<<<JAVASCRIPT
+jQuery(function() {
 	jQuery('.wrap a.modal[target="_blank"]').on('click', function(e) {
 		// get link HREF
 		var href = jQuery(this).attr('href');
@@ -230,7 +230,7 @@ jQuery(document).ready(function() {
 		// otherwise fallback to default browser opening
 	});
 });
-JS
+JAVASCRIPT
 		);
 
 		// display modal to preview the images

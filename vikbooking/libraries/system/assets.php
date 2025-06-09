@@ -55,7 +55,7 @@ class VikBookingAssets
 			
 			$document->addStyleSheet(VIKBOOKING_ADMIN_ASSETS_URI . 'vikbooking.css', $internalFilesOptions, array('id' => 'vbo-style'));
 			$document->addStyleSheet(VIKBOOKING_ADMIN_ASSETS_URI . 'fonts/vboicomoon.css', $internalFilesOptions, array('id' => 'vbo-icomoon-style'));
-			$document->addStyleSheet(VIKBOOKING_ADMIN_ASSETS_URI . 'vikbooking_backendcustom.css', $internalFilesOptions, array('id' => 'vbo-custom-style'));
+			$document->addStyleSheet(VIKBOOKING_ADMIN_ASSETS_URI . 'vikbooking_backendcustom.css', array('version' => filemtime(JPath::clean(VBO_ADMIN_PATH . '/resources/vikbooking_backendcustom.css'))), array('id' => 'vbo-custom-style'));
 
 			VikBooking::getVboApplication()->normalizeBackendStyles();
 

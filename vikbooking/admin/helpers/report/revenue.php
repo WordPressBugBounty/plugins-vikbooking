@@ -43,11 +43,11 @@ class VikBookingReportRevenue extends VikBookingReport
 	{
 		$this->reportFile = basename(__FILE__, '.php');
 		$this->reportName = JText::translate('VBOREPORT'.strtoupper(str_replace('_', '', $this->reportFile)));
-		$this->reportFilters = array();
+		$this->reportFilters = [];
 
-		$this->cols = array();
-		$this->rows = array();
-		$this->footerRow = array();
+		$this->cols = [];
+		$this->rows = [];
+		$this->footerRow = [];
 
 		$this->debug = (VikRequest::getInt('e4j_debug', 0, 'request') > 0);
 
@@ -112,26 +112,28 @@ class VikBookingReportRevenue extends VikBookingReport
 		);
 		array_push($this->reportFilters, $filter_opt);
 
-		//Room ID filter
-		$pidroom = VikRequest::getInt('idroom', '', 'request');
-		$all_rooms = $this->getRooms();
-		$rooms = array();
-		foreach ($all_rooms as $room) {
-			$rooms[$room['id']] = $room['name'];
-		}
-		if (count($rooms)) {
-			$rooms_sel_html = $vbo_app->getNiceSelect($rooms, $pidroom, 'idroom', JText::translate('VBOSTATSALLROOMS'), JText::translate('VBOSTATSALLROOMS'), '', '', 'idroom');
-			$filter_opt = array(
-				'label' => '<label for="idroom">'.JText::translate('VBOREPORTSROOMFILT').'</label>',
-				'html' => $rooms_sel_html,
-				'type' => 'select',
-				'name' => 'idroom'
-			);
-			array_push($this->reportFilters, $filter_opt);
-		}
+		// Listings Filter
+		$filter_opt = array(
+			'label' => '<label for="listingsfilt">' . JText::translate('VBO_LISTINGS') . '</label>',
+			'html' => '<span class="vbo-toolbar-multiselect-wrap">' . $vbo_app->renderElementsDropDown([
+				'id'              => 'listingsfilt',
+				'elements'        => 'listings',
+				'placeholder'     => JText::translate('VBO_LISTINGS'),
+				'allow_clear'     => 1,
+				'attributes'      => [
+					'name' => 'listings[]',
+					'multiple' => 'multiple',
+				],
+				'selected_values' => (array) JFactory::getApplication()->input->get('listings', [], 'array'),
+			]) . '</span>',
+			'type' => 'select',
+			'multiple' => true,
+			'name' => 'listings',
+		);
+		array_push($this->reportFilters, $filter_opt);
 
 		// channel filter
-		$all_channels = array();
+		$all_channels = [];
 		$pchannel = VikRequest::getString('channel', '', 'request');
 		$q = "SELECT `channel` FROM `#__vikbooking_orders` WHERE `channel` IS NOT NULL GROUP BY `channel`;";
 		$this->dbo->setQuery($q);
@@ -179,7 +181,7 @@ class VikBookingReportRevenue extends VikBookingReport
 		//jQuery code for the datepicker calendars and select2
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
-		$js = 'jQuery(document).ready(function() {
+		$js = 'jQuery(function() {
 			jQuery(".vbo-report-datepicker:input").datepicker({
 				'.(!empty($mincheckin) ? 'minDate: "'.date($df, $mincheckin).'", ' : '').'
 				'.(!empty($maxcheckout) ? 'maxDate: "'.date($df, $maxcheckout).'", ' : '').'
@@ -215,14 +217,16 @@ class VikBookingReportRevenue extends VikBookingReport
 	 */
 	public function getReportData()
 	{
-		if (strlen($this->getError())) {
-			//Export functions may set errors rather than exiting the process, and the View may continue the execution to attempt to render the report.
+		if ($this->getError()) {
+			// export functions may set errors rather than exiting the process, and the View may continue the execution to attempt to render the report.
 			return false;
 		}
-		//Input fields and other vars
+
+		// input fields and other vars
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
 		$pidroom = VikRequest::getInt('idroom', '', 'request');
+		$plistings = (array) VikRequest::getVar('listings', array());
 		$pchannel = VikRequest::getString('channel', '', 'request');
 		$pkrsort = VikRequest::getString('krsort', $this->defaultKeySort, 'request');
 		$pkrsort = empty($pkrsort) ? $this->defaultKeySort : $pkrsort;
@@ -235,7 +239,8 @@ class VikBookingReportRevenue extends VikBookingReport
 		if (empty($ptodate)) {
 			$ptodate = $pfromdate;
 		}
-		//Get dates timestamps
+
+		// get dates timestamps
 		$from_ts = VikBooking::getDateTimestamp($pfromdate, 0, 0);
 		$to_ts = VikBooking::getDateTimestamp($ptodate, 23, 59, 59);
 		if (empty($pfromdate) || empty($from_ts) || empty($to_ts)) {
@@ -243,14 +248,70 @@ class VikBookingReportRevenue extends VikBookingReport
 			return false;
 		}
 
-		//Query to obtain the records
-		$records = array();
-		$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`status`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`country`,`o`.`tot_taxes`,".
-			"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`refund`,`o`.`canc_fee`,`or`.`idorder`,`or`.`idroom`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost` ".
-			"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
-			"WHERE (`o`.`status`='confirmed' OR (`o`.`status`='cancelled' AND `o`.`canc_fee` > 0)) AND `o`.`closure`=0 AND `o`.`checkout`>=".$from_ts." AND `o`.`checkin`<=".$to_ts." ".(!empty($pidroom) ? "AND `or`.`idroom`=".(int)$pidroom." " : "").
-			(strlen($pchannel) ? "AND `o`.`channel` " . ($pchannel == '-1' ? 'IS NULL' : "LIKE " . $this->dbo->quote("%{$pchannel}%")) . ' ' : '') .
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
+		// query to obtain the records
+		$q = $this->dbo->getQuery(true)
+			->select([
+				$this->dbo->qn('o.id'),
+				$this->dbo->qn('o.custdata'),
+				$this->dbo->qn('o.ts'),
+				$this->dbo->qn('o.status'),
+				$this->dbo->qn('o.days'),
+				$this->dbo->qn('o.checkin'),
+				$this->dbo->qn('o.checkout'),
+				$this->dbo->qn('o.totpaid'),
+				$this->dbo->qn('o.coupon'),
+				$this->dbo->qn('o.roomsnum'),
+				$this->dbo->qn('o.total'),
+				$this->dbo->qn('o.idorderota'),
+				$this->dbo->qn('o.channel'),
+				$this->dbo->qn('o.country'),
+				$this->dbo->qn('o.tot_taxes'),
+				$this->dbo->qn('o.tot_city_taxes'),
+				$this->dbo->qn('o.tot_fees'),
+				$this->dbo->qn('o.tot_damage_dep'),
+				$this->dbo->qn('o.cmms'),
+				$this->dbo->qn('o.refund'),
+				$this->dbo->qn('o.canc_fee'),
+				$this->dbo->qn('or.idorder'),
+				$this->dbo->qn('or.idroom'),
+				$this->dbo->qn('or.optionals'),
+				$this->dbo->qn('or.cust_cost'),
+				$this->dbo->qn('or.cust_idiva'),
+				$this->dbo->qn('or.extracosts'),
+				$this->dbo->qn('or.room_cost'),
+			])
+			->from($this->dbo->qn('#__vikbooking_orders', 'o'))
+			->leftJoin($this->dbo->qn('#__vikbooking_ordersrooms', 'or') . ' ON ' . $this->dbo->qn('or.idorder') . ' = ' . $this->dbo->qn('o.id'))
+			->where('(' . $this->dbo->qn('o.status') . ' = ' . $this->dbo->q('confirmed') . ' OR (' . $this->dbo->qn('o.status') . ' = ' . $this->dbo->q('cancelled') . ' AND ' . $this->dbo->qn('o.canc_fee') . ' > 0))')
+			->where($this->dbo->qn('o.closure') . ' = 0')
+			->where($this->dbo->qn('o.checkout') . ' >= ' . $from_ts)
+			->where($this->dbo->qn('o.checkin') . ' <= ' . $to_ts)
+			->order($this->dbo->qn('o.checkin') . ' ASC')
+			->order($this->dbo->qn('o.id') . ' ASC')
+			->order($this->dbo->qn('or.id') . ' ASC');
+
+		/**
+		 * Do not filter the room booking records by room ID, but always join them, to improve accuracy with calculations.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		if (!empty($pidroom)) {
+			// keep supporting the old single-listing filter, no longer used
+			// $q->where($this->dbo->qn('or.idroom') . ' = ' . (int) $pidroom);
+		} elseif ($plistings) {
+			// new multi-listing filter
+			// $q->where($this->dbo->qn('or.idroom') . ' IN (' . implode(', ', array_map('intval', $plistings)) . ')');
+		}
+
+		if (strlen($pchannel)) {
+			// filter by channel
+			if ($pchannel == -1) {
+				$q->where($this->dbo->qn('o.channel') . ' IS NULL');
+			} else {
+				$q->where($this->dbo->qn('o.channel') . ' LIKE ' . $this->dbo->q('%' . $pchannel . '%'));
+			}
+		}
+
 		$this->dbo->setQuery($q);
 		$records = $this->dbo->loadAssocList();
 
@@ -260,10 +321,10 @@ class VikBookingReportRevenue extends VikBookingReport
 		}
 
 		// nest records with multiple rooms booked inside sub-array
-		$bookings = array();
+		$bookings = [];
 		foreach ($records as $v) {
 			if (!isset($bookings[$v['id']])) {
-				$bookings[$v['id']] = array();
+				$bookings[$v['id']] = [];
 			}
 
 			// calculate the from_ts and to_ts values for later comparison
@@ -280,6 +341,8 @@ class VikBookingReportRevenue extends VikBookingReport
 			// push nested room-booking
 			array_push($bookings[$v['id']], $v);
 		}
+
+		unset($records);
 
 		// define the columns of the report
 		$this->cols = array(
@@ -372,6 +435,15 @@ class VikBookingReportRevenue extends VikBookingReport
 				'sortable' => 1,
 				'label' => JText::translate('VBOREPORTREVENUETAX')
 			),
+			// Damage deposit
+			array(
+				'key' => 'damagedep',
+				'attr' => array(
+					'class="center"'
+				),
+				'sortable' => 1,
+				'label' => JText::translate('VBO_DAMAGE_DEPOSIT')
+			),
 			// Commissions
 			array(
 				'key' => 'cmms',
@@ -401,7 +473,7 @@ class VikBookingReportRevenue extends VikBookingReport
 			)
 		);
 
-		$total_rooms_units = $this->countRooms($pidroom);
+		$total_rooms_units = $this->countRooms($pidroom ?: $plistings) ?: 1;
 
 		// loop over the dates of the report to build the rows
 		$from_info = getdate($from_ts);
@@ -420,15 +492,18 @@ class VikBookingReportRevenue extends VikBookingReport
 			$adr = 0;
 			$revpar = 0;
 			$taxes = 0;
+			$tot_damage_deps = 0;
 			$cmms = 0;
 			$canc_fees = 0;
 			$revenue = 0;
+
 			// calculate the report details for this day
 			foreach ($bookings as $gbook) {
 				// skip already parsed cancelled bookings with cancellation fees
 				if (in_array($gbook[0]['id'], $canc_fee_bookings)) {
 					continue;
 				}
+
 				// check if booking affects the current day
 				if ($from_info[0] >= $gbook[0]['from_ts'] && $from_info[0] <= $gbook[0]['to_ts']) {
 					// immediately check for cancelled bookings with cancellation fees
@@ -441,23 +516,27 @@ class VikBookingReportRevenue extends VikBookingReport
 					}
 
 					// this booking affects the current day
-					if (!empty($pidroom)) {
-						$rooms_booked = 0;
+					$tot_bookings++;
+
+					// get the optionally filtered rooms (single listing no longer used, or multiple listings)
+					$filter_rooms = (array) ($pidroom ?: $plistings);
+
+					// count the rooms booked in case of rooms filtering
+					if ($filter_rooms) {
 						foreach ($gbook as $sgbook) {
-							if ((int)$sgbook['idroom'] == $pidroom) {
+							if (in_array($sgbook['idroom'], $filter_rooms)) {
 								$rooms_sold++;
 							}
 						}
 					} else {
 						$rooms_sold += $gbook[0]['roomsnum'];
 					}
-					$tot_bookings++;
 
-					// determine the base total amount in case of rooms filtering
+					// determine the base total amount ONLY in case of rooms filtering
 					$room_base_total = 0;
-					if ($pidroom && $rooms_sold > 0) {
+					if ($filter_rooms && $rooms_sold > 0) {
 						foreach ($gbook as $room_book) {
-							if ($room_book['idroom'] != $pidroom) {
+							if (!in_array($room_book['idroom'], $filter_rooms)) {
 								continue;
 							}
 							if ($room_book['cust_cost'] > 0) {
@@ -468,34 +547,66 @@ class VikBookingReportRevenue extends VikBookingReport
 						}
 					}
 
-					// calculate net revenue and taxes
-					$tot_net = $gbook[0]['total'] - (float)$gbook[0]['tot_taxes'] - (float)$gbook[0]['tot_city_taxes'] - (float)$gbook[0]['tot_fees'] - (float)$gbook[0]['cmms'];
+					// check if a (coupon) discount was applied
+					$discount = 0;
+					if (!empty($gbook[0]['coupon'])) {
+						$coupon_parts = explode(';', $gbook[0]['coupon']);
+						$discount = $coupon_parts[1] ?? $coupon_parts[0];
+						$discount = (float) preg_replace('/[^0-9\.]/', '', $discount);
+					}
 
-					if ($room_base_total && (!(float)$gbook[0]['tot_taxes'] || !VikBooking::ivaInclusa())) {
+					// calculate net revenue and taxes
+					$tot_net = $gbook[0]['total'] - (float) $gbook[0]['tot_taxes'] - (float) $gbook[0]['tot_city_taxes'] - (float) $gbook[0]['tot_fees'] - (float) $gbook[0]['tot_damage_dep'] - (float) $gbook[0]['cmms'];
+
+					if ($room_base_total && (!((float) $gbook[0]['tot_taxes']) || !VikBooking::ivaInclusa())) {
 						/**
 						 * Overwrite total net value in case of rooms filtering only in case of no taxes, or in
 						 * case of prices before taxes, because the amount of tax per room is not available.
 						 * 
 						 * @since 	1.16.9 (J) - 1.6.9 (WP)
+						 * @since 	1.18.0 (J) - 1.8.0 (WP) when relying on the room costs, ensure to deduct the discount.
 						 */
-						$tot_net = $room_base_total;
+						$tot_net = $room_base_total - ($discount / max(1, count(array_intersect(array_column($gbook, 'idroom'), $filter_rooms))));
+					} elseif ($room_base_total && $gbook[0]['roomsnum'] > 1 && array_diff(array_column($gbook, 'idroom'), $filter_rooms)) {
+						/**
+						 * Overwrite total net value in case of rooms filtering, multi-room booking and booking rooms different than filters.
+						 * The amount of tax per room is not available, hence the tax calculation may not be accurate in these cases.
+						 * 
+						 * @since 	1.18.0 (J) - 1.8.0 (WP)
+						 */
+						$tot_net = $room_base_total - ($discount / max(1, count(array_intersect(array_column($gbook, 'idroom'), $filter_rooms))));
 					}
 
-					$tot_net = $tot_net / (int)$gbook[0]['days'];
+					// ensure we do not have negative values
+					$tot_net = $tot_net > 0 ? $tot_net : 0;
+
+					$tot_net = $tot_net / (int) $gbook[0]['days'];
 					$revenue += $tot_net;
+
 					if (!empty($gbook[0]['idorderota']) && !empty($gbook[0]['channel'])) {
 						$ota_revenue += $tot_net;
 					} else {
 						$ibe_revenue += $tot_net;
 					}
-					$taxes += ((float)$gbook[0]['tot_taxes'] + (float)$gbook[0]['tot_city_taxes'] + (float)$gbook[0]['tot_fees']) / (int)$gbook[0]['days'];
-					$cmms += (float)$gbook[0]['cmms'] / (int)$gbook[0]['days'];
+
+					$taxes += ((float) $gbook[0]['tot_taxes'] + (float) $gbook[0]['tot_city_taxes'] + (float) $gbook[0]['tot_fees']) / (int) $gbook[0]['days'];
+					$cmms += (float) $gbook[0]['cmms'] / (int) $gbook[0]['days'];
 					$tot_refunds += $gbook[0]['refund'] / $gbook[0]['days'];
+
+					// attempt to calculate the damage deposit for the current day and room
+					$room_day_damage_dep = (float) $gbook[0]['tot_damage_dep'] / (int) $gbook[0]['days'];
+					if ($room_base_total) {
+						// when filters applied, calculate the amount of damage deposit per room for this day
+						$room_day_damage_dep = $room_day_damage_dep / (int) $gbook[0]['roomsnum'] * max(1, count(array_intersect(array_column($gbook, 'idroom'), $filter_rooms)));
+					}
+					$tot_damage_deps += $room_day_damage_dep;
 				}
 			}
+
 			$occupancy = round(($rooms_sold * 100 / $total_rooms_units), 2);
 			$adr = $rooms_sold > 0 ? $revenue / $rooms_sold : 0;
 			$revpar = $revenue / $total_rooms_units;
+
 			// push fields in the rows array as a new row
 			array_push($this->rows, array(
 				array(
@@ -587,6 +698,16 @@ class VikBookingReportRevenue extends VikBookingReport
 					'value' => $taxes,
 				),
 				array(
+					'key' => 'damagedep',
+					'attr' => array(
+						'class="center"'
+					),
+					'callback' => function ($val) use ($currency_symb) {
+						return $currency_symb . ' ' . VikBooking::numberFormat($val);
+					},
+					'value' => $tot_damage_deps,
+				),
+				array(
 					'key' => 'cmms',
 					'attr' => array(
 						'class="center"'
@@ -632,6 +753,7 @@ class VikBookingReportRevenue extends VikBookingReport
 		$foot_ota_revenue = 0;
 		$foot_tot_refunds = 0;
 		$foot_taxes = 0;
+		$foot_damage_deps = 0;
 		$foot_cmms = 0;
 		$foot_canc_fees = 0;
 		$foot_revenue = 0;
@@ -643,9 +765,10 @@ class VikBookingReportRevenue extends VikBookingReport
 			$foot_ota_revenue 	+= $row[5]['value'];
 			$foot_tot_refunds 	+= $row[6]['value'];
 			$foot_taxes 		+= $row[9]['value'];
-			$foot_cmms 			+= $row[10]['value'];
-			$foot_canc_fees 	+= $row[11]['value'];
-			$foot_revenue 		+= $row[12]['value'];
+			$foot_damage_deps	+= $row[10]['value'];
+			$foot_cmms 			+= $row[11]['value'];
+			$foot_canc_fees 	+= $row[12]['value'];
+			$foot_revenue 		+= $row[13]['value'];
 		}
 
 		array_push($this->footerRow, array(
@@ -711,6 +834,15 @@ class VikBookingReportRevenue extends VikBookingReport
 					return $currency_symb . ' ' . VikBooking::numberFormat($val);
 				},
 				'value' => $foot_taxes,
+			),
+			array(
+				'attr' => array(
+					'class="center"'
+				),
+				'callback' => function ($val) use ($currency_symb) {
+					return $currency_symb . ' ' . VikBooking::numberFormat($val);
+				},
+				'value' => $foot_damage_deps,
 			),
 			array(
 				'attr' => array(

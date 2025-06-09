@@ -68,7 +68,7 @@ var vbdialog_on = false;
  */
 var vbo_multirooms_dialog = true;
 
-jQuery(document).ready(function() {
+jQuery(function() {
 	jQuery(".vbmodalframe").fancybox({
 		"helpers": {
 			"overlay": {

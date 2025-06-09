@@ -69,4 +69,13 @@ interface VBOPlatformUriInterface
 	 * @return 	mixed    The resulting URL on success, null otherwise.
 	 */
 	public function getUrlFromPath($path, $relative = false);
+
+	/**
+	 * Returns the platform base path.
+	 *
+	 * @return 	string
+	 * 
+	 * @since   1.9  This method is now public and directly declared by the interface.
+	 */
+	public function getAbsolutePath();
 }

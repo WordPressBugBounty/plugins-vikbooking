@@ -594,12 +594,29 @@ if (count($allc) > 1) {
 	<div class="vbo-calendar-cfields-filler">
 		<div class="vbo-calendar-cfields-topcont">
 			<div class="vbo-calendar-cfields-search">
-				<label for="vbo-searchcust"><?php echo JText::translate('VBOSEARCHEXISTCUST'); ?></label>
-				<span id="vbo-searchcust-loading">
-					<i class="vboicn-hour-glass"></i>
-				</span>
-				<input type="text" id="vbo-searchcust" autocomplete="off" value="" placeholder="<?php echo htmlspecialchars(JText::translate('VBOSEARCHCUSTBY')); ?>" size="35" />
-				<div id="vbo-searchcust-res"></div>
+				<div class="vbo-singleselect-inline-elems-wrap vbo-search-elems-wrap">
+				<?php
+				/**
+				 * Display a search elements dropdown for searching customers.
+				 * 
+				 * @since 	1.18.0 (J) - 1.8.0 (WP)
+				 */
+				echo $vbo_app->renderSearchElementsDropDown([
+					'id' => 'vbo-calendar-view-search-customer',
+					'elements' => 'customers',
+					'placeholder' => JText::translate('VBOSEARCHEXISTCUST'),
+					'allow_clear' => true,
+					'attributes'  => [
+						'name' => 'calendar[id_customer]',
+					],
+					'style_selection' => true,
+					'selection_class' => 'vbo-sel2-selected-search-elem-full',
+					'selection_event' => 'vbo-calendar-view-choose-customer',
+					'load_assets' => false,
+					'width' => '300px',
+				]);
+				?>
+				</div>
 			</div>
 		</div>
 		<div class="vbo-calendar-cfields-inner">
@@ -686,7 +703,6 @@ if (count($allc) > 1) {
 <script type="text/javascript">
 <?php echo ($poverview_change > 0 ? 'window.parent.hasNewBooking = true;' . "\n" : ''); ?>
 var vbo_glob_sel_nights = 0;
-var customers_search_vals = "";
 var prev_tareat = null;
 var booknowmade = false;
 var vbo_quickres_has_custdetails = false;
@@ -750,15 +766,13 @@ function showCustomFields() {
 	jQuery('.vbo-calendar-cfields-filler').appendTo(modal_body);
 
 	setTimeout(function() {
-		jQuery('#vbo-searchcust').focus();
+		jQuery('#vbo-calendar-view-search-customer').select2('open');
 	}, 500);
 }
 
 function hideCustomFields() {
 	// dismiss modal
 	VBOCore.emitEvent('vbo-calendar-cfields-dismiss');
-	// empty any customer search value
-	jQuery("#vbo-searchcust").val('').trigger('keyup');
 	// trigger event to unregister the keydown event for choosing the customer
 	VBOCore.emitEvent('vbo-search-customers-navigation-dismissed');
 }
@@ -1189,59 +1203,6 @@ jQuery(function() {
 		showCustomFields();
 	});
 
-	// search customer - start
-	var vbocustsdelay = (function() {
-		var timer = 0;
-		return function(callback, ms) {
-			clearTimeout (timer);
-			timer = setTimeout(callback, ms);
-		};
-	})();
-
-	function vboCustomerSearch(words) {
-		jQuery("#vbo-searchcust-res").hide().html("");
-		jQuery("#vbo-searchcust-loading").show();
-		var jqxhr = jQuery.ajax({
-			type: "POST",
-			url: "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=searchcustomer'); ?>",
-			data: {
-				kw: words,
-				tmpl: "component"
-			}
-		}).done(function(cont) {
-			if (cont) {
-				var obj_res = typeof cont === 'string' ? JSON.parse(cont) : cont;
-				customers_search_vals = obj_res[0];
-				jQuery("#vbo-searchcust-res").html(obj_res[1]);
-			} else {
-				customers_search_vals = "";
-				jQuery("#vbo-searchcust-res").html("----");
-			}
-			jQuery("#vbo-searchcust-res").show();
-			jQuery("#vbo-searchcust-loading").hide();
-		}).fail(function() {
-			jQuery("#vbo-searchcust-loading").hide();
-			alert("Error searching");
-		});
-	}
-
-	jQuery("#vbo-searchcust").keyup(function(event) {
-		vbocustsdelay(function() {
-			var keywords = jQuery("#vbo-searchcust").val();
-			var chars = keywords.length;
-			if (chars > 1) {
-				if ((event.which > 96 && event.which < 123) || (event.which > 64 && event.which < 91) || event.which == 13) {
-					vboCustomerSearch(keywords);
-				}
-			} else {
-				if (jQuery("#vbo-searchcust-res").is(":visible")) {
-					jQuery("#vbo-searchcust-res").hide();
-				}
-			}
-		}, 600);
-	});
-	// search customer - end
-
 	// DRP - start
 	jQuery("#checkindate").vboDatesRangePicker({
 		checkout: '#checkoutdate',
@@ -1314,21 +1275,36 @@ jQuery(function() {
 	<?php echo (!empty($pcheckin) || !empty($pcheckout) ? 'jQuery("#checkindate").vboDatesRangePicker("setDates", ["'.$pcheckin.'", "'.$pcheckout.'"]);'."\n" : ''); ?>
 });
 
-jQuery(document).on("click", ".vbo-custsearchres-entry", function() {
-	var custid = jQuery(this).attr("data-custid");
-	var custemail = jQuery(this).attr("data-email");
-	var custphone = jQuery(this).attr("data-phone");
-	var custcountry = jQuery(this).attr("data-country");
-	var custfirstname = jQuery(this).attr("data-firstname");
-	var custlastname = jQuery(this).attr("data-lastname");
+// subscribe to the event for choosing a customer to assign to a new booking
+document.addEventListener('vbo-calendar-view-choose-customer', vboCalendarHandleCustomerSelection);
+
+/**
+ * Handles the selection of a customer to assign to a new booking.
+ */
+function vboCalendarHandleCustomerSelection(e) {
+	if (!e?.detail?.element?.id) {
+		return;
+	}
+
+	let custid 		  = e.detail.element.id;
+	let custemail 	  = e.detail.element?.email;
+	let custphone 	  = e.detail.element?.phone;
+	let custcountry   = e.detail.element?.country;
+	let custfirstname = e.detail.element?.first_name;
+	let custlastname  = e.detail.element?.last_name;
+
+	// set customer ID
 	jQuery("#customer_id_inpfield").val(custid);
-	if (customers_search_vals.hasOwnProperty(custid)) {
-		jQuery.each(customers_search_vals[custid], function(cfid, cfval) {
-			var fill_field = jQuery("#cfield"+cfid);
-			if (fill_field.length) {
-				fill_field.val(cfval);
+
+	// check previous custom fields
+	if (e.detail.element?.cfields && typeof e.detail.element.cfields === 'object') {
+		for (const [cfid, cfval] of Object.entries(e.detail.element.cfields)) {
+			let fill_field = document.querySelector('#cfield' + cfid);
+			if (fill_field && cfval) {
+				// set previous value
+				fill_field.value = cfval;
 			}
-		});
+		}
 	} else {
 		jQuery("input[data-isnominative=\"1\"]").each(function(k, v) {
 			if (k == 0) {
@@ -1347,16 +1323,17 @@ jQuery(document).on("click", ".vbo-custsearchres-entry", function() {
 		jQuery("#custmailfield").val(custemail);
 		jQuery("#t_first_name_inpfield").val(custfirstname);
 		jQuery("#t_last_name_inpfield").val(custlastname);
-		//
 	}
+
 	applyCustomFieldsContent();
+
 	if (custcountry.length) {
 		jQuery("#ccode_inpfield").val(custcountry);
 	}
 	if (custphone.length) {
 		jQuery("#phonefield").val(custphone);
 	}
-});
+};
 
 var vborefreshingsel = false;
 function vboCheckCloseOthers() {

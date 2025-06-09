@@ -38,7 +38,7 @@ class VikBookingAdminWidgetLastReservations extends VikBookingAdminWidget
 		$this->widgetStyleName = 'pink';
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		$dbo = JFactory::getDbo();
 		

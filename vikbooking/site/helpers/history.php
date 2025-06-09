@@ -16,12 +16,12 @@ defined('ABSPATH') or die('No script kiddies please!');
 class VboBookingHistory
 {
 	/**
-	 * @var  int
+	 * @var  ?int
 	 */
 	protected $bid = null;
 
 	/**
-	 * @var  array
+	 * @var  ?array
 	 */
 	protected $prevBooking = null;
 
@@ -31,14 +31,30 @@ class VboBookingHistory
 	protected $data = null;
 
 	/**
-	 * @var  object
-	 */
-	protected $dbo = null;
-
-	/**
 	 * @var  array
 	 */
 	protected $typesMap = [];
+
+	/**
+	 * @var  array
+	 * 
+	 * @since  	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected $bookingInfo = [];
+
+	/**
+	 * @var  array
+	 * 
+	 * @since  	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected $bookingRooms = [];
+
+	/**
+	 * @var  array 	Static cache to identify duplicate operations.
+	 * 
+	 * @since  	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected static $signaturesList = [];
 
 	/**
 	 * List of event types worthy of a notification.
@@ -101,6 +117,66 @@ class VboBookingHistory
 	];
 
 	/**
+	 * List of Task Manager events for a new booking.
+	 * 
+	 * @var 	array
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected $taskManagerEventsNewBooking = [
+		// New booking with status Confirmed
+		'NC',
+		// New booking from back-end
+		'NB',
+		// Booking paid for the first time
+		'P0',
+		// Booking set to Confirmed by admin
+		'TC',
+		// Booking set to Confirmed via App
+		'AC',
+		// New booking via App
+		'AN',
+		// New Booking from OTA
+		'NO',
+	];
+
+	/**
+	 * List of Task Manager events for a modified booking.
+	 * 
+	 * @var 	array
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected $taskManagerEventsModifiedBooking = [
+		// Booking modified from website
+		'MW',
+		// Booking modified from back-end
+		'MB',
+		// Booking modified from channel
+		'MC',
+		// Booking modified via App
+		'AM',
+	];
+
+	/**
+	 * List of Task Manager events for a cancelled booking.
+	 * 
+	 * @var 	array
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected $taskManagerEventsCancelledBooking = [
+		// Booking cancelled via front-end website
+		'CW',
+		// Booking cancelled via back-end by admin
+		'CB',
+		// Booking cancelled from channel
+		'CC',
+		// Booking removed via App
+		'AR',
+	];
+
+	/**
 	 * Class constructor.
 	 * 
 	 * @param 	int 	$bid 	optional booking ID to set.
@@ -109,11 +185,10 @@ class VboBookingHistory
 	 */
 	public function __construct($bid = 0)
 	{
-		$this->dbo = JFactory::getDbo();
 		$this->typesMap = $this->getTypesMap();
 
 		if ($bid) {
-			$this->bid = (int)$bid;
+			$this->bid = (int) $bid;
 		}
 	}
 
@@ -213,6 +288,14 @@ class VboBookingHistory
 			'UR' => JText::translate('VBOBOOKHISTORYTUR'),
 			// Overbooking
 			'OB' => JText::translate('VBOBOOKHISTORYTOB'),
+			// Task Manager - General event (i.e. task status updated)
+			'TM' => JText::translate('VBOBOOKHISTORYTTM'),
+			// Task Manager - New tasks
+			'NT' => JText::translate('VBOBOOKHISTORYTNT'),
+			// Task Manager - Modified tasks
+			'MT' => JText::translate('VBOBOOKHISTORYTMT'),
+			// Task Manager - Cancelled tasks
+			'CT' => JText::translate('VBOBOOKHISTORYTCT'),
 		];
 	}
 
@@ -297,15 +380,32 @@ class VboBookingHistory
 	}
 
 	/**
+	 * Checks whether the type for the history record is valid.
+	 *
+	 * @param 	string 		$type
+	 * @param 	bool 		$returnit 	True for returning the translated value. Bool is returned otherwise.
+	 *
+	 * @return 	bool
+	 */
+	public function validType($type, $returnit = false)
+	{
+		if ($returnit) {
+			return isset($this->typesMap[strtoupper($type)]) ? $this->typesMap[strtoupper($type)] : $type;
+		}
+
+		return isset($this->typesMap[strtoupper($type)]);
+	}
+
+	/**
 	 * Sets the current booking ID.
 	 * 
 	 * @param 	int 	$bid
 	 *
-	 * @return 	self
+	 * @return 	VboBookingHistory
 	 **/
 	public function setBid($bid)
 	{
-		$this->bid = (int)$bid;
+		$this->bid = (int) $bid;
 
 		return $this;
 	}
@@ -320,7 +420,7 @@ class VboBookingHistory
 	 * 
 	 * @param 	array 	$booking
 	 *
-	 * @return 	self
+	 * @return 	VboBookingHistory
 	 **/
 	public function setPrevBooking($booking)
 	{
@@ -338,7 +438,7 @@ class VboBookingHistory
 	 * 							Useful to store the amount paid to be invoiced,
 	 * 							or the transaction details of the payments.
 	 *
-	 * @return 	self
+	 * @return 	VboBookingHistory
 	 **/
 	public function setExtraData($data)
 	{
@@ -348,42 +448,87 @@ class VboBookingHistory
 	}
 
 	/**
-	 * Checks whether the type for the history record is valid.
+	 * Sets the current booking room records.
+	 * 
+	 * @param 	array 	$booking_rooms 	The current booking room records.
 	 *
-	 * @param 	string 		$type
-	 * @param 	[bool] 		$returnit 	if true, the translated value is returned. Otherwise boolean is returned
-	 *
-	 * @return 	boolean
+	 * @return 	VboBookingHistory
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
 	 */
-	public function validType($type, $returnit = false)
+	public function setBookingRooms(array $booking_rooms)
 	{
-		if ($returnit) {
-			return isset($this->typesMap[strtoupper($type)]) ? $this->typesMap[strtoupper($type)] : $type;
-		}
-
-		return isset($this->typesMap[strtoupper($type)]);
+		$this->bookingRooms = $booking_rooms;
 	}
 
 	/**
-	 * Reads the current booking record.
+	 * Sets the current booking record.
+	 * 
+	 * @param 	array 	$booking 	The current booking record.
 	 *
-	 * @param 	mixed 	
+	 * @return 	VboBookingHistory
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function setBookingInfo(array $booking)
+	{
+		$this->bookingInfo = $booking;
+
+		if (is_array(($booking['rooms_info'] ?? null)) && $booking['rooms_info']) {
+			// booking room records may be available within the booking record itself
+			$this->setBookingRooms($booking['rooms_info']);
+		}
+	}
+
+	/**
+	 * Sets the current booking data.
+	 * 
+	 * @param 	array 	$booking 		The current booking record.
+	 * @param 	array 	$booking_rooms 	The current booking room records.
 	 *
-	 * @return 	false|array
+	 * @return 	VboBookingHistory
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function setBookingData(array $booking, array $booking_rooms = [])
+	{
+		$this->setBookingInfo($booking);
+
+		if ($booking_rooms) {
+			$this->setBookingRooms($booking_rooms);
+		}
+
+		return $this;
+	}
+
+	/**
+	 * Fetches the current booking record.
+	 *
+	 * @return 	?array
 	 */
 	protected function getBookingInfo()
 	{
-		$q = $this->dbo->getQuery(true)
-			->select('*')
-			->from($this->dbo->qn('#__vikbooking_orders'))
-			->where($this->dbo->qn('id') . ' = ' . (int)$this->bid);
+		$dbo = JFactory::getDbo();
 
-		$this->dbo->setQuery($q, 0, 1);
-		$record = $this->dbo->loadAssoc();
+		if ($this->bookingInfo && ($this->bookingInfo['id'] ?? 0) == $this->bid) {
+			// return the cached value
+			return $this->bookingInfo;
+		}
+
+		$q = $dbo->getQuery(true)
+			->select('*')
+			->from($dbo->qn('#__vikbooking_orders'))
+			->where($dbo->qn('id') . ' = ' . (int) $this->bid);
+
+		$dbo->setQuery($q, 0, 1);
+		$record = $dbo->loadAssoc();
 
 		if (!$record) {
-			return false;
+			return null;
 		}
+
+		// cache booking information internally
+		$this->bookingInfo = $record;
 
 		return $record;
 	}
@@ -391,13 +536,15 @@ class VboBookingHistory
 	/**
 	 * Stores a new history record for the booking.
 	 * 
-	 * @param 	string 		$type 	the char-type of store we are making for the history
-	 * @param 	[string] 	$descr 	the description of this booking record (optional)
+	 * @param 	string 	$type 	Char-type of storing we are making for the history.
+	 * @param 	string 	$descr 	Optional description of this booking record.
 	 *
-	 * @return 	boolean
+	 * @return 	bool
 	 */
 	public function store($type, $descr = '')
 	{
+		$dbo = JFactory::getDbo();
+
 		if (is_null($this->bid) || !$this->validType($type)) {
 			return false;
 		}
@@ -405,6 +552,13 @@ class VboBookingHistory
 		if (!$booking_info = $this->getBookingInfo()) {
 			return false;
 		}
+
+		/**
+		 * Define the current storing signature.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		$storingSignature = implode('-', [$type, $this->bid]);
 
 		if (empty($descr) && $this->prevBooking) {
 			/**
@@ -414,9 +568,6 @@ class VboBookingHistory
 			 */
 			$lang = JFactory::getLanguage();
 			$lang->load('com_vikbooking', (VBOPlatformDetection::isWordPress() ? VIKBOOKING_ADMIN_LANG : JPATH_ADMINISTRATOR), $lang->getTag(), true);
-			if (!class_exists('VikBooking')) {
-				require_once(VBO_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikbooking.php');
-			}
 			$descr = VikBooking::getLogBookingModification($this->prevBooking);
 		}
 
@@ -429,8 +580,8 @@ class VboBookingHistory
 		$history_record->dt 	 = JFactory::getDate()->toSql();
 		$history_record->type 	 = $type;
 		$history_record->descr 	 = $descr ?: null;
-		$history_record->totpaid = (float)$booking_info['totpaid'];
-		$history_record->total 	 = (float)$booking_info['total'];
+		$history_record->totpaid = (float) $booking_info['totpaid'];
+		$history_record->total 	 = (float) $booking_info['total'];
 		$history_record->data 	 = $this->data;
 
 		/**
@@ -454,7 +605,7 @@ class VboBookingHistory
 		}
 
 		// store record
-		if (!$this->dbo->insertObject('#__vikbooking_orderhistory', $history_record, 'id') || !isset($history_record->id)) {
+		if (!$dbo->insertObject('#__vikbooking_orderhistory', $history_record, 'id') || !isset($history_record->id)) {
 			return false;
 		}
 
@@ -475,6 +626,33 @@ class VboBookingHistory
 			$this->addToNotificationsCenter($history_record, $booking_info);
 		}
 
+		/**
+		 * Check if the Task Manager framework should run for the current event type.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		if (!in_array($storingSignature, static::$signaturesList)) {
+			// we can safely invoke the Task Manager framework for a unique event
+			if (in_array($type, $this->taskManagerEventsNewBooking)) {
+				// process the new booking confirmation tasks
+				VBOFactory::getTaskManager()->processBookingConfirmation($this->bookingInfo, $this->bookingRooms);
+			} elseif (in_array($type, $this->taskManagerEventsCancelledBooking)) {
+				// process the booking cancellation tasks
+				VBOFactory::getTaskManager()->processBookingCancellation($this->bookingInfo, $this->bookingRooms);
+			} elseif (in_array($type, $this->taskManagerEventsModifiedBooking)) {
+				// process the booking modification tasks
+				VBOFactory::getTaskManager()->processBookingModification($this->bookingInfo, $this->bookingRooms, (array) $this->prevBooking);
+			}
+		}
+
+		/**
+		 * Populate a static cache list to prevent duplicate operations from being executed, unless required.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		static::$signaturesList[] = $storingSignature;
+
+		// operation completed with success
 		return true;
 	}
 
@@ -490,20 +668,22 @@ class VboBookingHistory
 	 */
 	public function loadHistory($offset = 0, $limit = 0)
 	{
+		$dbo = JFactory::getDbo();
+
 		if (empty($this->bid)) {
 			return [];
 		}
 
-		$q = $this->dbo->getQuery(true)
+		$q = $dbo->getQuery(true)
 			->select('*')
-			->from($this->dbo->qn('#__vikbooking_orderhistory'))
-			->where($this->dbo->qn('idorder') . ' = ' . (int)$this->bid)
-			->order($this->dbo->qn('dt') . ' DESC')
-			->order($this->dbo->qn('id') . ' DESC');
+			->from($dbo->qn('#__vikbooking_orderhistory'))
+			->where($dbo->qn('idorder') . ' = ' . (int) $this->bid)
+			->order($dbo->qn('dt') . ' DESC')
+			->order($dbo->qn('id') . ' DESC');
 
-		$this->dbo->setQuery($q, $offset, $limit);
+		$dbo->setQuery($q, $offset, $limit);
 
-		return $this->dbo->loadAssocList();
+		return $dbo->loadAssocList();
 	}
 
 	/**
@@ -517,20 +697,22 @@ class VboBookingHistory
 	 */
 	public function hasEvent($type)
 	{
+		$dbo = JFactory::getDbo();
+
 		if (empty($type) || empty($this->bid)) {
 			return false;
 		}
 
-		$q = $this->dbo->getQuery(true)
-			->select($this->dbo->qn('dt'))
-			->from($this->dbo->qn('#__vikbooking_orderhistory'))
-			->where($this->dbo->qn('idorder') . ' = ' . (int)$this->bid)
-			->where($this->dbo->qn('type') . ' = ' . $this->dbo->q($type))
-			->order($this->dbo->qn('dt') . ' DESC');
+		$q = $dbo->getQuery(true)
+			->select($dbo->qn('dt'))
+			->from($dbo->qn('#__vikbooking_orderhistory'))
+			->where($dbo->qn('idorder') . ' = ' . (int) $this->bid)
+			->where($dbo->qn('type') . ' = ' . $dbo->q($type))
+			->order($dbo->qn('dt') . ' DESC');
 
-		$this->dbo->setQuery($q, 0, 1);
+		$dbo->setQuery($q, 0, 1);
 
-		$dt = $this->dbo->loadResult();
+		$dt = $dbo->loadResult();
 
 		if (!$dt) {
 			return false;
@@ -553,6 +735,8 @@ class VboBookingHistory
 	 */
 	public function getEventsWithData($type, $callvalid = null, $onlydata = true)
 	{
+		$dbo = JFactory::getDbo();
+
 		if (empty($type) || empty($this->bid)) {
 			return false;
 		}
@@ -562,17 +746,17 @@ class VboBookingHistory
 		}
 
 		// quote all given types
-		$types = array_map([$this->dbo, 'q'], $type);
+		$types = array_map([$dbo, 'q'], $type);
 
-		$q = $this->dbo->getQuery(true)
+		$q = $dbo->getQuery(true)
 			->select('*')
-			->from($this->dbo->qn('#__vikbooking_orderhistory'))
-			->where($this->dbo->qn('idorder') . ' = ' . (int)$this->bid)
-			->where($this->dbo->qn('type') . ' IN (' . implode(', ', $types) . ')')
-			->order($this->dbo->qn('dt') . ' ASC');
+			->from($dbo->qn('#__vikbooking_orderhistory'))
+			->where($dbo->qn('idorder') . ' = ' . (int) $this->bid)
+			->where($dbo->qn('type') . ' IN (' . implode(', ', $types) . ')')
+			->order($dbo->qn('dt') . ' ASC');
 
-		$this->dbo->setQuery($q);
-		$events = $this->dbo->loadAssocList();
+		$dbo->setQuery($q);
+		$events = $dbo->loadAssocList();
 
 		if ($events) {
 			$datas  = [];
@@ -613,6 +797,8 @@ class VboBookingHistory
 	 */
 	public function getLatestBookingEvents($start = 0, $limit = 20, $min_id = 0, array $types = [])
 	{
+		$dbo = JFactory::getDbo();
+
 		$clauses = [];
 
 		if ($min_id > 0) {
@@ -637,7 +823,7 @@ class VboBookingHistory
 			}
 
 			// quote all values
-			$types = array_map(array($this->dbo, 'q'), array_filter($types));
+			$types = array_map(array($dbo, 'q'), array_filter($types));
 
 			if ($types) {
 				// add query clause
@@ -661,15 +847,15 @@ class VboBookingHistory
 		 */
 
 		// query just the history records without joining any other table, or the records would become hundreds of thousands
-		$q = $this->dbo->getQuery(true)
-			->select($this->dbo->qn('h') . '.*')
-			->from($this->dbo->qn('#__vikbooking_orderhistory', 'h'))
+		$q = $dbo->getQuery(true)
+			->select($dbo->qn('h') . '.*')
+			->from($dbo->qn('#__vikbooking_orderhistory', 'h'))
 			->where(implode(' AND ', $clauses))
-			->order($this->dbo->qn('h.dt') . ' DESC')
-			->order($this->dbo->qn('h.id') . ' DESC');
+			->order($dbo->qn('h.dt') . ' DESC')
+			->order($dbo->qn('h.id') . ' DESC');
 
-		$this->dbo->setQuery($q, $start, $limit);
-		$rows = $this->dbo->loadObjectList();
+		$dbo->setQuery($q, $start, $limit);
+		$rows = $dbo->loadObjectList();
 		if (!$rows) {
 			return [];
 		}
@@ -694,8 +880,8 @@ class VboBookingHistory
 			LEFT JOIN `#__vikbooking_customers` AS `c` ON `c`.`id`=`co`.`idcustomer`
 			WHERE `o`.`id` IN (" . implode(', ', $history_orders) . ");";
 
-		$this->dbo->setQuery($q);
-		$rows_data = $this->dbo->loadObjectList();
+		$dbo->setQuery($q);
+		$rows_data = $dbo->loadObjectList();
 		if (!$rows_data) {
 			return [];
 		}
@@ -726,7 +912,7 @@ class VboBookingHistory
 	 * 
 	 * @param 	array 	$worthy_events  list of event type identifiers.
 	 * 
-	 * @return 	self
+	 * @return 	VboBookingHistory
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP)
 	 */
@@ -765,6 +951,8 @@ class VboBookingHistory
 	 */
 	public function getWorthyEvents($min_id = 0, $limit = 0)
 	{
+		$dbo = JFactory::getDbo();
+
 		$clauses = [
 			"`o`.`status` IS NOT NULL",
 			"`o`.`closure` = 0"
@@ -776,32 +964,32 @@ class VboBookingHistory
 
 		if ($this->worthy_events) {
 			// quote all worthy types of event
-			$worthy_types = array_map(array($this->dbo, 'quote'), $this->worthy_events);
+			$worthy_types = array_map(array($dbo, 'q'), $this->worthy_events);
 			$clauses[] = "`h`.`type` IN (" . implode(', ', $worthy_types) . ")";
 		}
 
 		// join as few tables as possible to reduce the execution timing
-		$q = $this->dbo->getQuery(true)
-			->select($this->dbo->qn('h') . '.*')
+		$q = $dbo->getQuery(true)
+			->select($dbo->qn('h') . '.*')
 			->select([
-				$this->dbo->qn('o.status'),
-				$this->dbo->qn('o.days'),
-				$this->dbo->qn('o.checkin'),
-				$this->dbo->qn('o.checkout'),
-				$this->dbo->qn('o.totpaid'),
-				$this->dbo->qn('o.total'),
-				$this->dbo->qn('o.idorderota'),
-				$this->dbo->qn('o.channel'),
-				$this->dbo->qn('o.country'),
+				$dbo->qn('o.status'),
+				$dbo->qn('o.days'),
+				$dbo->qn('o.checkin'),
+				$dbo->qn('o.checkout'),
+				$dbo->qn('o.totpaid'),
+				$dbo->qn('o.total'),
+				$dbo->qn('o.idorderota'),
+				$dbo->qn('o.channel'),
+				$dbo->qn('o.country'),
 			])
-			->from($this->dbo->qn('#__vikbooking_orderhistory', 'h'))
-			->leftJoin($this->dbo->qn('#__vikbooking_orders', 'o') . ' ON ' . $this->dbo->qn('h.idorder') . ' = ' . $this->dbo->qn('o.id'))
+			->from($dbo->qn('#__vikbooking_orderhistory', 'h'))
+			->leftJoin($dbo->qn('#__vikbooking_orders', 'o') . ' ON ' . $dbo->qn('h.idorder') . ' = ' . $dbo->qn('o.id'))
 			->where(implode(' AND ', $clauses))
-			->order($this->dbo->qn('h.dt') . ' DESC')
-			->order($this->dbo->qn('h.id') . ' DESC');
+			->order($dbo->qn('h.dt') . ' DESC')
+			->order($dbo->qn('h.id') . ' DESC');
 
-		$this->dbo->setQuery($q, 0, $limit);
-		$rows = $this->dbo->loadObjectList();
+		$dbo->setQuery($q, 0, $limit);
+		$rows = $dbo->loadObjectList();
 
 		if (!$rows) {
 			return [];
@@ -823,18 +1011,18 @@ class VboBookingHistory
 		$history_orders = array_unique($history_orders);
 
 		// fetch the rest of the information
-		$q = $this->dbo->getQuery(true)
+		$q = $dbo->getQuery(true)
 			->select([
-				$this->dbo->qn('o.id'),
-				$this->dbo->qn('c.pic'),
+				$dbo->qn('o.id'),
+				$dbo->qn('c.pic'),
 			])
-			->from($this->dbo->qn('#__vikbooking_orders', 'o'))
-			->leftJoin($this->dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $this->dbo->qn('co.idorder') . ' = ' . $this->dbo->qn('o.id'))
-			->leftJoin($this->dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $this->dbo->qn('c.id') . ' = ' . $this->dbo->qn('co.idcustomer'))
-			->where($this->dbo->qn('o.id') . ' IN (' . implode(', ', $history_orders) . ')');
+			->from($dbo->qn('#__vikbooking_orders', 'o'))
+			->leftJoin($dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $dbo->qn('co.idorder') . ' = ' . $dbo->qn('o.id'))
+			->leftJoin($dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $dbo->qn('c.id') . ' = ' . $dbo->qn('co.idcustomer'))
+			->where($dbo->qn('o.id') . ' IN (' . implode(', ', $history_orders) . ')');
 
-		$this->dbo->setQuery($q);
-		$rows_data = $this->dbo->loadObjectList();
+		$dbo->setQuery($q);
+		$rows_data = $dbo->loadObjectList();
 
 		if ($rows_data) {
 			// merge information
@@ -866,7 +1054,7 @@ class VboBookingHistory
 	 */
 	public function getBookingModificationSummary(array $booking_info)
 	{
-		if ($this->prevBooking) {
+		if (!$this->prevBooking) {
 			return '';
 		}
 

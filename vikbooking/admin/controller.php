@@ -2137,7 +2137,7 @@ class VikBookingController extends JControllerVikBooking
 				}
 
 				//Booking History
-				VikBooking::getBookingHistoryInstance()->setBid($ord['id'])->store('MB', "({$user->name}) " . VikBooking::getLogBookingModification($ord));
+				VikBooking::getBookingHistoryInstance($ord['id'])->setPrevBooking($ord)->store('MB', "({$user->name}) " . VikBooking::getLogBookingModification($ord));
 				//
 				$app->redirect("index.php?option=com_vikbooking&task=editbusy".($pvcm == 1 ? '&vcm=1' : '').($pfrominv == 1 ? '&frominv=1' : '')."&cid[]=".$ord['id'].($pgoto == 'overv' ? "&goto=overv" : ""));
 				exit;
@@ -2591,6 +2591,7 @@ class VikBookingController extends JControllerVikBooking
 			$tot_taxes = 0;
 			$tot_city_taxes = 0;
 			$tot_fees = 0;
+			$tot_damage_dep = 0;
 			$doup = true;
 			$tars = array();
 			$cust_costs = array();
@@ -2744,6 +2745,9 @@ class VikBookingController extends JControllerVikBooking
 					$wop = "";
 
 					foreach ($toptionals as $opt) {
+						// option params
+						$opt_params = !empty($opt['oparams']) ? json_decode($opt['oparams'], true) : [];
+						$opt_params = is_array($opt_params) ? $opt_params : [];
 						if (!empty($opt['ageintervals']) && ($or['children'] > 0 || (array_key_exists($num, $arrpeople) && array_key_exists('children', $arrpeople[$num]))) ) {
 							$tmpvar = VikRequest::getInt('optid'.$num.$opt['id'], []);
 							if (is_array($tmpvar) && $tmpvar) {
@@ -2815,6 +2819,8 @@ class VikBookingController extends JControllerVikBooking
 										$tot_city_taxes += $tmpopr;
 									} elseif ($opt['is_fee'] == 1) {
 										$tot_fees += $tmpopr;
+									} elseif ($opt_params['damagedep'] ?? 0) {
+										$tot_damage_dep += $tmpopr;
 									}
 									// VBO 1.11 - always calculate the amount of tax no matter if this is already a tax or a fee
 									if ($tmpopr == $realcost) {
@@ -2890,6 +2896,8 @@ class VikBookingController extends JControllerVikBooking
 									$tot_city_taxes += $tmpopr;
 								} elseif ($opt['is_fee'] == 1) {
 									$tot_fees += $tmpopr;
+								} elseif ($opt_params['damagedep'] ?? 0) {
+									$tot_damage_dep += $tmpopr;
 								}
 								// VBO 1.11 - always calculate the amount of tax no matter if this is already a tax or a fee
 								if ($tmpopr == $realcost) {
@@ -3026,7 +3034,7 @@ class VikBookingController extends JControllerVikBooking
 				}
 
 				// update totals
-				$q = "UPDATE `#__vikbooking_orders` SET `total`='".$isdue."', `tot_taxes`='".$tot_taxes."', `tot_city_taxes`='".$tot_city_taxes."', `tot_fees`='".$tot_fees."' WHERE `id`=".$ord['id'].";";
+				$q = "UPDATE `#__vikbooking_orders` SET `total`='".$isdue."', `tot_taxes`='".$tot_taxes."', `tot_city_taxes`='".$tot_city_taxes."', `tot_fees`='".$tot_fees."', `tot_damage_dep`='".$tot_damage_dep."' WHERE `id`=".$ord['id'].";";
 				$dbo->setQuery($q);
 				$dbo->execute();
 				$upd_esit = JText::translate('VBORESRATESUPDATED');
@@ -3099,7 +3107,7 @@ class VikBookingController extends JControllerVikBooking
 			if (!$opertwounits && $forcebooking) {
 				$history_descr .= "\n" . JText::translate('VBO_FORCED_BOOKDATES');
 			}
-			VikBooking::getBookingHistoryInstance()->setBid($ord['id'])->store('MB', $history_descr);
+			VikBooking::getBookingHistoryInstance($ord['id'])->setPrevBooking($ord)->store('MB', $history_descr);
 
 			// enqueue result message
 			$app->enqueueMessage($upd_esit);
@@ -8587,12 +8595,51 @@ class VikBookingController extends JControllerVikBooking
 		$app->close();
 	}
 
-	public function edittmplfile() {
-		//modal box, so we do not set menu or footer
-	
+	public function edittmplfile()
+	{
+		// this view should be rendered through AJAX
 		VikRequest::setVar('view', VikRequest::getCmd('view', 'edittmplfile'));
-	
-		parent::display();
+
+		if (JFactory::getApplication()->input->getBool('ajax') && VBOPlatformDetection::isJoomla()) {
+			/**
+			 * @todo  This needs to be changed for Joomla in the future versions.
+			 *        Right now no HTML document tree is being added as an AJAX response, because
+			 *        the View output is captured within a buffer, but the CodeMirror will not work.
+			 *        In case the View was rendered normally and sent to output, the CodeMirror would
+			 *        work fine, but the response appended to the modal body would contain HTML head tags
+			 *        and so accessing the language definitions through JS would fail after the first response.
+			 *        The solution for both Joomla and WordPress is probably to use a completely different endpoint
+			 *        that returns just the file buffer/content, and maybe the file type, so that who makes the requests
+			 *        can set the content and render the proper CodeMirror editor manually at runtime.
+			 */
+
+			// start output buffer
+			ob_start();
+
+			try {
+				// display view
+				parent::display();
+			} catch (Exception $e) {
+				// clear output buffer
+				ob_end_clean();
+
+				// raise error
+				VBOHttpDocument::getInstance()->close($e->getCode(), $e->getMessage());
+			}
+
+			// obtain view HTML from buffer
+			$html = ob_get_contents();
+
+			// clear output buffer
+			ob_end_clean();
+
+			// encode HTML in JSON to avoid encoding issues
+			VBOHttpDocument::getInstance()->json(json_encode($html));
+
+		} else {
+			// regular view display
+			parent::display();
+		}
 	}
 
 	public function tmplfileprew() {
@@ -9713,7 +9760,7 @@ class VikBookingController extends JControllerVikBooking
 			$pemailsubj = str_replace('{booking_id}', $pbid, $pemailsubj);
 			//
 			$is_html = (strpos($pemailcont, '<') !== false && strpos($pemailcont, '>') !== false);
-			$pemailcont = $is_html ? nl2br($pemailcont) : $pemailcont;
+			$pemailcont = !$is_html ? nl2br($pemailcont) : $pemailcont;
 			$vbo_app = VikBooking::getVboApplication();
 			$vbo_app->sendMail($pemailfrom, $pemailfrom, $pemail, $pemailfrom, $pemailsubj, $pemailcont, $is_html, 'base64', $email_attach);
 			$mainframe->enqueueMessage(JText::translate('VBSENDEMAILOK'));
@@ -11708,7 +11755,7 @@ jQuery(".' . $selector . '").hover(function() {
 		//
 
 		//Booking History
-		VikBooking::getBookingHistoryInstance()->setBid($ord['id'])->store('MB', "({$user->name}) " . VikBooking::getLogBookingModification($ord));
+		VikBooking::getBookingHistoryInstance($ord['id'])->setPrevBooking($ord)->store('MB', "({$user->name}) " . VikBooking::getLogBookingModification($ord));
 		//
 
 		$vcm_autosync = VikBooking::vcmAutoUpdate();
@@ -13102,7 +13149,26 @@ jQuery(".' . $selector . '").hover(function() {
 		$pujid = VikRequest::getInt('ujid', '', 'request');
 		$pwhere = VikRequest::getInt('where', '', 'request');
 
-		if (!empty($pfirst_name) && !empty($pemail) && (!empty($pcode) || !empty($pujid))) {
+		$work_days_week = (array) $app->input->get('work_days_week', [], 'array');
+		$work_days_exceptions = (array) $app->input->get('work_days_exceptions', [], 'array');
+
+		// normalize to linear arrays
+		$work_days_week_schedule = array_combine(array_keys($work_days_week), array_values($work_days_week));
+		$work_days_week = [];
+		foreach ($work_days_week_schedule as $wday => $whours) {
+			$work_days_week[] = [
+				'wday'  => $wday,
+				'hours' => $whours,
+			];
+		}
+		foreach ($work_days_exceptions as &$wexceptions) {
+			if (is_scalar($wexceptions)) {
+				$wexceptions = json_decode($wexceptions, true);
+			}
+		}
+		unset($wexceptions);
+
+		if (!empty($pfirst_name) && !empty($pemail) && !empty($pcode)) {
 			$q = "SELECT * FROM `#__vikbooking_operators` WHERE `id`=".(int)$pwhere." LIMIT 1;";
 			$dbo->setQuery($q);
 			$customer = $dbo->loadAssoc();
@@ -13150,7 +13216,7 @@ jQuery(".' . $selector . '").hover(function() {
 				}
 
 				// update record
-				$q = "UPDATE `#__vikbooking_operators` SET `first_name`=" . $dbo->q($pfirst_name) . ",`last_name`=" . $dbo->q($plast_name) . ",`email`=" . $dbo->q($pemail) . ",`phone`=" . $dbo->q($pphone) . ",`code`=" . $dbo->q($pcode) . ",`ujid`=" . $dbo->q($pujid) . ",`fingpt`=" . $dbo->q($fingpt) . ",`pic`=" . $dbo->q($operator_pic) . " WHERE `id`=" . (int)$pwhere;
+				$q = "UPDATE `#__vikbooking_operators` SET `first_name`=" . $dbo->q($pfirst_name) . ",`last_name`=" . $dbo->q($plast_name) . ",`email`=" . $dbo->q($pemail) . ",`phone`=" . $dbo->q($pphone) . ",`code`=" . $dbo->q($pcode) . ",`ujid`=" . $dbo->q($pujid) . ",`fingpt`=" . $dbo->q($fingpt) . ",`pic`=" . $dbo->q($operator_pic) . ",`work_days_week`=" . ($work_days_week ? $dbo->q(json_encode($work_days_week)) : 'NULL') . ",`work_days_exceptions`=" . ($work_days_exceptions ? $dbo->q(json_encode($work_days_exceptions)) : 'NULL') . " WHERE `id`=" . (int)$pwhere;
 				$dbo->setQuery($q);
 				$dbo->execute();
 				$app->enqueueMessage(JText::translate('VBOPERATORSAVED'));
@@ -13188,7 +13254,26 @@ jQuery(".' . $selector . '").hover(function() {
 		$pcode = VikRequest::getString('code', '', 'request');
 		$pujid = VikRequest::getInt('ujid', '', 'request');
 
-		if (!empty($pfirst_name) && !empty($pemail) && (!empty($pcode) || !empty($pujid))) {
+		$work_days_week = (array) $app->input->get('work_days_week', [], 'array');
+		$work_days_exceptions = (array) $app->input->get('work_days_exceptions', [], 'array');
+
+		// normalize to linear arrays
+		$work_days_week_schedule = array_combine(array_keys($work_days_week), array_values($work_days_week));
+		$work_days_week = [];
+		foreach ($work_days_week_schedule as $wday => $whours) {
+			$work_days_week[] = [
+				'wday'  => $wday,
+				'hours' => $whours,
+			];
+		}
+		foreach ($work_days_exceptions as &$wexceptions) {
+			if (is_scalar($wexceptions)) {
+				$wexceptions = json_decode($wexceptions, true);
+			}
+		}
+		unset($wexceptions);
+
+		if (!empty($pfirst_name) && !empty($pemail) && !empty($pcode)) {
 			$q = "SELECT * FROM `#__vikbooking_operators` WHERE `email`=".$dbo->quote($pemail)." OR ".(!empty($pcode) ? "`code`=".$dbo->quote($pcode) : "`ujid`=".$dbo->quote($pujid))." LIMIT 1;";
 			$dbo->setQuery($q);
 			$ex_operator = $dbo->loadAssoc();
@@ -13224,7 +13309,7 @@ jQuery(".' . $selector . '").hover(function() {
 					}
 				}
 
-				$q = "INSERT INTO `#__vikbooking_operators` (`first_name`,`last_name`,`email`,`phone`,`code`,`ujid`,`pic`) VALUES(" . $dbo->q($pfirst_name) . ", " . $dbo->q($plast_name) . ", " . $dbo->q($pemail) . ", " . $dbo->q($pphone) . ", " . $dbo->q($pcode) . ", " . $dbo->q($pujid) . ", " . $dbo->q($operator_pic) . ");";
+				$q = "INSERT INTO `#__vikbooking_operators` (`first_name`,`last_name`,`email`,`phone`,`code`,`ujid`,`pic`,`work_days_week`,`work_days_exceptions`) VALUES(" . $dbo->q($pfirst_name) . ", " . $dbo->q($plast_name) . ", " . $dbo->q($pemail) . ", " . $dbo->q($pphone) . ", " . $dbo->q($pcode) . ", " . $dbo->q($pujid) . ", " . $dbo->q($operator_pic) . ", " . ($work_days_week ? $dbo->q(json_encode($work_days_week)) : 'NULL') . ", " . ($work_days_exceptions ? $dbo->q(json_encode($work_days_exceptions)) : 'NULL') . ");";
 				$dbo->setQuery($q);
 				$dbo->execute();
 				$lid = $dbo->insertid();

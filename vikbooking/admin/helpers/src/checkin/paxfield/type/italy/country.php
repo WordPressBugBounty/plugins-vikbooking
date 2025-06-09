@@ -138,10 +138,54 @@ HTML;
 		$json_value = json_encode(($set_value ? [$value] : []));
 
 		// build select2 placeholder label
-		$plch_lbl = addslashes(JText::translate('VBO_SELECT_COUNTRY'));
+		$plch_lbl = $is_docplace ? addslashes(JText::translate('VBO_SELECT')) : addslashes(JText::translate('VBO_SELECT_COUNTRY'));
 
-		// append select2 JS script for rendering the field
-		$field_html .= <<<HTML
+		if ($is_docplace && $this->checkLoadedJSONComuniProvince()) {
+			// the list of Italian "comuni e province" was loaded by another field
+			// so we try to merge the two JSON lists (countries + comuni-province)
+
+			// build option group placeholders
+			$italy_country_name = strtolower(substr(JFactory::getLanguage()->getTag(), 0, 2)) === 'it' ? 'Italia' : 'Italy';
+			$it_cities_lbl = addslashes(JText::sprintf('VBO_ONLY_IF_COUNTRY_EQ', $italy_country_name));
+			$fcountries_lbl = addslashes(JText::translate('VBO_FOREIGN_COUNTRIES'));
+
+			// append select2 JS script for rendering the field
+			$field_html .= <<<HTML
+<script>
+	jQuery(function() {
+
+		jQuery("#$field_id").select2({
+			data: [
+				{
+					text: "$fcountries_lbl",
+					// detach "Italy" from the list of countries when comuni/province is available and append it as last option
+					// do not remove it completely for backward compatibility and pre-selected values
+					children: (typeof vbo_comuni_province_json !== 'undefined' && vbo_nazioni_json[0]?.id == '100000100' ? vbo_nazioni_json.toSpliced(0, 1).concat([vbo_nazioni_json[0]]) : vbo_nazioni_json),
+				},
+				{
+					text: "$it_cities_lbl",
+					children: (vbo_comuni_province_json || []),
+				},
+			],
+			width: "100%",
+			placeholder: "$plch_lbl",
+			allowClear: true
+		});
+
+		setTimeout(function() {
+			if ($set_value) {
+				var prev_val_json = $json_value;
+				jQuery("#$field_id").val(prev_val_json[0]).trigger('change');
+			}
+		}, 700);
+	});
+</script>
+HTML;
+		} else {
+			// not a "docplace" field, but rather a list of countries alone
+
+			// append select2 JS script for rendering the field
+			$field_html .= <<<HTML
 <script>
 	jQuery(function() {
 
@@ -161,6 +205,7 @@ HTML;
 	});
 </script>
 HTML;
+		}
 
 		// return the necessary HTML string to display the field
 		return $field_html;
@@ -200,6 +245,35 @@ HTML;
 
 			// return the loaded flag status
 			return $collect_registry->get('nazioni_json', 0);
+		}
+
+		// definitely not loaded
+		return 0;
+	}
+
+	/**
+	 * Helper method to cache a flag for loading heavy JSON data only once.
+	 * 
+	 * @param 	int 	$set 	the optional flag status to set.
+	 * 
+	 * @return 	int 	a boolean integer indicating the flag status.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	private function checkLoadedJSONComuniProvince($set = 0)
+	{
+		// try to access the registry instance data
+		$collect_registry = VBOCheckinPax::getInstanceData();
+
+		// check if the registry instance of this collection type has cached values
+		if ($collect_registry) {
+			if ($set) {
+				// update registry flag and return previous value
+				return $collect_registry->set('comuni_province_json', $set);
+			}
+
+			// return the loaded flag status
+			return $collect_registry->get('comuni_province_json', 0);
 		}
 
 		// definitely not loaded

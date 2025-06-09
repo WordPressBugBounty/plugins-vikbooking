@@ -499,7 +499,7 @@ function vbFullObject(obj) {
 		return obj.hasOwnProperty(jk);
 	}
 }
-jQuery(document).ready(function() {
+jQuery(function() {
 	jQuery('.vb-cal-img, .vbo-caltrigger').click(function(){
 		var jdp = jQuery(this).prev('input.hasDatepicker');
 		if (jdp.length) {

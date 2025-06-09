@@ -38,7 +38,7 @@ class VikBookingAdminWidgetForecast extends VikBookingAdminWidget
 		$this->widgetStyleName = 'yellow';
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		$vbo_auth_pricing = JFactory::getUser()->authorise('core.vbo.pricing', 'com_vikbooking');
 		$vbo_auth_bookings = JFactory::getUser()->authorise('core.vbo.bookings', 'com_vikbooking');

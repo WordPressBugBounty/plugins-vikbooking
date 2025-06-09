@@ -31,7 +31,7 @@ echo JHtml::fetch(
 
 <script>
 
-	jQuery(document).ready(function() {
+	jQuery(function() {
 		var aborted = false;
 		
 		if (typeof localStorage !== 'undefined') {

@@ -46,7 +46,7 @@ class VikBookingAdminWidgetWeeklyBookings extends VikBookingAdminWidget
 		$this->widgetStyleName = 'brown';
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;
@@ -191,7 +191,7 @@ class VikBookingAdminWidgetWeeklyBookings extends VikBookingAdminWidget
 		?>
 			<script type="text/javascript">
 			var nextwk_ymd = '<?php echo $nextwk_ymd; ?>';
-			jQuery(document).ready(function() {
+			jQuery(function() {
 				jQuery('.vbo-dash-chart-nav').click(function() {
 					var instance_elem = jQuery(this).closest('.vbo-admin-widget-wrapper');
 					var direction = jQuery(this).parent().hasClass('vbo-dash-chart-prev') ? 'prev' : 'next';
@@ -275,7 +275,7 @@ class VikBookingAdminWidgetWeeklyBookings extends VikBookingAdminWidget
 			vbo_t = setTimeout(vboRefreshTimer, 1000);
 			vbo_t_on = true;
 		}
-		jQuery(document).ready(function() {
+		jQuery(function() {
 			/**
 			 * We disable the automatic reload timer. To restore it, remove the display: none
 			 * attribute to the DIV.vbo-dashboard-refresh-container and decomment "vboStartTimer();".

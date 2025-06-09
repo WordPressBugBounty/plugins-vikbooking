@@ -301,6 +301,69 @@ final class VBONotificationScheduler
 	}
 
 	/**
+	 * Builds a notification display data object for a recent operator
+	 * chat message for an administrator. This kind of notification will
+	 * be actually dispatched immediately with no scheduling, and so
+	 * so it won't provide a build-URL, it will provide display data.
+	 * 
+	 * @param 	object 	$message 	Operator chat message record object to parse.
+	 * 
+	 * @return 	?object
+	 * 
+	 * @since  	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function getOperatorsChatDataObject($message)
+	{
+		if (!$message instanceof VBOChatMessage) {
+			return null;
+		}
+
+		// get a new notification data object
+		$notification = VBONotificationDataOperatormessage::getInstance();
+
+		// inject all record properties as "reserved" properties
+		foreach ($message->jsonSerialize() as $prop => $val) {
+			// properties starting with an underscore are "reserved"
+			$notification->set("_{$prop}", $val);
+		}
+
+		// the notification will be dispatched immediately
+		$notification->setDateTime('now');
+
+		// let the notification build the display data
+		$notification->buildDisplayData();
+
+		// return the notification data-object
+		return $notification->toDataObject();
+	}
+
+	/**
+	 * Given a list of recent operators chat messages for the administrators,
+	 * builds a list of notification data objects of type (operator) "message".
+	 * Such notifications will be immediately dispatched, and they will contain
+	 * the necessary data for display without being built through a callback.
+	 * 
+	 * @param 	array 	$messages 	List of recent operators chat message objects for the admin.
+	 * 
+	 * @return 	array 				List of browser notification display data objects.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function buildOperatorsChatDataObjects(array $messages)
+	{
+		// container of notification display data objects
+		$data_objects = [];
+
+		foreach ($messages as $message) {
+			if ($data_object = $this->getOperatorsChatDataObject($message)) {
+				$data_objects[] = $data_object;
+			}
+		}
+
+		return $data_objects;
+	}
+
+	/**
 	 * Enqueues a list of notification objects for the overdue reminders.
 	 * This should be called upon a regular page loading, not during AJAX
 	 * requests, as it attachs a script declaration to the document.

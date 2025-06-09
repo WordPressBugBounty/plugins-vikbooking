@@ -112,10 +112,16 @@ class JMail
 		// hook to the PHPMailer init action
 		add_action('phpmailer_init', function(&$phpmailer) use ($name, $value)
 		{	
-			if (!$phpmailer instanceof PHPMailer)
+			/**
+			 * Make sure the provided argument is actually an object.
+			 * 
+			 * @since 10.1.61  Ignore the PHPMailer class check, since it might be prefixed by a namespace.
+			 *                 Receiving an object is enough for us.
+			 */
+			if (!is_object($phpmailer))
 			{
 				// safety check
-				return $phpmailer;
+				return;
 			}
 
 			/**
@@ -412,16 +418,22 @@ class JMail
 		// hook to the PHPMailer init action
 		add_action('phpmailer_init', function(&$phpmailer) use ($auth, $host, $user, $pass, $secure, $port)
 		{
-			if (!$phpmailer instanceof PHPMailer)
+			/**
+			 * Make sure the provided argument is actually an object.
+			 * 
+			 * @since 10.1.62  Ignore the PHPMailer class check, since it might be prefixed by a namespace.
+			 *                 Receiving an object is enough for us.
+			 */
+			if (!is_object($phpmailer))
 			{
 				// safety check
-				return $phpmailer;
+				return;
 			}
 
 			if ($auth === null || $host === null || $user === null || $pass === null)
 			{
 				// do not interfere if the plugin parameters are null
-				return $phpmailer;
+				return;
 			}
 
 			// Tell PHPMailer to use SMTP
@@ -445,11 +457,11 @@ class JMail
 			if ($secure == 'ssl' || $secure == 'tls')
 			{
 				$phpmailer->SMTPSecure = $secure;
-			} else {
+			}
+			else
+			{
 				$phpmailer->SMTPAutoTLS = false;
 			}
-
-			return $phpmailer;
 		});
 		
 		return true;

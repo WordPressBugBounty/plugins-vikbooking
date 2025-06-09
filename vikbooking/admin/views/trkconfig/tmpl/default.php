@@ -22,7 +22,7 @@ $vbobaseuri = JUri::root();
 <script type="text/javascript">
 var randspool  = new Array;
 var vbobaseuri = '<?php echo $vbobaseuri; ?>';
-jQuery(document).ready(function() {
+jQuery(function() {
 	jQuery('#vbo-add-trkcampaign').click(function() {
 		var randkey = Math.floor(Math.random() * (9999 - 1000)) + 1000;
 		if (randspool.indexOf(randkey) > -1) {

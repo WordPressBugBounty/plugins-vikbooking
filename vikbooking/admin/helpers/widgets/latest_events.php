@@ -91,7 +91,7 @@ class VikBookingAdminWidgetLatestEvents extends VikBookingAdminWidget
 	/**
 	 * Checks for new notifications by using the previous preloaded watch-data.
 	 * 
-	 * @param 	VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
+	 * @param 	?VBONotificationWatchdata 	$watch_data 	the preloaded watch-data object.
 	 * 
 	 * @return 	array 						data object to watch next and notifications array.
 	 * 
@@ -99,7 +99,7 @@ class VikBookingAdminWidgetLatestEvents extends VikBookingAdminWidget
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP)
 	 */
-	public function getNotifications(VBONotificationWatchdata $watch_data = null)
+	public function getNotifications(?VBONotificationWatchdata $watch_data = null)
 	{
 		// default empty values
 		$watch_next    = null;
@@ -298,7 +298,7 @@ class VikBookingAdminWidgetLatestEvents extends VikBookingAdminWidget
 		);
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;
@@ -675,13 +675,13 @@ class VikBookingAdminWidgetLatestEvents extends VikBookingAdminWidget
 	 * It's assumed that the AJAX rendering of a multitask widget takes place one
 	 * second before the AJAX event that updates the multitask map to push the widget.
 	 * 
-	 * @param 	VBOMultitaskData 	$data 	the data object injected to the widget.
+	 * @param 	?VBOMultitaskData 	$data 	the data object injected to the widget.
 	 * 
 	 * @return 	bool|int 	false on failure, guessed settings index otherwise.
 	 * 
 	 * @since 	1.16.0 (J) - 1.6.0 (WP)
 	 */
-	protected function guessMultitaskHistoryInstance(VBOMultitaskData $data = null)
+	protected function guessMultitaskHistoryInstance(?VBOMultitaskData $data = null)
 	{
 		if (!is_array($this->widgetSettings) || !count($this->widgetSettings)) {
 			// nothing to guess if this widget has got no saved settings

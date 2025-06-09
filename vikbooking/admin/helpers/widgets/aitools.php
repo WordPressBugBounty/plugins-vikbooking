@@ -47,8 +47,12 @@ class VikBookingAdminWidgetAitools extends VikBookingAdminWidget
 	 */
 	public function preflight()
 	{
-		// can be used only if VCM is installed and the AI channel is supported (not necessarily active)
-		return class_exists('VikChannelManager') && defined('VikChannelManagerConfig::AI');
+		if (VBOPlatformDetection::isJoomla()) {
+			// can be used only if VCM is installed and the AI channel is supported (not necessarily active)
+			return class_exists('VikChannelManager') && defined('VikChannelManagerConfig::AI');
+		}
+
+		return parent::preflight();
 	}
 
 	/**
@@ -60,24 +64,26 @@ class VikBookingAdminWidgetAitools extends VikBookingAdminWidget
 			'version' => defined('VIKCHANNELMANAGER_SOFTWARE_VERSION') ? VIKCHANNELMANAGER_SOFTWARE_VERSION : VIKBOOKING_SOFTWARE_VERSION,
 		];
 
-		// manually load required dependencies
-		JHtml::fetch('script', VCM_ADMIN_URI . 'layouts/ai/assistant/aitools.js', $options);
-		JHtml::fetch('stylesheet', VCM_ADMIN_URI . 'layouts/ai/assistant/aitools.css', $options);
+		if (class_exists('VikChannelManager')) {
+			// manually load required dependencies
+			JHtml::fetch('script', VCM_ADMIN_URI . 'layouts/ai/assistant/aitools.js', $options);
+			JHtml::fetch('stylesheet', VCM_ADMIN_URI . 'layouts/ai/assistant/aitools.css', $options);
 
-		JHtml::fetch('script', VCM_ADMIN_URI . 'assets/js/katex/katex.min.js', $options);
-		JHtml::fetch('script', VCM_ADMIN_URI . 'assets/js/katex/auto-render.min.js', $options);
-		JHtml::fetch('stylesheet', VCM_ADMIN_URI . 'assets/js/katex/katex.min.css', $options);
+			JHtml::fetch('script', VCM_ADMIN_URI . 'assets/js/katex/katex.min.js', $options);
+			JHtml::fetch('script', VCM_ADMIN_URI . 'assets/js/katex/auto-render.min.js', $options);
+			JHtml::fetch('stylesheet', VCM_ADMIN_URI . 'assets/js/katex/katex.min.css', $options);
 
-    	// language definitions
-		JText::script('VBO_AI_ASSISTANT_DISCLAIMER');
-		JText::script('VBO_AI_ASSISTANT_DISCOVER_HINT');
-		JText::script('VBO_AI_ASSISTANT_DISCOVER_TITLE');
+			// language definitions
+			JText::script('VBO_AI_ASSISTANT_DISCLAIMER');
+			JText::script('VBO_AI_ASSISTANT_DISCOVER_HINT');
+			JText::script('VBO_AI_ASSISTANT_DISCOVER_TITLE');
+		}
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		$auto_focus = false;
 		$prompt = null;
@@ -132,8 +138,8 @@ class VikBookingAdminWidgetAitools extends VikBookingAdminWidget
 			],
 			null,
 			[
-				'client' => 'administrator',
 				'component' => 'com_vikchannelmanager',
+				'client' => 'admin',
 			]
 		);
 	}

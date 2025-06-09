@@ -258,7 +258,7 @@ $sendsmswhen = VikBooking::getSendSMSWhen();
 </div>
 
 <script type="text/javascript">
-if (jQuery.isFunction(jQuery.fn.tooltip)) {
+if (typeof jQuery.fn.tooltip === 'function') {
 	jQuery(".hasTooltip").tooltip();
 }
 function displaySMSTexts(sval) {

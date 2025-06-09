@@ -225,7 +225,7 @@ class VBOPlatformOrgWordpressUri extends VBOPlatformUriAware
 	 *
 	 * @return 	string
 	 */
-	protected function getAbsolutePath()
+	public function getAbsolutePath()
 	{
 		return ABSPATH;
 	}

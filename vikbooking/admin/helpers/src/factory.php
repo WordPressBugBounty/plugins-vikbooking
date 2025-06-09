@@ -16,7 +16,7 @@ JPluginHelper::importPlugin('vikbooking');
 /**
  * Factory application class.
  *
- * @since 1.5
+ * @since   1.15 (J) - 1.5 (WP)
  */
 final class VBOFactory
 {
@@ -54,6 +54,13 @@ final class VBOFactory
      * @var VBOCrontabSimulator
      */
     private static $crontabSimulator;
+
+    /**
+     * Task Manager instance.
+     * 
+     * @var VBOTaskManager
+     */
+    private static $taskManager;
 
     /**
      * Class constructor.
@@ -122,7 +129,7 @@ final class VBOFactory
      *
      * @return  VBOCronFactory
      * 
-     * @since   1.5.10
+     * @since   1.15.10 (J) - 1.5.10 (WP)
      */
     public static function getCronFactory()
     {
@@ -145,7 +152,7 @@ final class VBOFactory
              * 
              * @return  void
              * 
-             * @since   1.5.10
+             * @since   1.15.10 (J) - 1.5.10 (WP)
              */
             VBOFactory::getPlatform()->getDispatcher()->trigger('onCreateCronJobsFactoryVikBooking', [static::$cronFactory]);
         }
@@ -154,11 +161,11 @@ final class VBOFactory
     }
 
     /**
-     * Returns the current cron notification center instance.
+     * Returns the current notification center instance.
      *
      * @return  VBONotificationCenter
      * 
-     * @since   1.6.8
+     * @since   1.16.8 (J) - 1.6.8 (WP)
      */
     public static function getNotificationCenter()
     {
@@ -177,7 +184,7 @@ final class VBOFactory
      *
      * @return  VBOCrontabSimulator
      * 
-     * @since   1.7
+     * @since   1.17 (J) - 1.7 (WP)
      */
     public static function getCrontabSimulator()
     {
@@ -230,7 +237,7 @@ final class VBOFactory
              * 
              * @return  void
              * 
-             * @since   1.7
+             * @since   1.17 (J) - 1.7 (WP)
              */
             VBOFactory::getPlatform()->getDispatcher()->trigger('onSetupCrontabSimulator', [static::$crontabSimulator]);
 
@@ -241,5 +248,36 @@ final class VBOFactory
         }
 
         return static::$crontabSimulator;
+    }
+
+    /**
+     * Returns the current task manager instance.
+     *
+     * @return  VBOTaskManager
+     * 
+     * @since   1.18.0 (J) - 1.8.0 (WP)
+     */
+    public static function getTaskManager()
+    {
+        // check if the object is already instantiated
+        if (is_null(static::$taskManager))
+        {
+            // create object instance
+            static::$taskManager = new VBOTaskManager;
+        }
+
+        return static::$taskManager;
+    }
+
+    /**
+     * Returns a new chat mediator instance.
+     *
+     * @return  VBOChatMediator
+     * 
+     * @since   1.18 (J) - 1.8 (WP)
+     */
+    public static function getChatMediator()
+    {
+        return new VBOChatMediator(new VBOChatStorageDatabase);
     }
 }

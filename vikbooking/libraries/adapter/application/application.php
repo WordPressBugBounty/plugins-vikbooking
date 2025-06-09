@@ -518,7 +518,7 @@ class JApplication
 	 *
 	 * @since   10.1.30
 	 */
-	public function triggerEvent($event, array $args = null)
+	public function triggerEvent($event, ?array $args = null)
 	{
 		// proxy for JEventDispatcher
 		return JEventDispatcher::getInstance()->trigger($event, $args);

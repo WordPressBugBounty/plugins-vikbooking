@@ -2,8 +2,8 @@
 /**
  * @package     VikBooking
  * @subpackage  com_vikbooking
- * @author      Alessio Gaggii - e4j - Extensionsforjoomla.com
- * @copyright   Copyright (C) 2018 e4j - Extensionsforjoomla.com. All rights reserved.
+ * @author      Alessio Gaggii - E4J srl
+ * @copyright   Copyright (C) 2025 E4J srl. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com
  */
@@ -653,7 +653,7 @@ abstract class VikBookingReport
 			}
 
 			// attempt to convert UTF-8 to ASCII to support currencies
-		    $field = iconv("UTF-8", "ASCII//TRANSLIT//IGNORE", $field);
+			$field = iconv("UTF-8", "ASCII//TRANSLIT//IGNORE", $field);
 		}
 
 		if (!function_exists('mb_convert_encoding')) {
@@ -663,6 +663,43 @@ abstract class VikBookingReport
 
 		// convert encoding to UTF-16LE (low-endian with BOM)
 		return mb_convert_encoding($field, 'UTF-16LE', ['ASCII', 'UTF-8', 'ISO-8859-1']);
+	}
+
+	/**
+	 * Used to apply transliteration over UTF-8 characters for having only latins chars.
+	 * 
+	 * @param 	string 	$value 	The original string value.
+	 * 
+	 * @return 	string 			The transliterated string or the original string.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	protected function transliterateToAscii(string $value)
+	{
+		if (!preg_match('/[\\x80-\\xff]/', $value)) {
+			// no UTF-8 encoding (special character) detected
+			return $value;
+		}
+
+		// make a safe copy of the original string
+		$copy_value = $value;
+
+		if (function_exists('transliterator_transliterate')) {
+			// if Transliterator is available (PECL intl >= 2.0.0), transliterate to ASCII
+			$copy_value = transliterator_transliterate('Any-Latin; Latin-ASCII;', $copy_value);
+		}
+
+		if (function_exists('iconv')) {
+			// attempt to convert UTF-8 to ASCII
+			$copy_value = iconv("UTF-8", "ASCII//TRANSLIT//IGNORE", $copy_value);
+		}
+
+		if (empty($copy_value)) {
+			// revert to the original string value
+			$copy_value = $value;
+		}
+
+		return $copy_value;
 	}
 
 	/**
@@ -1374,13 +1411,13 @@ abstract class VikBookingReport
 	 * Returns the current report custom settings, optionally loaded from a
 	 * given profile identifier in case the report supports multiple settings.
 	 * 
-	 * @param 	?string 	$profile 	Optional settings profile identifier.
+	 * @param 	string 	$profile 	Optional settings profile identifier.
 	 * 
 	 * @return 	array
 	 * 
 	 * @since 	1.17.1 (J) - 1.7.1 (WP)
 	 */
-	public function loadSettings(string $profile = null)
+	public function loadSettings(string $profile = '')
 	{
 		// access report current settings
 		$current_settings = (array) VBOFactory::getConfig()->getArray('report_settings_' . $this->getFileName(), []);
@@ -1411,14 +1448,14 @@ abstract class VikBookingReport
 	 * 
 	 * @param   array    $data     The associative list of settings to save.
 	 * @param   bool     $merge    If true, the previous settings will be merged.
-	 * @param   ?string  $profile  Optional settings profile identifier.
+	 * @param   string   $profile  Optional settings profile identifier.
 	 * 
 	 * @return  void
 	 * 
 	 * @since   1.17.1 (J) - 1.7.1 (WP)
 	 * @since   1.17.7 (J) - 1.7.7 (WP) added 3rd argument $profile and related support.
 	 */
-	public function saveSettings(array $data, $merge = true, string $profile = null)
+	public function saveSettings(array $data, $merge = true, string $profile = '')
 	{
 		if ($merge) {
 			// build report global settings

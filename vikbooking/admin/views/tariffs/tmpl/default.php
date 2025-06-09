@@ -309,7 +309,7 @@ if (!empty($prices)) {
 ?>
 
 <script type="text/javascript">
-jQuery(document).ready(function() {
+jQuery(function() {
 	jQuery('#ddaysfrom').change(function() {
 		var fnights = parseInt(jQuery(this).val());
 		if (!isNaN(fnights)) {

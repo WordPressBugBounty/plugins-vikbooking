@@ -244,7 +244,7 @@ class VikBookingReportOccupancyRanking extends VikBookingReport
 		$pfromdate = empty($pfromdate) && !empty($mincheckin) ? date($df, $mincheckin) : $pfromdate;
 		$ptodate = VikRequest::getString('todate', '', 'request');
 		$ptodate = empty($ptodate) && !empty($maxcheckout) ? date($df, $maxcheckout) : $ptodate;
-		$js = 'jQuery(document).ready(function() {
+		$js = 'jQuery(function() {
 			jQuery(".vbo-report-datepicker:input").datepicker({
 				'.(!empty($mincheckin) ? 'minDate: "'.date($df, $mincheckin).'", ' : '').'
 				'.(!empty($maxcheckout) ? 'maxDate: "'.date($df, $maxcheckout).'", ' : '').'
@@ -477,7 +477,7 @@ class VikBookingReportOccupancyRanking extends VikBookingReport
 		}
 
 		// total number of rooms
-		$total_rooms_units = $this->countRooms($pidroom);
+		$total_rooms_units = $this->countRooms($pidroom) ?: 1;
 
 		// define the columns of the report
 		$this->cols = array(

@@ -159,7 +159,7 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 			$ptodate = $this->getSessionFilter('todate');
 		}
 		$js = '
-		jQuery(document).ready(function() {
+		jQuery(function() {
 			jQuery(".vbo-einvoicing-datepicker:input").datepicker({
 				maxDate: "+1y",
 				dateFormat: "'.$this->getDateFormat('jui').'",
@@ -764,7 +764,7 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 				array_push($oidsfound, $res['idorder']);
 			}
 			// we make the same query but by passing the IDs of the bookings found according to the filters
-			$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`coupon`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`chcurrency`,`o`.`country`,`o`.`tot_taxes`,".
+			$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`idpayment`,`o`.`coupon`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`chcurrency`,`o`.`country`,`o`.`tot_taxes`,".
 				"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`pkg`,`o`.`refund`,`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`c`.`country_name`,`c`.`country_2_code`,`r`.`name` AS `room_name`,`r`.`fromadult`,`r`.`toadult`,`ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent` ".
 				"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
 				"LEFT JOIN `#__vikbooking_rooms` AS `r` ON `or`.`idroom`=`r`.`id` ".
@@ -801,7 +801,7 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 					$mergecustoms = true;
 					break;
 			}
-			$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`coupon`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`chcurrency`,`o`.`country`,`o`.`tot_taxes`,".
+			$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`idpayment`,`o`.`coupon`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`chcurrency`,`o`.`country`,`o`.`tot_taxes`,".
 				"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`pkg`,`o`.`refund`,`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`c`.`country_name`,`c`.`country_2_code`,`r`.`name` AS `room_name`,`r`.`fromadult`,`r`.`toadult`,`ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent` ".
 				"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
 				"LEFT JOIN `#__vikbooking_rooms` AS `r` ON `or`.`idroom`=`r`.`id` ".
@@ -1629,7 +1629,7 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 
 		if (is_int($data)) {
 			// query to obtain the booking records
-			$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`coupon`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`chcurrency`,`o`.`country`,`o`.`tot_taxes`,".
+			$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`idpayment`,`o`.`coupon`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`chcurrency`,`o`.`country`,`o`.`tot_taxes`,".
 				"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`pkg`,`o`.`refund`,`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`c`.`country_name`,`r`.`name` AS `room_name`,`r`.`fromadult`,`r`.`toadult`,`ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent` ".
 				"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
 				"LEFT JOIN `#__vikbooking_rooms` AS `r` ON `or`.`idroom`=`r`.`id` ".
@@ -1849,27 +1849,30 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 							$agestept = explode('-', $stept[1]);
 							$stept[1] = $agestept[0];
 							$chvar = $agestept[1];
-							if (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 1) {
-								// percentage value of the adults tariff
-								if ($is_package || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
-									$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
-								} else {
-									$display_rate = !empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost'];
-									$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
+							$realcost = 0;
+							if (!empty($chvar)) {
+								if (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 1) {
+									// percentage value of the adults tariff
+									if ($is_package || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
+										$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
+									} else {
+										$display_rate = !empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost'];
+										$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
+									}
+								} elseif (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 2) {
+									// percentage value of room base cost
+									if ($is_package || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
+										$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
+									} else {
+										$display_rate = isset($tars[$num]['room_base_cost']) ? $tars[$num]['room_base_cost'] : (!empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost']);
+										$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
+									}
 								}
-							} elseif (array_key_exists(($chvar - 1), $optagepcent) && $optagepcent[($chvar - 1)] == 2) {
-								// percentage value of room base cost
-								if ($is_package || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
-									$optagecosts[($chvar - 1)] = $or['cust_cost'] * $optagecosts[($chvar - 1)] / 100;
-								} else {
-									$display_rate = isset($tars[$num]['room_base_cost']) ? $tars[$num]['room_base_cost'] : (!empty($or['room_cost']) ? $or['room_cost'] : $tars[$num]['cost']);
-									$optagecosts[($chvar - 1)] = $display_rate * $optagecosts[($chvar - 1)] / 100;
-								}
+								$actopt[0]['chageintv'] = $chvar;
+								$actopt[0]['name'] .= ' ('.$optagenames[($chvar - 1)].')';
+								$actopt[0]['quan'] = $stept[1];
+								$realcost = (intval($actopt[0]['perday']) == 1 ? (floatval($optagecosts[($chvar - 1)]) * $or['days'] * $stept[1]) : (floatval($optagecosts[($chvar - 1)]) * $stept[1]));
 							}
-							$actopt[0]['chageintv'] = $chvar;
-							$actopt[0]['name'] .= ' ('.$optagenames[($chvar - 1)].')';
-							$actopt[0]['quan'] = $stept[1];
-							$realcost = (intval($actopt[0]['perday']) == 1 ? (floatval($optagecosts[($chvar - 1)]) * $or['days'] * $stept[1]) : (floatval($optagecosts[($chvar - 1)]) * $stept[1]));
 						} else {
 							$actopt[0]['quan'] = $stept[1];
 							// VBO 1.11 - options percentage cost of the room total fee
@@ -2154,6 +2157,17 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 		}
 		//
 
+		/**
+		 * Prevent rejections for customers with no VAT Number and no Codice Fiscale.
+		 * In case of foreign customers, we can populate the VAT Number with a dummy value,
+		 * because the node DatiAnagrafici requires either IdFiscaleIVA or CodiceFiscale to be populated.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		if (!empty($data[0]['customer']['country_2_code']) && $data[0]['customer']['country_2_code'] != 'IT' && empty($data[0]['customer']['vat']) && empty($data[0]['customer']['fisccode'])) {
+			$data[0]['customer']['vat'] = '0000000';
+		}
+
 		// build XML
 		$xml = VikBookingAgenziaEntrateConstants::XMLOPENINGTAG.'
 <p:FatturaElettronica xmlns:ds="'.VikBookingAgenziaEntrateConstants::XMLNS_DS.'" xmlns:p="'.VikBookingAgenziaEntrateConstants::XMLNS_P.'" versione="'.VikBookingAgenziaEntrateConstants::XMLNS_V.'">
@@ -2196,10 +2210,10 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 		</CedentePrestatore>
 		<CessionarioCommittente>
 			<DatiAnagrafici>
-				'.(!empty($data[0]['customer']['country_2_code']) && !empty($data[0]['customer']['vat']) ? '
+				'.(!empty($data[0]['customer']['country_2_code']) && (!empty($data[0]['customer']['vat']) || !empty($data[0]['customer']['fisccode'])) ? '
 				<IdFiscaleIVA>
 					<IdPaese>'.$data[0]['customer']['country_2_code'].'</IdPaese>
-					<IdCodice>'.$data[0]['customer']['vat'].'</IdCodice>
+					<IdCodice>'.($data[0]['customer']['vat'] ?: $data[0]['customer']['fisccode']).'</IdCodice>
 				</IdFiscaleIVA>
 				' : '').'
 				'.(!empty($data[0]['customer']['fisccode']) && !empty($data[0]['customer']['country_2_code']) && $data[0]['customer']['country_2_code'] == 'IT' ? '
@@ -2240,6 +2254,19 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 	</FatturaElettronicaBody>
 </p:FatturaElettronica>';
 
+		/**
+		 * Trigger event to allow third party plugins to overwrite the XML file.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		VBOFactory::getPlatform()->getDispatcher()->trigger('onBeforeSaveInvoiceXmlAgenziaEntrate', [$data, $invdate, $invnum, &$xml]);
+
+		if (empty($xml)) {
+			$this->setWarning('Empty XML file.');
+			return false;
+		}
+
+		// format the XML string properly
 		$this->formatXmlString($xml);
 
 		// it doesn't look like we can validate the XML against the schema because the process runs out of execution time

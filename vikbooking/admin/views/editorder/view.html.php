@@ -112,6 +112,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 		$ptot_city_taxes = VikRequest::getString('tot_city_taxes', '', 'request');
 		$ptot_fees = VikRequest::getString('tot_fees', '', 'request');
 		$pcmms = VikRequest::getString('cmms', '', 'request');
+		$ptot_damage_dep = VikRequest::getString('tot_damage_dep', '', 'request');
 		$pcustmail = VikRequest::getString('custmail', '', 'request');
 		$pcustphone = VikRequest::getString('custphone', '', 'request');
 		$pmakepay = VikRequest::getInt('makepay', 0, 'request');
@@ -273,6 +274,12 @@ class VikBookingViewEditorder extends JViewVikBooking
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['cmms'] = $pcmms;
+		}
+		if (strlen($ptot_damage_dep) > 0) {
+			$q = "UPDATE `#__vikbooking_orders` SET `tot_damage_dep`='".floatval($ptot_damage_dep)."' WHERE `id`=".$row['id'].";";
+			$dbo->setQuery($q);
+			$dbo->execute();
+			$row['tot_damage_dep'] = $ptot_damage_dep;
 		}
 		if (strlen($pcustmail) > 0) {
 			$q = "UPDATE `#__vikbooking_orders` SET `custmail`=".$dbo->quote($pcustmail)." WHERE `id`=".$row['id'].";";

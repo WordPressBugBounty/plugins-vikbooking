@@ -263,7 +263,7 @@ class VikBookingAdminWidgetStickyNotes extends VikBookingAdminWidget
 		JText::script('VBO_WIDGETS_CONFRMELEM');
 	}
 
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;
@@ -681,11 +681,11 @@ class VikBookingAdminWidgetStickyNotes extends VikBookingAdminWidget
 	 * It's assumed that the AJAX rendering of a multitask widget takes place one
 	 * second before the AJAX event that updates the multitask map to push the widget.
 	 * 
-	 * @param 	VBOMultitaskData 	$data 	the data object injected to the widget.
+	 * @param 	?VBOMultitaskData 	$data 	the data object injected to the widget.
 	 * 
 	 * @return 	bool|int 	false on failure, guessed settings index otherwise.
 	 */
-	protected function guessMultitaskStickyInstance(VBOMultitaskData $data = null)
+	protected function guessMultitaskStickyInstance(?VBOMultitaskData $data = null)
 	{
 		if (!is_array($this->widgetSettings) || !count($this->widgetSettings)) {
 			// nothing to guess if this widget has got no saved settings

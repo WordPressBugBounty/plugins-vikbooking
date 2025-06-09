@@ -740,7 +740,7 @@ if ($payable && $ord['status'] == 'confirmed' && !empty($ord['idorderota']) && $
 if ($payable && !empty($ord['idorderota']) && !empty($ord['channel']) && $ord['cmms'] && ($ord['total'] - $ord['totpaid'] - $ord['cmms']) < 1) {
 	// the difference of the amount paid is equal to the OTA commissions amount
 	$payable = false;
-	if ($ord['payable'] > 0 && $ord['total'] > $ord['totpaid'] && (int) ($ord['total'] - $ord['totpaid']) == (int) $ord['payable']) {
+	if ($ord['payable'] > 0 && $ord['total'] > $ord['totpaid'] && round(($ord['total'] - $ord['totpaid']), 0) == round($ord['payable'], 0)) {
 		// there must have been an upselling event or a payment request
 		$payable = true;
 	}

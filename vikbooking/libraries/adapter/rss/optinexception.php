@@ -24,9 +24,9 @@ class JRssOptInException extends Exception
 	 *
 	 * @param 	string     $message   The error message.
 	 * @param 	integer    $code      The error code.
-	 * @param 	Exception  $previous  The previous stack exception.
+	 * @param 	Throwable  $previous  The previous stack exception.
 	 */
-	public function __construct($message = null, $code = 0, Exception $previous = null)
+	public function __construct($message = null, $code = 0, ?Throwable $previous = null)
 	{
 		if (!$message)
 		{

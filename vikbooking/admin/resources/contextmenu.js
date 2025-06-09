@@ -1,58 +1,71 @@
 /**
  * jQuery add-on used to support context menus.
- * Here's a list of supported options.
  * 
- * @author 	E4J srl
+ * @version 2.2.4
+ * @author E4J srl
+ * 
+ * Here's a list of supported options.
  *
- * - trigger         string    The command that should trigger the popup menu. Accepts the
- *                             following values: click|doubleclick|rightclick|hover.
- *                             Click will be used by default.
- * - placement       string    Where the popup should be displayed in relation to the target.
- *                             Accepts the following values: auto|top|right|bottom|left.
- *                             Auto will be used by default (at the mouse coordinates).
- * - class           string    An optional class to use for individual styling.
- * - buttons         object[]  A list of buttons to include within the popup menu. See the options
- *                             of the buttons for further details.
- * - onShow          function  An optional callback to invoke when the popup menu is displayed.
- * - onHide          function  An optional callback to invoke when the popup menu is dismissed.
- * - darkMode        mixed     Flag for dark mode layout, which accepts 3 possible values:
- *                             true|false|null. Pass true to always force the dark mode, false to
- *                             always use the light mode, null to auto-detect the proper mode
- *                             according to the preferred theme of the browser.
- * - clickable       boolean   Flag used to check whether the root element should prevent the
- *                             browser selection by applying specific CSS rules. False by default.
- * - lockScroll      boolean   Flag used to prevent the document scroll when the context menu
- *                             pops up. True by default.
- * - hideOnEsc       boolean   Choose whether the context menu should be closed when ESC key is
- *                             pressed. Always true by default.
- * - formatShortcut  mixed     An optional callback that can be used to format the shortcut symbols.
+ * @param trigger         string    The command that should trigger the popup menu. Accepts the
+ *                                  following values: click|doubleclick|rightclick|hover.
+ *                                  Click will be used by default.
+ * @param placement       string    Where the popup should be displayed in relation to the target.
+ *                                  Accepts the following values: auto|top|right|bottom|left.
+ *                                  Auto will be used by default (at the mouse coordinates).
+ * @param class           string    An optional class to use for individual styling.
+ * @param buttons         object[]  A list of buttons to include within the popup menu. See the options
+ *                                  of the buttons for further details.
+ * @param onShow          function  An optional callback to invoke when the popup menu is displayed.
+ * @param onHide          function  An optional callback to invoke when the popup menu is dismissed.
+ * @param darkMode        mixed     Flag for dark mode layout, which accepts 3 possible values:
+ *                                  true|false|null. Pass true to always force the dark mode, false to
+ *                                  always use the light mode, null to auto-detect the proper mode
+ *                                  according to the preferred theme of the browser.
+ * @param clickable       bool      Flag used to check whether the root element should prevent the
+ *                                  browser selection by applying specific CSS rules. False by default.
+ * @param lockScroll      bool      Flag used to prevent the document scroll when the context menu
+ *                                  pops up. True by default.
+ * @param hideOnEsc       bool      Choose whether the context menu should be closed when ESC key is
+ *                                  pressed. Always true by default.
+ * @param formatShortcut  mixed     An optional callback that can be used to format the shortcut symbols.
+ * @param search          bool      Whether the context menu should display a search box to filter the buttons.
+ * @param searchHint      string    An optional placeholder to use for the search box.
+ * @param searchEmpty     string    The string to display in case of no matching results.
+ * @param searchClass     string    An optional extra class to apply to the search item.
+ * @param searchFocus     bool      Whether the search bar should grab the focus on show. True by default.
  *
  * Here's a list of options supported by the buttons. Any other property of the button will
  * be accessible by the internal methods.
  *
- * - icon       mixed     Either a function, an image URL, an image instance or a font icon
- *                        to display before the button text. In case of a function, it will be
- *                        used as callback to define an image/icon at runtime.
- * - text       string    The text to display for the popup menu button.
- * - action     function  The callback to dispatch when the button gets clicked.
- * - class      string    An optional class to use for individual styling.
- * - disabled   mixed     Either a function or a boolean to check whether the button should 
- *                        be clicked or not. The button is never disabled by default.
- * - visible    mixed     Either a function or a boolean to check whether the button should 
- *                        be displayed or not. The button is always visible by default.
- * - separator  boolean   Flag used to check whether the popup should include a separator after the
- *                        button. False by default.
- * - shortcut   mixed     An array of commands to represent the shortcut that will trigger the action
- *                        via keyboard. The array must contain one and only one character or symbol.
- *                        The array may contain one ore more modifiers, which must be specified first.
+ * @param string      group     The identifier of the group to which the item belongs (none by default).
+ * @param icon        mixed     Either a function, a font icon, an image URL, an image instance or an HTML
+ *                              node to display before the button text. In case of a function, it will be
+ *                              used as callback to define an image/icon at runtime.
+ * @param text        string    The text/html to display for the popup menu button.
+ * @param action      function  The callback to dispatch when the button gets clicked.
+ * @param class       string    An optional class to use for individual styling. Use "btngroup" to apply a
+ *                              sort of fieldset title effect. Useful to describe a sub group.
+ * @param disabled    mixed     Either a function or a boolean to check whether the button should 
+ *                              be clicked or not. The button is never disabled by default.
+ * @param visible     mixed     Either a function or a boolean to check whether the button should 
+ *                              be displayed or not. The button is always visible by default.
+ * @param separator   bool      Flag used to check whether the popup should include a separator after the
+ *                              button. False by default.
+ * @param shortcut    mixed     An array of commands to represent the shortcut that will trigger the action
+ *                              via keyboard. The array must contain one and only one character or symbol.
+ *                              The array may contain one ore more modifiers, which must be specified first.
+ * @param searchable  bool      Whether this button can be searched. Ignored in case the search feature is off.
+ * @param keywords    string[]  A list of keywords to match the searched value. This value is ignored in case
+ *                              the search feature is disabled. Along with the specified keywords, the system will
+ *                              keep searching on the button title too.
  *
  * List of methods supported by the add-on.
  *
- * - show     Manually displays the popup menu.
- * - hide     Manually disposes the popup menu.
- * - destroy  Destroys the popup attached to the element.
- * - config   Returns the configuration of the popup.
- * - buttons  Getter/setter of the popup buttons.
+ * @method show     Manually displays the popup menu.
+ * @method hide     Manually disposes the popup menu.
+ * @method destroy  Destroys the popup attached to the element.
+ * @method config   Returns the configuration of the popup.
+ * @method buttons  Getter/setter of the popup buttons.
  *
  * It is possible to update each setting configuration by using the same
  * name of the property and the related value to set. Leave the set argument
@@ -62,6 +75,8 @@
  * jQuery(target).vboContextMenu('placement',  'auto');
  */
 (function($) {
+	'use strict';
+
 	/**
 	 * Popup menu trigger setup.
 	 *
@@ -71,7 +86,7 @@
 	 *
 	 * @return 	string  The trigger event.
 	 */
-	var vikPopupMenuTrigger = function(root, trigger, prev) {
+	const vikPopupMenuTrigger = function(root, trigger, prev) {
 		// check if the trigger was already registered
 		if (prev) {
 			// detach previous trigger
@@ -130,7 +145,7 @@
 	 *
 	 * @return 	self
 	 */
-	var vikPopupMenuClickable = function(root, flag, prev) {
+	const vikPopupMenuClickable = function(root, flag, prev) {
 		if (prev) {
 			// remove CSS class used to disable the selection from root element 
 			$(root).removeClass('vik-context-menu-disable-selection');
@@ -152,9 +167,9 @@
 	 *
 	 * @return 	self
 	 */
-	var vikPopupMenuInit = function(root, options) {
+	const vikPopupMenuInit = function(root, options) {
 		// inject the specified options within the default configuration
-		options = $.extend($.vboContextMenu.defaults, options);
+		options = $.extend({}, $.vboContextMenu.defaults, options);
 
 		// register the popup configuration for being used later
 		vikPopupMenuConfig(root, options);
@@ -169,26 +184,26 @@
 		vikPopupMenuClickable(root, options.clickable);
 
 		// register callback to dispatch the action of a button when its shortcut is pressed
-		$(document).on('keydown.contextmenu.vikbooking', function(event) {
+		$(document).on('keydown.contextmenu.vik', function(event) {
 			// ignore the event with this namespace because it will end up
 			// to catch also the plain keydown event
-			if (event.namespace == 'contextmenu.vikbooking') {
-				return true;
-			}
-
-			// go ahead only in case the focus is not help by a text field
-			if ($(document.activeElement).is('input,textarea') == true) {
-				// prevent shortcuts from catching typed characters
+			if (event.namespace == 'contextmenu.vik') {
 				return true;
 			}
 
 			// retrieve popup configuration
-			var config = vikPopupMenuConfig(root);
+			const config = vikPopupMenuConfig(root);
 
 			// in case ESC was pressed, check if we should hide the popup
 			if (config.hideOnEsc && event.keyCode == 27) {
 				// auto-close the context menu
 				vikPopupMenuHide(root);
+				return true;
+			}
+
+			// go ahead only in case the focus is not held by a text field
+			if ($(document.activeElement).is('input,textarea') == true) {
+				// prevent shortcuts from catching typed characters
 				return true;
 			}
 
@@ -204,7 +219,7 @@
 				if (event.originalEvent.shortcut(btn.shortcut)) {
 					// launch callback to check whether the button is disabled
 					// or simply rely on the specified boolean
-					var disabled = typeof btn.disabled === 'function' ? btn.disabled(root, config) : btn.disabled; 
+					let disabled = typeof btn.disabled === 'function' ? btn.disabled(root, config) : btn.disabled; 
 
 					// trigger action only in case the button is not disabled
 					if (!disabled) {
@@ -234,7 +249,7 @@
 	 * @param 	mixed 	Returns the configuration when the data argument is
 	 * 					missing. Otherwise itself will be returned.
 	 */
-	var vikPopupMenuConfig = function(root, data) {
+	const vikPopupMenuConfig = function(root, data) {
 		if (typeof data === 'undefined') {
 			// GETTER: return popup configuration.
 			// Clone the object in order to prevent manual edits to
@@ -254,17 +269,113 @@
 	 *
 	 * @return 	self
 	 */
-	var vikPopupMenuShow = function(root, event) {
+	const vikPopupMenuShow = function(root, event) {
 		if ($('.vik-context-menu').length) {
 			// do not go ahead in case a context menu is visible
 			return root;
 		}
 
 		// retrieve configuration
-		var config = vikPopupMenuConfig(root);
+		const config = vikPopupMenuConfig(root);
+
+		// register a flag to easily check whether the context menu of this root is open
+		config.isPopupOpen = true;
+		vikPopupMenuConfig(root, config);
 
 		// prepare context menu structure
-		var popup = $('<div class="vik-context-menu"><ul></ul></div>');
+		const popup = $('<div class="vik-context-menu"><ul class="buttons-list"></ul></div>');
+
+		if (config.search) {
+			// create search input
+			const search = $('<input type="text" />');
+
+			if (config.searchHint) {
+				search.attr('placeholder', config.searchHint);
+			}
+
+			search.on('keyup', function() {
+				// obtain search term
+				const term = $(search).val().toLowerCase();
+
+				// remove "no matches" element
+				popup.find('li.no-matches').remove();
+
+				let atLeastOne = false;
+
+				// scan all the buttons
+				config.buttons.forEach((btn, i) => {
+					const li = popup.find('li[data-id="' + i + '"]');
+
+					if (li.length === 0 || li.hasClass('not-searchable')) {
+						// cannot search by this item
+						return;
+					}
+
+					let btnText = typeof btn.text === 'object' ? $(btn.text).text() : btn.text + '';
+
+					// define list of keywords
+					const keywords = [btnText].concat(btn.keywords || []);
+
+					// check whether the button matches the given search term
+					let match = keywords.some((k) => k.toLowerCase().indexOf(term) !== -1);
+					
+					if (match) {
+						li.show();
+						atLeastOne = true;
+					} else {
+						li.hide();
+					}
+				});
+
+				/**
+				 * Check whether we should completely hide a subgroup because all its children
+				 * don't match the specified search.
+				 */
+				popup.find('li.buttons-subgroup ul').each(function() {
+					$(this).parent().show();
+
+					if ($(this).children().not('.btngroup').filter(':visible').length === 0) {
+						// all sub-items are hidden, hide the sub-group too
+						$(this).parent().hide();
+					}
+				});
+
+				if (!atLeastOne) {
+					// add "no matches" element in case of no results
+					popup.find('ul.buttons-list').append(
+						$('<li class="no-matches"></li>').append(
+							$('<a class="disabled"></a>').append(
+								$('<span class="button-text"></span>').text(config.searchEmpty)
+							)
+						)
+					);
+				}
+
+				if (term.length) {
+					searchClear.show();
+				} else {
+					searchClear.hide();
+				}
+			});
+
+			// create button to clear the text
+			const searchClear = $('<button type="button" class="search-clear"><i class="fas fa-times-circle"></i></button>');
+
+			// register event to clear the input
+			searchClear.on('click', () => {
+				search.val('').trigger('keyup');
+			}).hide();
+
+			// create search list item
+			const searchLi = $('<li class="search-box"></li>').append(search).append(searchClear);
+			
+			if (config.searchClass) {
+				searchLi.addClass(config.searchClass);
+			}
+
+			// attach search input to the popup
+			popup.find('ul.buttons-list').append(searchLi);
+		}
 
 		// in case of a custom class, add it
 		if (config.class) {
@@ -284,7 +395,7 @@
 		$.each(config.buttons, function(i, btn) { 
 			// launch callback to check whether the button should be displayed
 			// or simply rely on the specified boolean
-			var visible = typeof btn.visible === 'function' ? btn.visible(root, config) : btn.visible;
+			let visible = typeof btn.visible === 'function' ? btn.visible(root, config) : btn.visible;
 
 			if (!visible) {
 				// skip button and go ahead
@@ -292,10 +403,10 @@
 			}
 
 			// prepare button structure
-			var popupBtn = $('<a></a>');
+			const popupBtn = $('<a></a>');
 
 			if (btn.icon) {
-				var icon;
+				let icon;
 
 				if (typeof btn.icon === 'function') {
 					// we have a function, launch the callback
@@ -321,8 +432,10 @@
 
 				// leave as is in case a jQuery instance was passed
 
-				// wrap icon in a parent and append all to button
-				popupBtn.append($('<span class="button-icon"></span>').append(icon));
+				if (icon !== null && icon !== undefined) {
+					// wrap icon in a parent and append all to button
+					popupBtn.append($('<span class="button-icon"></span>').append(icon));
+				}
 			}
 
 			// insert text button
@@ -331,8 +444,8 @@
 			// check if the button specified a shortcut
 			if (btn.shortcut) {
 				// map shortcut elements
-				var cmd = btn.shortcut.map(function(k) {
-					var keyCode = k;
+				let cmd = btn.shortcut.map(function(k) {
+					let keyCode = k;
 
 					switch (k) {
 						case 'alt':   k = "&#8997;"; break;
@@ -379,7 +492,7 @@
 
 			// launch callback to check whether the button should be disabled
 			// or simply rely on the specified boolean
-			var disabled = typeof btn.disabled === 'function' ? btn.disabled(root, config) : btn.disabled; 
+			let disabled = typeof btn.disabled === 'function' ? btn.disabled(root, config) : btn.disabled; 
 
 			// check whether the button is disabled
 			if (disabled) {
@@ -398,21 +511,45 @@
 				});
 			}
 
-			// in case of a custom class, add it
+			// wrap button within a parent for <ul> compliance
+			const popupItem = $('<li data-id="' + i + '"></li>').append(popupBtn);
+
+			// in case of a custom class, add it to the li and to the link
 			if (btn.class) {
+				popupItem.addClass(btn.class);
 				popupBtn.addClass(btn.class);
 			}
 
-			// wrap button within a parent for <ul> compliance
-			var popupItem = $('<li></li>').append(popupBtn);
+			if (!btn.searchable) {
+				popupItem.addClass('not-searchable');
+			}
 
 			// in case of a separator, add a specific class
 			if (btn.separator) {
 				popupItem.addClass('separator');
 			}
 
-			// wrap button within a parent and add to popup
-			popup.find('ul').append(popupItem);
+			/**
+			 * Register a sub group of buttons to improve individual styling.
+			 * 
+			 * @since 2.1
+			 */
+			if (btn.group) {
+				// obtain the group element
+				let ulGroup = popup.find('ul.' + btn.group);
+
+				if (ulGroup.length == 0) {
+					// create now in case it doesn't exist yet
+					ulGroup = $('<ul></ul>').addClass(btn.group);
+					popup.find('ul.buttons-list').append($('<li class="buttons-subgroup separator"></li>').append(ulGroup));
+				}
+
+				// append item to the given group
+				ulGroup.append(popupItem);
+			} else {
+				// add button to the default list
+				popup.find('ul.buttons-list').append(popupItem);
+			}
 		});
 
 		// hide the popup before appending it
@@ -432,19 +569,24 @@
 		// show popup
 		popup.show();
 
+		if (config.search && config.searchFocus) {
+			// auto-focus the search box
+			popup.find('.search-box input').focus();
+		}
+
 		// look for a specific callback to be triggered on opening
 		if (config.onShow) {
 			// trigger show callback
-			config.onShow(root, popup);
+			config.onShow(root, popup, event);
 		}
 
 		// Register callback to auto dismiss the popup when clicked outside.
 		// Use mousedown event because it will be execured before any other
 		// supported trigger, so that the context menus can be shown on cascade.
-		$(document).on('mousedown.contextmenu.vikbooking', function(event) {
+		$(document).on('mousedown.contextmenu.vik', function(event) {
 			// ignore the event with this namespace because it will end up
 			// to catch also the plain mousedown event
-			if (event.namespace == 'contextmenu.vikbooking') {
+			if (event.namespace == 'contextmenu.vik') {
 				return false;
 			}
 
@@ -454,7 +596,7 @@
 			}
 
 			// get list of buttons
-			var links = popup.find('a');
+			const links = popup.find('a');
 			
 			// make sure we haven't clicked the popup or a link
 			if (!popup.is(event.target) && popup.has(event.target).length === 0
@@ -479,9 +621,19 @@
 	 *
 	 * @return 	self
 	 */
-	var vikPopupMenuHide = function(root) {
-		// go ahead only in case a popup is open
-		if ($('.vik-context-menu').length) {
+	const vikPopupMenuHide = function(root) {
+		// get popup configuration
+		const config = vikPopupMenuConfig(root);
+
+		// go ahead only in case a popup of this element is open
+		if (config.isPopupOpen && $('.vik-context-menu').length) {
+			// remove "open" flag after closing the context menu of this element
+			delete config.isPopupOpen;
+			vikPopupMenuConfig(root, config);
+
+			// remove the focus from the active element to prevent unexpected scrolls
+			document.activeElement.blur();
+
 			// destroy any existing popup menu because we do not support
 			// more than a popup per time
 			$('.vik-context-menu').remove();
@@ -490,10 +642,7 @@
 			$('body').removeClass('lock-scroll');
 
 			// turn off proxy
-			$(document).off('mousedown.contextmenu.vikbooking');
-
-			// get popup configuration
-			var config = vikPopupMenuConfig(root);
+			$(document).off('mousedown.contextmenu.vik');
 
 			// look for a specific callback to be triggered on dismiss
 			if (config.onHide) {
@@ -512,18 +661,18 @@
 	 *
 	 * @return 	self
 	 */
-	var vikPopupMenuDestroy = function(root) {
+	const vikPopupMenuDestroy = function(root) {
 		// in case the popup was open, close it first
 		vikPopupMenuHide(root);
 
+		// get popup configuration
+		const config = vikPopupMenuConfig(root);
+
 		// detach keyboard listener
-		$(document).off('keydown.contextmenu.vikbooking');
+		$(document).off('keydown.contextmenu.vik');
 
 		// remove CSS class used to disable the selection from root element 
 		$(root).removeClass('vik-context-menu-disable-selection');
-
-		// get popup configuration
-		var config = vikPopupMenuConfig(root);
 
 		// detach previous event without attaching a new one
 		vikPopupMenuTrigger(root, null, config.trigger);
@@ -545,9 +694,9 @@
 	 * @param 	mixed 	Returns the buttons list when the data argument is
 	 * 					missing. Otherwise itself will be returned.
 	 */
-	var vikPopupMenuButtons = function(root, data) {
+	const vikPopupMenuButtons = function(root, data) {
 		// get configuration
-		var config = vikPopupMenuConfig(root);
+		const config = vikPopupMenuConfig(root);
 
 		if (typeof data === 'undefined') {
 			// return popup buttons
@@ -563,9 +712,10 @@
 		config.buttons = data;
 
 		// iterate all buttons
-		for (var i = 0; i < config.buttons.length; i++) {
+		for (let i = 0; i < config.buttons.length; i++) {
 			// create default button properties
 			config.buttons[i] = $.extend({
+				group:     '',
 				icon:      null,
 				text:      '',
 				action:    null,
@@ -574,6 +724,7 @@
 				disabled:  false,
 				visible:   true,
 				separator: false,
+				searchable: true,
 			}, config.buttons[i]);
 
 			// make sure we have an array
@@ -596,9 +747,9 @@
 	 *
 	 * @param 	self
 	 */
-	var vikPopupMenuCalcPosition = function(root, popup, event) {
+	const vikPopupMenuCalcPosition = function(root, popup, event) {
 		// get popup configuration
-		var config = vikPopupMenuConfig(root);
+		const config = vikPopupMenuConfig(root);
 
 		// in case of "auto" placement, we need to make sure
 		// that we own an event to access the mouse coordinates
@@ -608,17 +759,17 @@
 		}
 
 		// calculate root offset
-		var rootOffset = $(root).offset();
+		let rootOffset = $(root).offset();
 		// calculate root size
-		var rootWidth  = $(root).outerWidth();
-		var rootHeight = $(root).outerHeight();
+		let rootWidth  = $(root).outerWidth();
+		let rootHeight = $(root).outerHeight();
 		// calculate popup size
-		var popupWidth  = $(popup).outerWidth();
-		var popupHeight = $(popup).outerHeight();
+		let popupWidth  = $(popup).outerWidth();
+		let popupHeight = $(popup).outerHeight();
 
-		var x, y;
+		let x, y;
 
-		// display popup above the root, centered
+		// display popup above the root
 		if (config.placement == 'top') {
 			x = rootOffset.left + rootWidth / 2 - popupWidth / 2;
 			y = rootOffset.top - popupHeight - 4;
@@ -633,7 +784,7 @@
 			x = rootOffset.left;
 			y = rootOffset.top - popupHeight - 4;
 		}
-		// display the popup below the root, centered
+		// display the popup below the root
 		else if (config.placement == 'bottom') {
 			x = rootOffset.left + rootWidth / 2 - popupWidth / 2;
 			y = rootOffset.top + rootHeight + 4;
@@ -665,11 +816,11 @@
 		}
 
 		// calculate screen size
-		var screenWidth  = $(window).width();
-		var screenHeight = $(window).height();
+		let screenWidth  = $(window).width();
+		let screenHeight = $(window).height();
 		// calculate window scrolls
-		var windowScrollLeft = $(window).scrollLeft();
-		var windowScrollTop  = $(window).scrollTop();
+		let windowScrollLeft = $(window).scrollLeft();
+		let windowScrollTop  = $(window).scrollTop();
 
 		// use 4 pixel as minimum value
 		x = Math.max(4, x);
@@ -694,14 +845,14 @@
 	$(document).on('mousedown', function() {
 		// we need to propagate the event with a proxy so that we can safely
 		// detach the registered callbacks when the popup gets closed
-		$(document).trigger('mousedown.contextmenu.vikbooking');
+		$(document).trigger('mousedown.contextmenu.vik');
 	});
 
 	// register listener to dispatch the actions of the buttons via keyboard
 	$(document).on('keydown', function() {
 		// we need to propagate the event with a proxy so that we can safely
 		// detach the registered callbacks when the popup gets destroyed
-		$(document).trigger('keydown.contextmenu.vikbooking');
+		$(document).trigger('keydown.contextmenu.vik');
 	});
 
 	// register the jQuery callback
@@ -743,7 +894,7 @@
 		// fallback to configuration setting getter/setter
 		else {
 			// access configuration
-			var config = vikPopupMenuConfig(this);
+			const config = vikPopupMenuConfig(this);
 
 			// check if the second argument was passed
 			if (typeof data !== 'undefined') {
@@ -783,6 +934,11 @@
 			darkMode:       null,
 			hideOnEsc:      true,
 			formatShortcut: null,
+			search:         false,
+			searchHint:     '',
+			searchEmpty:    'No results.',
+			searchClass:    'separator',
+			searchFocus:    true,
 		},
 	};
 
@@ -795,9 +951,9 @@
 	 */
 	KeyboardEvent.prototype.shortcut = function(keys) {
 		// get modifiers list
-		var modifiers = keys.slice(0);
+		let modifiers = keys.slice(0);
 		// pop character from modifiers
-		var keyCode = modifiers.pop();
+		let keyCode = modifiers.pop();
 
 		if (typeof keyCode === 'string') {
 			// get ASCII
@@ -809,17 +965,17 @@
 			return mod.toLowerCase();
 		});
 
-		var ok = false;
+		let ok = false;
 
 		// validate key code
 		if (this.keyCode == keyCode) {
 			// validate modifiers
 			ok = true;
-			var lookup = ['meta', 'shift', 'alt', 'ctrl'];
+			const lookup = ['meta', 'shift', 'alt', 'ctrl'];
 
-			for (var i = 0; i < lookup.length && ok; i++) {
+			for (let i = 0; i < lookup.length && ok; i++) {
 				// check if modifiers is pressed
-				var mod = this[lookup[i] + 'Key'];
+				let mod = this[lookup[i] + 'Key'];
 
 				if (mod) {
 					// if pressed, the shortcut must specify it

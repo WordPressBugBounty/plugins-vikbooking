@@ -59,7 +59,7 @@ class VikbookingViewTableaux extends JViewVikBooking
 		$fromts = mktime(0, 0, 0, $tsinfo['mon'], ($tsinfo['mday'] - $past_days), $tsinfo['year']);
 		$tots 	= mktime(23, 59, 59, $tsinfo['mon'], ($tsinfo['mday'] + $visible_days), $tsinfo['year']);
 
-		$roomids = array_filter((array) $operator['perms']['rooms']);
+		$roomids = array_filter((array) ($operator['perms']['rooms'] ?? []));
 
 		// get all rooms enabled for the operator
 		$rooms = [];

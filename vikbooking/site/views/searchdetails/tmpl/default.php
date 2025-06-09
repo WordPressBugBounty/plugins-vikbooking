@@ -55,7 +55,7 @@ if (!empty($room['moreimgs'])) {
 	 * @wponly 	we render vikDotsSlider with a 1-second delay for the AJAX request to load the modal to complete.
 	 */
 	$vikdotsslider = '
-jQuery(document).ready(function() {
+jQuery(function() {
 	setTimeout(function() {
 		jQuery(".vbo-searchdet-gallery-container").html("").vikDotsSlider({
 			images: ' . json_encode($gallery_images) . ',
@@ -182,7 +182,7 @@ var sendprices = new Array();
 var fromCurrency = '<?php echo $def_currency; ?>';
 var fromSymbol;
 var pricestaken = 0;
-jQuery(document).ready(function() {
+jQuery(function() {
 	if(jQuery(".vbo_price").length > 0) {
 		jQuery(".vbo_price").each(function() {
 			sendprices.push(jQuery(this).text());

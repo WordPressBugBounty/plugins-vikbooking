@@ -383,7 +383,7 @@ if (count($this->condtext)) {
 	/**
 	 * Declares document ready event processes.
 	 */
-	jQuery(document).ready(function() {
+	jQuery(function() {
 		
 		/**
 		 * Dismiss modal window with Esc.

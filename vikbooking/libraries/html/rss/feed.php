@@ -46,7 +46,7 @@ echo JHtml::fetch(
 
 <script>
 
-	jQuery(document).ready(function() {
+	jQuery(function() {
 
 		var dismissed = false;
 		

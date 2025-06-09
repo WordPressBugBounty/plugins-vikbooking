@@ -285,6 +285,30 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 			</div>
 			<?php
 		}
+
+		/**
+		 * Return the information about the damage deposits collected/held.
+		 * 
+		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 */
+		if ($stats['damage_deposits'] > 0) {
+			?>
+			<div class="vbo-widget-finance-data-block" data-typestat="damage_deposits">
+				<div class="vbo-widget-finance-stat">
+					<div class="vbo-widget-finance-stat-info">
+						<span class="vbo-widget-finance-stat-name"><?php echo JText::translate('VBO_TOT_DAMAGE_DEPOSITS'); ?></span>
+						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
+					</div>
+					<div class="vbo-widget-finance-stat-amount">
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['damage_deposits']); ?>">
+							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
+							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['damage_deposits']); ?></span>
+						</span>
+					</div>
+				</div>
+			</div>
+			<?php
+		}
 		?>
 
 			<div class="vbo-widget-finance-data-block" data-typestat="tot_bookings">
@@ -625,37 +649,38 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 
 		// stats that require percent values for comparison
 		$pcent_stats = [
-			'gross_revenue' => [],
-			'taxes' 		=> [],
-			'cmms' 			=> [
-				'reverse'  => 1,
+			'gross_revenue'   => [],
+			'taxes'           => [],
+			'cmms'            => [
+				'reverse' => 1,
 			],
-			'revenue' 		=> [],
-			'ibe_revenue' 	=> [],
-			'ota_revenue' 	=> [],
-			'ota_avg_cmms' 	=> [
+			'revenue'         => [],
+			'ibe_revenue'     => [],
+			'ota_revenue'     => [],
+			'ota_avg_cmms'    => [
 				'reverse'  => 1,
 				'no_pcent' => 1,
 				'fixednum' => 1,
 			],
-			'cmm_savings' 	=> [],
-			'tot_bookings' 	=> [
+			'cmm_savings'     => [],
+			'damage_deposits' => [],
+			'tot_bookings'    => [
 				'fixednum' => 1,
 			],
-			'nights_booked' => [
+			'nights_booked'   => [
 				'fixednum' => 1,
 			],
-			'avg_los' 		=> [
+			'avg_los'         => [
 				'fixednum' => 1,
 			],
-			'abw' 			=> [
+			'abw'             => [
 				'fixednum' => 1,
 			],
-			'rooms_booked' 	=> [
+			'rooms_booked'    => [
 				'fixednum' => 1,
 			],
 			'cancellations_amt' => [
-				'reverse'  => 1,
+				'reverse' => 1,
 			],
 		];
 
@@ -728,11 +753,11 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 	 * Main method to invoke the widget. Contents will be loaded
 	 * through AJAX requests, not via PHP when the page loads.
 	 * 
-	 * @param 	VBOMultitaskData 	$data
+	 * @param 	?VBOMultitaskData 	$data
 	 * 
 	 * @return 	void
 	 */
-	public function render(VBOMultitaskData $data = null)
+	public function render(?VBOMultitaskData $data = null)
 	{
 		// increase widget's instance counter
 		static::$instance_counter++;

@@ -599,7 +599,7 @@ $filters_set = false;
 					</div>
 					<div class="vbo-customer-info-box-avatar vbo-customer-avatar-small">
 						<span>
-							<img src="<?php echo strpos($customer_avatar, 'http') === 0 ? $customer_avatar : VBO_SITE_URI . 'resources/uploads/' . $customer_avatar; ?>" data-caption="<?php echo htmlspecialchars($avatar_caption); ?>" />
+							<img src="<?php echo strpos($customer_avatar, 'http') === 0 ? $customer_avatar : VBO_SITE_URI . 'resources/uploads/' . $customer_avatar; ?>" data-caption="<?php echo htmlspecialchars($avatar_caption); ?>" decoding="async" loading="lazy" />
 						</span>
 					</div>
 				</div>
@@ -829,7 +829,7 @@ $filters_set = false;
 </form>
 
 <script type="text/javascript">
-if (jQuery.isFunction(jQuery.fn.tooltip)) {
+if (typeof jQuery.fn.tooltip === 'function') {
 	jQuery(".hasTooltip").tooltip();
 } else {
 	jQuery.fn.tooltip = function(){};

@@ -41,6 +41,10 @@
 	padding-bottom: 4px;
 	margin-bottom: 4px;
 }
+.vik-context-menu li a.btngroup {
+    padding-left: 8px;
+    font-size: smaller;
+}
 .vik-context-menu li a {
 	font-family: Helvetica;
 	display: flex;
@@ -73,6 +77,42 @@
 	flex: 1;
 }
 
+.vik-context-menu li.search-box {
+	padding: 6px !important;
+	position: relative;
+}
+.vik-context-menu li.search-box input {
+	width: 100%;
+	box-sizing: border-box;
+	background: #fff;
+	border: 1px solid #ddd;
+	color: #333;
+	border-radius: 4px;
+	padding: 8px 26px 8px 8px;
+	outline: none;
+	font-size: 14px;
+}
+.vik-context-menu li.search-box input:focus {
+	border-color: #1674b8;
+}
+.vik-context-menu li.search-box button.search-clear {
+	position: absolute;
+	top: 50%;
+	right: 14px;
+	transform: translateY(-50%);
+	display: inline-flex;
+	padding: 0;
+	appearance: none;
+	background: none;
+	border: none;
+	outline: none;
+	font-size: 14px;
+	cursor: pointer;
+}
+.vik-context-menu li.search-box button.search-clear:hover {
+	color: #218cf2 !important;
+}
+
 /**
  * Dark Mode
  */
@@ -90,6 +130,14 @@
 .vik-context-menu.dark-mode li a.disabled:hover {
 	color: #fff;
 }
+.vik-context-menu.dark-mode li.search-box input {
+	background: #333;
+	border-color: 1px solid #777;
+	color: #fff;
+}
+.vik-context-menu.dark-mode li.search-box button.search-clear {
+	color: #fff;
+}
 
 @media (prefers-color-scheme: dark) {
 	.vik-context-menu:not(.light-mode) {
@@ -103,6 +151,14 @@
 	}
 	.vik-context-menu:not(.light-mode) li a,
 	.vik-context-menu:not(.light-mode) li a.disabled:hover {
+		color: #fff;
+	}
+	.vik-context-menu:not(.light-mode) li.search-box input {
+		background: #333;
+		border-color: 1px solid #777;
+		color: #fff;
+	}
+	.vik-context-menu:not(.light-mode) li.search-box button.search-clear {
 		color: #fff;
 	}
 }

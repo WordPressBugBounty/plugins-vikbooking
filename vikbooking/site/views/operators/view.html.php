@@ -44,9 +44,11 @@ class VikbookingViewOperators extends JViewVikBooking
 			$tpl = 'dashboard';
 		}
 
-		// turn the permissions into an associative (or empty) array
+		// convert the JSON strings into array values
 		if ($operator) {
-			$operator['perms'] = !empty($operator['perms']) ? ((array) json_decode($operator['perms'], true)) : [];
+			$operator['perms'] = !empty($operator['perms']) ? (is_scalar($operator['perms']) ? (array) json_decode($operator['perms'], true) : $operator['perms']) : [];
+			$operator['work_days_week'] = !empty($operator['work_days_week']) ? (is_scalar($operator['work_days_week']) ? (array) json_decode($operator['work_days_week'], true) : $operator['work_days_week']) : [];
+			$operator['work_days_exceptions'] = !empty($operator['work_days_exceptions']) ? (is_scalar($operator['work_days_exceptions']) ? (array) json_decode($operator['work_days_exceptions'], true) : $operator['work_days_exceptions']) : [];
 		}
 
 		$this->operator = $operator;

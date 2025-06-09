@@ -225,7 +225,7 @@ class MobileDetector {
 		
 	);
 
-	public function __construct(array $headers = null, $userAgent = null) {
+	public function __construct(?array $headers = null, $userAgent = null) {
 		$this->setHttpHeaders($headers);
 		$this->setUserAgent($userAgent);
 	}

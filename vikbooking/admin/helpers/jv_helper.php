@@ -220,7 +220,7 @@ class VboApplication extends VikApplication
 
 		//js code
 		$dropdown .= '<script type="text/javascript">'."\n";
-		$dropdown .= 'jQuery(document).ready(function() {'."\n";
+		$dropdown .= 'jQuery(function() {'."\n";
 		$dropdown .= '  jQuery("#'.$idattr.'").select2('.(!empty($placeholder) ? '{placeholder: "'.addslashes($placeholder).'"}' : '').');'."\n";
 		$dropdown .= '});'."\n";
 		$dropdown .= '</script>'."\n";
@@ -307,6 +307,335 @@ JS
 	}
 
 	/**
+	 * Renders a date-time locale input element to pick a date and time.
+	 * 
+	 * @param 	array 	$options 	Associative list of element options.
+	 * 
+	 * @return 	string 				The HTML string necessary to render the date-time picker.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function renderDateTimePicker(array $options = [])
+	{
+		if (!($options['id'] ?? null)) {
+			// the ID attribute is mandatory
+			$options['id'] = uniqid('dtp_');
+		}
+
+		// ensure attributes are set
+		if (!($options['attributes'] ?? [])) {
+			$options['attributes'] = [];
+		}
+
+		// attributes name, value, min and max can also be specified outside the "attributes" key
+		if (($options['name'] ?? null) && !($options['attributes']['name'] ?? null)) {
+			// resort the attribute inside the apposite key
+			$options['attributes']['name'] = $options['name'];
+		}
+		if (($options['value'] ?? null) && !($options['attributes']['value'] ?? null)) {
+			// resort the attribute inside the apposite key
+			$options['attributes']['value'] = $options['value'];
+		}
+		if (($options['min'] ?? null) && !($options['attributes']['min'] ?? null)) {
+			// resort the attribute inside the apposite key
+			$options['attributes']['min'] = $options['min'];
+		}
+		if (($options['max'] ?? null) && !($options['attributes']['max'] ?? null)) {
+			// resort the attribute inside the apposite key
+			$options['attributes']['max'] = $options['max'];
+		}
+
+		// check for "min" attribute, required to hide seconds from the time-picker
+		if (!($options['attributes']['min'] ?? null)) {
+			// default to 10 years in the past
+			$options['attributes']['min'] = JFactory::getDate('-10 years')->format('Y-m-d\TH:i');
+		}
+
+		// build attributes list
+		$attributes = array_merge([
+			'id' => $options['id'],
+		], $options['attributes']);
+
+		// build attributes string
+		$attr_str = implode(' ', array_map(function($name, $value) {
+			return $name . '="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"'; 
+		}, array_keys($attributes), array_values($attributes)));
+
+		// build HTML string
+		$html = <<<HTML
+<input type="datetime-local" {$attr_str} />
+HTML;
+
+		// return the HTML string to be displayed
+		return $html;
+	}
+
+	/**
+	 * Renders a select2 component to display existing tags or to add new ones.
+	 * 
+	 * @param 	array 	$options 	Associative list of dropdown options.
+	 * @param 	array 	$elements 	Associative list of element records.
+	 * @param 	array 	$groups 	Optional list of element groups to source.
+	 * 
+	 * @return 	string 				The HTML string necessary to render the dropdown.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function renderTagsDropDown(array $options = [], array $elements = [], array $groups = [])
+	{
+		// load select2 assets
+		$this->loadSelect2();
+
+		if (!($options['id'] ?? null)) {
+			// the ID attribute is mandatory
+			$options['id'] = uniqid('tdd_');
+		}
+
+		// build attributes list
+		$attributes = array_merge([
+			'id' => $options['id'],
+		], ($options['attributes'] ?? []));
+
+		// build attributes string
+		$attr_str = implode(' ', array_map(function($name, $value) {
+			return $name . '="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"'; 
+		}, array_keys($attributes), array_values($attributes)));
+
+		// build data sources
+		$data_sources  = [];
+
+		foreach ($elements as $element) {
+			if (is_object($element)) {
+				$element = (array) $element;
+			}
+
+			if (empty($element['id'])) {
+				continue;
+			}
+
+			// build element data source
+			$data_source = [
+				'id'    => $element['id'],
+				'text'  => $element['name'] ?? $element['id'],
+				'color' => $element['color'] ?? null,
+				'hex'   => $element['hex'] ?? null,
+			];
+
+			// check for option selected status
+			if (($options['selected_value'] ?? null) && $options['selected_value'] == $element['id']) {
+				$data_source['selected'] = true;
+			} elseif (is_array($options['selected_values'] ?? null) && in_array($element['id'], $options['selected_values'])) {
+				$data_source['selected'] = true;
+			}
+
+			// check for option disabled status
+			if (($options['disabled_value'] ?? null) && $options['disabled_value'] == $element['id']) {
+				$data_source['disabled'] = true;
+			} elseif (is_array($options['disabled_values'] ?? null) && in_array($element['id'], $options['disabled_values'])) {
+				$data_source['disabled'] = true;
+			}
+
+			// push element data source
+			$data_sources[] = $data_source;
+		}
+
+		// append groups to source as data elements
+		foreach ($groups as $group) {
+			if (is_object($group)) {
+				// always cast to array
+				$group = (array) $group;
+			}
+
+			if (!is_array($group) || empty($group['text']) || empty($group['elements'])) {
+				continue;
+			}
+
+			// filter out invalid group elements
+			$group['elements'] = array_filter((array) $group['elements'], function($group_element) {
+				return is_array($group_element) && isset($group_element['id']) && isset($group_element['text']);
+			});
+
+			// check for option selected status
+			if (($options['selected_value'] ?? null) || (is_array($options['selected_values'] ?? null) && $options['selected_values'])) {
+				foreach ($group['elements'] as $k => $element) {
+					if (($options['selected_value'] ?? null)) {
+						if ($options['selected_value'] == $element['id']) {
+							$group['elements'][$k]['selected'] = true;
+						}
+					} else {
+						if (in_array($element['id'], $options['selected_values'])) {
+							$group['elements'][$k]['selected'] = true;
+						}
+					}
+				}
+			}
+
+			// check for option disabled status
+			if (($options['disabled_value'] ?? null) || (is_array($options['disabled_values'] ?? null) && $options['disabled_values'])) {
+				foreach ($group['elements'] as $k => $element) {
+					if (($options['disabled_value'] ?? null)) {
+						if ($options['disabled_value'] == $element['id']) {
+							$group['elements'][$k]['disabled'] = true;
+						}
+					} else {
+						if (in_array($element['id'], $options['disabled_values'])) {
+							$group['elements'][$k]['disabled'] = true;
+						}
+					}
+				}
+			}
+
+			// push group element data source
+			$data_sources[] = [
+				'text' => $group['text'],
+				'children' => $group['elements'],
+			];
+		}
+
+		// data sources JSON encoded string
+		$data_sources_str = json_encode($data_sources);
+
+		// empty option tag
+		$empty_option = '';
+		if (!($options['attributes']['multiple'] ?? null)) {
+			$empty_option = '<option></option>';
+		}
+
+		// clearing allowed
+		$clearable = (bool) ($options['allow_clear'] ?? 1);
+		$clearable_str = $clearable ? 'true' : 'false';
+
+		// tags allowed (for entering custom values)
+		$taggable = (bool) ($options['allow_tags'] ?? 1);
+		$taggable_str = $taggable ? 'true' : 'false';
+
+		// placeholder text
+		$placeholder = json_encode($options['placeholder'] ?? '');
+
+		// select2 width
+		$sel2width = $options['width'] ?? 'resolve';
+
+		// supported tag colors
+		$colors = json_encode((array) ($options['colors'] ?? []));
+
+		// build HTML string
+		$html = <<<HTML
+<select {$attr_str}>{$empty_option}</select>
+HTML;
+
+		// build script declaration
+		$js_decl = <<<JAVASCRIPT
+jQuery(function() {
+	const supportedColors = $colors;
+	let remainingColors = supportedColors.slice();
+
+	if (remainingColors.length) {
+		// internally rearrange tags by ID to preserve the linear color scheme supported by default
+		const existingTags = {$data_sources_str}.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+
+		// iterate all the existing tags
+		existingTags.forEach((tag) => {
+			let index = remainingColors.indexOf(tag.color);
+			if (index != -1) {
+				// remove the tag color from the remaining ones
+				remainingColors.splice(index, 1);
+
+				if (remainingColors.length == 0) {
+					// no more remaining colors, reset array
+					remainingColors = supportedColors.slice();
+				}
+			}
+		});
+	}
+
+	jQuery('select#{$options['id']}').select2({
+		width: '$sel2width',
+		allowClear: $clearable_str,
+		data: $data_sources_str,
+		placeholder: $placeholder,
+		tags: $taggable_str,
+		createTag: function (params) {
+			const term = (params.term || '').replace(/:/g, '').trim();
+
+			if (term === '') {
+				return null;
+			}
+
+			// temporarily assign the first available color
+			const color = remainingColors[0];
+
+			return {
+				id: term + ':' + color,
+				text: term,
+				color: color,
+				newTag: true,
+			};
+		},
+		templateResult: (element) => {
+			if (!element.id) {
+				return element.text;
+			}
+
+			let tag_class = '';
+			let tag_style = '';
+			if (element?.color) {
+				tag_class = element.color;
+			} else if (element?.hex) {
+				tag_style = 'background-color: ' + element.hex + ';';
+			} else {
+				tag_class = (element.id + '').toLowerCase().replace(/[^a-z0-9]/ig, '');
+			}
+			return jQuery('<span class="vbo-sel2-selectable-tag"><span class="vbo-sel2-selectable-tag-color vbo-colortag-circle' + (tag_class ? ' ' + tag_class : '') + '"' + (tag_style ? ' style="' + tag_style + '"' : '') + '></span><span class="vbo-sel2-selectable-tag-name">' + element.text + '</span></span>');
+		},
+		templateSelection: (element) => {
+			if (!element.id) {
+				return element.text;
+			}
+
+			let tag_elem = jQuery('<span></span>')
+				.addClass('vbo-sel2-selected-tag')
+				.text(element.text);
+
+			if (element.newTag) {
+				// we can understand here whether a new tag has been officially submitted
+				element.newTag = false;
+
+				// permanently detach the last color assigned
+				remainingColors.shift();
+
+				if (remainingColors.length == 0) {
+					// no more remaining colors, reset array
+					remainingColors = supportedColors.slice();
+				}
+			}
+
+			if (element?.color) {
+				tag_elem.addClass(element.color);
+			} else if (element?.hex) {
+				tag_elem.css('background-color', element.hex);
+			} else {
+				tag_elem.addClass((element.id + '').toLowerCase().replace(/[^a-z0-9]/ig, ''));
+			}
+
+			return tag_elem;
+		},
+	});
+});
+JAVASCRIPT;
+
+		if ((VBOPlatformDetection::isWordPress() && wp_doing_ajax()) || (!VBOPlatformDetection::isWordPress() && !strcasecmp((string) JFactory::getApplication()->input->server->get('HTTP_X_REQUESTED_WITH', ''), 'xmlhttprequest'))) {
+			// concatenate script to HTML string when doing an AJAX request
+			$html .= "\n" . '<script>' . $js_decl . '</script>';
+		} else {
+			// add script declaration to document
+			JFactory::getDocument()->addScriptDeclaration($js_decl);
+		}
+
+		// return the HTML string to be displayed
+		return $html;
+	}
+
+	/**
 	 * Renders a select2 component to display elements with thumbnails.
 	 * 
 	 * @param 	array 	$options 	Associative list of dropdown options.
@@ -321,7 +650,8 @@ JS
 	{
 		if (!$elements && ($options['elements'] ?? '') == 'listings') {
 			// load listing records
-			$elements = VikBooking::getAvailabilityInstance(true)->loadRooms([], 0, true);
+			$filter_listing_ids = (array) ($options['element_ids'] ?? []);
+			$elements = VikBooking::getAvailabilityInstance(true)->loadRooms($filter_listing_ids, 0, true);
 		}
 
 		if (!$elements) {
@@ -353,6 +683,10 @@ JS
 		$base_img_uri  = VBO_SITE_URI . 'resources/uploads/';
 
 		foreach ($elements as $element) {
+			if (is_object($element)) {
+				$element = (array) $element;
+			}
+
 			if (empty($element['id'])) {
 				continue;
 			}
@@ -456,6 +790,36 @@ JS
 				return is_array($group_element) && isset($group_element['id']) && isset($group_element['text']);
 			});
 
+			// check for option selected status
+			if (($options['selected_value'] ?? null) || (is_array($options['selected_values'] ?? null) && $options['selected_values'])) {
+				foreach ($group['elements'] as $k => $element) {
+					if (($options['selected_value'] ?? null)) {
+						if ($options['selected_value'] == $element['id']) {
+							$group['elements'][$k]['selected'] = true;
+						}
+					} else {
+						if (in_array($element['id'], $options['selected_values'])) {
+							$group['elements'][$k]['selected'] = true;
+						}
+					}
+				}
+			}
+
+			// check for option disabled status
+			if (($options['disabled_value'] ?? null) || (is_array($options['disabled_values'] ?? null) && $options['disabled_values'])) {
+				foreach ($group['elements'] as $k => $element) {
+					if (($options['disabled_value'] ?? null)) {
+						if ($options['disabled_value'] == $element['id']) {
+							$group['elements'][$k]['disabled'] = true;
+						}
+					} else {
+						if (in_array($element['id'], $options['disabled_values'])) {
+							$group['elements'][$k]['disabled'] = true;
+						}
+					}
+				}
+			}
+
 			// push group element data source
 			$data_sources[] = [
 				'text' => $group['text'],
@@ -479,15 +843,47 @@ JS
 		// placeholder text
 		$placeholder = json_encode($options['placeholder'] ?? '');
 
+		// select2 width
+		$sel2width = $options['width'] ?? 'resolve';
+
 		// build HTML string
 		$html = <<<HTML
 <select {$attr_str}>{$empty_option}</select>
 HTML;
 
+		// template selection function
+		$selectionFn = '';
+		if ($options['style_selection'] ?? null) {
+			$defaultSelectionIcn = $options['default_selection_icon'] ?? '';
+			$selectionFn = <<<JAVASCRIPT
+templateSelection: (element) => {
+	if (!element.id) {
+		return element.text;
+	}
+	let sel_elem = jQuery('<span></span>')
+		.addClass('vbo-sel2-selected-tag')
+		.text(element.text);
+	if (element.img) {
+		let avatar_elem = jQuery('<img/>')
+			.addClass('vbo-sel2-selected-tag-avatar')
+			.attr('src', element.img);
+		sel_elem.prepend(avatar_elem);
+	} else if ('$defaultSelectionIcn') {
+		let icn_elem = jQuery('<i></i>')
+			.addClass('$defaultSelectionIcn')
+			.addClass('vbo-sel2-selected-tag-avatar');
+		sel_elem.prepend(icn_elem);
+	}
+	return sel_elem;
+}
+JAVASCRIPT;
+		}
+
 		// build script declaration
 		$js_decl = <<<JAVASCRIPT
 jQuery(function() {
 	jQuery('select#{$options['id']}').select2({
+		width: '$sel2width',
 		allowClear: $clearable_str,
 		data: $data_sources_str,
 		placeholder: $placeholder,
@@ -497,7 +893,261 @@ jQuery(function() {
 			}
 			return jQuery('<span class="vbo-sel2-element-img"><img src="' + element.img + '" /> <span>' + element.text + '</span></span>');
 		},
+		$selectionFn
 	});
+});
+JAVASCRIPT;
+
+		if ((VBOPlatformDetection::isWordPress() && wp_doing_ajax()) || (!VBOPlatformDetection::isWordPress() && !strcasecmp((string) JFactory::getApplication()->input->server->get('HTTP_X_REQUESTED_WITH', ''), 'xmlhttprequest'))) {
+			// concatenate script to HTML string when doing an AJAX request
+			$html .= "\n" . '<script>' . $js_decl . '</script>';
+		} else {
+			// add script declaration to document
+			JFactory::getDocument()->addScriptDeclaration($js_decl);
+		}
+
+		// return the HTML string to be displayed
+		return $html;
+	}
+
+	/**
+	 * Renders a select2 component to display searchable elements with thumbnails.
+	 * 
+	 * @param 	array 	$options 	Associative list of dropdown and search options.
+	 * 
+	 * @return 	string 				The HTML string necessary to render the dropdown.
+	 * 
+	 * @since 	1.18.0 (J) - 1.8.0 (WP)
+	 */
+	public function renderSearchElementsDropDown(array $options = [])
+	{
+		if (!($options['endpoint'] ?? null) && ($options['elements'] ?? '') == 'bookings') {
+			// search bookings endpoint
+			$options['endpoint'] = VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.bookings_search');
+		} elseif (!($options['endpoint'] ?? null) && ($options['elements'] ?? '') == 'customers') {
+			// search customers endpoint
+			$options['endpoint'] = VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.customer_elements_search');
+		}
+
+		if (empty($options['endpoint'])) {
+			// abort
+			return '';
+		}
+
+		// set AJAX endpoint for searching
+		$endpoint = $options['endpoint'];
+
+		if ($options['load_assets'] ?? true) {
+			// load select2 assets
+			$this->loadSelect2();
+		}
+
+		if (!($options['id'] ?? null)) {
+			// the ID attribute is mandatory
+			$options['id'] = uniqid('ldd_');
+		}
+
+		// build attributes list
+		$attributes = array_merge([
+			'id' => $options['id'],
+		], ($options['attributes'] ?? []));
+
+		// build attributes string
+		$attr_str = implode(' ', array_map(function($name, $value) {
+			return $name . '="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"'; 
+		}, array_keys($attributes), array_values($attributes)));
+
+		// build data sources
+		$data_sources  = [];
+
+		// check for default option(s) selected status
+		$selected_options = [];
+		if (is_array($options['selected_values'] ?? null) && $options['selected_values']) {
+			$selected_options = $options['selected_values'];
+		} elseif (($options['selected_value'] ?? null)) {
+			$selected_options[] = $options['selected_value'];
+		}
+		foreach ($selected_options as $sel_option) {
+			if (is_array($sel_option) || is_object($sel_option)) {
+				// element object expected
+				$sel_option = (array) $sel_option;
+				if (isset($sel_option['id']) && isset($sel_option['text'])) {
+					// push valid data source
+					$sel_option['selected'] = true;
+					$data_sources[] = $sel_option;
+				}
+			} else {
+				// selected ID expected, push a data source object with limited information
+				$data_sources[] = [
+					'id' => $sel_option,
+					'text' => $sel_option,
+					'selected' => true,
+				];
+			}
+		}
+
+		// data sources JSON encoded string
+		$data_sources_str = json_encode($data_sources);
+
+		// empty option tag
+		$empty_option = '';
+		if (!($options['attributes']['multiple'] ?? null)) {
+			$empty_option = '<option></option>';
+		}
+
+		// clearing allowed
+		$clearable = (bool) ($options['allow_clear'] ?? 1);
+		$clearable_str = $clearable ? 'true' : 'false';
+
+		// placeholder text
+		$placeholder = json_encode($options['placeholder'] ?? '');
+
+		// minimum input length for searching
+		$min_inp_len = 1;
+
+		// search language definitions
+		$lang_error_loading = json_encode($options['language']['error'] ?? JText::translate('VBO_ERR_LOAD_RESULTS'));
+		$lang_no_results    = json_encode($options['language']['noresults'] ?? JText::translate('VBO_NO_RECORDS_FOUND'));
+		$lang_searching     = json_encode($options['language']['searching'] ?? JText::translate('VBO_SEARCHING'));
+		// this language definition is NOT quoted, because it is not JSON-encoded
+		$lang_inptooshort   = $min_inp_len > 1 && ($options['language']['inptooshort'] ?? '') ? $options['language']['inptooshort'] : '';
+
+		// selection/result with ID
+		$selection_with_id = ($options['selected_id'] ?? null) ? 'true' : 'false';
+
+		// selection extra class
+		$selection_class = $options['selection_class'] ?? '';
+
+		// selection click open widget
+		$selection_click_widget = $options['selection_click_widget'] ?? '';
+
+		// selection dispatch event
+		$selection_event = $options['selection_event'] ?? '';
+
+		// select2 width
+		$sel2width = $options['width'] ?? 'resolve';
+
+		// build HTML string
+		$html = <<<HTML
+<select {$attr_str}>{$empty_option}</select>
+HTML;
+
+		// template selection function
+		$selectionFn = '';
+		if ($options['style_selection'] ?? null) {
+			$defaultSelectionIcn = $options['default_selection_icon'] ?? '';
+			$selectionFn = <<<JAVASCRIPT
+templateSelection: (element) => {
+	if (!element.id) {
+		return element.text;
+	}
+	let sel_elem = jQuery('<span></span>')
+		.addClass(('vbo-sel2-selected-search-elem $selection_class').trim())
+		.text(element.text + ($selection_with_id ? ' #' + element.id : ''));
+	if (element.img) {
+		let avatar_elem = jQuery('<img/>')
+			.addClass('vbo-sel2-selected-search-elem-avatar')
+			.attr('src', element.img);
+		if (element.img_title) {
+			avatar_elem.attr('title', element.img_title);
+		}
+		sel_elem.prepend(avatar_elem);
+	} else if (element.icon_class) {
+		let icn_wrap = jQuery('<span></span>')
+			.addClass('vbo-sel2-selected-search-elem-avatar');
+		let icn_elem = jQuery('<i></i>')
+			.addClass(element.icon_class);
+		icn_wrap.append(icn_elem);
+		sel_elem.prepend(icn_wrap);
+	} else if ('$defaultSelectionIcn') {
+		let icn_elem = jQuery('<i></i>')
+			.addClass('$defaultSelectionIcn')
+			.addClass('vbo-sel2-selected-search-elem-avatar');
+		sel_elem.prepend(icn_elem);
+	}
+	if ("$selection_click_widget" == 'booking_details') {
+		sel_elem.on('click', () => {
+			VBOCore.handleDisplayWidgetNotification({
+				widget_id: 'booking_details',
+			}, {
+				booking_id: element.id,
+				modal_options: {
+					suffix: 'vbo-booking-details-inner',
+					body_prepend: false,
+					enlargeable:  false,
+					minimizeable: false,
+				},
+			});
+		});
+	}
+	return sel_elem;
+}
+JAVASCRIPT;
+		}
+
+		// build script declaration
+		$js_decl = <<<JAVASCRIPT
+jQuery(function() {
+	jQuery('select#{$options['id']}').select2({
+		width: '$sel2width',
+		allowClear: $clearable_str,
+		data: $data_sources_str,
+		placeholder: $placeholder,
+		minimumInputLength: $min_inp_len,
+		language: {
+			errorLoading: () => {
+				return $lang_error_loading;
+			},
+			noResults: () => {
+				return $lang_no_results;
+			},
+			searching: () => {
+				return $lang_searching;
+			},
+			inputTooShort: () => {
+				return "$lang_inptooshort";
+			},
+		},
+		ajax: {
+			delay: 350,
+			url: "$endpoint",
+			dataType: 'json',
+		},
+		templateResult: (element) => {
+			if (!element.id) {
+				return element.text;
+			}
+			let search_elem = jQuery('<span></span>')
+				.addClass('vbo-sel2-search-elem');
+
+			let search_avatar = jQuery('<span></span>')
+				.addClass('vbo-sel2-search-elem-avatar');
+
+			let elem_name = jQuery('<span></span>')
+				.addClass('vbo-sel2-search-elem-name')
+				.text(element.text + ($selection_with_id ? ' #' + element.id : ''));
+
+			if (element.img) {
+				search_avatar.append('<img src="' + element.img + '" ' + (element.img_title ? 'title="' + element.img_title + '" ' : '') + '/>');
+			} else if (element.icon_class) {
+				search_avatar.append('<i class="' + element.icon_class + '"></i>');
+			}
+
+			search_avatar.append(elem_name);
+			search_elem.append(search_avatar);
+
+			return search_elem;
+		},
+		$selectionFn
+	});
+	if ("$selection_event") {
+		jQuery('select#{$options['id']}').on('select2:select', (e) => {
+			let element = e?.params?.data || e;
+			VBOCore.emitEvent("$selection_event", {
+				element: element,
+			});
+		});
+	}
 });
 JAVASCRIPT;
 
@@ -1141,7 +1791,7 @@ jQuery(function($) {' . "\n" . '
 			$doc->addScriptDeclaration(
 <<<JS
 jQuery(function() {
-	if (jQuery.isFunction(jQuery.fn.tooltip)) {
+	if (typeof jQuery.fn.tooltip === 'function') {
 		jQuery('.vik-multiswitch-wrap label').tooltip();
 	}
 });
@@ -1372,6 +2022,11 @@ JS
 	Specialtag.tagName = 'strong';
 	Quill.register(Specialtag);
 
+	// register bold tag names in the proper order to avoid conflicts
+	var Bold = Quill.import('formats/bold');
+	Bold.tagName = ['B', 'STRONG'];
+	Quill.register(Bold, true);
+
 	// register custom Blot for mail-wrapper
 	var BlockEmbed = Quill.import('blots/block/embed');
 	class MailWrapper extends BlockEmbed { }
@@ -1426,8 +2081,11 @@ JS
 		 * Load Context Menu assets.
 		 * 
 		 * @since 	1.17.6 (J) - 1.7.6 (WP)
+		 * @since 	1.18.0 (J) - 1.8.0 (WP) loaded only if not during an AJAX request.
 		 */
-		$this->loadContextMenuAssets();
+		if ((VBOPlatformDetection::isWordPress() && !wp_doing_ajax()) || (!VBOPlatformDetection::isWordPress() && strcasecmp((string) JFactory::getApplication()->input->server->get('HTTP_X_REQUESTED_WITH', ''), 'xmlhttprequest'))) {
+			$this->loadContextMenuAssets();
+		}
 	}
 
 	/**
@@ -1550,6 +2208,19 @@ JS
 			$ta_attributes[] = $aname . '="' . JHtml::fetch('esc_attr', $aval) . '"';
 		}
 
+		// visual editor JS options for list buttons
+		$js_editor_opts_list_btns = [
+			// ordered list (ol)
+			['list' => 'ordered'],
+			// un-ordered list (ul)
+			['list' => 'bullet'],
+		];
+
+		if ($opts['list_check'] ?? null) {
+			// push the un-ordered list (ul) with checked data-attribute, simulating a check-boxes list
+			$js_editor_opts_list_btns[] = ['list' => 'check'];
+		}
+
 		// build visual editor JS options
 		$js_editor_opts = [
 			'snippetsyntax' => true,
@@ -1586,10 +2257,7 @@ JS
 								'background' => []
 							],
 						],
-						[
-							['list' => 'ordered'],
-							['list' => 'bullet'],
-						],
+						$js_editor_opts_list_btns,
 						[
 							'link',
 							'image',
@@ -1635,6 +2303,36 @@ JS
 			$editor .= '</style>' . "\n";
 		}
 
+		if ($opts['unset_buttons'] ?? null) {
+			// unset toolbar container main-level buttons
+			$opts['unset_buttons'] = (array) $opts['unset_buttons'];
+			foreach ($js_editor_opts['modules']['toolbar']['container'] as $tc_index => $tc_buttons) {
+				if (!is_array($tc_buttons)) {
+					continue;
+				}
+				foreach ($opts['unset_buttons'] as $unset_btn) {
+					if (!is_string($unset_btn)) {
+						continue;
+					}
+					foreach ($tc_buttons as $tc_btn_index => $tc_btn) {
+						if (is_string($tc_btn) && $tc_btn === $unset_btn) {
+							// unset toolbar container button
+							unset($js_editor_opts['modules']['toolbar']['container'][$tc_index][$tc_btn_index]);
+						}
+					}
+				}
+				if (!$js_editor_opts['modules']['toolbar']['container'][$tc_index]) {
+					// unset the whole container
+					unset($js_editor_opts['modules']['toolbar']['container'][$tc_index]);
+				} else {
+					// restore numeric (non-associative) list
+					$js_editor_opts['modules']['toolbar']['container'][$tc_index] = array_values($js_editor_opts['modules']['toolbar']['container'][$tc_index]);
+				}
+			}
+			// restore numeric (non-associative) list
+			$js_editor_opts['modules']['toolbar']['container'] = array_values($js_editor_opts['modules']['toolbar']['container']);
+		}
+
 		// attept to pretty print a JSON encoded string for the editor options
 		$editor_opts_str = defined('JSON_PRETTY_PRINT') ? json_encode($js_editor_opts, JSON_PRETTY_PRINT) : json_encode($js_editor_opts);
 
@@ -1648,7 +2346,7 @@ JS
 		$editor .= '<div class="vik-contentbuilder-wrapper">' . "\n";
 		if (count($modes) > 1) {
 			// display buttons to switch mode only if more than one mode available
-			$editor .= "\t" . '<div class="vik-contentbuilder-switcher">' . "\n";
+			$editor .= "\t" . '<div class="vik-contentbuilder-switcher"' . (($opts['hide_modes'] ?? null) ? ' style="display: none;"' : '') . '>' . "\n";
 			foreach ($modes as $key => $val) {
 				if (!isset($allowed_modes[$key])) {
 					continue;
@@ -1702,6 +2400,9 @@ JS
 		if (!$gen_ai_use_prompt && !strcasecmp(($opts['gen_ai']['environment'] ?? ''), 'cron')) {
 			// use default prompt for cron messages
 			$gen_ai_use_prompt = JText::translate('VBO_AITOOL_WRITER_CRON_DEF_PROMPT');
+		} elseif (!$gen_ai_use_prompt && !strcasecmp(($opts['gen_ai']['environment'] ?? ''), 'taskmanager')) {
+			// use default prompt for the task manager
+			$gen_ai_use_prompt = JText::translate('VBO_AITOOL_WRITER_TM_DEF_PROMPT');
 		}
 
 		if ($gen_ai_use_prompt && ($opts['gen_ai']['placeholders'] ?? 0) && $btns) {
@@ -1844,8 +2545,8 @@ jQuery(function() {
 					if ((e.detail?.type || '') == 'html') {
 						// convert HTML content into Delta for the Visual Editor
 						let delta = visualEditor.clipboard.convert(ai_content);
-						// set (replace) editor HTML content
-						visualEditor.setContents(delta, 'silent');
+						// set (replace) editor HTML content (2nd argument "source" should be "api" so that the "text-change" event will fire)
+						visualEditor.setContents(delta, 'api');
 					} else {
 						// default to plain text
 						visualEditor.insertText(cursorPosition, ai_content, 'user');
@@ -1906,7 +2607,7 @@ jQuery(function() {
 			});
 			var editor_delta = visual_editor.clipboard.convert(editor_content);
 			// set editor HTML content
-			visual_editor.setContents(editor_delta, 'silent');
+			visual_editor.setContents(editor_delta, 'api');
 		} else {
 			// set text content
 			visual_editor.setText(editor_content, 'silent');
@@ -1952,14 +2653,17 @@ HTML;
 			return;
 		}
 
-		// get appearance preference
-		$app_pref = VikBooking::getAppearancePref();
-
 		$dark_mode = 'null';
-		if ($app_pref == 'light') {
-			$dark_mode = 'false';
-		} elseif ($app_pref == 'dark') {
-			$dark_mode = 'true';
+
+		if (JFactory::getApplication()->isClient('administrator')) {
+			// get appearance preference
+			$app_pref = VikBooking::getAppearancePref();
+
+			if ($app_pref == 'light') {
+				$dark_mode = 'false';
+			} elseif ($app_pref == 'dark') {
+				$dark_mode = 'true';
+			}
 		}
 
 		$this->addScript(VBO_ADMIN_URI . 'resources/contextmenu.js');

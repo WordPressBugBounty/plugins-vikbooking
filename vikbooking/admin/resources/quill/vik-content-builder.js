@@ -9,8 +9,11 @@
 
 /**
  * Class handler to store the editor instances and switch building modes.
+ * 
+ * AJAX requests may load this asset multiple times, so we declare an anonymous class, but
+ * we assign it to a variable using "var" because it is not block-scoped like "let" or "const".
  */
-class VikContentBuilder {
+var VikContentBuilder = class {
 
 	/** @var  array */
 	static editors = new Array;
@@ -106,8 +109,11 @@ class VikContentBuilder {
 
 /**
  * Class handler for uploading an image file and display it through Quill.
+ * 
+ * AJAX requests may load this asset multiple times, so we declare an anonymous class, but
+ * we assign it to a variable using "var" because it is not block-scoped like "let" or "const".
  */
-class VikContentBuilderImageHandler {
+var VikContentBuilderImageHandler = class {
 	
 	constructor(editor, endpoint) {
 		this.editor = editor;

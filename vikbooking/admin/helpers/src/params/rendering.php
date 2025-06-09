@@ -141,7 +141,13 @@ final class VBOParamsRendering
 
             // check for assets to be loaded, only once to obtain individual setups
             if ($load_assets) {
-                $this->loadAssets($load_once = true);
+                if ((VBOPlatformDetection::isWordPress() && wp_doing_ajax()) || (!VBOPlatformDetection::isWordPress() && !strcasecmp((string) JFactory::getApplication()->input->server->get('HTTP_X_REQUESTED_WITH', ''), 'xmlhttprequest'))) {
+                    // concatenate script(s) to HTML string when doing an AJAX request
+                    $html .= "\n" . '<script>' . implode("\n", $this->buildScriptAssets($load_once = true)) . '</script>';
+                } else {
+                    // add script declaration(s) to document
+                    $this->loadAssets($load_once = true);
+                }
             }
 
             if ($labelhelp) {
@@ -159,15 +165,18 @@ final class VBOParamsRendering
     }
 
     /**
-     * Loads the requested assets, if any.
+     * Builds the requested script assets, if any.
      * 
      * @param   bool    $load_once  True to unset the assets after loading.
      * 
-     * @return  void
+     * @return  array
+     * 
+     * @since   1.18.0 (J) - 1.8.0 (WP)
      */
-    public function loadAssets($load_once = false)
+    public function buildScriptAssets($load_once = false)
     {
-        $doc = JFactory::getDocument();
+        $scripts = [];
+
         foreach ($this->assets as $asset_type => $asset_elements) {
             if ($asset_type === 'select2') {
                 // build list of selectors
@@ -179,20 +188,39 @@ final class VBOParamsRendering
                 $asset_options = $this->assets['select2_options'] ?? null;
                 $asset_options_str = $asset_options ? json_encode($asset_options) : '';
 
-                // add script declaration
+                // always attempt to load assets
                 VikBooking::getVboApplication()->loadSelect2();
-                $doc->addScriptDeclaration(
-<<<JS
+
+                // build and push script
+                $scripts[] =
+<<<JAVASCRIPT
 jQuery(function() {
     jQuery('$ids_list').select2($asset_options_str);
 });
-JS
-                );
+JAVASCRIPT;
             }
 
             if ($load_once) {
                 unset($this->assets[$asset_type]);
             }
+        }
+
+        return $scripts;
+    }
+
+    /**
+     * Loads the requested assets, if any.
+     * 
+     * @param   bool    $load_once  True to unset the assets after loading.
+     * 
+     * @return  void
+     */
+    public function loadAssets($load_once = false)
+    {
+        $doc = JFactory::getDocument();
+
+        foreach ($this->buildScriptAssets($load_once) as $script) {
+            $doc->addScriptDeclaration($script);
         }
     }
 
@@ -311,10 +339,24 @@ JS
                 ];
                 if ($param_config['multiple'] ?? null) {
                     $elements_attr['multiple'] = 'multiple';
+                    $elements_attr['name'] .= '[]';
                 }
                 $custom_attr = (array) ($param_config['attributes'] ?? []);
                 unset($custom_attr['id'], $custom_attr['name']);
                 $elements_attr = array_merge($elements_attr, $custom_attr);
+
+                $wrapped = false;
+                $style_selection = false;
+                if ($param_config['inline'] ?? true) {
+                    // wrap the select within an additional div
+                    $html .= '<div class="' . (($param_config['multiple'] ?? null) ? 'vbo-multiselect-inline-elems-wrap' : 'vbo-singleselect-inline-elems-wrap') . '">';
+                    $wrapped = true;
+                    $style_selection = (bool) ($param_config['multiple'] ?? null);
+                } elseif ($param_config['wrapdivcls'] ?? null) {
+                    // wrap the select within a custom div
+                    $html .= '<div class="' . $param_config['wrapdivcls'] . '">';
+                    $wrapped = true;
+                }
 
                 // obtain the necessary HTML code for rendering
                 $html .= VikBooking::getVboApplication()->renderElementsDropDown([
@@ -325,6 +367,115 @@ JS
                     'attributes'      => $elements_attr,
                     'selected_value'  => (is_scalar($this->settings[$param_name] ?? null) ? $this->settings[$param_name] : (is_scalar($default_paramv ?? null) ? $default_paramv : null)),
                     'selected_values' => (is_array($this->settings[$param_name] ?? null) ? $this->settings[$param_name] : (is_array($default_paramv ?? null) ? $default_paramv : null)),
+                    'style_selection' => $style_selection,
+                ]);
+
+                if ($wrapped) {
+                    // close the select div wrapper
+                    $html .= '</div>';
+                }
+                break;
+            case 'elements':
+                // build attributes list
+                $element_id = 'vik-select-' . static::$instance_counter . '-' . preg_replace("/[^A-Z0-9]+/i", '', $param_name);
+                $elements_attr = [
+                    'name' => $this->inputName . '[' . $param_name . ']',
+                ];
+                if ($param_config['multiple'] ?? null) {
+                    $elements_attr['multiple'] = 'multiple';
+                    $elements_attr['name'] .= '[]';
+                }
+                $custom_attr = (array) ($param_config['attributes'] ?? []);
+                unset($custom_attr['id'], $custom_attr['name']);
+                $elements_attr = array_merge($elements_attr, $custom_attr);
+
+                $wrapped = false;
+                $style_selection = false;
+                if ($param_config['inline'] ?? true) {
+                    // wrap the select within an additional div
+                    $html .= '<div class="' . (($param_config['multiple'] ?? null) ? 'vbo-multiselect-inline-elems-wrap' : 'vbo-singleselect-inline-elems-wrap') . '">';
+                    $wrapped = true;
+                    $style_selection = (bool) ($param_config['multiple'] ?? null);
+                } elseif ($param_config['wrapdivcls'] ?? null) {
+                    // wrap the select within a custom div
+                    $html .= '<div class="' . $param_config['wrapdivcls'] . '">';
+                    $wrapped = true;
+                }
+
+                // obtain the necessary HTML code for rendering
+                $html .= VikBooking::getVboApplication()->renderElementsDropDown([
+                    'id'                  => $element_id,
+                    'placeholder'         => ($param_config['asset_options']['placeholder'] ?? null),
+                    'allow_clear'         => ($param_config['asset_options']['allowClear'] ?? $param_config['asset_options']['allow_clear'] ?? null),
+                    'attributes'          => $elements_attr,
+                    'element_def_img_uri' => ($param_config['element_def_img_uri'] ?? ''),
+                    'style_selection'     => ($param_config['style_selection'] ?? $style_selection),
+                    'selected_value'      => (is_scalar($this->settings[$param_name] ?? null) ? $this->settings[$param_name] : (is_scalar($default_paramv ?? null) ? $default_paramv : null)),
+                    'selected_values'     => (is_array($this->settings[$param_name] ?? null) ? $this->settings[$param_name] : (is_array($default_paramv ?? null) ? $default_paramv : null)),
+                ], (array) ($param_config['elements'] ?? []), (array) ($param_config['groups'] ?? []));
+
+                if ($wrapped) {
+                    // close the select div wrapper
+                    $html .= '</div>';
+                }
+                break;
+            case 'tags':
+                // build attributes list
+                $element_id = 'vik-select-' . static::$instance_counter . '-' . preg_replace("/[^A-Z0-9]+/i", '', $param_name);
+                $elements_attr = [
+                    'name' => $this->inputName . '[' . $param_name . ']',
+                ];
+                if ($param_config['multiple'] ?? null) {
+                    $elements_attr['multiple'] = 'multiple';
+                    $elements_attr['name'] .= '[]';
+                }
+                $custom_attr = (array) ($param_config['attributes'] ?? []);
+                unset($custom_attr['id'], $custom_attr['name']);
+                $elements_attr = array_merge($elements_attr, $custom_attr);
+
+                $wrapped = false;
+                $style_selection = (bool) ($param_config['style_selection'] ?? null);
+                if ($param_config['inline'] ?? true) {
+                    // wrap the select within an additional div
+                    $html .= '<div class="' . (($param_config['multiple'] ?? null) ? 'vbo-multiselect-inline-elems-wrap' : 'vbo-singleselect-inline-elems-wrap') . '">';
+                    $wrapped = true;
+                    $style_selection = (bool) ($param_config['multiple'] ?? null);
+                } elseif ($param_config['wrapdivcls'] ?? null) {
+                    // wrap the select within a custom div
+                    $html .= '<div class="' . $param_config['wrapdivcls'] . '">';
+                    $wrapped = true;
+                }
+
+                // obtain the necessary HTML code for rendering
+                $html .= VikBooking::getVboApplication()->renderTagsDropDown([
+                    'id'                  => $element_id,
+                    'placeholder'         => ($param_config['asset_options']['placeholder'] ?? null),
+                    'allow_clear'         => ($param_config['asset_options']['allowClear'] ?? $param_config['asset_options']['allow_clear'] ?? null),
+                    'attributes'          => $elements_attr,
+                    'selected_value'      => (is_scalar($this->settings[$param_name] ?? null) ? $this->settings[$param_name] : (is_scalar($default_paramv ?? null) ? $default_paramv : null)),
+                    'selected_values'     => (is_array($this->settings[$param_name] ?? null) ? $this->settings[$param_name] : (is_array($default_paramv ?? null) ? $default_paramv : null)),
+                    'style_selection'     => $style_selection,
+                ], (array) ($param_config['tags'] ?? []), (array) ($param_config['groups'] ?? []));
+
+                if ($wrapped) {
+                    // close the select div wrapper
+                    $html .= '</div>';
+                }
+                break;
+            case 'datetime':
+                // build attributes list
+                $element_id = 'vik-dtp-' . static::$instance_counter . '-' . preg_replace("/[^A-Z0-9]+/i", '', $param_name);
+                $elements_attr = [
+                    'name' => $this->inputName . '[' . $param_name . ']',
+                ];
+                $custom_attr = (array) ($param_config['attributes'] ?? []);
+                unset($custom_attr['id'], $custom_attr['name']);
+                $elements_attr = array_merge($elements_attr, $custom_attr);
+
+                // obtain the necessary HTML code for rendering
+                $html .= VikBooking::getVboApplication()->renderDateTimePicker([
+                    'id'         => $element_id,
+                    'attributes' => $elements_attr,
                 ]);
                 break;
             case 'password':

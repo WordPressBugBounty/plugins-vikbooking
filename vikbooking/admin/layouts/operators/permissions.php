@@ -209,6 +209,12 @@ if ($operator_id) {
                         </div>
                     </div>
                 </div>
+
+                <?php
+                // if the current user does not have access to this tool, display a warning
+                if ($operator_id && !in_array($tool_id, array_column($operator['perms'], 'type'))): ?>
+                    <p class="warn"><?php echo JText::translate('VBO_OPERATOR_NO_TOOL_PERMS'); ?></p>
+                <?php endif; ?>
             </div>
             <?php
         }

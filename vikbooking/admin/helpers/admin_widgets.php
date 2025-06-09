@@ -522,11 +522,11 @@ class VikBookingHelperAdminWidgets
 	 * Forces the rendering of a specific widget identifier.
 	 * 
 	 * @param 	string 				$id 	the widget identifier.
-	 * @param 	VBOMultitaskData 	$data 	optional multitask data for the widget.
+	 * @param 	?VBOMultitaskData 	$data 	optional multitask data for the widget.
 	 *
 	 * @return 	void
 	 */
-	public function renderWidget($id, VBOMultitaskData $data = null)
+	public function renderWidget($id, ?VBOMultitaskData $data = null)
 	{
 		$id = $this->simplifyId($id);
 
