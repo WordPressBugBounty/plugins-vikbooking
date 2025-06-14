@@ -16,7 +16,7 @@ Famous Booking Engine, PMS and Hotel Reservations plugin for single properties. 
 
 The famous Booking Engine and PMS online software for accommodations is now available also for WordPress as a native Plugin!
 
-If you are looking for a reliable reservation system for a Hotel, B&B, Villa, Apartments, Hostel or any similar accommodation, then you have found the right plugin. In fact, Vik Booking is a **PCI-DSS** and **OpenTravel** compliant hotel Booking Engine used by thousands of properties every day.
+If you are looking for a reliable reservation system for a Hotel, B&B, Villa, Apartments, Hostel or any similar accommodation, then you have found the right plugin. In fact, Vik Booking is a **PCI-DSS** and **OpenTravel** compliant hotel & vacation rental Booking Engine used by thousands of properties every day.
 
 This is the **free** version of the plugin, but you can upgrade to the **Pro** version at any time from your *wp-admin* section. Experience the power of a true and internal Booking Engine that competes with the best ones of the world!
 

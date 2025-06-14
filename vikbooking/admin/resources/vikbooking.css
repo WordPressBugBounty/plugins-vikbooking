@@ -998,7 +998,7 @@ body.admin #content .container-main .btn.btn-success:hover, body.admin #content 
 	cursor: pointer;
 }
 .vbo-checkinday {
-	border-top: 3px solid var(--vbo-green-color); 
+	border-top: 3px solid var(--vbo-green-color) !important; 
 }
 .busy.vbo-overv-todaycell:not(.vbo-hascolortag), .subroom-busy.vbo-overv-todaycell:not(.vbo-hascolortag) {
 	background: var(--vbo-red-color) !important;
@@ -3468,9 +3468,6 @@ span.vbo-label-small, .vbo-label-small {
 	border-radius: var(--vbo-field-radius);
 	padding: 8px 10px;
 	width: 70% !important;
-}
-.vbo-ratesoverview-roomsel-block > form .vbo-ratesoverview-roomsel-entry-calc .vbo-field-calendar .input-append  {
-
 }
 .vbo-ratesoverview-roomsel-block > form .vbo-ratesoverview-roomsel-entry-calc .hasDatepicker + button.btn {
 	padding: 8px 10px;
