@@ -3,7 +3,7 @@
 Plugin Name:  VikBooking
 Plugin URI:   https://vikwp.com/plugin/vikbooking
 Description:  Certified Booking Engine for Hotels and Accommodations.
-Version:      1.8.0
+Version:      1.8.1
 Author:       E4J s.r.l.
 Author URI:   https://vikwp.com
 License:      GPL2
@@ -891,6 +891,16 @@ add_action('admin_footer', function()
 
 	// make sure we are not inside Vik Booking
 	if ($input->get('option') == 'com_vikbooking' || $input->get('page') == 'vikbooking' || $input->get('action') == 'vikbooking')
+	{
+		return;
+	}
+
+	/**
+	 * Avoid conflicts with third-party page-builder plugins that may simulate the front-end.
+	 * 
+	 * @since 	1.8.1
+	 */
+	if (!$app->isClient('administrator'))
 	{
 		return;
 	}

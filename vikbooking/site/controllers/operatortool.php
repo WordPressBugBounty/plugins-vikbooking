@@ -451,18 +451,15 @@ class VikBookingControllerOperatortool extends JControllerAdmin
             'dates' => sprintf('%s:%s', date('Y-m-d'), date('Y-m-d', strtotime('+1 year'))),
         ]);
 
-        // send headers to output the calendar
-        header('Content-type: text/calendar; charset=utf-8');
-        header('Content-Disposition: attachment; filename=' . sprintf('%d-%s-%s', $operator['id'], (string) $operator['first_name'], date('Y-m-d')) . '.ics');
-
-        // build and send to output the calendar content
-        echo VBOTaskOperatorIcal::getInstance()
+        // build and downlaod the calendar content
+        VBOTaskOperatorIcal::getInstance()
+            ->setCalendarSubscriber($app->input->getString('sub'))
             ->setOperator($operator)
             ->setPermissions($permissions)
             ->setTool($tool)
             ->setToolUri($tool_uri)
             ->setEvents($tasks)
-            ->toString();
+            ->download($app);
 
         // close the application
         $app->close();

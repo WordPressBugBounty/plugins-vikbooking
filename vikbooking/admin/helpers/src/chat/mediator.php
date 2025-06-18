@@ -56,7 +56,7 @@ class VBOChatMediator
         $this->storage = $storage;
 
         // create default attachments folder
-        $this->attachmentsPath = VBO_MEDIA_PATH . DIRECTORY_SEPARATOR . 'attachments';
+        $this->attachmentsPath = (defined('VBO_MEDIA_PATH') ? VBO_MEDIA_PATH : '') . DIRECTORY_SEPARATOR . 'attachments';
 
         // create default attachments extension filters
         $this->supportedFiles = implode(',', [

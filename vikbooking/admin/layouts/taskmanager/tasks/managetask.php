@@ -482,7 +482,7 @@ if (!empty($data['task_id'])) {
                     "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=ai.extractTaskTags'); ?>",
                     {
                         area_id: '<?php echo $areaId; ?>',
-                        task_id: '<?php echo $data['task_id'] ?: 0; ?>',
+                        task_id: '<?php echo (int) ($data['task_id'] ?? 0); ?>',
                         task_title: document.querySelector('.vbo-param-setting-tm-task-title-inp')?.value,
                         task_notes: document.querySelector('.vbo-tm-managetask-notes')?.value,
                         booking_id: document.querySelector('#vbo-tm-managetask-idorder')?.value,

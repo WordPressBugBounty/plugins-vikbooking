@@ -2590,7 +2590,7 @@ class VikBookingController extends JControllerVikBooking
 		$response = [];
 
 		$customer = $cpin->getCustomerByPin($ppin);
-		if (count($customer)) {
+		if ($customer) {
 			$response = $customer;
 			$response['success'] = 1;
 
@@ -3557,7 +3557,7 @@ class VikBookingController extends JControllerVikBooking
 		// reviewer information
 		$review_content->reviewer = new stdClass;
 		$customer_name = '';
-		if (count($customer)) {
+		if ($customer) {
 			$review_content->reviewer->name = $customer['first_name'];
 			$review_content->reviewer->country_code = $customer['country'];
 			$customer_name = $customer['first_name'] . ' ' . $customer['last_name'];

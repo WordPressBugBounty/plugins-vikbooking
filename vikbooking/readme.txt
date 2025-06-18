@@ -3,7 +3,7 @@ Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
 Tested up to: 6.8
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 Requires PHP: 7.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -128,6 +128,13 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 13. Browser (web push) notifications will turn your device into a real-time updated system.
 
 == Changelog ==
+
+= 1.8.1 =
+*Release date - 18 June 2025*
+
+* Minor fixes.
+* Minor CSS improvements.
+* Improved support for third-party page builder plugins with Operators Login shortcode.
 
 = 1.8.0 =
 *Release date - 10 June 2025*

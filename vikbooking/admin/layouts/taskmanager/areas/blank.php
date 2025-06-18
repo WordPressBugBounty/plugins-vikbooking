@@ -66,8 +66,10 @@ defined('ABSPATH') or die('No script kiddies please!');
     (function($) {
         'use strict';
 
-        $('#blank-area-new-trigger').on('click', () => {
-            VBOCore.emitEvent('vbo-tm-area-create-trigger');
+        $(function() {
+            $('#blank-area-new-trigger').on('click', () => {
+                VBOCore.emitEvent('vbo-tm-area-create-trigger');
+            });
         });
     })(jQuery);
 </script>

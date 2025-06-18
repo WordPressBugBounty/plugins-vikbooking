@@ -7221,13 +7221,13 @@ class VikBooking
 
 				foreach ($arr as $k => $a) {
 					// applied only to some types of price
-					if ($allprices && !empty($allprices[0])) {
+					if ($allprices && !empty($allprices[0]) && !empty($a[0]['idprice'])) {
 						if (!in_array("-" . $a[0]['idprice'] . "-", $allprices)) {
 							continue;
 						}
 					}
 					// applied only to some room types
-					if (!in_array("-" . $a[0]['idroom'] . "-", $allrooms)) {
+					if (!in_array("-" . ($a[0]['idroom'] ?? 0) . "-", $allrooms)) {
 						continue;
 					}
 					
@@ -7573,7 +7573,7 @@ class VikBooking
 					// only rooms with no price modifications from seasons
 					
 					// applied only to some types of price
-					if ($allprices && !empty($allprices[0])) {
+					if ($allprices && !empty($allprices[0]) && !empty($a[0]['idprice'])) {
 						if (!in_array("-" . $a[0]['idprice'] . "-", $allprices)) {
 							continue;
 						}
@@ -7586,7 +7586,7 @@ class VikBooking
 					 * 
 					 * @since 	1.11
 					 */
-					if (!in_array("-" . $a[0]['idroom'] . "-", $allrooms)) {
+					if (!in_array("-" . ($a[0]['idroom'] ?? 0) . "-", $allrooms)) {
 						continue;
 					}
 
@@ -8088,7 +8088,7 @@ class VikBooking
 
 				foreach ($arr as $k => $a) {
 					// applied only to some types of price
-					if ($allprices && !empty($allprices[0])) {
+					if ($allprices && !empty($allprices[0]) && !empty($a['idprice'])) {
 						// VikBooking 1.6: Price Calendar sets the idprice to -1
 						if (!in_array("-" . $a['idprice'] . "-", $allprices) && $a['idprice'] > 0) {
 							continue;
@@ -8474,7 +8474,7 @@ class VikBooking
 					// only rooms with no price modifications from seasons
 					
 					// applied only to some types of price
-					if ($allprices && !empty($allprices[0])) {
+					if ($allprices && !empty($allprices[0]) && !empty($a['idprice'])) {
 						// VikBooking 1.6: Price Calendar sets the idprice to -1
 						if (!in_array("-" . $a['idprice'] . "-", $allprices) && $a['idprice'] > 0) {
 							continue;

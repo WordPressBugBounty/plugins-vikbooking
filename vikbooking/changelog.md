@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.1
+
+*Release date - 18 June 2025*
+
+- Minor fixes.
+- Minor CSS improvements.
+- Improved support for third-party page builder plugins with Operators Login shortcode.
+
 ## 1.8.0
 
 *Release date - 10 June 2025*

@@ -294,7 +294,7 @@ class VikBookingCustomersPin
 			}
 		}
 
-		return $customer;
+		return $customer ?: [];
 	}
 
 	/**

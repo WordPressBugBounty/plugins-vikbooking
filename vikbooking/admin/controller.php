@@ -12592,7 +12592,7 @@ jQuery(".' . $selector . '").hover(function() {
 		header('Content-Disposition: attachment; filename="customers_export_'.(!empty($pcountry) ? strtolower($pcountry).'_' : '').date('Y-m-d').'.csv"');
 		$outstream = fopen("php://output", 'w');
 		foreach ($csvlines as $csvline) {
-			fputcsv($outstream, $csvline);
+			fputcsv($outstream, $csvline, $separator = ',', $enclosure = '"', $escape = '');
 		}
 		fclose($outstream);
 		exit;

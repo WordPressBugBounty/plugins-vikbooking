@@ -685,6 +685,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 					}
 
 					// prepare cell content
+					$day_has_closure = false;
 					if ($totfound === 1 || $closure_on_real_res) {
 						$day_booking_snake = '';
 						$day_booking_data = [];
@@ -708,6 +709,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 								}
 							}
 						}
+						$day_has_closure = !empty($day_booking_data['closure']);
 						if ($room['units'] == 1 && $day_booking_data && !$day_booking_data['closure']) {
 							// build tableaux-style snake container for guest
 							$customer_descr = '';
@@ -823,7 +825,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 						<td align="center" class="<?php echo $dclass; ?>"<?php echo $dstyle; ?> data-day="<?php echo $cur_day_key; ?>" data-units-booked="<?php echo $totfound; ?>" data-units-left="<?php echo ($room['units'] - $totfound); ?>" data-bids="<?php echo strpos($dclass, "subroom-busy") !== false ? "-{$bid}-" : implode(',', $bids_pool); ?>">
 						<?php
 						if (!$day_booking_snake) {
-							if ($is_checkin === true && !$stopdrag) {
+							if ($is_checkin === true && !$stopdrag && !$day_has_closure) {
 								?>
 								<span class="vbo-draggable-sp" draggable="true">
 									<a href="<?php echo $cell_link; ?>" class="<?php echo strpos($dclass, "subroom-busy") === false ? 'vbo-overview-redday' : 'vbo-overview-subredday'; ?>"<?php echo $astyle . (!empty($dalt) ? ' title="' . JHtml::fetch('esc_attr', $dalt) . '"' : ''); ?>><?php echo $write_units; ?></a>
@@ -853,7 +855,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 						<?php
 						if ($cookie_sticky_heads == 'off' && isset($room_bookings_pool[$room['id']]) && isset($room_bookings_pool[$room['id']][$prev_day_key]) && $room_bookings_pool[$room['id']][$prev_day_key]) {
 							if ($is_subunit && isset($room_bookings_pool[$room['id']][$prev_day_key][$room['unit_index']])) {
-								if (date('Y-m-d', $room_bookings_pool[$room['id']][$prev_day_key][$room['unit_index']]['checkout']) == $cur_day_key) {
+								if (date('Y-m-d', $room_bookings_pool[$room['id']][$prev_day_key][$room['unit_index']]['checkout']) == $cur_day_key && !($room_bookings_pool[$room['id']][$prev_day_key][$room['unit_index']]['closure'] ?? 0)) {
 									// prepend checkout snake
 									echo '<div class="vbo-tableaux-booking vbo-tableaux-booking-singleunit vbo-tableaux-booking-checkout"><span>&nbsp;</span></div>';
 								}
@@ -1181,8 +1183,6 @@ function doAlterBooking(bid, roomid, landrid) {
 		},
 		(res) => {
 			if (res.indexOf('e4j.error') >= 0 ) {
-				// console.log('doAlterBooking-- Booking ID: '+bid+' - Old Room ID: '+roomid+' - New Room ID: '+landrid+' - New Date From: '+nowdatefrom+' - New Date To: '+nowdateto);
-				// console.log(res);
 				alert(res.replace("e4j.error.", ""));
 				//restore the old cells
 				jQuery('td.vbo-dragging-cells-tmp').removeClass('vbo-dragging-cells-tmp');
@@ -1704,7 +1704,6 @@ function vboMoveSubunit(bid, rid, old_rindex, new_rindex, dday) {
 		},
 		(res) => {
 			if (res.indexOf('e4j.error') >= 0 ) {
-				// console.log(res);
 				alert(res.replace("e4j.error.", ""));
 
 				// restore loading opacity in container
@@ -1777,7 +1776,7 @@ function vboMoveSubunit(bid, rid, old_rindex, new_rindex, dday) {
 }
 
 /**
- * Swap room sub-unit with another sub-unit on an occupied date. Triggered by DnD.
+ * Swap room sub-unit with another sub-unit on an occupied date. Triggered by DnD or by manual sub-unit switching.
  */
 function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 	if (!confirm(Joomla.JText._('VBO_CONF_SWAP_RNUMB').replace('%s', old_rindex).replace('%s', new_rindex))) {
@@ -1788,42 +1787,58 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 		return false;
 	}
 	// check if movement can be made
-	var cur_tr = jQuery('tr.vboverviewtablerow-subunit[data-subroomid="' + rid + '-' + old_rindex + '"]');
+	let cur_tr = jQuery('tr.vboverviewtablerow-subunit[data-subroomid="' + rid + '-' + old_rindex + '"]');
 	if (!cur_tr || !cur_tr.length) {
 		console.error('could not find the parent row of the subunit cells');
 		return false;
 	}
-	var maincell = cur_tr.find('td.subroom-busy[data-day="' + dday + '"]');
+	let maincell = cur_tr.find('td.subroom-busy[data-day="' + dday + '"]');
 	if (!maincell || !maincell.length) {
 		console.error('could not find the main cell of the subunit to move');
 		return false;
 	}
-	var dest_tr = jQuery('tr.vboverviewtablerow-subunit[data-subroomid="' + rid + '-' + new_rindex + '"]');
+	let dest_tr = jQuery('tr.vboverviewtablerow-subunit[data-subroomid="' + rid + '-' + new_rindex + '"]');
 	if (!dest_tr || !dest_tr.length) {
 		console.error('could not find the destination row for the subunit cells');
 		return false;
 	}
-	var destcell = dest_tr.find('td.subroom-busy[data-day="' + dday + '"]');
+	let destcell = dest_tr.find('td.subroom-busy[data-day="' + dday + '"]');
 	if (!destcell || !destcell.length) {
 		console.error('could not find the destination cell of the subunit to move');
 		return false;
 	}
 
 	// gather the cells for the swop
-	var swap_cells_one = [];
-	var swap_cells_two = [];
-	var swap_dates_one = [];
-	var swap_dates_two = [];
-	var swap_cell_from = maincell;
-	var swap_cell_to   = destcell;
+	let swap_cells_one  = [];
+	let swap_cells_two  = [];
+	let swap_dates_one  = [];
+	let swap_dates_two  = [];
+	let swap_styles_one = [];
+	let swap_styles_two = [];
+	let swap_cell_from  = maincell;
+	let swap_cell_to    = destcell;
 
 	// register the elements to swap of the first sub-unit
+	if (!swap_cell_from.hasClass('vbo-checkinday')) {
+		// attempt to select the first cell of this booking in the current month
+		while (true) {
+			let prev_cell_from = swap_cell_from.prev();
+			if (!prev_cell_from || !prev_cell_from.length) {
+				break;
+			}
+			let prev_bids = prev_cell_from.attr('data-bids');
+			if (!prev_bids || prev_bids.indexOf('-' + bid + '-') < 0) {
+				break;
+			}
+			swap_cell_from = prev_cell_from;
+		}
+	}
 	while (true) {
 		if (!swap_cell_from || !swap_cell_from.length) {
 			// next cell not found
 			break;
 		}
-		var swap_bids = swap_cell_from.attr('data-bids');
+		let swap_bids = swap_cell_from.attr('data-bids');
 		if (!swap_bids || swap_bids.indexOf('-' + bid + '-') < 0) {
 			// last occupied cell reached
 			break;
@@ -1831,6 +1846,7 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 		// push cloned cell data to move
 		swap_cells_one.push(swap_cell_from.children().not('.vbo-tableaux-booking-checkout').not('.vbo-roomdaynote-trigger').clone(true));
 		swap_dates_one.push(swap_cell_from.attr('data-day'));
+		swap_styles_one.push(swap_cell_from.attr('style'));
 		// set next iteration cell
 		swap_cell_from = swap_cell_from.next();
 	}
@@ -1841,7 +1857,7 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 			// next cell not found
 			break;
 		}
-		var swap_bids = swap_cell_to.attr('data-bids');
+		let swap_bids = swap_cell_to.attr('data-bids');
 		if (!swap_bids || swap_bids.indexOf('-' + bidtwo + '-') < 0) {
 			// last occupied cell reached
 			break;
@@ -1849,19 +1865,23 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 		// make sure we are swapping with the check-in day, or if it's a stay-date we need to unshift until the check-in
 		if (!swap_cells_two.length && !swap_cell_to.hasClass('vbo-checkinday')) {
 			// prepend first the cells until the check-in or until not found
-			var prev_cell = swap_cell_to;
+			let prev_cell = swap_cell_to;
 			while (true) {
 				prev_cell = prev_cell.prev();
 				if (!prev_cell || !prev_cell.length) {
 					break;
 				}
-				var prev_cell_snake = prev_cell.find('.vbo-tableaux-booking').not('.vbo-tableaux-booking-checkout');
+				let prev_cell_snake = prev_cell.find('.vbo-tableaux-booking').not('.vbo-tableaux-booking-checkout');
 				if (prev_cell_snake && prev_cell_snake.length && (prev_cell_snake.hasClass('vbo-tableaux-booking-checkin') || prev_cell_snake.hasClass('vbo-tableaux-booking-stay'))) {
 					// prepend cloned cell data to move
 					swap_cells_two.unshift(prev_cell.children().not('.vbo-tableaux-booking-checkout').not('.vbo-roomdaynote-trigger').clone(true));
 					swap_dates_two.unshift(prev_cell.attr('data-day'));
+					swap_styles_two.unshift(prev_cell.attr('style'));
 				} else {
 					// no more previous cells
+					break;
+				}
+				if (prev_cell.hasClass('vbo-checkinday')) {
 					break;
 				}
 			}
@@ -1869,6 +1889,7 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 		// push cloned cell data to move
 		swap_cells_two.push(swap_cell_to.children().not('.vbo-tableaux-booking-checkout').not('.vbo-roomdaynote-trigger').clone(true));
 		swap_dates_two.push(swap_cell_to.attr('data-day'));
+		swap_styles_two.push(swap_cell_to.attr('style'));
 		// set next iteration cell
 		swap_cell_to = swap_cell_to.next();
 	}
@@ -1879,14 +1900,14 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 	}
 
 	// walk over the cells of the first room to swap and check the corresponding destination
-	var check_destcell = destcell;
+	let check_destcell = destcell;
 	for (let i = 0; i < swap_cells_one.length; i++) {
 		if (!check_destcell || !check_destcell.length) {
 			// this cell does not exist, abort
 			console.error('destination cell to #' + (i + 1) + ' was not found');
 			return false;
 		}
-		var dest_bids = check_destcell.attr('data-bids');
+		let dest_bids = check_destcell.attr('data-bids');
 		if (dest_bids && dest_bids.length && dest_bids.indexOf('-' + bidtwo + '-') < 0) {
 			// this cell is already occupied, abort
 			console.error('destination cell to #' + (i + 1) + ' is occupied by another reservation');
@@ -1904,7 +1925,7 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 			console.error('destination cell from #' + (i + 1) + ' was not found');
 			return false;
 		}
-		var dest_bids = check_destcell.attr('data-bids');
+		let dest_bids = check_destcell.attr('data-bids');
 		if (dest_bids && dest_bids.length && dest_bids.indexOf('-' + bid + '-') < 0) {
 			// this cell is already occupied, abort
 			console.error('destination cell from #' + (i + 1) + ' is occupied by another reservation');
@@ -1927,10 +1948,13 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 			tmpl: 'component'
 		},
 		(res) => {
+			// init values from selection
+			let target_cell  = destcell;
+			let current_cell = maincell;
+			let different_lengths = swap_dates_one.length != swap_dates_two.length;
+			let swap_diff_dates = false;
+
 			// move the cells of the first sub-unit onto the cells of the second sub-unit
-			var target_cell  = destcell;
-			var current_cell = maincell;
-			var swap_diff_dates = false;
 			for (let counter = 0; counter < swap_cells_one.length; counter++) {
 				// remove elements from target
 				target_cell.children().not('.vbo-tableaux-booking-checkout').not('.vbo-roomdaynote-trigger').remove();
@@ -1938,6 +1962,13 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 				swap_cells_one[counter].appendTo(target_cell);
 				// set proper bids attribute
 				target_cell.attr('data-bids', '-' + bid + '-');
+				// restore initial cell styling
+				if ((swap_styles_one[counter] || 0)) {
+					target_cell.attr('style', swap_styles_one[counter]);
+				}
+				if (!(swap_dates_two[counter] || 0) && swap_dates_one.length > swap_dates_two.length) {
+					current_cell.attr('style', '');
+				}
 				// check if we are swapping with a non check-in day sub-unit occupied cell
 				if (counter === 0 && !target_cell.hasClass('vbo-checkinday')) {
 					target_cell.addClass('vbo-checkinday');
@@ -1946,7 +1977,7 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 					target_cell.removeClass('subnotbusy').addClass('subroom-busy');
 				}
 				// check if the reservations have different nights of stay
-				var cell_will_occupy = true;
+				let cell_will_occupy = true;
 				if (counter > 0 && swap_diff_dates && !swap_dates_two.includes(swap_dates_one[counter])) {
 					// the swapped unit will not occupy this cell, so clean it
 					cell_will_occupy = false;
@@ -1974,9 +2005,10 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 			// move the cells of the second sub-unit onto the cells of the first sub-unit
 			target_cell  = maincell;
 			current_cell = destcell;
+
 			// check if we are swapping with a non check-in day sub-unit occupied cell
 			if (swap_diff_dates) {
-				var prev_land_cell = current_cell;
+				let prev_land_cell = current_cell;
 				while (true) {
 					prev_land_cell = prev_land_cell.prev();
 					if (!prev_land_cell || !prev_land_cell.length) {
@@ -1997,6 +2029,7 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 					}
 				}
 			}
+
 			for (let counter = 0; counter < swap_cells_two.length; counter++) {
 				// remove elements from target
 				target_cell.children().not('.vbo-tableaux-booking-checkout').not('.vbo-roomdaynote-trigger').remove();
@@ -2004,6 +2037,13 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 				swap_cells_two[counter].appendTo(target_cell);
 				// set proper bids attribute
 				target_cell.attr('data-bids', '-' + bidtwo + '-');
+				// restore initial cell styling
+				if ((swap_styles_two[counter] || 0)) {
+					target_cell.attr('style', swap_styles_two[counter]);
+				}
+				if (!(swap_dates_one[counter] || 0) && swap_dates_one.length > swap_dates_two.length) {
+					current_cell.attr('style', '');
+				}
 				// check if we are swapping with a non check-in day sub-unit occupied cell
 				if (counter === 0 && !target_cell.hasClass('vbo-checkinday')) {
 					target_cell.addClass('vbo-checkinday');
@@ -2017,13 +2057,20 @@ function vboSwapRoomSubunits(bid, bidtwo, rid, old_rindex, new_rindex, dday) {
 					target_cell.removeClass('subnotbusy').addClass('subroom-busy');
 				}
 				// check if the reservations have different nights of stay
-				if ((counter + 1) > swap_cells_one.length) {
+				if (different_lengths && (swap_dates_two[counter] || 0) && !swap_dates_one.includes(swap_dates_two[counter])) {
+					// moving a shorter reservation onto a longer reservation
 					// remove the children elements from this longer reservation
 					current_cell.children().not('.vbo-tableaux-booking-checkout').not('.vbo-roomdaynote-trigger').remove();
 					// remove the occupied class as well
 					current_cell.removeClass('subroom-busy').addClass('subnotbusy').attr('data-bids', '');
 					// set the occupied class onto the target
 					target_cell.removeClass('subnotbusy').addClass('subroom-busy');
+					// check booking color tags
+					let current_cell_styling = current_cell.attr('style');
+					// remove custom background color with an inline styling
+					current_cell.attr('style', '');
+					// restore the original styling on target
+					target_cell.attr('style', current_cell_styling);
 				}
 				// set next target cell
 				target_cell = target_cell.next();
@@ -2653,7 +2700,6 @@ jQuery(function() {
 			(res) => {
 				applying_tag = false;
 				if (res.indexOf('e4j.error') >= 0 ) {
-					// console.log(res);
 					alert(res.replace("e4j.error.", ""));
 					//restore loading opacity in circles
 					jQuery('.vbo-overview-tip-bctag-subtip-circle').css('opacity', '1');
@@ -2819,7 +2865,7 @@ jQuery(function() {
 				}
 			},
 			(err) => {
-				console.log("orphanscount Request Failed");
+				console.error("orphanscount Request Failed");
 			}
 		);
 	}
@@ -3253,7 +3299,6 @@ function vboRemoveFest(day, index, fest_type, that) {
 				}
 				elem.closest('.vbo-overlay-fest-details').remove();
 			} else {
-				// console.log(res);
 				alert('Invalid response');
 			}
 		},
@@ -3299,7 +3344,6 @@ function vboAddFest() {
 				jQuery('#vbo-newfest-name').val('');
 				jQuery('#vbo-newfest-descr').val('');
 			} catch (e) {
-				// console.log(res);
 				alert('Invalid response');
 				return false;
 			}
@@ -3390,7 +3434,6 @@ function vboAddRoomDayNote(that) {
 				jQuery('#vbo-newrdnote-descr').val('');
 				jQuery('#vbo-newrdnote-cdays').val('0').trigger('change');
 			} catch (e) {
-				// console.log(res);
 				alert('Invalid response');
 				return false;
 			}
@@ -3437,7 +3480,6 @@ function vboRemoveRdayNote(index, day, idroom, subunit, note_type, that) {
 				}
 				elem.closest('.vbo-modal-roomdaynotes-note-details').remove();
 			} else {
-				// console.log(res);
 				alert('Invalid response');
 			}
 		},

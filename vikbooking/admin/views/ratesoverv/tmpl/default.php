@@ -100,7 +100,7 @@ VBOFactory::getConfig()->set('pre_cache_seasons', 1);
 $main_room_rates = array_map(function($rrate) {
 	// convert a possible multi-rate-plan listing into a single-rate-plan listing
 	return [$rrate[0]];
-}, $this->roomrates);
+}, array_filter($this->roomrates));
 $current_rates_pool = [];
 $iter_date = $from_info;
 $cell_count = 0;

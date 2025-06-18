@@ -463,7 +463,7 @@ abstract class VikBookingReport
 
 		// default CSV delimiter and enclosure
 		$separator = ',';
-		$enclosure = "\"";
+		$enclosure = '"';
 		if (!strcasecmp($this->csv_export_format, 'excel')) {
 			// for Excel we use the semicolon as separator and double quotes as enclosure
 			$separator = ';';
@@ -480,7 +480,7 @@ abstract class VikBookingReport
 			}
 
 			// put the array of values as a new CSV line
-			fputcsv($fp, $csvline, $separator, $enclosure);
+			fputcsv($fp, $csvline, $separator, $enclosure, $escape = '');
 		}
 
 		// close the file pointer

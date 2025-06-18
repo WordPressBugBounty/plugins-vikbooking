@@ -325,6 +325,8 @@ echo JLayoutHelper::render('taskmanager.calendar.' . $allowedTypes[0], $layout_d
                         action: (root, event) => {
                             // replace HTTP(S) with WEBCAL protocol
                             let url = $(root).data('url').replace(/^https?:\/\//, 'webcal://');
+                            // add subscriber software name
+                            url += '&sub=apple';
 
                             setTimeout(function() {
                                 // open subscription URL in a new browser page
@@ -339,6 +341,8 @@ echo JLayoutHelper::render('taskmanager.calendar.' . $allowedTypes[0], $layout_d
                         action: (root, event) => {
                             // replace HTTP(S) with WEBCAL protocol
                             let url = $(root).data('url').replace(/^https?:\/\//, 'webcal://');
+                            // add subscriber software name
+                            url += '&sub=google';
                             // encode URL and prepend Google Calendar renderer
                             url = 'https://www.google.com/calendar/render?cid=' + encodeURIComponent(url);
 

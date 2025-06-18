@@ -12,7 +12,7 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 // Software version
-define('VIKBOOKING_SOFTWARE_VERSION', '1.8.0');
+define('VIKBOOKING_SOFTWARE_VERSION', '1.8.1');
 
 // Base path
 define('VIKBOOKING_BASE', dirname(__FILE__));

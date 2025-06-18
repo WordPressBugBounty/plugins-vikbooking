@@ -6270,6 +6270,10 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 .vbo-modal-wguestmessages-chat-wrap .chat-border-layout {
 	height: calc(100% - 70px);
 }
+/* We modified the height just for the Guest Messages modal because the textarea will increase based on the number of the row the customer is writing. */
+.vbo-modal-overlay-wguestmessages-chat .vbo-modal-nofooter .vbo-modal-overlay-content-body-scroll {
+	height: calc(100% - 124px);
+}
 .vbo-modal-wguestmessages-chat-wrap .chat-border-layout .chat-messages-panel {
 	height: 100%;
 }
