@@ -180,9 +180,23 @@ class VikBooking
 		return count($feature) ? $feature : false;
 	}
 
-	public static function getRoomUnitNumsUnavailable($order, $idroom) {
+	/**
+	 * Returns an associative list of booking room records and occupied sub-unit indexes.
+	 * 
+	 * @param 	array 	$order 		The current booking record for which the list is needed.
+	 * @param 	int 	$idroom 	The booked room ID involved for the associative list.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.18.2 (J) - 1.8.2 (WP) refactoring to improve speed and efficiency for large datasets.
+	 */
+	public static function getRoomUnitNumsUnavailable(array $order, $idroom)
+	{
 		$dbo = JFactory::getDbo();
-		$unavailable_indexes = array();
+
+		// list of data to build
+		$unavailable_indexes = [];
+
 		$first = $order['checkin'];
 		$second = $order['checkout'];
 		$secdiff = $second - $first;
@@ -205,27 +219,106 @@ class VikBooking
 				}
 			}
 		}
+
+		// the busy records information pool
+		$busyMap = [];
+
+		// query just the busy records
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select($dbo->qn([
+					'b.idroom',
+					'b.checkin',
+					'b.checkout',
+					'b.realback',
+					'ob.idorder',
+				]))
+				->from($dbo->qn('#__vikbooking_busy', 'b'))
+				->innerJoin($dbo->qn('#__vikbooking_ordersbusy', 'ob') . ' ON ' . $dbo->qn('ob.idbusy') . ' = ' . $dbo->qn('b.id'))
+				->where($dbo->qn('b.idroom') . ' = ' . (int) $idroom)
+				->where($dbo->qn('b.checkin') . ' < ' . $second)
+				->where($dbo->qn('b.checkout') . ' > ' . $first)
+				->where($dbo->qn('ob.idorder') . ' != ' . (int) $order['id'])
+				->order($dbo->qn('b.id') . ' ASC')
+		);
+		$busyRecords = $dbo->loadAssocList();
+
+		if (!$busyRecords) {
+			// useless to proceed
+			return [];
+		}
+
+		// query bookings and rooms based on the busy records obtained
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select([
+					$dbo->qn('or.id', 'or_id'),
+					$dbo->qn('or.idorder'),
+					$dbo->qn('or.idroom'),
+					$dbo->qn('or.roomindex'),
+				])
+				->from($dbo->qn('#__vikbooking_ordersrooms', 'or'))
+				->where($dbo->qn('or.idroom') . ' = ' . (int) $idroom)
+				->where($dbo->qn('or.idorder') . ' IN (' . implode(', ', array_map('intval', array_column($busyRecords, 'idorder'))) . ')')
+				->order($dbo->qn('or.id') . ' ASC')
+		);
+		$busyRooms = $dbo->loadAssocList();
+
+		// build the final map by merging values
+		foreach ($busyRecords as $busyRecord) {
+			// busy signature
+			$signature = sprintf('%d-%d', $busyRecord['idorder'], $busyRecord['idroom']);
+			// push initial record values
+			$busyMap[$signature][] = $busyRecord;
+		}
+
+		// list of booking-id/booking-room-id signatures
+		$roomSignaturesCounter = [];
+
+		foreach ($busyRooms as $busyRoom) {
+			// busy signature
+			$signature = sprintf('%d-%d', $busyRoom['idorder'], $busyRoom['idroom']);
+
+			// determine booking room signature index
+			$roomSignaturesCounter[$signature] = ($roomSignaturesCounter[$signature] ?? -1) + 1;
+
+			if (!isset($busyMap[$signature][$roomSignaturesCounter[$signature]])) {
+				// unmatched signature
+				continue;
+			}
+
+			// merge booking room values with existing busy record values
+			$busyMap[$signature][$roomSignaturesCounter[$signature]] = array_merge($busyMap[$signature][$roomSignaturesCounter[$signature]], $busyRoom);
+		}
+
+		// simulate a list of associative busy and booking room records
+		$busy = [];
+		foreach ($busyMap as $mapList) {
+			foreach ($mapList as $record) {
+				// push record
+				$busy[] = $record;
+			}
+		}
+
+		if (!$busy) {
+			// useless to proceed
+			return [];
+		}
+
+		// get a list of affected timestamps
 		$groupdays = self::getGroupDays($first, $second, $daysdiff);
-		$q = "SELECT `b`.`id`,`b`.`checkin`,`b`.`checkout`,`b`.`realback`,`ob`.`idorder`,`ob`.`idbusy`,`or`.`id` AS `or_id`,`or`.`idroom`,`or`.`roomindex`,`o`.`status` ".
-			"FROM `#__vikbooking_busy` AS `b` ".
-			"LEFT JOIN `#__vikbooking_ordersbusy` `ob` ON `ob`.`idbusy`=`b`.`id` ".
-			"LEFT JOIN `#__vikbooking_ordersrooms` `or` ON `or`.`idorder`=`ob`.`idorder` AND `or`.`idorder`!=".(int)$order['id']." ".
-			"LEFT JOIN `#__vikbooking_orders` `o` ON `o`.`id`=`or`.`idorder` AND `o`.`id`=`ob`.`idorder` AND `o`.`id`!=".(int)$order['id']." ".
-			"WHERE `or`.`idroom`=".(int)$idroom." AND `b`.`checkout` > ".time()." AND `o`.`status`='confirmed' AND `ob`.`idorder`!=".(int)$order['id']." AND `ob`.`idorder` > 0;";
-		$dbo->setQuery($q);
-		$busy = $dbo->loadAssocList();
-		if ($busy) {
-			foreach ($groupdays as $gday) {
-				foreach ($busy as $bu) {
-					if (empty($bu['roomindex']) || empty($bu['idorder'])) {
-						continue;
-					}
-					if ($gday >= $bu['checkin'] && $gday <= $bu['realback']) {
+
+		// scan the affected stay timestamps to build the sub-unit matches
+		foreach ($groupdays as $gday) {
+			foreach ($busy as $bu) {
+				if (empty($bu['roomindex']) || empty($bu['idorder'])) {
+					continue;
+				}
+				if ($gday >= $bu['checkin'] && $gday <= $bu['realback']) {
+					$unavailable_indexes[$bu['or_id']] = $bu['roomindex'];
+				} elseif (count($groupdays) == 2 && $gday == $groupdays[0]) {
+					if ($groupdays[0] < $bu['checkin'] && $groupdays[0] < $bu['realback'] && $groupdays[1] > $bu['checkin'] && $groupdays[1] > $bu['realback']) {
 						$unavailable_indexes[$bu['or_id']] = $bu['roomindex'];
-					} elseif (count($groupdays) == 2 && $gday == $groupdays[0]) {
-						if ($groupdays[0] < $bu['checkin'] && $groupdays[0] < $bu['realback'] && $groupdays[1] > $bu['checkin'] && $groupdays[1] > $bu['realback']) {
-							$unavailable_indexes[$bu['or_id']] = $bu['roomindex'];
-						}
 					}
 				}
 			}
@@ -234,72 +327,39 @@ class VikBooking
 		return $unavailable_indexes;
 	}
 
-	public static function getRoomUnitNumsAvailable($order, $idroom) {
-		$dbo = JFactory::getDbo();
-		$unavailable_indexes = array();
-		$available_indexes = array();
-		$first = $order['checkin'];
-		$second = $order['checkout'];
-		$secdiff = $second - $first;
-		$daysdiff = $secdiff / 86400;
-		if (is_int($daysdiff)) {
-			if ($daysdiff < 1) {
-				$daysdiff = 1;
-			}
-		} else {
-			if ($daysdiff < 1) {
-				$daysdiff = 1;
-			} else {
-				$sum = floor($daysdiff) * 86400;
-				$newdiff = $secdiff - $sum;
-				$maxhmore = self::getHoursMoreRb() * 3600;
-				if ($maxhmore >= $newdiff) {
-					$daysdiff = floor($daysdiff);
-				} else {
-					$daysdiff = ceil($daysdiff);
+	/**
+	 * Returns an associative list of booking room records and available sub-unit indexes.
+	 * 
+	 * @param 	array 	$order 		The current booking record for which the list is needed.
+	 * @param 	int 	$idroom 	The booked room ID involved for the associative list.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.18.2 (J) - 1.8.2 (WP) refactoring to improve speed and efficiency for large datasets.
+	 */
+	public static function getRoomUnitNumsAvailable(array $order, $idroom)
+	{
+		// build available indexes
+		$available_indexes = [];
+
+		// get the unavailable room indexes
+		$unavailable_indexes = self::getRoomUnitNumsUnavailable($order, $idroom);
+
+		// load room params
+		$room_data = self::getRoomInfo($idroom, ['params'], $no_cache = false);
+		$room_params_arr = (array) json_decode($room_data['params'] ?? '[]', true);
+
+		if (is_array($room_params_arr['features'] ?? null) && $room_params_arr['features']) {
+			foreach ($room_params_arr['features'] as $rind => $rfeatures) {
+				if (in_array($rind, $unavailable_indexes)) {
+					continue;
 				}
-			}
-		}
-		$groupdays = self::getGroupDays($first, $second, $daysdiff);
-		$q = "SELECT `b`.`id`,`b`.`checkin`,`b`.`checkout`,`b`.`realback`,`ob`.`idorder`,`ob`.`idbusy`,`or`.`id` AS `or_id`,`or`.`idroom`,`or`.`roomindex`,`o`.`status` ".
-			"FROM `#__vikbooking_busy` AS `b` ".
-			"LEFT JOIN `#__vikbooking_ordersbusy` `ob` ON `ob`.`idbusy`=`b`.`id` ".
-			"LEFT JOIN `#__vikbooking_ordersrooms` `or` ON `or`.`idorder`=`ob`.`idorder` AND `or`.`idorder`!=".(int)$order['id']." ".
-			"LEFT JOIN `#__vikbooking_orders` `o` ON `o`.`id`=`or`.`idorder` AND `o`.`id`=`ob`.`idorder` AND `o`.`id`!=".(int)$order['id']." ".
-			"WHERE `or`.`idroom`=".(int)$idroom." AND `b`.`checkout` > ".time()." AND `o`.`status`='confirmed' AND `ob`.`idorder`!=".(int)$order['id']." AND `ob`.`idorder` > 0;";
-		$dbo->setQuery($q);
-		$busy = $dbo->loadAssocList();
-		if ($busy) {
-			foreach ($groupdays as $gday) {
-				foreach ($busy as $bu) {
-					if (empty($bu['roomindex']) || empty($bu['idorder'])) {
-						continue;
-					}
-					if ($gday >= $bu['checkin'] && $gday <= $bu['realback']) {
-						$unavailable_indexes[$bu['or_id']] = $bu['roomindex'];
-					} elseif (count($groupdays) == 2 && $gday == $groupdays[0]) {
-						if ($groupdays[0] < $bu['checkin'] && $groupdays[0] < $bu['realback'] && $groupdays[1] > $bu['checkin'] && $groupdays[1] > $bu['realback']) {
-							$unavailable_indexes[$bu['or_id']] = $bu['roomindex'];
-						}
-					}
-				}
-			}
-		}
-		$q = "SELECT `params` FROM `#__vikbooking_rooms` WHERE `id`=".(int)$idroom.";";
-		$dbo->setQuery($q);
-		$room_params = $dbo->loadResult();
-		if ($room_params) {
-			$room_params_arr = json_decode($room_params, true);
-			if (array_key_exists('features', $room_params_arr) && is_array($room_params_arr['features']) && count($room_params_arr['features'])) {
-				foreach ($room_params_arr['features'] as $rind => $rfeatures) {
-					if (in_array($rind, $unavailable_indexes)) {
-						continue;
-					}
-					$available_indexes[] = $rind;
-				}
+				// push available room index
+				$available_indexes[] = $rind;
 			}
 		}
 
+		// return the available indexes
 		return $available_indexes;
 	}
 	
@@ -359,23 +419,95 @@ class VikBooking
 		return $restrictions;
 	}
 
-	public static function globalRestrictions($restrictions = [])
+	/**
+	 * Given a list of restriction records split into range or months, filters
+	 * the list by including the "global" restrictions applied to all rooms.
+	 * 
+	 * @param 	array 	$restrictions 	List of restriction records loaded.
+	 * 
+	 * @return 	array 	Associative list of filtered restriction records.
+	 */
+	public static function globalRestrictions(array $restrictions)
 	{
-		$ret = [];
+		$list = [];
+
+		// iterate all records
 		foreach ($restrictions as $kr => $rr) {
 			if ($kr == 'range') {
+				// scan all date-range restriction records
 				foreach ($rr as $kd => $dr) {
 					if ($dr['allrooms'] == 1) {
-						$ret['range'][$kd] = $restrictions[$kr][$kd];
+						$list['range'][$kd] = $restrictions[$kr][$kd];
 					}
 				}
+				// go next
 				continue;
 			}
+
+			// month restriction record
 			if ($rr['allrooms'] == 1) {
-				$ret[$kr] = $restrictions[$kr];
+				$list[$kr] = $restrictions[$kr];
 			}
 		}
-		return $ret;
+
+		return $list;
+	}
+
+	/**
+	 * Given a list of restriction records split into range or months, filters the list
+	 * by including the "listing-level" or "global" restrictions affecting to given rooms.
+	 * 
+	 * @param 	array 	$restrictions 	List of restriction records loaded.
+	 * @param 	array 	$room_ids 		List of involved and eligible room IDs.
+	 * 
+	 * @return 	array 	Associative list of filtered restriction records.
+	 * 
+	 * @since 	1.18.2 (J) - 1.8.2 (WP)
+	 */
+	public static function listingRestrictions(array $restrictions, array $room_ids)
+	{
+		$list = [];
+
+		// iterate all records
+		foreach ($restrictions as $kr => $rr) {
+			if ($kr == 'range') {
+				// scan all date-range restriction records
+				foreach ($rr as $kd => $dr) {
+					if ($dr['allrooms'] == 1) {
+						// push global restriction
+						$list['range'][$kd] = $restrictions[$kr][$kd];
+					} elseif (!empty($dr['idrooms'])) {
+						// scan the list of room IDs to match against
+						foreach ($room_ids as $room_id) {
+							if (strpos($dr['idrooms'], '-' . $room_id . '-') !== false) {
+								// push listing-level restriction
+								$list['range'][$kd] = $restrictions[$kr][$kd];
+								break;
+							}
+						}
+					}
+				}
+				// go next
+				continue;
+			}
+
+			// month restriction record
+			if ($rr['allrooms'] == 1) {
+				// push global restriction
+				$list[$kr] = $restrictions[$kr];
+			} elseif (!empty($rr['idrooms'])) {
+				// scan the list of room IDs to match against
+				foreach ($room_ids as $room_id) {
+					if (strpos($rr['idrooms'], '-' . $room_id . '-') !== false) {
+						// push listing-level restriction
+						$list[$kr] = $restrictions[$kr];
+						break;
+					}
+				}
+			}
+		}
+
+		return $list;
 	}
 
 	/**
@@ -3594,21 +3726,29 @@ class VikBooking
 		return self::loadBusyRecords($roomids, $from_ts, $max_ts, false);
 	}
 
-	public static function loadBookingBusyIds($idorder) {
-		$busy = array();
+	/**
+	 * Loads the occupied record IDs for a given booking ID.
+	 * 
+	 * @param 	int 	$idorder 	The booking record ID.
+	 * 
+	 * @return 	array 				List of busy IDs, if any.
+	 */
+	public static function loadBookingBusyIds($idorder)
+	{
 		if (empty($idorder)) {
-			return $busy;
+			return [];
 		}
+
 		$dbo = JFactory::getDbo();
-		$q = "SELECT * FROM `#__vikbooking_ordersbusy` WHERE `idorder`=".(int)$idorder.";";
-		$dbo->setQuery($q);
-		$allbusy = $dbo->loadAssocList();
-		if ($allbusy) {
-			foreach ($allbusy as $b) {
-				array_push($busy, $b['idbusy']);
-			}
-		}
-		return $busy;
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select($dbo->qn('idbusy'))
+				->from($dbo->qn('#__vikbooking_ordersbusy'))
+				->where($dbo->qn('idorder') . ' = ' . (int) $idorder)
+		);
+
+		return array_map('intval', array_column($dbo->loadAssocList(), 'idbusy'));
 	}
 
 	public static function loadLockedRecords($roomids, $ts = 0) {
@@ -8924,16 +9064,17 @@ class VikBooking
 	public static function loadColorTagsRules()
 	{
 		$color_tag_rules = [
-			0 		=> 'VBOCOLORTAGRULECUSTOMCOLOR',
-			'pend1' => 'VBWAITINGFORPAYMENT',
-			'conf1' => 'VBDBTEXTROOMCLOSED',
-			'conf2' => 'VBOCOLORTAGRULECONFTWO',
-			'conf3' => 'VBOCOLORTAGRULECONFTHREE',
-			'inv1' 	=> 'VBOCOLORTAGRULEINVONE',
-			'rcp1' 	=> 'VBOCOLORTAGRULERCPONE',
-			'conf4' => 'VBOCOLORTAGRULECONFFOUR',
-			'conf5' => 'VBOCOLORTAGRULECONFFIVE',
-			'inv2' 	=> 'VBOCOLORTAGRULEINVTWO',
+			0 		 => 'VBOCOLORTAGRULECUSTOMCOLOR',
+			'pend1'  => 'VBWAITINGFORPAYMENT',
+			'conf1'  => 'VBDBTEXTROOMCLOSED',
+			'ovbook' => 'VBO_BTYPE_OVERBOOKING',
+			'conf2'  => 'VBOCOLORTAGRULECONFTWO',
+			'conf3'  => 'VBOCOLORTAGRULECONFTHREE',
+			'inv1' 	 => 'VBOCOLORTAGRULEINVONE',
+			'rcp1' 	 => 'VBOCOLORTAGRULERCPONE',
+			'conf4'  => 'VBOCOLORTAGRULECONFFOUR',
+			'conf5'  => 'VBOCOLORTAGRULECONFFIVE',
+			'inv2' 	 => 'VBOCOLORTAGRULEINVTWO',
 		];
 
 		/**
@@ -8952,47 +9093,52 @@ class VikBooking
 			[
 				'color' => '#9b9b9b',
 				'name' => 'VBWAITINGFORPAYMENT',
-				'rule' => 'pend1'
+				'rule' => 'pend1',
 			],
 			[
 				'color' => '#333333',
 				'name' => 'VBDBTEXTROOMCLOSED',
-				'rule' => 'conf1'
+				'rule' => 'conf1',
+			],
+			[
+				'color' => '#f04848',
+				'name' => 'VBO_BTYPE_OVERBOOKING',
+				'rule' => 'ovbook',
 			],
 			[
 				'color' => '#ff8606',
 				'name' => 'VBOCOLORTAGRULECONFTWO',
-				'rule' => 'conf2'
+				'rule' => 'conf2',
 			],
 			[
 				'color' => '#0418c9',
 				'name' => 'VBOCOLORTAGRULECONFTHREE',
-				'rule' => 'conf3'
+				'rule' => 'conf3',
 			],
 			[
 				'color' => '#bed953',
 				'name' => 'VBOCOLORTAGRULEINVONE',
-				'rule' => 'inv1'
+				'rule' => 'inv1',
 			],
 			[
 				'color' => '#67f5b5',
 				'name' => 'VBOCOLORTAGRULERCPONE',
-				'rule' => 'rcp1'
+				'rule' => 'rcp1',
 			],
 			[
 				'color' => '#04d2c2',
 				'name' => 'VBOCOLORTAGRULECONFFOUR',
-				'rule' => 'conf4'
+				'rule' => 'conf4',
 			],
 			[
 				'color' => '#00b316',
 				'name' => 'VBOCOLORTAGRULECONFFIVE',
-				'rule' => 'conf5'
+				'rule' => 'conf5',
 			],
 			[
 				'color' => '#00f323',
 				'name' => 'VBOCOLORTAGRULEINVTWO',
-				'rule' => 'inv2'
+				'rule' => 'inv2',
 			],
 		];
 
@@ -9053,7 +9199,7 @@ class VikBooking
 		$invoice_numb = false;
 		$receipt_numb = false;
 
-		if ($booking['status'] == 'confirmed') {
+		if ($booking['status'] == 'confirmed' && ($booking['checkin'] ?? 0) > time()) {
 			$q = "SELECT `b`.`id` AS `o_id`, `i`.`id` AS `inv_id`, `i`.`number` AS `inv_number`, `i`.`file_name` AS `inv_file_name`, `r`.`id` AS `rcp_id`, `r`.`number` AS `rcp_number`
 				FROM `#__vikbooking_orders` AS `b`
 				LEFT JOIN `#__vikbooking_invoices` AS `i` ON `b`.`id`=`i`.`idorder`
@@ -9148,7 +9294,14 @@ class VikBooking
 					break;
 				case 'conf1':
 					// Confirmed (Room Closed)
-					if ($booking['status'] == 'confirmed' && $booking['custdata'] == JText::translate('VBDBTEXTROOMCLOSED')) {
+					if ($booking['status'] == 'confirmed' && (!empty($booking['closure']) || $booking['custdata'] == JText::translate('VBDBTEXTROOMCLOSED'))) {
+						$tval['fontcolor'] = self::getBestColorContrast($tval['color']);
+						return $tval;
+					}
+					break;
+				case 'ovbook':
+					// Confirmed (Overbooking)
+					if ($booking['status'] == 'confirmed' && !empty($booking['type']) && $booking['type'] == 'overbooking') {
 						$tval['fontcolor'] = self::getBestColorContrast($tval['color']);
 						return $tval;
 					}
@@ -9228,21 +9381,33 @@ class VikBooking
 	/**
 	 * Load booking details for a given list of IDs.
 	 * 
-	 * @param 	int 	$roomid 			the room integer number.
-	 * @param 	array 	$room_bids_pool 	list of booking IDs involved.
+	 * @param 	int 	$roomid 			The room integer number.
+	 * @param 	array 	$room_bids_pool 	List of booking IDs involved.
+	 * @param 	bool 	$unassigned 		Whether to return also the unassigned bookings.
 	 * 
-	 * @return 	array
+	 * @return 	array 	Associative list of sub-unit bookings, or list containing also the unassigned bookings.
+	 * 
+	 * @since 	1.18.2 (J) - 1.8.2 (WP) added argument $unassigned.
 	 */
-	public static function loadRoomIndexesBookings($roomid, array $room_bids_pool)
+	public static function loadRoomIndexesBookings(int $roomid, array $room_bids_pool, $unassigned = false)
 	{
 		$dbo = JFactory::getDbo();
 
+		$pool_values = [];
+		if ($unassigned) {
+			// prepare the default return value
+			$pool_values = [
+				[],
+				[],
+			];
+		}
+
 		if (empty($roomid) || !$room_bids_pool) {
-			return [];
+			return $pool_values;
 		}
 
 		$room_features_bookings = [];
-		$roomid = (int)$roomid;
+		$unassigned_bookings = [];
 
 		$all_bids = [];
 		foreach ($room_bids_pool as $day => $bids) {
@@ -9255,11 +9420,16 @@ class VikBooking
 		$dbo->setQuery($q);
 		$rbookings = $dbo->loadAssocList();
 		if (!$rbookings) {
-			return [];
+			return $pool_values;
 		}
 
 		foreach ($rbookings as $k => $v) {
 			if (empty($v['roomindex'])) {
+				if ($unassigned) {
+					// push this booking to the list of unassigned reservations
+					$unassigned_bookings[] = $v['idorder'];
+				}
+				// do not proceed further
 				continue;
 			}
 			if (!isset($room_features_bookings[$v['roomindex']])) {
@@ -9268,6 +9438,15 @@ class VikBooking
 			$room_features_bookings[$v['roomindex']][] = $v['idorder'];
 		}
 
+		if ($unassigned) {
+			// return a list of information
+			return [
+				$room_features_bookings,
+				$unassigned_bookings,
+			];
+		}
+
+		// return just the list of room sub-unit bookings
 		return $room_features_bookings;
 	}
 
@@ -13016,7 +13195,15 @@ class VikBooking
 	 */
 	public static function isBookingTypeSupported()
 	{
-		return is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikchannelmanager.php');
+		static $isBookingTypeSupported = null;
+
+		if (is_bool($isBookingTypeSupported)) {
+			return $isBookingTypeSupported;
+		}
+
+		$isBookingTypeSupported = is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikchannelmanager.php');
+
+		return $isBookingTypeSupported;
 	}
 
 	/**

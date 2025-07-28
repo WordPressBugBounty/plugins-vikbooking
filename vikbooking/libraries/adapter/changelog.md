@@ -1,5 +1,15 @@
 # Framework Changelog
 
+### 10.1.64
+
+*Release date - 15 July 2025*
+
+##### BUG FIXES
+
+* Prevented a fatal error that could occur with the initialization of the RSS feeds though simple pie add-on.
+
+---
+
 ### 10.1.63
 
 *Release date - 9 June 2025*

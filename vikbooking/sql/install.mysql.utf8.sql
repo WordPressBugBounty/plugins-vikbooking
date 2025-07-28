@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_rooms` (
   `info` text DEFAULT NULL,
   `avail` tinyint(1) NOT NULL DEFAULT 1,
   `units` int(10) NOT NULL DEFAULT 1,
-  `moreimgs` varchar(1024) DEFAULT NULL,
+  `moreimgs` varchar(2048) DEFAULT NULL,
   `fromadult` int(10) NOT NULL DEFAULT 1,
   `toadult` int(10) NOT NULL DEFAULT 1,
   `fromchild` int(10) NOT NULL DEFAULT 1,
@@ -87,10 +87,10 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_rooms` (
   `totpeople` int(10) NOT NULL DEFAULT 1,
   `mintotpeople` int(10) NOT NULL DEFAULT 1,
   `params` text DEFAULT NULL,
-  `imgcaptions` varchar(1024) DEFAULT NULL,
+  `imgcaptions` varchar(2048) DEFAULT NULL,
   `alias` varchar(128) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `#__vikbooking_calendars_xref` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -443,6 +443,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_ordersrooms` (
   `pkg_name` varchar(128) DEFAULT NULL,
   `cust_cost` decimal(12,2) DEFAULT NULL,
   `cust_idiva` int(10) DEFAULT NULL,
+  `cust_cpolicy_id` int(10) DEFAULT NULL,
   `extracosts` text DEFAULT NULL,
   `room_cost` decimal(12,2) DEFAULT NULL,
   `otarplan` varchar(64) DEFAULT NULL,
@@ -1412,6 +1413,7 @@ INSERT INTO `#__vikbooking_states`
 (         109,                 'Asti',           'AT',          'AST',           1),
 (         109,             'Avellino',           'AV',          'AVE',           1),
 (         109,                 'Bari',           'BA',          'BAR',           1),
+(         109,'Barletta-Andria-Trani',           'BT',          'BAT',           1),
 (         109,              'Belluno',           'BL',          'BEL',           1),
 (         109,            'Benevento',           'BN',          'BEN',           1),
 (         109,              'Bergamo',           'BG',          'BEG',           1),
@@ -1434,6 +1436,7 @@ INSERT INTO `#__vikbooking_states`
 (         109,              'Crotone',           'KR',          'CRO',           1),
 (         109,                'Cuneo',           'CN',          'CUN',           1),
 (         109,                 'Enna',           'EN',          'ENN',           1),
+(         109,                'Fermo',           'FM',          'FRM',           1),
 (         109,              'Ferrara',           'FE',          'FER',           1),
 (         109,              'Firenze',           'FI',          'FIR',           1),
 (         109,               'Foggia',           'FG',          'FOG',           1),
@@ -1460,6 +1463,7 @@ INSERT INTO `#__vikbooking_states`
 (         109,              'Messina',           'ME',          'MES',           1),
 (         109,               'Milano',           'MI',          'MIL',           1),
 (         109,               'Modena',           'MO',          'MOD',           1),
+(         109,      'Monza e Brianza',           'MB',          'MBZ',           1),
 (         109,               'Napoli',           'NA',          'NAP',           1),
 (         109,               'Novara',           'NO',          'NOV',           1),
 (         109,                'Nuoro',           'NU',          'NUR',           1),
@@ -1493,6 +1497,7 @@ INSERT INTO `#__vikbooking_states`
 (         109,                'Siena',           'SI',          'SIE',           1),
 (         109,             'Siracusa',           'SR',          'SIR',           1),
 (         109,              'Sondrio',           'SO',          'SOO',           1),
+(         109,         'Sud Sardegna',           'SU',          'SUS',           1),
 (         109,              'Taranto',           'TA',          'TAR',           1),
 (         109,               'Teramo',           'TE',          'TER',           1),
 (         109,                'Terni',           'TR',          'TRN',           1),
@@ -1507,7 +1512,7 @@ INSERT INTO `#__vikbooking_states`
 (         109, 'Verbano Cusio Ossola',           'VB',          'VCO',           1),
 (         109,             'Vercelli',           'VC',          'VER',           1),
 (         109,               'Verona',           'VR',          'VRN',           1),
-(         109,        'Vibo Valenzia',           'VV',          'VIV',           1),
+(         109,        'Vibo Valentia',           'VV',          'VIV',           1),
 (         109,              'Vicenza',           'VI',          'VII',           1),
 (         109,              'Viterbo',           'VT',          'VIT',           1);
 

@@ -342,7 +342,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Reservation Saved', 'vikbooking');
 				break;
 			case 'VBBOOKNOTMADE':
-				$result = __('Unable to save the Reservation, Room not Available', 'vikbooking');
+				$result = __('Unable to save the reservation, room not available', 'vikbooking');
 				break;
 			case 'VBMSGTHREE':
 				$result = __('Check-in Field is empty', 'vikbooking');
@@ -2049,13 +2049,13 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Website', 'vikbooking');
 				break;
 			case 'VBNEWOPTISCITYTAX':
-				$result = __('It\'s a City Tax', 'vikbooking');
+				$result = __('It\'s a city tax', 'vikbooking');
 				break;
 			case 'VBNEWOPTISFEE':
-				$result = __('It\'s a Fee', 'vikbooking');
+				$result = __('It\'s a fixed fee', 'vikbooking');
 				break;
 			case 'VBOPTHELPCITYTAXFEE':
-				$result = __('These settings are needed by the system to know if this Option is a City Tax like local/tourist taxes, or if it\'s a Fee like a booking fee, a mandatory resort fee, or a gratuity service fee that has to be paid at time of booking. Leave these settings disabled if the Option is not a tax or a fee, but just an extra service.', 'vikbooking');
+				$result = __('For mandatory costs, the system needs to know whether this option is a tourist tax or a fixed fee (such as cleaning or linen costs) to be paid at the time of booking. Leave these settings disabled if the option is not a tax or a fixed fee, but simply an optional extra service.', 'vikbooking');
 				break;
 			case 'VBTOTALVAT':
 				$result = __('Taxes (VAT)', 'vikbooking');
@@ -2718,7 +2718,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Packages/Offers', 'vikbooking');
 				break;
 			case 'VBOXMLTRANSLATECRONJOBS':
-				$result = __('Scheduled Cron Jobs', 'vikbooking');
+				$result = __('Scheduled Actions', 'vikbooking');
 				break;
 			case 'VBCHANNELMANAGERRESULTOK':
 				$result = __('The Channel Manager has successfully notified the Channels!', 'vikbooking');
@@ -2997,7 +2997,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Graphs &amp; Statistics', 'vikbooking');
 				break;
 			case 'VBMENUCRONS':
-				$result = __('Scheduled Cron Jobs', 'vikbooking');
+				$result = __('Scheduled Actions', 'vikbooking');
 				break;
 			case 'VBOIBECHANNEL':
 				$result = __('Website/IBE', 'vikbooking');
@@ -3102,7 +3102,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Your Booking', 'vikbooking');
 				break;
 			case 'VBMAINCRONSTITLE':
-				$result = __('Vik Booking - Scheduled Cron Jobs', 'vikbooking');
+				$result = __('Vik Booking - Scheduled Actions', 'vikbooking');
 				break;
 			case 'VBMAINCRONNEW':
 				$result = __('New Cron Job', 'vikbooking');
@@ -8092,6 +8092,72 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_CHARGE_AUTHORIZED_CARD':
 				$result = __('Charge Authorized Card', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_CLEANING_PREARRIVAL':
+				$result = __('Pre-arrival Cleaning', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_MAINTENANCE_PREARRIVAL':
+				$result = __('Pre-arrival Maintenance', 'vikbooking');
+				break;
+			case 'VBO_PREARRIVAL':
+				$result = __('Pre-arrival', 'vikbooking');
+				break;
+			case 'VBO_TM_OP_ASSIGN_STRATEGY':
+				$result = __('Tasks assignment strategy', 'vikbooking');
+				break;
+			case 'VBO_TM_OP_ASSIGN_STRATEGY_HELP':
+				$result = __('Choose how new tasks are assigned to operators. Balanced: Distributes tasks evenly across all available operators. Sequential: Fills one operator\'s schedule before assigning tasks to the next.', 'vikbooking');
+				break;
+			case 'VBO_TM_OP_ASSIGN_STRATEGY_BALANCED':
+				$result = __('Balanced', 'vikbooking');
+				break;
+			case 'VBO_TM_OP_ASSIGN_STRATEGY_SEQUENTIAL':
+				$result = __('Sequential', 'vikbooking');
+				break;
+			case 'VBO_HOLDING_AREA':
+				$result = __('Holding Area', 'vikbooking');
+				break;
+			case 'VBDISMISS':
+				$result = __('Ignore', 'vikbooking');
+				break;
+			case 'VBO_TRY_IT':
+				$result = __('Try it', 'vikbooking');
+				break;
+			case 'VBO_SCHEDULE_CRONJOB':
+				$result = __('Schedule action', 'vikbooking');
+				break;
+			case 'VBO_HELP_WIZARD_GENERAL_BASE_COUNTRY':
+				$result = __('Main country', 'vikbooking');
+				break;
+			case 'VBO_HELP_WIZARD_GENERAL_BASE_COUNTRY_SUMMARY':
+				$result = __('Choose the country and the state/province (if requested) where your main property is located. This information will eventually help you configure some local integrations.', 'vikbooking');
+				break;
+			case 'VBO_HELP_WIZARD_GENERAL_BASE_COUNTRY_VALUE_DESC':
+				$result = __('If you manage properties in different countries, choose only the main one.', 'vikbooking');
+				break;
+			case 'VBO_HELP_WIZARD_GENERAL_BASE_COUNTRY_STATE_DESC':
+				$result = __('If you manage properties in different states/provinces, choose only the main one.', 'vikbooking');
+				break;
+			case 'VBO_HELP_WIZARD_GENERAL_CRON_PRECHECKIN':
+				$result = __('Reminder - Pre-checkin', 'vikbooking');
+				break;
+			case 'VBO_HELP_WIZARD_GENERAL_CRON_PRECHECKIN_SUMMARY':
+				$result = __('Configure an automated action to remind your guests to complete the pre-check-in online before their stay.', 'vikbooking');
+				break;
+			case 'VBO_HELP_WIZARD_GENERAL_HOUSEKEEPING':
+				$result = __('Housekeeping management', 'vikbooking');
+				break;
+			case 'VBO_HELP_WIZARD_GENERAL_HOUSEKEEPING_SUMMARY':
+				$result = __('<p>Thanks to the Task Manager, you can schedule in an efficient and organized way the housekeeping tasks for your properties. This will let you save time, and it will improve the communication with the housekeeping staff.</p><ul><li>Automatic scheduling of cleaning tasks (turnover, daily, weekly cleanings)</li><li>Built-in chat system between the managers and the operators for real-time updates</li><li>Interactive calendar to view and manage the every-day tasks</li></ul><p>Click the button below to start setting up your first area/project.</p>', 'vikbooking');
+				break;
+			case 'VBO_HOLDING_AREA_NO_SWAP':
+				$result = __('Room reservations in the holding area can only be moved onto free nights.', 'vikbooking');
+				break;
+			case 'VBO_SELECT_BOOKING':
+				$result = __('Select booking', 'vikbooking');
+				break;
+			case 'VBO_UNASSIGNED_ROW_FORBID':
+				$result = __('Reservations cannot be moved onto this row.', 'vikbooking');
 				break;
 		}
 

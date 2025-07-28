@@ -452,6 +452,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			return $this->reportFilters;
 		}
 
+		$app = JFactory::getApplication();
+
 		// get VBO Application Object
 		$vbo_app = VikBooking::getVboApplication();
 
@@ -634,6 +636,26 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			'html' => '<input type="text" id="todate" name="todate" value="" class="vbo-report-datepicker vbo-report-datepicker-to" />',
 			'type' => 'calendar',
 			'name' => 'todate'
+		);
+		array_push($this->reportFilters, $filter_opt);
+
+		// Listings Filter
+		$filter_opt = array(
+			'label' => '<label for="listingsfilt">' . JText::translate('VBO_LISTINGS') . '</label>',
+			'html' => '<span class="vbo-toolbar-multiselect-wrap">' . $vbo_app->renderElementsDropDown([
+				'id'              => 'listingsfilt',
+				'elements'        => 'listings',
+				'placeholder'     => JText::translate('VBO_LISTINGS'),
+				'allow_clear'     => 1,
+				'attributes'      => [
+					'name' => 'listings[]',
+					'multiple' => 'multiple',
+				],
+				'selected_values' => (array) $app->input->get('listings', [], 'array'),
+			]) . '</span>',
+			'type' => 'select',
+			'multiple' => true,
+			'name' => 'listings',
 		);
 		array_push($this->reportFilters, $filter_opt);
 
@@ -1306,6 +1328,8 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		$pkrorder = VikRequest::getString('krorder', $this->defaultKeyOrder, 'request');
 		$pkrorder = empty($pkrorder) ? $this->defaultKeyOrder : $pkrorder;
 		$pkrorder = $pkrorder == 'DESC' ? 'DESC' : 'ASC';
+		$plistings = ((array) VikRequest::getVar('listings', array())) ?: ((array) $options->get('listings', []));
+		$plistings = array_filter(array_map('intval', $plistings));
 
 		$currency_symb = VikBooking::getCurrencySymb();
 		$df = $this->getDateFormat();
@@ -1377,6 +1401,10 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 			->order($this->dbo->qn('o.checkin') . ' ASC')
 			->order($this->dbo->qn('o.id') . ' ASC')
 			->order($this->dbo->qn('or.id') . ' ASC');
+
+		if ($plistings) {
+			$q->where($this->dbo->qn('or.idroom') . ' IN (' . implode(', ', $plistings) . ')');
+		}
 
 		if ($ptype === 'reservation') {
 			$q->where($this->dbo->qn('o.ts') . ' >= ' . $from_ts);
@@ -2562,7 +2590,7 @@ JS
 				if (!empty($row_data['docnum'])) {
 					$persona->addChild('numeroDocumento', htmlspecialchars($row_data['docnum']));
 				}
-				if (!empty($row_data['docsoporte'])) {
+				if (!empty($row_data['docsoporte']) && $export_type == 'checkin') {
 					$persona->addChild('soporteDocumento', htmlspecialchars($row_data['docsoporte']));
 				}
 				$persona->addChild('fechaNacimiento', htmlspecialchars($row_data['date_birth']));
@@ -2681,16 +2709,19 @@ JS
 			// access the desired XML element
 			$xmlBody = $xmlBody->respuesta ?? $xmlBody;
 
-			if (!isset($xmlBody->codigoRetorno)) {
+			// access the result code
+			$result_code = $xmlBody->codigoRetorno ?? $xmlBody->codigo ?? null;
+
+			if (is_null($result_code)) {
 				// unexpected response
-				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
+				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', htmlspecialchars($xmlBody->formatXml() ?: $response)), 500);
 			}
 
 			// validate the response
-			$is_error = (int) $xmlBody->codigoRetorno !== 0;
+			$is_error = (int) $result_code !== 0;
 
 			if ($is_error || !($xmlBody->lote ?? '')) {
-				$error_code = (string) ($xmlBody->codigoRetorno ?? '500');
+				$error_code = (string) ($result_code ?? '500');
 				$error_dets = (string) ($xmlBody->descripcion ?? 'Unknown');
 				// terminate the execution in case of errors or empty result
 				throw new Exception(sprintf("[%s] Response error:\n%s", $error_code, $error_dets), 500);
@@ -2817,16 +2848,19 @@ JS
 			// access the desired XML element
 			$xmlBody = $xmlBody->respuesta ?? $xmlBody;
 
-			if (!isset($xmlBody->codigoRetorno)) {
+			// access the result code (should be "codigo")
+			$result_code = $xmlBody->codigo ?? $xmlBody->codigoRetorno ?? null;
+
+			if (is_null($result_code)) {
 				// unexpected response
-				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', $xmlBody->formatXml() ?: $response), 500);
+				throw new UnexpectedValueException(sprintf('Unexpected response [%s]', htmlspecialchars($xmlBody->formatXml() ?: $response)), 500);
 			}
 
 			// validate the response
-			$is_error = (int) $xmlBody->codigoRetorno !== 0;
+			$is_error = (int) $result_code !== 0;
 
 			if ($is_error || !($xmlBody->lote ?? '')) {
-				$error_code = (string) ($xmlBody->codigoRetorno ?? '500');
+				$error_code = (string) ($result_code ?? '500');
 				$error_dets = (string) ($xmlBody->descripcion ?? 'Unknown');
 				// terminate the execution in case of errors or empty result
 				throw new Exception(sprintf("[%s] Response error:\n%s", $error_code, $error_dets), 500);

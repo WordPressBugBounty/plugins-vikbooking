@@ -179,7 +179,7 @@ final class VBOMailWrapper
 		
 		$this->sender = [
 			'address' => $address,
-			'name'    => $name,
+			'name'    => $address != $name ? $name : null,
 		];
 
 		return $this;
@@ -192,7 +192,7 @@ final class VBOMailWrapper
 	 */
 	public function getSenderMail()
 	{
-		return $this->sender && !empty($this->sender['address']) ? $this->sender['address'] : VBOFactory::getConfig()->get('senderemail');
+		return !empty($this->sender['address']) ? $this->sender['address'] : VBOFactory::getConfig()->get('senderemail');
 	}
 
 	/**
@@ -202,7 +202,7 @@ final class VBOMailWrapper
 	 */
 	public function getSenderName()
 	{
-		return $this->sender ? $this->sender['name'] : null;
+		return !empty($this->sender['name']) ? $this->sender['name'] : VikBooking::getFrontTitle();
 	}
 
 	/**

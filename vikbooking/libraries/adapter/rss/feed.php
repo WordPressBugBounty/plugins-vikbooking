@@ -99,7 +99,7 @@ class JRssFeed
 	 */
 	public function __construct($element, $plugin)
 	{
-		if ($element instanceof SimplePie_Item)
+		if ($element instanceof SimplePie_Item || $element instanceof SimplePie\Item)
 		{
 			// extract data from SimplePie Item
 			$this->id          = md5($element->get_id());

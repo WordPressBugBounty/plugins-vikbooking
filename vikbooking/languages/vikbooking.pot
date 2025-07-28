@@ -2,14 +2,14 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: VikBooking 1.8.0\n"
+"Project-Id-Version: VikBooking 1.8.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/vikbooking\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-06-09T23:28:33+02:00\n"
+"POT-Creation-Date: 2025-07-25T01:12:12+02:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.6.0\n"
 "X-Domain: vikbooking\n"
@@ -899,7 +899,7 @@ msgid "Reservation Saved"
 msgstr ""
 
 #: libraries/language/admin.php:345
-msgid "Unable to save the Reservation, Room not Available"
+msgid "Unable to save the reservation, room not available"
 msgstr ""
 
 #: libraries/language/admin.php:348
@@ -1003,6 +1003,7 @@ msgstr ""
 #: libraries/language/admin.php:4326
 #: libraries/language/site.php:123
 #: libraries/language/site.php:1374
+#: libraries/language/site.php:2413
 msgid "Check-in"
 msgstr ""
 
@@ -3058,15 +3059,15 @@ msgid "Website"
 msgstr ""
 
 #: libraries/language/admin.php:2052
-msgid "It's a City Tax"
+msgid "It's a city tax"
 msgstr ""
 
 #: libraries/language/admin.php:2055
-msgid "It's a Fee"
+msgid "It's a fixed fee"
 msgstr ""
 
 #: libraries/language/admin.php:2058
-msgid "These settings are needed by the system to know if this Option is a City Tax like local/tourist taxes, or if it's a Fee like a booking fee, a mandatory resort fee, or a gratuity service fee that has to be paid at time of booking. Leave these settings disabled if the Option is not a tax or a fee, but just an extra service."
+msgid "For mandatory costs, the system needs to know whether this option is a tourist tax or a fixed fee (such as cleaning or linen costs) to be paid at the time of booking. Leave these settings disabled if the option is not a tax or a fixed fee, but simply an optional extra service."
 msgstr ""
 
 #: libraries/language/admin.php:2061
@@ -3834,7 +3835,7 @@ msgstr ""
 
 #: libraries/language/admin.php:2721
 #: libraries/language/admin.php:3000
-msgid "Scheduled Cron Jobs"
+msgid "Scheduled Actions"
 msgstr ""
 
 #: libraries/language/admin.php:2724
@@ -4304,7 +4305,7 @@ msgid "Your Booking"
 msgstr ""
 
 #: libraries/language/admin.php:3105
-msgid "Vik Booking - Scheduled Cron Jobs"
+msgid "Vik Booking - Scheduled Actions"
 msgstr ""
 
 #: libraries/language/admin.php:3108
@@ -8381,6 +8382,7 @@ msgid "Reminder - Email"
 msgstr ""
 
 #: libraries/language/admin.php:6324
+#: libraries/language/admin.php:8142
 msgid "Reminder - Pre-checkin"
 msgstr ""
 
@@ -8774,18 +8776,22 @@ msgid "If you are sending the exported file to an email address, then after test
 msgstr ""
 
 #: libraries/language/admin.php:6618
+#: libraries/language/site.php:2443
 msgid "Meal Plans Included"
 msgstr ""
 
 #: libraries/language/admin.php:6621
+#: libraries/language/site.php:2446
 msgid "Breakfast"
 msgstr ""
 
 #: libraries/language/admin.php:6624
+#: libraries/language/site.php:2449
 msgid "Lunch"
 msgstr ""
 
 #: libraries/language/admin.php:6627
+#: libraries/language/site.php:2452
 msgid "Dinner"
 msgstr ""
 
@@ -8801,10 +8807,12 @@ msgstr ""
 
 #: libraries/language/admin.php:6636
 #: libraries/language/site.php:1785
+#: libraries/language/site.php:2455
 msgid "Meal Plan"
 msgstr ""
 
 #: libraries/language/admin.php:6639
+#: libraries/language/site.php:2458
 msgid "Meals"
 msgstr ""
 
@@ -10755,6 +10763,93 @@ msgstr ""
 
 #: libraries/language/admin.php:8094
 msgid "Charge Authorized Card"
+msgstr ""
+
+#: libraries/language/admin.php:8097
+#: libraries/language/site.php:2416
+msgid "Pre-arrival Cleaning"
+msgstr ""
+
+#: libraries/language/admin.php:8100
+#: libraries/language/site.php:2419
+msgid "Pre-arrival Maintenance"
+msgstr ""
+
+#: libraries/language/admin.php:8103
+#: libraries/language/site.php:2422
+msgid "Pre-arrival"
+msgstr ""
+
+#: libraries/language/admin.php:8106
+msgid "Tasks assignment strategy"
+msgstr ""
+
+#: libraries/language/admin.php:8109
+msgid "Choose how new tasks are assigned to operators. Balanced: Distributes tasks evenly across all available operators. Sequential: Fills one operator's schedule before assigning tasks to the next."
+msgstr ""
+
+#: libraries/language/admin.php:8112
+msgid "Balanced"
+msgstr ""
+
+#: libraries/language/admin.php:8115
+msgid "Sequential"
+msgstr ""
+
+#: libraries/language/admin.php:8118
+msgid "Holding Area"
+msgstr ""
+
+#: libraries/language/admin.php:8121
+msgid "Ignore"
+msgstr ""
+
+#: libraries/language/admin.php:8124
+msgid "Try it"
+msgstr ""
+
+#: libraries/language/admin.php:8127
+msgid "Schedule action"
+msgstr ""
+
+#: libraries/language/admin.php:8130
+msgid "Main country"
+msgstr ""
+
+#: libraries/language/admin.php:8133
+msgid "Choose the country and the state/province (if requested) where your main property is located. This information will eventually help you configure some local integrations."
+msgstr ""
+
+#: libraries/language/admin.php:8136
+msgid "If you manage properties in different countries, choose only the main one."
+msgstr ""
+
+#: libraries/language/admin.php:8139
+msgid "If you manage properties in different states/provinces, choose only the main one."
+msgstr ""
+
+#: libraries/language/admin.php:8145
+msgid "Configure an automated action to remind your guests to complete the pre-check-in online before their stay."
+msgstr ""
+
+#: libraries/language/admin.php:8148
+msgid "Housekeeping management"
+msgstr ""
+
+#: libraries/language/admin.php:8151
+msgid "<p>Thanks to the Task Manager, you can schedule in an efficient and organized way the housekeeping tasks for your properties. This will let you save time, and it will improve the communication with the housekeeping staff.</p><ul><li>Automatic scheduling of cleaning tasks (turnover, daily, weekly cleanings)</li><li>Built-in chat system between the managers and the operators for real-time updates</li><li>Interactive calendar to view and manage the every-day tasks</li></ul><p>Click the button below to start setting up your first area/project.</p>"
+msgstr ""
+
+#: libraries/language/admin.php:8154
+msgid "Room reservations in the holding area can only be moved onto free nights."
+msgstr ""
+
+#: libraries/language/admin.php:8157
+msgid "Select booking"
+msgstr ""
+
+#: libraries/language/admin.php:8160
+msgid "Reservations cannot be moved onto this row."
 msgstr ""
 
 #: libraries/language/adminsys.php:45
@@ -13000,6 +13095,30 @@ msgstr ""
 
 #: libraries/language/site.php:2398
 msgid "hour"
+msgstr ""
+
+#: libraries/language/site.php:2425
+msgid "Refresh status"
+msgstr ""
+
+#: libraries/language/site.php:2428
+msgid "Verify your identity"
+msgstr ""
+
+#: libraries/language/site.php:2431
+msgid "See uploaded documents"
+msgstr ""
+
+#: libraries/language/site.php:2434
+msgid "Identity verification documents"
+msgstr ""
+
+#: libraries/language/site.php:2437
+msgid "Please go through the identity verification process."
+msgstr ""
+
+#: libraries/language/site.php:2440
+msgid "Invalid identity verification values"
 msgstr ""
 
 #: libraries/language/system.php:46

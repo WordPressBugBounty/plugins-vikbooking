@@ -118,7 +118,7 @@ if (is_array($timeopst)) {
 		$inonout_allowed = false;
 	}
 }
-if (is_array($this->busy)) {
+if (!empty($this->busy)) {
 	// start date from today
 	$now_info = getdate();
 	// we loop for the next 18 months ahead to disable dates for check-in/check-out

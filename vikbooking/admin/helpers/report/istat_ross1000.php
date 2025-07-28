@@ -26,8 +26,9 @@ defined('ABSPATH') or die('No script kiddies please!');
  * @link 	Lombardia https://www.flussituristici.servizirl.it/Turismo5/app/ws/checkinV2?wsdl
  * @link 	Calabria https://sirdat.regione.calabria.it/ws/checkinV2?wsdl
  * @link 	Sardegna https://sardegnaturismo.ross1000.it/ws/checkinV2?wsdl
+ * @link    Lazio https://lazioturismo.ross1000.it/ws/checkinV2?wsdl
  * 
- * @see 	Tracciato_XML-WEBSERVICE-2.4-_-2.pdf
+ * @link 	https://web.gies.sm/cc_allegati/ross1000/Tracciato_XML-WEBSERVICE-2.4.pdf
  * 
  * @since 	1.15.4 (J) - 1.5.10 (WP) report introduced.
  * @since 	1.17.2 (J) - 1.7.2 (WP)  report refactoring with settings and custom scoped actions.
@@ -228,6 +229,10 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 				'name' => 'Liguria',
 				'url' => 'https://turismows.regione.liguria.it/ws/checkinV2?wsdl',
 			],
+			[
+				'name' => 'Lazio',
+				'url' => 'https://lazioturismo.ross1000.it/ws/checkinV2?wsdl',
+			],
 		];
 
 		$example_urls_str = '';
@@ -242,7 +247,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 			'title' => [
 				'type'  => 'custom',
 				'label' => '',
-				'html'  => '<p class="info">Configura le impostazioni per la generazione dei tracciati record XML e per la trasmissione delle informazioni verso il WebService della tua regione o procinvia.</p>',
+				'html'  => '<p class="info">Configura le impostazioni per la generazione dei tracciati record XML e per la trasmissione delle informazioni verso il WebService della tua regione o provincia.</p>',
 			],
 			'codstru' => [
 				'type'  => 'text',
@@ -276,7 +281,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 			'endpoint' => [
 				'type'  => 'text',
 				'label' => 'WS Endpoint URL',
-				'help'  => 'Indirizzo URL web-service del sito web dell\'ente al quale trasmettere i dati.',
+				'help'  => 'Indirizzo URL web-service del sito web dell\'ente al quale trasmettere i dati. È suggerito consultare anche la lista di endpoint sottostante.',
 			],
 			'exampleurls' => [
 				'type'  => 'custom',

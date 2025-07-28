@@ -95,7 +95,12 @@ final class VBOMailParser
 			$content = str_replace('{total_paid}', VikBooking::numberFormat($booking['totpaid']), $content);
 		}
 		if (isset($booking['total']) && isset($booking['totpaid'])) {
+			// calculate the outstanding balance
 			$remaining_bal = $booking['total'] - $booking['totpaid'];
+			$damage_deposit_payment = VBORoomHelper::getInstance()->getDamageDepositSplitPayment($booking, $booking_rooms);
+			if ($damage_deposit_payment && !empty($booking['tot_damage_dep'])) {
+				$remaining_bal -= $booking['tot_damage_dep'];
+			}
 			$content = str_replace('{remaining_balance}', VikBooking::numberFormat($remaining_bal), $content);
 		}
 

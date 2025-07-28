@@ -127,6 +127,13 @@ if (count($gallery_data)) {
 	$document->addScriptDeclaration($vikfx);
 }
 
+// rate plan meals map
+$rate_plan_meals_map = [
+	'breakfast' => JText::translate('VBO_MEAL_BREAKFAST'),
+	'lunch'     => JText::translate('VBO_MEAL_LUNCH'),
+	'dinner'    => JText::translate('VBO_MEAL_DINNER'),
+];
+
 $mod_rooms_data = [];
 if (count($this->mod_booking)) {
 	// booking modification
@@ -417,9 +424,33 @@ if (count($this->mod_booking)) {
 				$cancpolicy = '';
 				//
 				$priceinfostr = '<div class="vbpricedetails">';
-				if ($priceinfo['breakfast_included'] == 1) {
+
+				/**
+				 * Handle meal plans included.
+				 * 
+				 * @since 	1.18.2 (J) - 1.8.2 (WP)
+				 */
+				$rate_plan_meals = [];
+				if (!empty($priceinfo['meal_plans'])) {
+					$rate_plan_meals = is_array($priceinfo['meal_plans']) ? $priceinfo['meal_plans'] : (array) json_decode($priceinfo['meal_plans'], true);
+					if (count($rate_plan_meals) === 1 && !strcasecmp(($rate_plan_meals[0] ?? ''), 'breakfast')) {
+						// display the common "breakfast included" label
+						$rate_plan_meals = [];
+						$priceinfo['breakfast_included'] = 1;
+					}
+				}
+				if ($rate_plan_meals) {
+					$rate_plan_meals_incl = [];
+					foreach ($rate_plan_meals as $rate_plan_meal) {
+						$rate_plan_meals_incl[] = $rate_plan_meals_map[$rate_plan_meal] ?? $rate_plan_meal;
+					}
+					$priceinfostr .= '<span class="vbprice_breakfast vbprice_all_meals_incl">' . rtrim(JText::translate('VBO_MEAL_PLANS_INCL'), ':') . ': ' . implode(', ', $rate_plan_meals_incl) . '</span>';
+				}
+
+				if (!$rate_plan_meals && $priceinfo['breakfast_included'] == 1) {
 					$priceinfostr .= '<span class="vbprice_breakfast">'.JText::translate('VBBREAKFASTINCLUDED').'</span>';
 				}
+
 				if ($priceinfo['free_cancellation'] == 1) {
 					if ((int)$priceinfo['canc_deadline'] > 0) {
 						$priceinfostr .= '<span class="vbprice_freecanc">'.JText::sprintf('VBFREECANCELLATIONWITHIN', $priceinfo['canc_deadline']).'</span>';

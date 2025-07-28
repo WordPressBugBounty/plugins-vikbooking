@@ -239,7 +239,7 @@ final class VBOTaskOperatorIcal
         $ics = $this->toString();
 
         // declare headers
-        $app->setHeader('Content-Type', 'text/calendar; charset=utf-8');
+        $app->setHeader('Content-Type', 'text/calendar; charset=utf-8', true);
         $app->setHeader('Content-Disposition', 'attachment; filename=' . $filename . '.ics');
         $app->setHeader('Content-Length', strlen($ics));
         $app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');

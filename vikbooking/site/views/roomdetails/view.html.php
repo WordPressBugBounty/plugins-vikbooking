@@ -12,17 +12,18 @@ defined('ABSPATH') or die('No script kiddies please!');
 
 jimport('joomla.application.component.view');
 
-class VikbookingViewRoomdetails extends JViewVikBooking {
-	function display($tpl = null) {
+class VikbookingViewRoomdetails extends JViewVikBooking
+{
+	public function display($tpl = null)
+	{
 		VikBooking::prepareViewContent();
 		$proomid = VikRequest::getString('roomid', '', 'request');
 		$dbo = JFactory::getDbo();
 		$vbo_tn = VikBooking::getTranslator();
 		$q = "SELECT * FROM `#__vikbooking_rooms` WHERE `id`=".$dbo->quote($proomid)." AND `avail`='1';";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() == 1) {
-			$room = $dbo->loadAssocList();
+		$room = $dbo->loadAssocList();
+		if ($room) {
 			$vbo_tn->translateContents($room, '#__vikbooking_rooms');
 
 			/**
@@ -53,9 +54,8 @@ class VikbookingViewRoomdetails extends JViewVikBooking {
 			$room[0]['cost'] = 0;
 			$q = "SELECT * FROM `#__vikbooking_dispcost` WHERE `idroom`=".$dbo->quote($room[0]['id'])." ORDER BY `#__vikbooking_dispcost`.`days` ASC, `#__vikbooking_dispcost`.`cost` ASC";
 			$dbo->setQuery($q, 0, 1);
-			$dbo->execute();
-			if ($dbo->getNumRows()) {
-				$tar = $dbo->loadAssocList();
+			$tar = $dbo->loadAssocList();
+			if ($tar) {
 				$room[0]['base_cost'] = $tar[0]['cost'] / ($tar[0]['days'] > 1 ? $tar[0]['days'] : 1);
 				/**
 				 * We apply the today's rate by default for one night of stay.
@@ -69,13 +69,11 @@ class VikbookingViewRoomdetails extends JViewVikBooking {
 			//
 
 			$actnow = mktime(0, 0, 0, date('m'), 1, date('Y'));
-			$busy = "";
+
 			$q = "SELECT * FROM `#__vikbooking_busy` WHERE `idroom`='".$room[0]['id']."' AND (`checkin`>=".$actnow." OR `checkout`>=".$actnow.");";
 			$dbo->setQuery($q);
-			$dbo->execute();
-			if ($dbo->getNumRows() > 0) {
-				$busy = $dbo->loadAssocList();
-			}
+			$busy = $dbo->loadAssocList();
+
 			//seasons calendar
 			$seasons_cal = array();
 			$use_seasons_cal = VikBooking::getRoomParam('seasoncal', $room[0]['params']);
@@ -84,15 +82,13 @@ class VikbookingViewRoomdetails extends JViewVikBooking {
 			if (intval($use_seasons_cal) > 0 && count($seasons_cal_nights) > 0) {
 				$q = "SELECT * FROM `#__vikbooking_seasons` WHERE `idrooms` LIKE '%-".$room[0]['id']."-%'".($use_seasons_cal == 2 ? " AND `promo`=0" : ($use_seasons_cal == 3 ? " AND `type`=1 AND `promo`=0" : "")).";";
 				$dbo->setQuery($q);
-				$dbo->execute();
-				if ($dbo->getNumRows() > 0) {
-					$seasons = $dbo->loadAssocList();
+				$seasons = $dbo->loadAssocList();
+				if ($seasons) {
 					$vbo_tn->translateContents($seasons, '#__vikbooking_seasons');
 					$q = "SELECT `p`.*,`tp`.`name`,`tp`.`attr`,`tp`.`idiva`,`tp`.`breakfast_included`,`tp`.`free_cancellation`,`tp`.`canc_deadline` FROM `#__vikbooking_dispcost` AS `p` LEFT JOIN `#__vikbooking_prices` `tp` ON `p`.`idprice`=`tp`.`id` WHERE `p`.`days` IN (".implode(',', $seasons_cal_nights).") AND `p`.`idroom`=".$room[0]['id']." ORDER BY `p`.`days` ASC, `p`.`cost` ASC;";
 					$dbo->setQuery($q);
-					$dbo->execute();
-					if ($dbo->getNumRows() > 0) {
-						$tars = $dbo->loadAssocList();
+					$tars = $dbo->loadAssocList();
+					if ($tars) {
 						$vbo_tn->translateContents($tars, '#__vikbooking_prices', array('id' => 'idprice'));
 						$arrtar = array();
 						foreach ($tars as $tar) {
@@ -164,24 +160,21 @@ class VikbookingViewRoomdetails extends JViewVikBooking {
 			//end seasons calendar
 			//promotion min number of nights
 			$ppromo = VikRequest::getInt('promo', 0, 'request');
-			$promo_season = array();
+			$promo_season = [];
 			if ($ppromo > 0) {
 				$q = "SELECT * FROM `#__vikbooking_seasons` WHERE `id`=".(int)$ppromo." AND `promo`=1;";
 				$dbo->setQuery($q);
-				$dbo->execute();
-				if ($dbo->getNumRows() > 0) {
-					$promo_season = $dbo->loadAssoc();
+				$promo_season = (array) $dbo->loadAssoc();
+				if ($promo_season) {
 					$vbo_tn->translateContents($promo_season, '#__vikbooking_seasons');
 				}
 			}
 
 			// attempt to load the first two "mandatory" checkbox fields
-			$terms_fields = array();
 			$q = "SELECT * FROM `#__vikbooking_custfields` WHERE `type`='checkbox' AND `required`=1 ORDER BY `#__vikbooking_custfields`.`ordering` ASC";
 			$dbo->setQuery($q, 0, 2);
-			$dbo->execute();
-			if ($dbo->getNumRows()) {
-				$terms_fields = $dbo->loadAssocList();
+			$terms_fields = $dbo->loadAssocList();
+			if ($terms_fields) {
 				$vbo_tn->translateContents($terms_fields, '#__vikbooking_custfields');
 			}
 

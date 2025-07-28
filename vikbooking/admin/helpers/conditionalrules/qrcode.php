@@ -56,10 +56,9 @@ class VikBookingConditionalRuleQrcode extends VikBookingConditionalRule
             'qr_code_width' => [
                 'type'  => 'number',
                 'label' => 'QR Code width (px)',
-                'help'  => 'You can optionally use the tag <strong onclick="vboQrcodeCtrAddContentEditor(\'{qrcode_img}\');" style="cursor: pointer;">{qrcode_img}</strong> if you would like to place the <i>QR code image</i> on a specific section of the message.',
+                'help'  => 'You can optionally use the tag <strong onclick="vboQrcodeCtrAddContentEditor(\'{qrcode_img}\');" style="cursor: pointer;">{qrcode_img}</strong> if you would like to place the <i>QR code image</i> on a specific section of the message. Suggested width: 128px.',
                 'min'   => 1,
                 'max'   => 999,
-                'default' => 128,
             ],
         ];
 

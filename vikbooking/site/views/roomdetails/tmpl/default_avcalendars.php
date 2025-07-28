@@ -142,7 +142,7 @@ if ($numcalendars > 0) {
 	</div>
 	
 	<?php
-	$check = is_array($this->busy);
+	$check = !empty($this->busy);
 	if ($validmonth) {
 		$arr = getdate($pmonth);
 		$mon = $arr['mon'];

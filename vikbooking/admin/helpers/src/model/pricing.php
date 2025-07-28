@@ -212,6 +212,9 @@ class VBOModelPricing extends JObject
 						$current_rates_pool[$listing_id] = [];
 					}
 
+					// filter restrictions by the current listing
+					$listing_restrictions = VikBooking::listingRestrictions($all_restrictions, [$listing_id]);
+
 					foreach ($tars as $index => $tar) {
 						// apply rounding to 2 decimals at most
 						$tars[$index]['cost'] = round($tar['cost'], 2);
@@ -222,7 +225,7 @@ class VBOModelPricing extends JObject
 						// calculate restrictions
 						$tars[$index]['restrictions'] = [];
 						if ($restrictions) {
-							$restr = VikBooking::parseSeasonRestrictions($today_mid_ts, $tomorrow_ts, 1, $all_restrictions);
+							$restr = VikBooking::parseSeasonRestrictions($today_mid_ts, $tomorrow_ts, 1, $listing_restrictions);
 							if (!$restr) {
 								$restr = ['minlos' => $glob_minlos];
 							}
@@ -246,6 +249,9 @@ class VBOModelPricing extends JObject
 						$current_rates_pool[$listing_id] = [];
 					}
 
+					// filter restrictions by the current listing
+					$listing_restrictions = VikBooking::listingRestrictions($all_restrictions, [$listing_id]);
+
 					// calculate listing tariffs for this day
 					$tars = VikBooking::applySeasonsRoom($pool_roomrates[$listing_id], $today_tsin, $today_tsout, [], $cached_seasons);
 
@@ -259,7 +265,7 @@ class VBOModelPricing extends JObject
 						// calculate restrictions
 						$tars[$index]['restrictions'] = [];
 						if ($restrictions) {
-							$restr = VikBooking::parseSeasonRestrictions($today_mid_ts, $tomorrow_ts, 1, $all_restrictions);
+							$restr = VikBooking::parseSeasonRestrictions($today_mid_ts, $tomorrow_ts, 1, $listing_restrictions);
 							if (!$restr) {
 								$restr = ['minlos' => $glob_minlos];
 							}

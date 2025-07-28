@@ -2168,6 +2168,25 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 			$data[0]['customer']['vat'] = '0000000';
 		}
 
+		/**
+		 * For Italian customers with VAT ID equal to Fiscal Code we should omit the IdFiscaleIVA completely.
+		 * This is because either IdFiscaleIVA or CodiceFiscale should be populated, not always both.
+		 * 
+		 * @since 	1.18.2 (J) - 1.8.2 (WP)
+		 */
+		$omitIdFiscaleIva = false;
+		if (!empty($data[0]['customer']['country_2_code']) && $data[0]['customer']['country_2_code'] == 'IT') {
+			if (empty($data[0]['customer']['vat']) && !empty($data[0]['customer']['fisccode'])) {
+				// omit the VAT ID because the Italian customer has got a Fiscal Code
+				$omitIdFiscaleIva = true;
+			} elseif (!empty($data[0]['customer']['fisccode']) && $data[0]['customer']['vat'] == $data[0]['customer']['fisccode']) {
+				if (preg_match('/^[A-Z]{6}[0-9]{2}[A-EHLMPRST][0-9]{2}[A-Z][0-9]{3}[A-Z]$/i', $data[0]['customer']['vat'])) {
+					// omit the VAT ID because the Italian customer has got a VAT ID equal to the Fiscal Code, and it's a person's fiscal code
+					$omitIdFiscaleIva = true;
+				}
+			}
+		}
+
 		// build XML
 		$xml = VikBookingAgenziaEntrateConstants::XMLOPENINGTAG.'
 <p:FatturaElettronica xmlns:ds="'.VikBookingAgenziaEntrateConstants::XMLNS_DS.'" xmlns:p="'.VikBookingAgenziaEntrateConstants::XMLNS_P.'" versione="'.VikBookingAgenziaEntrateConstants::XMLNS_V.'">
@@ -2210,7 +2229,7 @@ class VikBookingEInvoicingAgenziaEntrate extends VikBookingEInvoicing
 		</CedentePrestatore>
 		<CessionarioCommittente>
 			<DatiAnagrafici>
-				'.(!empty($data[0]['customer']['country_2_code']) && (!empty($data[0]['customer']['vat']) || !empty($data[0]['customer']['fisccode'])) ? '
+				'.(!empty($data[0]['customer']['country_2_code']) && !$omitIdFiscaleIva && (!empty($data[0]['customer']['vat']) || !empty($data[0]['customer']['fisccode'])) ? '
 				<IdFiscaleIVA>
 					<IdPaese>'.$data[0]['customer']['country_2_code'].'</IdPaese>
 					<IdCodice>'.($data[0]['customer']['vat'] ?: $data[0]['customer']['fisccode']).'</IdCodice>

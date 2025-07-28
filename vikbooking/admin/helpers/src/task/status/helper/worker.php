@@ -27,17 +27,17 @@ trait VBOTaskStatusHelperWorker
      */
     public function startWork(VBOTaskTaskregistry $task)
     {
-        $now = JFactory::getDate();
+        $now = JFactory::getDate('now', JFactory::getApplication()->get('offset'));
 
         $data = [
             'id' => $task->getID(),
-            'workstartedon' => $now->toSql(),
+            'workstartedon' => $now->toSql($local = false),
             'finishedby' => 0,
         ];
 
         if (!$task->get('beganon')) {
             // work started right now
-            $data['beganon'] = $now->toSql();
+            $data['beganon'] = $now->toSql($local = true);
         }
 
         if (!$task->get('beganby')) {
@@ -66,7 +66,7 @@ trait VBOTaskStatusHelperWorker
             // update the task
             VBOTaskModelTask::getInstance()->update([
                 'id' => $task->getID(),
-                'workstartedon' => JFactory::getDate()->toSql(),
+                'workstartedon' => JFactory::getDate()->toSql($local = false),
                 'realduration' => $this->calculateTotalDuration($task),
             ]);
         } catch (Exception $error) {
@@ -83,17 +83,17 @@ trait VBOTaskStatusHelperWorker
      */
     public function finishWork(VBOTaskTaskregistry $task)
     {
-        $now = JFactory::getDate();
+        $now = JFactory::getDate('now', JFactory::getApplication()->get('offset'));
 
         $data = [
             'id' => $task->getID(),
-            'workstartedon' => $now->toSql(),
+            'workstartedon' => $now->toSql($local = false),
             'realduration' => $this->calculateTotalDuration($task),
         ];
 
         if (!$task->get('finishedon')) {
             // work finished right now
-            $data['finishedon'] = $now->toSql();
+            $data['finishedon'] = $now->toSql($local = true);
         }
 
         if (!$task->get('finishedby')) {

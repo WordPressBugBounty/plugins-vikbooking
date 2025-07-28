@@ -2129,7 +2129,18 @@ class VikBookingController extends JControllerVikBooking
 			$obj = VBOPaymentFactory::getPaymentInstance($payment['file'], array_merge($row, $extra_data), $payment['params']);
 		}
 
-		$array_result = $obj->validatePayment();
+		try {
+			// let the gateway validate the payment transaction
+			$array_result = $obj->validatePayment();
+		} catch (Throwable $e) {
+			// silently catch the error and set the log
+			$array_result = [
+				'verified' => 0,
+				'log' => $e->getMessage() ?: 'Transaction error exception.',
+			];
+		}
+
+		// build payment log
 		$newpaymentlog = date('c')."\n".$array_result['log']."\n----------\n".$row['paymentlog'];
 
 		/**
@@ -2204,8 +2215,9 @@ class VikBookingController extends JControllerVikBooking
 			if (isset($array_result['tot_paid'])) {
 				$shouldpay = round($shouldpay, 2);
 				$shouldpay_befdep = round($shouldpay_befdep, 2);
+				$shouldpay_less_damagedep = round(($row['total'] - $row['tot_damage_dep']), 2);
 				$totreceived = round($array_result['tot_paid'], 2);
-				if ($shouldpay != $totreceived && $shouldpay_befdep != $totreceived && $shouldpay_befdd != $totreceived && $shouldpay_dd != $totreceived && $row['paymcount'] == 0) {
+				if ($shouldpay != $totreceived && $shouldpay_befdep != $totreceived && $shouldpay_befdd != $totreceived && $shouldpay_less_damagedep != $totreceived && $shouldpay_dd != $totreceived && $row['paymcount'] == 0) {
 					// the amount paid is different than the order total
 					// fares might have changed or the deposit might be different
 					// Sending just an email to the admin that will check

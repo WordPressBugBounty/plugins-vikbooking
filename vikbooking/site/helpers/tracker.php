@@ -154,6 +154,11 @@ class VikBookingTracker
 			return static::$fingerprint;
 		}
 
+		// abort if tracking is disabled
+		if (!VBOFactory::getConfig()->getBool('trkenabled')) {
+			return '';
+		}
+
 		/**
 		 * To check for an existing or previous fingerprint, we give the highest priority
 		 * to the reserved request var "vbo_tracking", which may have been passed after
@@ -971,6 +976,11 @@ class VikBookingTracker
 	public function triggerBookingConversion(array $booking)
 	{
 		$fingerprint = $this->getFingerprint();
+
+		if (!$fingerprint) {
+			// tracking may be disabled
+			return $this;
+		}
 
 		$q = $this->dbo->getQuery(true);
 

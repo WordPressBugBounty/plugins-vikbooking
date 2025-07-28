@@ -240,14 +240,22 @@ class JRssReader
 		// iterate multi-feed property to scan all the supported feeds
 		foreach ($items as $data)
 		{
-			// encapsulate feed data
-			$feed = new JRssFeed($data, $this->plugin);
-
-			// check if we should take only visible feeds
-			if (!$strict || ($feed->isVisible() && $optinDate < $feed->date))
+			try
 			{
-				// take feed
-				$list[] = $feed;
+				// encapsulate feed data
+				$feed = new JRssFeed($data, $this->plugin);
+
+				// check if we should take only visible feeds
+				if (!$strict || ($feed->isVisible() && $optinDate < $feed->date))
+				{
+					// take feed
+					$list[] = $feed;
+				}
+			}
+			catch (Throwable $error)
+			{
+				// an error has occurred while trying to initialize the feed
+				continue;
 			}
 		}
 

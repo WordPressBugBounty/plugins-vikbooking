@@ -2409,6 +2409,54 @@ class VikBookingLanguageSite implements JLanguageHandler
 			case 'VBO_IMPORTANT':
 				$result = __('Important', 'vikbooking');
 				break;
+			case 'VBPICKUPAT':
+				$result = __('Check-in', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_CLEANING_PREARRIVAL':
+				$result = __('Pre-arrival Cleaning', 'vikbooking');
+				break;
+			case 'VBO_TM_SCHED_MAINTENANCE_PREARRIVAL':
+				$result = __('Pre-arrival Maintenance', 'vikbooking');
+				break;
+			case 'VBO_PREARRIVAL':
+				$result = __('Pre-arrival', 'vikbooking');
+				break;
+			case 'VBO_IDVERIF_PROCESSING_BUTTON_VALUE';
+				$result = __('Refresh status', 'vikbooking');
+				break;
+			case 'VBO_IDVERIF_VERIFY_IDENTITY_BUTTON_VALUE';
+				$result = __('Verify your identity', 'vikbooking');
+				break;
+			case 'VBO_IDVERIF_SEE_DOCUMENTS_BUTTON_VALUE';
+				$result = __('See uploaded documents', 'vikbooking');
+				break;
+			case 'VBO_IDVERIF_MODAL_TITLE';
+				$result = __('Identity verification documents', 'vikbooking');
+				break;
+			case 'VBO_IDVERIF_ERROR_MISSING_VERIFICATION_SESSION';
+				$result = __('Please go through the identity verification process.', 'vikbooking');
+				break;
+			case 'VBO_IDVERIF_ERROR_INVALID_SESSION';
+				$result = __('Invalid identity verification values', 'vikbooking');
+				break;
+			case 'VBO_MEAL_PLANS_INCL':
+				$result = __('Meal Plans Included', 'vikbooking');
+				break;
+			case 'VBO_MEAL_BREAKFAST':
+				$result = __('Breakfast', 'vikbooking');
+				break;
+			case 'VBO_MEAL_LUNCH':
+				$result = __('Lunch', 'vikbooking');
+				break;
+			case 'VBO_MEAL_DINNER':
+				$result = __('Dinner', 'vikbooking');
+				break;
+			case 'VBO_MEAL_PLAN':
+				$result = __('Meal Plan', 'vikbooking');
+				break;
+			case 'VBO_MEALS':
+				$result = __('Meals', 'vikbooking');
+				break;
 		}
 
 		return $result;

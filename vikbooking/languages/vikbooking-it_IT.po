@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2025-06-09 22:41+0200\n"
-"PO-Revision-Date: 2025-06-09 22:41+0200\n"
+"POT-Creation-Date: 2025-07-24 23:59+0200\n"
+"PO-Revision-Date: 2025-07-25 00:22+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: it_IT\n"
@@ -1068,7 +1068,7 @@ msgid "Reservation Saved"
 msgstr "Prenotazione salvata"
 
 #: libraries/language/admin.php:345
-msgid "Unable to save the Reservation, Room not Available"
+msgid "Unable to save the reservation, room not available"
 msgstr "Impossibile salvare la prenotazione, camera non disponibile"
 
 #: libraries/language/admin.php:348
@@ -1154,7 +1154,7 @@ msgstr "Sab"
 #: libraries/language/admin.php:1779 libraries/language/admin.php:2466
 #: libraries/language/admin.php:3312 libraries/language/admin.php:3933
 #: libraries/language/admin.php:4326 libraries/language/site.php:123
-#: libraries/language/site.php:1374
+#: libraries/language/site.php:1374 libraries/language/site.php:2413
 msgid "Check-in"
 msgstr "Check-in"
 
@@ -3152,27 +3152,25 @@ msgid "Website"
 msgstr "Website"
 
 #: libraries/language/admin.php:2052
-msgid "It's a City Tax"
+msgid "It's a city tax"
 msgstr "È una tassa di soggiorno"
 
 #: libraries/language/admin.php:2055
-msgid "It's a Fee"
-msgstr "È una tassa"
+msgid "It's a fixed fee"
+msgstr "È un costo fisso"
 
 #: libraries/language/admin.php:2058
 msgid ""
-"These settings are needed by the system to know if this Option is a City Tax "
-"like local/tourist taxes, or if it's a Fee like a booking fee, a mandatory "
-"resort fee, or a gratuity service fee that has to be paid at time of "
-"booking. Leave these settings disabled if the Option is not a tax or a fee, "
-"but just an extra service."
+"For mandatory costs, the system needs to know whether this option is a "
+"tourist tax or a fixed fee (such as cleaning or linen costs) to be paid at "
+"the time of booking. Leave these settings disabled if the option is not a "
+"tax or a fixed fee, but simply an optional extra service."
 msgstr ""
-"Il sistema ha bisogno di queste impostazioni per sapere se questa Opzione è "
-"una Tassa di soggiorno come le tasse locali o se è una Tassa come una Tassa "
-"Locale, una tariffa resort obbligatoria or una spesa per le pulizie, che "
-"deve essere pagata al momento della prenotazione. Lascia queste impostazioni "
-"disabilitate se l'Opzione non è una Tassa o un'Imposta ma soltanto un "
-"servizio extra."
+"Nel caso di costi obbligatori, il sistema ha bisogno di sapere se questa "
+"opzione è una tassa di soggiorno, o un costo fisso come i costi di pulizia/"
+"biancheria, da pagarsi al momento della prenotazione. Lascia queste "
+"impostazioni disabilitate se l’Opzione non è una tassa o un costo fisso, ma "
+"soltanto un servizio extra opzionale."
 
 #: libraries/language/admin.php:2061
 msgid "Taxes (VAT)"
@@ -3921,8 +3919,8 @@ msgid "Packages/Offers"
 msgstr "Pacchetti/Offerte"
 
 #: libraries/language/admin.php:2721 libraries/language/admin.php:3000
-msgid "Scheduled Cron Jobs"
-msgstr "Cron jobs programmati"
+msgid "Scheduled Actions"
+msgstr "Azioni programmate"
 
 #: libraries/language/admin.php:2724
 msgid "The Channel Manager has successfully notified the Channels!"
@@ -4402,8 +4400,8 @@ msgid "Your Booking"
 msgstr "La tua prenotazione"
 
 #: libraries/language/admin.php:3105
-msgid "Vik Booking - Scheduled Cron Jobs"
-msgstr "Vik Booking - Cron Jobs pianificati"
+msgid "Vik Booking - Scheduled Actions"
+msgstr "Vik Booking - Azioni programmate"
 
 #: libraries/language/admin.php:3108
 msgid "New Cron Job"
@@ -9488,7 +9486,7 @@ msgstr "Tasso di conversione"
 msgid "Reminder - Email"
 msgstr "Promemoria - Email"
 
-#: libraries/language/admin.php:6324
+#: libraries/language/admin.php:6324 libraries/language/admin.php:8142
 msgid "Reminder - Pre-checkin"
 msgstr "Promemoria - Pre-checkin"
 
@@ -10003,19 +10001,19 @@ msgstr ""
 "completato i tuoi test puoi scegliere di non tenere una copia locale di ogni "
 "file di export nel server e di cancellare tali file automaticamente."
 
-#: libraries/language/admin.php:6618
+#: libraries/language/admin.php:6618 libraries/language/site.php:2443
 msgid "Meal Plans Included"
 msgstr "Pasti inclusi"
 
-#: libraries/language/admin.php:6621
+#: libraries/language/admin.php:6621 libraries/language/site.php:2446
 msgid "Breakfast"
 msgstr "Colazione"
 
-#: libraries/language/admin.php:6624
+#: libraries/language/admin.php:6624 libraries/language/site.php:2449
 msgid "Lunch"
 msgstr "Pranzo"
 
-#: libraries/language/admin.php:6627
+#: libraries/language/admin.php:6627 libraries/language/site.php:2452
 msgid "Dinner"
 msgstr "Cena"
 
@@ -10028,10 +10026,11 @@ msgid "Pets"
 msgstr "Animali"
 
 #: libraries/language/admin.php:6636 libraries/language/site.php:1785
+#: libraries/language/site.php:2455
 msgid "Meal Plan"
 msgstr "Trattamento"
 
-#: libraries/language/admin.php:6639
+#: libraries/language/admin.php:6639 libraries/language/site.php:2458
 msgid "Meals"
 msgstr "Pasti"
 
@@ -12312,6 +12311,133 @@ msgstr "Alta priorità"
 #: libraries/language/admin.php:8094
 msgid "Charge Authorized Card"
 msgstr "Addebita carta autorizzata"
+
+#: libraries/language/admin.php:8097 libraries/language/site.php:2416
+msgid "Pre-arrival Cleaning"
+msgstr "Pulizia pre-arrivo"
+
+#: libraries/language/admin.php:8100 libraries/language/site.php:2419
+msgid "Pre-arrival Maintenance"
+msgstr "Manutenzione pre-arrivo"
+
+#: libraries/language/admin.php:8103 libraries/language/site.php:2422
+msgid "Pre-arrival"
+msgstr "Pre-arrivo"
+
+#: libraries/language/admin.php:8106
+msgid "Tasks assignment strategy"
+msgstr "Strategia di assegnazione delle attività"
+
+#: libraries/language/admin.php:8109
+msgid ""
+"Choose how new tasks are assigned to operators. Balanced: Distributes tasks "
+"evenly across all available operators. Sequential: Fills one operator's "
+"schedule before assigning tasks to the next."
+msgstr ""
+"Scegli come assegnare i nuovi compiti agli operatori. Bilanciata: "
+"distribuisce i compiti in modo uniforme tra tutti gli operatori disponibili. "
+"Sequenziale: riempie l’agenda di un operatore per volta, prima di passare al "
+"successivo."
+
+#: libraries/language/admin.php:8112
+msgid "Balanced"
+msgstr "Bilanciata"
+
+#: libraries/language/admin.php:8115
+msgid "Sequential"
+msgstr "Sequenziale"
+
+#: libraries/language/admin.php:8118
+msgid "Holding Area"
+msgstr "Area di appoggio"
+
+#: libraries/language/admin.php:8121
+msgid "Ignore"
+msgstr "Ignora"
+
+#: libraries/language/admin.php:8124
+msgid "Try it"
+msgstr "Provalo"
+
+#: libraries/language/admin.php:8127
+msgid "Schedule action"
+msgstr "Pianifica azione"
+
+#: libraries/language/admin.php:8130
+msgid "Main country"
+msgstr "Nazione principale"
+
+#: libraries/language/admin.php:8133
+msgid ""
+"Choose the country and the state/province (if requested) where your main "
+"property is located. This information will eventually help you configure "
+"some local integrations."
+msgstr ""
+"Seleziona il paese e la provincia (se richiesta) in cui si trova la tua "
+"struttura principale. Questa informazione ti aiuterà a configurare eventuali "
+"normative locali."
+
+#: libraries/language/admin.php:8136
+msgid ""
+"If you manage properties in different countries, choose only the main one."
+msgstr ""
+"Se gestisci strutture in diverse nazioni, seleziona solamente quella "
+"principale."
+
+#: libraries/language/admin.php:8139
+msgid ""
+"If you manage properties in different states/provinces, choose only the main "
+"one."
+msgstr ""
+"Se gestisci strutture in diverse province, seleziona solamente quella "
+"principale."
+
+#: libraries/language/admin.php:8145
+msgid ""
+"Configure an automated action to remind your guests to complete the pre-"
+"check-in online before their stay."
+msgstr ""
+"Configura un'azione automatica per ricordare ai tuoi ospiti di completare il "
+"pre-check-in online prima del loro soggiorno."
+
+#: libraries/language/admin.php:8148
+msgid "Housekeeping management"
+msgstr "Servizio di Housekeeping"
+
+#: libraries/language/admin.php:8151
+msgid ""
+"<p>Thanks to the Task Manager, you can schedule in an efficient and "
+"organized way the housekeeping tasks for your properties. This will let you "
+"save time, and it will improve the communication with the housekeeping staff."
+"</p><ul><li>Automatic scheduling of cleaning tasks (turnover, daily, weekly "
+"cleanings)</li><li>Built-in chat system between the managers and the "
+"operators for real-time updates</li><li>Interactive calendar to view and "
+"manage the every-day tasks</li></ul><p>Click the button below to start "
+"setting up your first area/project.</p>"
+msgstr ""
+"<p>Grazie al gestore delle attività, puoi organizzare in modo efficiente "
+"tutte le attività di pulizia della struttura, risparmiando tempo e "
+"migliorando la comunicazione tra lo staff.</p><ul><li>Creazione automatica "
+"delle pulizie (turnover, giornaliere, settimanali)</li><li>Chat integrata "
+"tra operatori e amministratori per aggiornamenti in tempo reale</"
+"li><li>Calendario interattivo per visualizzare e gestire i compiti di ogni "
+"giorno</li></ul><p>Fai clic sul pulsante in basso per creare la tua prima "
+"area di lavoro.</p>"
+
+#: libraries/language/admin.php:8154
+msgid ""
+"Room reservations in the holding area can only be moved onto free nights."
+msgstr ""
+"Le prenotazioni di camere nell'area di appoggio possono essere spostate "
+"soltanto su notti libere."
+
+#: libraries/language/admin.php:8157
+msgid "Select booking"
+msgstr "Seleziona prenotazione"
+
+#: libraries/language/admin.php:8160
+msgid "Reservations cannot be moved onto this row."
+msgstr "Le prenotazioni non possono essere spostate su questa riga."
 
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
@@ -15115,6 +15241,30 @@ msgstr "Mi sono disassegnato da questa attività."
 msgid "hour"
 msgstr "ora"
 
+#: libraries/language/site.php:2425
+msgid "Refresh status"
+msgstr "Aggiorna stato"
+
+#: libraries/language/site.php:2428
+msgid "Verify your identity"
+msgstr "Verifica la tua identità"
+
+#: libraries/language/site.php:2431
+msgid "See uploaded documents"
+msgstr "Visualizza documenti caricati"
+
+#: libraries/language/site.php:2434
+msgid "Identity verification documents"
+msgstr "Documenti di verifica identità"
+
+#: libraries/language/site.php:2437
+msgid "Please go through the identity verification process."
+msgstr "Per favore completa il processo di verifica dell'identità."
+
+#: libraries/language/site.php:2440
+msgid "Invalid identity verification values"
+msgstr "Valori di verifica dell'identità invalidi"
+
 #: libraries/language/system.php:46
 msgid "Error"
 msgstr "Errore"
@@ -16120,6 +16270,9 @@ msgstr "no"
 #: modules/mod_vikbooking_rooms/language/handler.php:204
 msgid "Sleep"
 msgstr "Posto letto"
+
+#~ msgid "Scheduled Cron Jobs"
+#~ msgstr "Cron jobs programmati"
 
 #~ msgid "Set up your daily/seasonal prices with just a few clicks"
 #~ msgstr "Configura prezzi giornalieri/stagionali con un paio di clic"

@@ -931,6 +931,13 @@ a:focus {
 	font-size: 1.1em;
 	font-weight: normal;
 }
+.vbo-booking-rooms-wrapper .vbo-booking-canc-policy-type {
+	font-size: .9em;
+}
+.vbo-booking-rooms-wrapper .vbo-booking-canc-policy-descr {
+	font-size: .85em;
+	opacity: .8;
+}
 .vbvordroominfo .vbvordroominfotitle {
 	font-weight:bold;
 	display: inline-block;

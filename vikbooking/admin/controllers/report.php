@@ -104,7 +104,7 @@ class VikBookingControllerReport extends JControllerAdmin
         }
 
         // save report settings
-        $report_obj->saveSettings($data, $merge = true, $use_profile_id);
+        $report_obj->saveSettings($data, $merge = true, (string) $use_profile_id);
 
         // send the response to output
         VBOHttpDocument::getInstance($app)->json([

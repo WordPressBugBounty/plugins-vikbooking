@@ -3,7 +3,7 @@ Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
 Tested up to: 6.8
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 Requires PHP: 7.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -129,6 +129,24 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 
 == Changelog ==
 
+= 1.8.2 =
+*Release date - 28 July 2025*
+
+* Custom cancellation policies for custom rate plans.
+* Multi-calendar improvements in Availability Overview.
+* Availability Overview "Holding Area" row for hotel-inventory rooms.
+* Availability Overview "Unassigned units" row for hotel-inventory rooms.
+* Availability Overview drag & drop actions improved.
+* Main framework updated.
+* Introducing the Help Wizard to automatically configure country-related functions.
+* Booking.com Payments API for VCC reservations (E4jConnect channel manager required).
+* New Task Manager settings for sequential or balanced operators assignment strategy.
+* Task Manager new tasks scheduling frequency for pre-arrival.
+* Booking availability pre-flight during manual modifications.
+* Improved query execution timing for rooms with hotel-inventory.
+* New PMS reports (Trentino, Italy).
+* Minor fixes.
+
 = 1.8.1 =
 *Release date - 18 June 2025*
 
@@ -198,14 +216,6 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 * Introducing the new operator tool "Guest Messaging" (E4jConnect CM required).
 * Various improvements to the listing-style layout of the front-end page "Room Details".
 * Visual editor improvements for Cron Jobs to preview the message for a specific booking ID.
-
-= 1.7.5 =
-*Release date - 29 January 2025*
-
-* JavaScript improvements with new dates-range picker calendars.
-* Styling and responsiveness improvements with new dates-range picker calendars.
-* Introduced listings automatic mini-thumbnail for drop down menus.
-* Storing the pre-checkin guests registration data will invoke the pax driver callback.
 
 = Earlier versions =
 

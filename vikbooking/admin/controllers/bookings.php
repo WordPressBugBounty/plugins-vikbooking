@@ -669,8 +669,8 @@ class VikBookingControllerBookings extends JControllerAdmin
 		$index_two = $app->input->getInt('index_two', 0);
 		$checkin   = $app->input->getString('checkin', '');
 
-		if (!$bid_one || !$bid_two || !$rid || !$index_one || !$index_two) {
-			VBOHttpDocument::getInstance()->close(500, 'Missing request values');
+		if (!$bid_one || !$bid_two || !$rid || !$index_one || !$index_two || $index_one < 0 || $index_two < 0) {
+			VBOHttpDocument::getInstance()->close(500, 'Missing or invalid request values');
 		}
 
 		// collect the booking information
@@ -1087,6 +1087,46 @@ class VikBookingControllerBookings extends JControllerAdmin
 		VBOHttpDocument::getInstance()->json([
 			'rows' => $aff_rows,
 			'url'  => VBOFactory::getPlatform()->getUri()->admin('index.php?option=com_vikbooking&task=editorder&cid[]=' . $booking['id'], false),
+		]);
+	}
+
+	/**
+	 * AJAX endpoint to check whether a whole booking can be modified with new stay dates.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.18.2 (J) - 1.8.2 (WP)
+	 */
+	public function is_booking_modifiable()
+	{
+		if (!JSession::checkToken()) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
+		$app = JFactory::getApplication();
+
+		$bid      = $app->input->getInt('bid', 0);
+		$checkin  = $app->input->getString('checkin');
+		$checkout = $app->input->getString('checkout');
+
+		if (!$bid || empty($checkin) || empty($checkout)) {
+			VBOHttpDocument::getInstance()->close(400, 'Missing booking information.');
+		}
+
+		try {
+			// check whether the booking can be modified
+			$modifiable = (new VBOModelReservation)->bookingModifiable($bid, $checkin, $checkout);
+		} catch (Exception $e) {
+			// propagate the error
+			VBOHttpDocument::getInstance()->close($e->getCode() ?: 400, $e->getMessage() ?: 'Validation failure.');
+		}
+
+		// validation process completed
+		VBOHttpDocument::getInstance()->json([
+			'modifiable' => $modifiable,
+			'bid'        => $bid,
+			'checkin'    => $checkin,
+			'checkout'   => $checkout,
 		]);
 	}
 }

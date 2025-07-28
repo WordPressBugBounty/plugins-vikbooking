@@ -22,11 +22,6 @@ $upgrade_options = VBORoomHelper::getInstance([
 ], true)->getUpgradeOptions($this->vbo_tn);
 
 if ($upgrade_options) {
-	/**
-	 * Include the VBOCore JS class.
-	 */
-	VikBooking::getVboApplication()->loadCoreJS();
-
 	// load JS lang strings
 	JText::script('VBO_UPGRADE_ROOMS');
 	JText::script('VBO_DOUPGRADE_CONFIRM');

@@ -209,6 +209,9 @@ $data 	 = !is_array($data) ? array() : $data;
 						<option value="3"<?php echo $current_einv_paymethod == '3' ? ' selected="selected"' : ''; ?>>Cash</option>
 						<option value="4"<?php echo $current_einv_paymethod == '4' ? ' selected="selected"' : ''; ?>>Check</option>
 						<option value="5"<?php echo $current_einv_paymethod == '5' ? ' selected="selected"' : ''; ?>>On credit</option>
+						<option value="6"<?php echo $current_einv_paymethod == '6' ? ' selected="selected"' : ''; ?>>Web Banking</option>
+						<option value="7"<?php echo $current_einv_paymethod == '7' ? ' selected="selected"' : ''; ?>>POS / e-POS</option>
+						<option value="8"<?php echo $current_einv_paymethod == '8' ? ' selected="selected"' : ''; ?>>IRIS</option>
 					</select>
 				</td>
 			</tr>

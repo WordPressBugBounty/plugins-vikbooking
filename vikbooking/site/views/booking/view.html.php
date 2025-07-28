@@ -234,10 +234,26 @@ class VikbookingViewBooking extends JViewVikBooking
 			}
 		}
 		$is_package = !empty($order['pkg']) ? true : false;
-		$orderrooms = [];
-		$q = "SELECT `or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`roomindex`,`or`.`pkg_id`,`or`.`pkg_name`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`or`.`otarplan`,`r`.`id` AS `r_reference_id`,`r`.`name`,`r`.`img`,`r`.`idcarat`,`r`.`fromadult`,`r`.`toadult` FROM `#__vikbooking_ordersrooms` AS `or`,`#__vikbooking_rooms` AS `r` WHERE `or`.`idorder`='".$order['id']."' AND `or`.`idroom`=`r`.`id` ORDER BY `or`.`id` ASC;";
-		$dbo->setQuery($q);
+
+		// get the rooms booked list
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select($dbo->qn('or') . '.*')
+				->select($dbo->qn('r.id', 'r_reference_id'))
+				->select([
+					$dbo->qn('r.name'),
+					$dbo->qn('r.img'),
+					$dbo->qn('r.idcarat'),
+					$dbo->qn('r.fromadult'),
+					$dbo->qn('r.toadult'),
+				])
+				->from($dbo->qn('#__vikbooking_ordersrooms', 'or'))
+				->leftJoin($dbo->qn('#__vikbooking_rooms', 'r') . ' ON ' . $dbo->qn('or.idroom') . ' = ' . $dbo->qn('r.id'))
+				->where($dbo->qn('or.idorder') . ' = ' . (int)$order['id'])
+				->order($dbo->qn('or.id') . ' ASC')
+		);
 		$orderrooms = $dbo->loadAssocList();
+
 		if ($orderrooms) {
 			$vbo_tn->translateContents($orderrooms, '#__vikbooking_rooms', array('id' => 'r_reference_id'));
 			foreach ($orderrooms as $kor => $or) {

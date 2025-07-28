@@ -44,6 +44,13 @@ class VBOPlatformOrgJoomlaMailer implements VBOPlatformMailerInterface
 	 */
 	public function prepare(VBOMailWrapper $mail)
 	{
+		/**
+		 * Trigger event to allow third party plugins to overwrite any property of the mail message.
+		 * 
+		 * @since 	1.18.2 (J) - 1.8.2 (WP)
+		 */
+		VBOFactory::getPlatform()->getDispatcher()->trigger('onBeforeSendMail', [$mail]);
+
 		// init table content
 		$content = JTable::getInstance('content');
 		$content->text = VBOMailParser::checkWrapperSymbols($mail->getContent());

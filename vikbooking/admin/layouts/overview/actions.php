@@ -182,6 +182,14 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
     const vboActionRoomRplansMap = {};
 
     /**
+     * Register multi-calendar action counters.
+     */
+    const vboMulticalendarActionCounters = {
+        apply: 0,
+        add_to_queue: 0,
+    };
+
+    /**
      * Register function for loading the room rates.
      */
     const vboActionLoadRoomRates = (from_date, to_date, room_ids) => {
@@ -215,7 +223,8 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                     vboActionHideRoomRates();
 
                     // get the date object for today at midnight as limit for past dates
-                    let todayMidnight = new Date().setHours(0, 0, 0, 0);
+                    let todayMidnight = new Date();
+                    todayMidnight.setHours(0, 0, 0, 0);
 
                     // populate rates for all listings by scanning all month tables
                     document
@@ -270,9 +279,11 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                                         .forEach((roomRowDay) => {
                                             // get the day Y-m-d value
                                             let ymd = roomRowDay.getAttribute('data-day');
+                                            let ymdMidnight = new Date(ymd);
+                                            ymdMidnight.setHours(0, 0, 0, 0);
 
                                             // check whether the day is in the past
-                                            let isPast = todayMidnight > new Date(ymd);
+                                            let isPast = todayMidnight > ymdMidnight;
 
                                             // build month-day cell with pricing details
                                             let rateDayCell = document.createElement(isMultiUnit ? 'td' : 'span');
@@ -370,7 +381,8 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                     if (previousQueue && previousQueue?.data && Array.isArray(previousQueue?.data)) {
                         // ensure the cells of the previous queue will get the pending update class
                         let previousQueueData = previousQueue.data;
-                        let todayMidnight = new Date().setHours(0, 0, 0, 0);
+                        let todayMidnight = new Date();
+                        todayMidnight.setHours(0, 0, 0, 0);
 
                         // get all month tables to find the requested listing-day cells
                         let monthTables = document
@@ -398,12 +410,15 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                             // build the date objects
                             let iterDate = new Date(prevData.fromdate);
                             let end = new Date(prevData.todate);
+                            iterDate.setHours(0, 0, 0, 0);
+                            end.setHours(0, 0, 0, 0);
 
                             // loop through the dates interval
                             while (iterDate <= end) {
                                 if (iterDate < todayMidnight) {
                                     // go to next day by cloning the date object
                                     iterDate = new Date(iterDate.setDate(iterDate.getDate() + 1));
+                                    iterDate.setHours(0, 0, 0, 0);
 
                                     // do not proceed with a date in the past
                                     continue;
@@ -440,6 +455,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                                 if (!listingDayRateCell) {
                                     // go to next day by cloning the date object
                                     iterDate = new Date(iterDate.setDate(iterDate.getDate() + 1));
+                                    iterDate.setHours(0, 0, 0, 0);
 
                                     // listing cell date no longer in the document
                                     continue;
@@ -471,6 +487,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
 
                                 // go to next day by cloning the date object
                                 iterDate = new Date(iterDate.setDate(iterDate.getDate() + 1));
+                                iterDate.setHours(0, 0, 0, 0);
                             }
                         });
                     }
@@ -648,6 +665,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
 
             // clone the start date object
             let iterDate = new Date(start);
+            iterDate.setHours(0, 0, 0, 0);
 
             // loop through the dates interval
             while (iterDate <= end) {
@@ -671,6 +689,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
 
                 // go to next day by cloning again the date object
                 iterDate = new Date(iterDate.setDate(iterDate.getDate() + 1));
+                iterDate.setHours(0, 0, 0, 0);
             }
 
             if (listingCells.length) {
@@ -712,7 +731,9 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
         if (!vboActionRoomRateData.start) {
             // start selection
             let startDate = new Date(day);
-            let todayMidnight = new Date().setHours(0, 0, 0, 0);
+            let todayMidnight = new Date();
+            startDate.setHours(0, 0, 0, 0);
+            todayMidnight.setHours(0, 0, 0, 0);
 
             if (todayMidnight > startDate) {
                 // starting a selection on a past date is forbidden
@@ -732,6 +753,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
         }
 
         let endDate = new Date(day);
+        endDate.setHours(0, 0, 0, 0);
 
         if (endDate < vboActionRoomRateData.start) {
             // date in the past clicked, reset selection
@@ -778,15 +800,23 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                 VBOCore.emitEvent('vbo-overv-setnewrates-dismiss');
             });
 
+        // let check default action depending on counters
+        let def_action = vboMulticalendarActionCounters.add_to_queue && vboMulticalendarActionCounters.add_to_queue > vboMulticalendarActionCounters.apply ? 'queue' : 'apply';
+
         // define the modal apply buttons content
         let apply_btn = jQuery('<button></button>')
             .attr('type', 'button')
             .addClass('btn')
             .addClass('btn-primary')
-            .text(<?php echo json_encode(JText::translate('VBAPPLY')); ?>)
+            .text(def_action == 'queue' ? <?php echo json_encode(JText::translate('VBO_ADD_TO_QUEUE')); ?> : <?php echo json_encode(JText::translate('VBAPPLY')); ?>)
             .on('click', () => {
-                // apply new rates
-                vboActionApplyNewRates();
+                if (def_action == 'queue') {
+                    // queue the rates update request
+                    vboActionQueueRatesUpdate();
+                } else {
+                    // apply new rates
+                    vboActionApplyNewRates();
+                }
             });
 
         let actions_btn = jQuery('<button></button>')
@@ -893,6 +923,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
         }
 
         let dayDate = new Date(day);
+        dayDate.setHours(0, 0, 0, 0);
 
         // always delete the selected class from any middle-cell
         document
@@ -1137,6 +1168,9 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             return;
         }
 
+        // increase action counter
+        vboMulticalendarActionCounters.apply++;
+
         // check the OTA pricing alteration rules, if any
         let ota_pricing = {};
         if (invoke_vcm) {
@@ -1292,6 +1326,9 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             alert('Invalid rate amount.');
             return;
         }
+
+        // increase action counter
+        vboMulticalendarActionCounters.add_to_queue++;
 
         // check the OTA pricing alteration rules, if any
         let ota_pricing = {};

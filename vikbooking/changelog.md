@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.8.2
+
+*Release date - 28 July 2025*
+
+- Custom cancellation policies for custom rate plans.
+- Multi-calendar improvements in Availability Overview.
+- Availability Overview "Holding Area" row for hotel-inventory rooms.
+- Availability Overview "Unassigned units" row for hotel-inventory rooms.
+- Availability Overview drag & drop actions improved.
+- Main framework updated.
+- Introducing the Help Wizard to automatically configure country-related functions.
+- Booking.com Payments API for VCC reservations (E4jConnect channel manager required).
+- New Task Manager settings for sequential or balanced operators assignment strategy.
+- Task Manager new tasks scheduling frequency for pre-arrival.
+- Booking availability pre-flight during manual modifications.
+- Improved query execution timing for rooms with hotel-inventory.
+- New PMS reports (Trentino, Italy).
+- Minor fixes.
+
 ## 1.8.1
 
 *Release date - 18 June 2025*

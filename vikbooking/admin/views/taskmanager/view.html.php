@@ -106,5 +106,9 @@ class VikBookingViewTaskmanager extends JViewVikBooking
 	{
 		// add menu title and some buttons to the page
 		JToolBarHelper::title(JText::translate('VBO_TITLE_TASK_MANAGER'), 'vikbooking');
+
+		if (JFactory::getUser()->authorise('core.admin', 'com_vikbooking')) {
+			JToolBarHelper::apply('tm.settings', JText::translate('VBOADMINLEGENDSETTINGS'));
+		}
 	}
 }

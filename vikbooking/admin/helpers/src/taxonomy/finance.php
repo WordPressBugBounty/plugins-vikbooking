@@ -524,8 +524,11 @@ class VBOTaxonomyFinance
 			$stats['bids'][] = $bid;
 
 			// increase tot bookings and los counter
-			$stats['tot_bookings']++;
-			$los_counter += $booking[0]['days'];
+			if (!$rooms || ($rooms && array_intersect(array_column($booking, 'idroom'), $rooms))) {
+				// make sure to increase counters only if filtered listing(s) involved or if no filters set
+				$stats['tot_bookings']++;
+				$los_counter += $booking[0]['days'];
+			}
 
 			// count rooms booked within the reservation
 			$booking_rooms = count($booking);
@@ -737,6 +740,33 @@ class VBOTaxonomyFinance
 
 		// return the statistics information
 		return $stats;
+	}
+
+	/**
+	 * Returns the information of the given rate plan ID.
+	 * 
+	 * @param 	int 	$rplan_id 	The rate plan ID.
+	 * 
+	 * @return 	?array
+	 * 
+	 * @since 	1.18.2 (J) - 1.8.2 (WP)
+	 */
+	public function getRatePlanData(int $rplan_id)
+	{
+		if (empty($rplan_id)) {
+			return null;
+		}
+
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_prices'))
+				->where($dbo->qn('id') . ' = ' . $rplan_id)
+		);
+
+		return $dbo->loadAssoc();
 	}
 
 	/**

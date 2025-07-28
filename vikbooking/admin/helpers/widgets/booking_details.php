@@ -1142,6 +1142,9 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 		</div>
 
 		<script type="text/javascript">
+			// register the last booking details found
+			vboWidgetBookDetsCurrentData = <?php echo json_encode($details); ?>;
+
 			jQuery(function() {
 
 				jQuery('#<?php echo $wrapper; ?>').find('button[data-hasreminders]').on('click', function() {
@@ -1316,6 +1319,11 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 					});
 				});
 
+				let selectBookingBtn = document.querySelector('#<?php echo $wrapper; ?> .vbo-wbookingdet-select-booking');
+				if (selectBookingBtn) {
+					selectBookingBtn.disabled = false;
+				}
+
 			<?php
 			if ($open_task = $this->getOption('task_id', 0)) {
 				?>
@@ -1323,7 +1331,6 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 				<?php
 			}
 			?>
-
 			});
 		<?php
 		if ($from_push) {
@@ -1384,6 +1391,7 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 		$load_bid 			= 0;
 		$js_modal_id 		= '';
 		$is_modal_rendering = false;
+		$selected_event     = null;
 		if ($data) {
 			// access Multitask data
 			$is_modal_rendering = $data->isModalRendering();
@@ -1398,6 +1406,9 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 			 * the ID from the injected options (i.e. new Push notification).
 			 */
 			$load_bid = $this->options()->fetchBookingId();
+
+			// booking selected event to eventually dispatch
+			$selected_event = $this->getOption('selected_event');
 		}
 
 		// check if we got data by clicking on a push notification from the ServiceWorker
@@ -1422,6 +1433,14 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 							</button>
 							<input type="text" name="booking_key" value="<?php echo $load_bid ? "id: {$load_bid}" : ''; ?>" placeholder="<?php echo htmlspecialchars(JText::translate('VBOFILTCONFNUMCUST')); ?>" autocomplete="off" />
 							<button type="button" class="btn vbo-config-btn" onclick="vboWidgetBookDetsSearch('<?php echo $wrapper_id; ?>');"><?php VikBookingIcons::e('search'); ?> <span class="vbo-widget-bookdets-searchbtn"><?php echo JText::translate('VBODASHSEARCHKEYS'); ?></span></button>
+						<?php
+						if ($selected_event) {
+							// display button to select the booking found
+							?>
+							<button type="button" class="btn btn-success vbo-wbookingdet-select-booking" style="margin-left: 4px;" disabled><?php VikBookingIcons::e('check'); ?> <?php echo JText::translate('VBO_SELECT'); ?></button>
+							<?php
+						}
+						?>
 						</div>
 					</div>
 
@@ -1703,6 +1722,9 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 			// holds the lastly modified booking ID
 			var vbo_widget_book_dets_last_mod_bid = null;
 
+			// holds the last booking details found
+			var vboWidgetBookDetsCurrentData = null;
+
 			jQuery(function() {
 
 				// when document is ready, load contents for this widget's instance
@@ -1816,6 +1838,20 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 					}
 				});
 				<?php
+				if ($selected_event) {
+					?>
+				let selectBookingBtn = document.querySelector('#<?php echo $wrapper_id; ?> .vbo-wbookingdet-select-booking');
+				selectBookingBtn.addEventListener('click', () => {
+					// dispatch the requested event
+					VBOCore.emitEvent('<?php echo $selected_event; ?>', {
+						booking: vboWidgetBookDetsCurrentData,
+					});
+
+					// dispatch the event to dismiss the modal
+					VBOCore.emitEvent('vbo-dismiss-widget-modal<?php echo $js_modal_id; ?>');
+				});
+					<?php
+				}
 			}
 			?>
 

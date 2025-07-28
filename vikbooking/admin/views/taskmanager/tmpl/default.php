@@ -32,6 +32,42 @@ JText::script('VBO_SEARCH_TASKS');
 
 ?>
 
+<form action="index.php?option=com_vikbooking" method="post" name="adminForm" id="adminForm"></form>
+
+<div class="vbo-tm-settings-helper" style="display: none;">
+    <div class="vbo-tm-settings-wrapper">
+        <form method="post" id="vbo-tm-settings-form">
+            <div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
+                <div class="vbo-params-wrap">
+                    <div class="vbo-params-container">
+                        <div class="vbo-params-block">
+                        <?php
+                        // render all params/settings
+                        echo VBOParamsRendering::getInstance(
+                            [
+                                'tm_op_assignment_strategy' => [
+                                    'type'  => 'select',
+                                    'label' => JText::translate('VBO_TM_OP_ASSIGN_STRATEGY'),
+                                    'help'  => JText::translate('VBO_TM_OP_ASSIGN_STRATEGY_HELP'),
+                                    'options' => [
+                                        'balanced' => JText::translate('VBO_TM_OP_ASSIGN_STRATEGY_BALANCED'),
+                                        'sequential' => JText::translate('VBO_TM_OP_ASSIGN_STRATEGY_SEQUENTIAL'),
+                                    ],
+                                ],
+                            ],
+                            [
+                                'tm_op_assignment_strategy' => VBOFactory::getConfig()->get('tm_op_assignment_strategy', 'balanced'),
+                            ]
+                        )->setInputName('settings')->getHtml();
+                        ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="vbo-tm-wrapper" style="<?php echo $allAreas ? '' : 'display: none;'; ?>">
 
     <div class="vbo-tm-toolbar">
@@ -570,6 +606,77 @@ if (!$allAreas) {
             }
         );
     });
+
+    /**
+     * Listen to the toolbar task buttons.
+     */
+    Joomla.submitbutton = (task) => {
+        if (task === 'tm.settings') {
+            // define the modal cancel button
+            let cancel_btn = jQuery('<button></button>')
+                .attr('type', 'button')
+                .addClass('btn')
+                .text(<?php echo json_encode(JText::translate('VBANNULLA')); ?>)
+                .on('click', () => {
+                    // dismiss the modal
+                    VBOCore.emitEvent('vbo-tm-settings-dismiss');
+                });
+
+            // define the modal apply button
+            let apply_btn = jQuery('<button></button>')
+                .attr('type', 'button')
+                .addClass('btn btn-success')
+                .html('<?php VikBookingIcons::e('save'); ?> ' + <?php echo json_encode(JText::translate('VBSAVE')); ?>)
+                .on('click', function() {
+                    // start loading
+                    VBOCore.emitEvent('vbo-tm-settings-loading');
+
+                    // get form data
+                    const tmSettingsForm = new FormData(document.querySelector('#vbo-tm-settings-form'));
+
+                    // build query parameters for the request
+                    let qpRequest = new URLSearchParams(tmSettingsForm);
+
+                    // make the request
+                    VBOCore.doAjax(
+                        "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=configuration.update'); ?>",
+                        qpRequest.toString(),
+                        (resp) => {
+                            // dismiss the modal on success
+                            VBOCore.emitEvent('vbo-tm-settings-dismiss');
+                        },
+                        (error) => {
+                            // stop loading
+                            VBOCore.emitEvent('vbo-tm-settings-loading');
+                            // display the error
+                            alert(error.responseText || 'Generic error');
+                        }
+                    );
+                });
+
+            // render modal
+            let modalBody = VBOCore.displayModal({
+                suffix: 'tm_settings_modal',
+                extra_class: 'vbo-modal-rounded vbo-modal-dialog',
+                title: <?php echo json_encode(JText::translate('VBOADMINLEGENDSETTINGS')); ?>,
+                body_prepend: true,
+                lock_scroll: true,
+                footer_left: cancel_btn,
+                footer_right: apply_btn,
+                loading_event: 'vbo-tm-settings-loading',
+                dismiss_event: 'vbo-tm-settings-dismiss',
+                onDismiss: () => {
+                    // move modal content back
+                    jQuery('.vbo-tm-settings-wrapper').appendTo(jQuery('.vbo-tm-settings-helper'));
+                }
+            });
+
+            // set modal content
+            jQuery('.vbo-tm-settings-wrapper').appendTo(modalBody);
+        } else {
+            Joomla.submitform(task, document.adminForm);
+        }
+    };
 
     jQuery(function() {
 

@@ -280,4 +280,31 @@ final class VBOFactory
     {
         return new VBOChatMediator(new VBOChatStorageDatabase);
     }
+
+    /**
+     * Returns a new help wizard instance.
+     * 
+     * @return  VBOHelpWizard
+     * 
+     * @since   1.18.2 (J) - 1.8.2 (WP)
+     */
+    public static function getHelpWizard()
+    {
+        $helpWizard = new VBOHelpWizard([
+            'delay' => 0,
+        ]);
+
+        // get VikBooking configuration status
+        $metrics = VikBookingHelper::getFirstSetupMetrics();
+
+        // do not spam the user with wizard hints until the first configuration is complete
+        if (empty($metrics['totprices']) || empty($metrics['totrooms']) || empty($metrics['totdailyfares'])) {
+            return $helpWizard;
+        }
+
+        // attach the folder where the instructions should be stored
+        $helpWizard->addIncludePath(VBO_ADMIN_PATH . '/helpers/src/help/wizard/drivers/');
+
+        return $helpWizard;
+    }
 }

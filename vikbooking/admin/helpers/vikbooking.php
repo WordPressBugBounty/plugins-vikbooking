@@ -1159,6 +1159,18 @@ class VikBookingHelper
 		</script>
 			<?php
 		}
+
+		$helpWizardAjaxUrl = VBOFactory::getPlatform()->getUri()->ajax('index.php?option=com_vikbooking');
+		JHtml::fetch('script', VBO_ADMIN_URI . 'resources/helpwizard.js', ['version' => VIKBOOKING_SOFTWARE_VERSION]);
+		JText::script('VBSAVE');
+		JText::script('VBDISMISS');
+		JFactory::getDocument()->addScriptDeclaration(
+<<<JAVASCRIPT
+(function(w) {
+	window.VBO_HELP_WIZARD_AJAX_URL = '{$helpWizardAjaxUrl}';
+})(window);
+JAVASCRIPT
+		);
 	}
 
 	public static function printFooter()

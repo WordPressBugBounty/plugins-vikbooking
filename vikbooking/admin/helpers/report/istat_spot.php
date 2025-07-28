@@ -169,7 +169,7 @@ class VikBookingReportIstatSpot extends VikBookingReport
 
 		//From Date Filter (with hidden values for the dropdown menus of Comuni, Province, Stati etc..)
 		$filter_opt = array(
-			'label' => '<label for="fromdate">'.JText::translate('VBOREPORTSDATEFROM').'</label>',
+			'label' => '<label for="fromdate">'.JText::translate('VBPVIEWORDERSONE').'</label>',
 			'html' => '<input type="text" id="fromdate" name="fromdate" value="" class="vbo-report-datepicker vbo-report-datepicker-from" />'.$hidden_vals,
 			'type' => 'calendar',
 			'name' => 'fromdate'
@@ -438,21 +438,74 @@ class VikBookingReportIstatSpot extends VikBookingReport
 			$this->setError('Devi specificare se la tua struttura è aperta o meno attraverso il menù a tendina qui sopra.');
 			return false;
 		}
-		//Query to obtain the records (all check-ins within the dates filter)
-		$records = array();
-		$q = "SELECT `o`.`id`,`o`.`custdata`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`country`,".
-			"`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`t_first_name`,`or`.`t_last_name`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,".
-			"`co`.`idcustomer`,`co`.`pax_data`,`c`.`first_name`,`c`.`last_name`,`c`.`country` AS `customer_country`,`c`.`doctype`,`c`.`docnum`,`c`.`gender`,`c`.`bdate`,`c`.`pbirth` ".
-			"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
-			"LEFT JOIN `#__vikbooking_customers_orders` AS `co` ON `co`.`idorder`=`o`.`id` LEFT JOIN `#__vikbooking_customers` AS `c` ON `c`.`id`=`co`.`idcustomer` ".
-			"WHERE `o`.`status`='confirmed' AND `o`.`closure`=0 AND ((`o`.`checkin`>=".$from_ts." AND `o`.`checkin`<=".$to_ts.") OR (`o`.`checkout`>=".$from_ts." AND `o`.`checkout`<=".$to_ts.")) ".
-			"ORDER BY `o`.`checkin` ASC, `o`.`id` ASC, `or`.`id` ASC;";
+
+		// query to obtain the records (all reservations or stays within the dates filter)
+		$q = $dbo->getQuery(true)
+			->select([
+				$dbo->qn('o.id'),
+				$dbo->qn('o.custdata'),
+				$dbo->qn('o.ts'),
+				$dbo->qn('o.days'),
+				$dbo->qn('o.status'),
+				$dbo->qn('o.checkin'),
+				$dbo->qn('o.checkout'),
+				$dbo->qn('o.totpaid'),
+				$dbo->qn('o.roomsnum'),
+				$dbo->qn('o.total'),
+				$dbo->qn('o.idorderota'),
+				$dbo->qn('o.channel'),
+				$dbo->qn('o.country'),
+				$dbo->qn('or.idorder'),
+				$dbo->qn('or.idroom'),
+				$dbo->qn('or.adults'),
+				$dbo->qn('or.children'),
+				$dbo->qn('or.t_first_name'),
+				$dbo->qn('or.t_last_name'),
+				$dbo->qn('or.cust_cost'),
+				$dbo->qn('or.cust_idiva'),
+				$dbo->qn('or.extracosts'),
+				$dbo->qn('or.room_cost'),
+				$dbo->qn('co.idcustomer'),
+				$dbo->qn('co.pax_data'),
+				$dbo->qn('c.first_name'),
+				$dbo->qn('c.last_name'),
+				$dbo->qn('c.country', 'customer_country'),
+				$dbo->qn('c.address'),
+				$dbo->qn('c.city'),
+				$dbo->qn('c.state'),
+				$dbo->qn('c.doctype'),
+				$dbo->qn('c.docnum'),
+				$dbo->qn('c.gender'),
+				$dbo->qn('c.bdate'),
+				$dbo->qn('c.pbirth'),
+			])
+			->from($dbo->qn('#__vikbooking_orders', 'o'))
+			->leftJoin($dbo->qn('#__vikbooking_ordersrooms', 'or') . ' ON ' . $dbo->qn('or.idorder') . ' = ' . $dbo->qn('o.id'))
+			->leftJoin($dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $dbo->qn('co.idorder') . ' = ' . $dbo->qn('o.id'))
+			->leftJoin($dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $dbo->qn('c.id') . ' = ' . $dbo->qn('co.idcustomer'))
+			->where($dbo->qn('o.closure') . ' = 0')
+			->where($dbo->qn('o.status') . ' = ' . $dbo->q('confirmed'))
+			->order($dbo->qn('o.checkin') . ' ASC')
+			->order($dbo->qn('o.id') . ' ASC')
+			->order($dbo->qn('or.id') . ' ASC');
+
+		if ($plistings) {
+			$q->where($this->dbo->qn('or.idroom') . ' IN (' . implode(', ', $plistings) . ')');
+		}
+
+		// fetch all bookings with a stay date between the interval of dates requested
+		$q->andWhere([
+			'(' . $dbo->qn('o.checkin') . ' BETWEEN ' . $from_ts . ' AND ' . $to_ts . ')',
+			'(' . $dbo->qn('o.checkout') . ' BETWEEN ' . $from_ts . ' AND ' . $to_ts . ')',
+			'(' . $dbo->qn('o.checkin') . ' < ' . $from_ts . ' AND ' . $dbo->qn('o.checkout') . ' > ' . $to_ts . ')',
+		], 'OR');
+
 		$this->dbo->setQuery($q);
 		$records = $this->dbo->loadAssocList();
 
 		if (!$records) {
 			$this->setError(JText::translate('VBOREPORTSERRNORESERV'));
-			$this->setError('Nessun check-in nelle date selezionate.');
+			$this->setError('Nessuna prenotazione trovata nelle date selezionate.');
 			return false;
 		}
 		//nest records with multiple rooms booked inside sub-array
@@ -468,9 +521,6 @@ class VikBookingReportIstatSpot extends VikBookingReport
 			//id booking
 			array(
 				'key' => 'idbooking',
-				'attr' => array(
-					'class="center"'
-				),
 				'label' => 'ID',
 				'sortable' => 1,
 			),
@@ -615,9 +665,6 @@ class VikBookingReportIstatSpot extends VikBookingReport
 				// booking ID
 				array_push($insert_row, array(
 					'key' => 'idbooking',
-					'attr' => array(
-						'class="center"'
-					),
 					'callback' => function ($val) {
 						return '<a href="index.php?option=com_vikbooking&task=editorder&cid[]='.$val.'" target="_blank"><i class="'.VikBookingIcons::i('external-link').'"></i> '.$val.'</a>';
 					},
@@ -1138,7 +1185,7 @@ class VikBookingReportIstatSpot extends VikBookingReport
 	{
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 
-		$this->setExportCSVFileName(str_replace(' ', '_', $this->reportName) . '-' . str_replace('/', '_', $pfromdate) . '.txt');
+		$this->setExportCSVFileName(str_replace(' ', '_', $this->reportName) . '-' . str_replace('/', '_', $pfromdate) . '.xml');
 	}
 
 	/**

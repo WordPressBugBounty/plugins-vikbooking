@@ -478,6 +478,9 @@ abstract class VBOTaskDriveraware implements VBOTaskDriverinterface
             return [];
         }
 
+        // sort available operators by working hours descending
+        arsort($availableOperators);
+
         // obtain a date object in UTC and related SQL dates
         $utc_dt = JFactory::getDate($dt->format('Y-m-d H:i:s'), $dt->getTimezone()->getName());
         $utc_dt->modify('00:00:00');
@@ -533,8 +536,8 @@ abstract class VBOTaskDriveraware implements VBOTaskDriverinterface
             return [];
         }
 
-        if (count($availableOperators) === 1) {
-            // there's only one free operator, so we return it immediately
+        if (count($availableOperators) === 1 || VBOFactory::getConfig()->get('tm_op_assignment_strategy') === 'sequential') {
+            // there's only one free operator, or the assignment strategy is not "balanced", so we return the first one
             return $this->getOperatorFromId($availableOperators[0]);
         }
 

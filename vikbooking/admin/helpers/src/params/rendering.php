@@ -105,8 +105,13 @@ final class VBOParamsRendering
             return '';
         }
 
+        // build the HTML params string
         $html = '';
 
+        // list of conditional field rules
+        $js_conditional_fields = [];
+
+        // scan all field params
         foreach ($this->params as $param_name => $param_config) {
             if (empty($param_name)) {
                 continue;
@@ -121,12 +126,55 @@ final class VBOParamsRendering
 
             $nested_style   = (isset($param_config['nested']) && $param_config['nested']);
             $hidden_wrapper = $param_config['type'] === 'hidden';
-            if (isset($param_config['conditional']) && isset($this->params[$param_config['conditional']])) {
-                $check_cond = isset($this->params[$param_config['conditional']]['default']) ? $this->params[$param_config['conditional']]['default'] : null;
-                $check_cond = isset($this->settings[$param_config['conditional']]) ? $this->settings[$param_config['conditional']] : $check_cond;
-                if (!is_null($check_cond) && (!$check_cond || !strcasecmp($check_cond, 'off'))) {
-                    // hide current field because the field to who this is dependant is "off" or disabled (i.e. 0)
-                    $hidden_wrapper = true;
+            if (!empty($param_config['conditional'])) {
+                /**
+                 * The conditional property can specify the value to check from the parent field
+                 * i.e. "test_mode:1" means that the value should be equal to 1. Alternative,
+                 * "test_mode!:1" means that the value should be different than 1.
+                 * 
+                 * @since   1.18.2 (J) - 1.8.2 (WP)
+                 * @todo
+                 */
+                $check_cond_field = $param_config['conditional'];
+                $check_cond_oper  = null;
+                $check_cond_value = null;
+                if (preg_match('/^([a-z0-9_\-]+)(!?:)(.*?)$/i', (string) $check_cond_field, $cond_matches)) {
+                    // conditional instruction detected
+                    $check_cond_field = $cond_matches[1];
+                    $check_cond_oper  = $cond_matches[2];
+                    $check_cond_value = $cond_matches[3];
+                }
+
+                if (isset($this->params[$check_cond_field])) {
+                    // get current value of the conditional parent field
+                    $check_cond = $this->params[$check_cond_field]['default'] ?? null;
+                    $check_cond = $this->settings[$check_cond_field] ?? $check_cond;
+                    if (!is_null($check_cond)) {
+                        // legacy syntax "conditional" => "test_mode"
+                        if (!$check_cond_oper && (!$check_cond || !strcasecmp((string) $check_cond, 'off'))) {
+                            // hide current field because the field to who this is dependant is "off" or disabled (i.e. 0)
+                            $hidden_wrapper = true;
+                        }
+                        // conditional (equal) syntax "conditional" => "test_mode:1"
+                        if ($check_cond_oper === ':' && $check_cond != $check_cond_value) {
+                            // equal condition not met, hide the field
+                            $hidden_wrapper = true;
+                        }
+                        // conditional (different) syntax "conditional" => "test_mode!:0"
+                        if ($check_cond_oper === '!:' && $check_cond == $check_cond_value) {
+                            // different condition not met, hide the field
+                            $hidden_wrapper = true;
+                        }
+                    }
+                }
+
+                if (!is_null($check_cond_value)) {
+                    // the field is dependant on another through a syntax, memorize the condition for JS
+                    $js_conditional_fields[$check_cond_field][] = [
+                        'field' => $param_name,
+                        'oper'  => $check_cond_oper,
+                        'value' => $check_cond_value,
+                    ];
                 }
             }
 
@@ -156,6 +204,81 @@ final class VBOParamsRendering
 
             $html .= '</div>';
             $html .= '</div>';
+        }
+
+        if ($js_conditional_fields) {
+            // build the JS script for handling contional field changes
+            $js_conditional_fields_json = json_encode($js_conditional_fields);
+            $base_input_name = $this->inputName;
+            $html .= 
+<<<HTML
+<script>
+    VBOCore.DOMLoaded(() => {
+        let js_conditional_fields = $js_conditional_fields_json;
+        let base_input_name = "$base_input_name";
+
+        // scan all parent fields
+        Object.keys(js_conditional_fields).forEach((field_name) => {
+            let parent_fields = Array.from(document.querySelectorAll('[name="' + base_input_name + '[' + field_name + ']"]')).filter((field_input) => {
+                // get only valid input fields
+                return (field_input.matches('input') || field_input.matches('select') || field_input.matches('textarea')) && !field_input.matches('input[type="hidden"]');
+            });
+
+            let parent_field = parent_fields[0] || null;
+            if (!parent_field) {
+                // invalid input field selected
+                return;
+            }
+
+            if (!Array.isArray(js_conditional_fields[field_name])) {
+                // invalid parent conditions
+                return;
+            }
+
+            // add change event listener
+            parent_field.addEventListener('change', (e) => {
+                // get the parent field current value
+                let parent_value = e.target.value;
+                if (e.target.matches('input[type="checkbox"]')) {
+                    // checkbox fields should rely on their checked status
+                    parent_value = e.target.checked ? '1' : '0';
+                }
+
+                // scan all dependant fields
+                js_conditional_fields[field_name].forEach((condition) => {
+                    let cond_fields = Array.from(document.querySelectorAll('[name="' + base_input_name + '[' + condition.field + ']"]')).filter((input_field) => {
+                        // get only valid input fields
+                        return (input_field.matches('input') || input_field.matches('select') || input_field.matches('textarea')) && !input_field.matches('input[type="hidden"]');
+                    });
+
+                    let cond_field = cond_fields[0] || null;
+                    if (!cond_field) {
+                        // invalid conditional field selected
+                        return;
+                    }
+
+                    // find the conditional field container
+                    let cond_field_target = cond_field.closest('.vbo-param-container');
+                    if (!cond_field_target) {
+                        // conditional field container not found
+                        return;
+                    }
+
+                    // validate condition syntax
+                    if ((condition.oper == ':' && parent_value != condition.value) || (condition.oper == '!:' && parent_value == condition.value)) {
+                        // hide conditional field not matching the condition syntax
+                        cond_field_target.style.display = 'none';
+                    } else {
+                        // show conditional field
+                        cond_field_target.style.display = '';
+                    }
+                });
+            });
+        });
+
+    });
+</script>
+HTML;
         }
 
         // JS helper functions

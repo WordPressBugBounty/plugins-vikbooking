@@ -16,6 +16,11 @@ $tars = $this->tars;
 $payment = $this->payment;
 $vbo_tn = $this->vbo_tn;
 
+/**
+ * Include the VBOCore JS class.
+ */
+VikBooking::getVboApplication()->loadCoreJS();
+
 // availability helper
 $av_helper = VikBooking::getAvailabilityInstance();
 
@@ -554,6 +559,43 @@ foreach ($orderrooms as $kor => $or) {
 				</span>
 			</div>
 			<?php
+			/**
+			 * In case of custom rate, check if a cancellation policy should be described.
+			 * 
+			 * @since 	1.18.2 (J) - 1.8.2 (WP)
+			 */
+			$rate_plan_data = VBOTaxonomyFinance::getInstance()->getRatePlanData(($or['cust_cpolicy_id'] ?? 0) ?: 0);
+
+			if ($rate_plan_data) {
+				// describe cancellation policy for custom rate
+				$canc_policy_type = '';
+				$canc_policy_descr = '';
+
+				if ($rate_plan_data['free_cancellation'] == 1) {
+					if ($rate_plan_data['canc_deadline'] > 0) {
+						$canc_policy_type = JText::sprintf('VBFREECANCELLATIONWITHIN', $rate_plan_data['canc_deadline']);
+					} else {
+						$canc_policy_type = JText::translate('VBFREECANCELLATION');
+					}
+					if (!empty($rate_plan_data['canc_policy'])) {
+						$canc_policy_descr = strpos($rate_plan_data['canc_policy'], '<') !== false ? $rate_plan_data['canc_policy'] : nl2br($rate_plan_data['canc_policy']);
+					}
+				} else {
+					$canc_policy_type = JText::translate('VBONONREFUNDRATE');
+				}
+				?>
+				<div class="vbo-booking-canc-policy-wrap">
+					<div class="vbo-booking-canc-policy-type"><span><?php echo $canc_policy_type; ?></span></div>
+					<?php
+					if (!empty($canc_policy_descr)) {
+						?>
+					<div class="vbo-booking-canc-policy-descr"><?php echo $canc_policy_descr; ?></div>
+						<?php
+					}
+					?>
+				</div>
+				<?php
+			}
 		} elseif (array_key_exists($num, $tars) && is_array($tars[$num])) {
 			?>
 			<div class="vbo-booking-roomrate">
@@ -1874,31 +1916,37 @@ if ((is_array($this->payment) && $this->payment['outposition'] != 'bottom') || (
 	$payment_position = isset($dd_payment) && is_array($dd_payment) && $dd_payment['outposition'] != 'bottom' ? $dd_payment['outposition'] : $this->payment['outposition'];
 	?>
 <script type="text/javascript">
-	
-	jQuery(function() {
 
-		var payment_output = jQuery('.vbvordpaybutton'),
-			payment_notes  = jQuery('.vbvordpaynote'),
-			payment_ctimer = jQuery('.vbo-timer-payment').first(),
-			payment_wrappr = jQuery('.vbo-paycontainer-pos-<?php echo $payment_position; ?>').first();
+	VBOCore.DOMLoaded(() => {
 
-		if (payment_output.length && payment_wrappr.length) {
-			// display final target
-			payment_wrappr.show();
+		setTimeout(() => {
+			let payment_output = document.querySelectorAll('.vbvordpaybutton'),
+				payment_notes  = document.querySelectorAll('.vbvordpaynote'),
+				payment_ctimer = document.querySelector('.vbo-timer-payment'),
+				payment_wrappr = document.querySelector('.vbo-paycontainer-pos-<?php echo $payment_position; ?>');
 
-			if (payment_notes.length) {
-				// prepend notes first
-				payment_notes.prependTo(payment_wrappr);
+			if (payment_output.length && payment_wrappr) {
+				// display final target
+				payment_wrappr.style.display = '';
+
+				if (payment_notes.length) {
+					payment_notes.forEach((payment_notes_block) => {
+						// prepend notes first
+						payment_wrappr.prepend(payment_notes_block);
+					});
+				}
+
+				if (payment_ctimer) {
+					// prepend countdown timer first
+					payment_wrappr.prepend(payment_ctimer);
+				}
+
+				payment_output.forEach((payment_output_block) => {
+					// append payment output
+					payment_wrappr.append(payment_output_block);
+				});
 			}
-
-			if (payment_ctimer.length) {
-				// prepend countdown timer first
-				payment_ctimer.prependTo(payment_wrappr);
-			}
-
-			// append payment output
-			payment_output.appendTo(payment_wrappr);
-		}
+		}, 50);
 
 	});
 
