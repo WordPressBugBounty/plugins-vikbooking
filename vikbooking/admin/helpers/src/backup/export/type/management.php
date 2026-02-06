@@ -57,6 +57,12 @@ class VBOBackupExportTypeManagement extends VBOBackupExportTypeFull
 			'#__vikbooking_ordersbusy',
 			'#__vikbooking_ordersrooms',
 			'#__vikbooking_orderhistory',
+			'#__vikbooking_tm_tasks',
+			'#__vikbooking_tm_task_assignees',
+			'#__vikbooking_tm_task_colortags',
+			'#__vikbooking_record_history',
+			'#__vikbooking_record_history_event',
+			'#__vikbooking_chat_messages',
 			// channel manager
 			'#__vikchannelmanager_keys',
 			'#__vikchannelmanager_messaging_users_pings',

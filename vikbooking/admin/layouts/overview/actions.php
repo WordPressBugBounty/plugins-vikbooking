@@ -37,6 +37,12 @@ $vbo_auth_pms = JFactory::getUser()->authorise('core.vbo.pms', 'com_vikbooking')
 // load all the existing task manager areas/projects
 $taskAreas = VBOTaskModelArea::getInstance()->getItems();
 
+// load all room rate plans to detect derived rate plans
+$allRatePlans = VikBooking::getAvailabilityInstance(true)->loadRatePlans(true);
+$hasDerivedRates = (bool) array_filter($allRatePlans, function($rp) {
+    return !empty($rp['derived_id']) && !empty($rp['parent_rate_id']);
+});
+
 // currency symbol and formatting options
 $currencysymb = VikBooking::getCurrencySymb();
 list($currency_digits, $currency_decimals, $currency_thousands) = explode(':', VikBooking::getNumberFormatData());
@@ -95,14 +101,43 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
         </div>
         <div class="vbo-roverw-setnewrate">
             <div class="vbo-roverw-setnewrate-title">
-                <h4><?php VikBookingIcons::e('calculator'); ?> <?php echo JText::translate('VBO_RATES_AND_RESTR'); ?></h4>
+                <h4><?php VikBookingIcons::e('tag'); ?> <?php echo JText::translate('VBO_RATES_AND_RESTR'); ?></h4>
+                <div class="vbo-roverw-setnewrate-skip-derived vbo-toggle-small vbo-toggle-mini" style="<?php echo !$hasDerivedRates ? 'display: none;' : ''; ?>">
+                    <label for="overw-skip-derived-on" class="vbo-roverw-setnewrate-skip-derived-lbl"><?php echo JText::translate('VBO_SKIP_DERIVED_RPLANS'); ?></label>
+                    <?php echo $vbo_app->printYesNoButtons('overw-skip-derived', JText::translate('VBYES'), JText::translate('VBNO'), 0, 1, 0); ?>
+                </div>
             </div>
             <div class="vbo-roverw-flexnew">
-                <div class="vbo-roverw-newrwrap">
-                    <h4><?php VikBookingIcons::e('edit'); ?> <?php echo JText::translate('VBRATESOVWSETNEWRATE'); ?></h4>
-                    <div class="vbo-roverw-newrcont">
+                <div class="vbo-roverw-newrwrap" data-rate-type="fixed">
+                    <h4>
+                        <button type="button" class="vbo-btn-transparent vbo-context-menu-rate-type">
+                            <span class="vbo-transparent-wrap">
+                                <?php VikBookingIcons::e('edit'); ?>
+                                <span class="vbo-roverw-action-rates-title"><?php echo JText::translate('VBO_SET_FIXED_RATE'); ?></span>
+                                <?php VikBookingIcons::e('chevron-down'); ?>
+                            </span>
+                        </button>
+                    </h4>
+                    <div class="vbo-roverw-newrcont" data-rate-type="fixed">
                         <label for="roverw-newrate" class="vbo-roverw-setnewrate-currency"><?php echo $currencysymb; ?></label>
                         <input type="number" step="any" min="0" id="roverw-newrate" value="" placeholder="" size="7" />
+                    </div>
+                    <div class="vbo-roverw-newrcont" data-rate-type="addsub" style="display: none;">
+                        <div class="vbo-roverw-setnewrate-addsub-elem">
+                            <select data-rate-type-rule="rmodsop">
+                                <option value="1">+</option>
+                                <option value="0">-</option>
+                            </select>
+                        </div>
+                        <div class="vbo-roverw-setnewrate-addsub-elem">
+                            <input type="number" value="" step="any" min="0" data-rate-type-rule="rmodsamount" />
+                        </div>
+                        <div class="vbo-roverw-setnewrate-addsub-elem">
+                            <select data-rate-type-rule="rmodsval">
+                                <option value="0"><?php echo $currencysymb; ?></option>
+                                <option value="1">%</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="vbo-roverw-newrestr-wrap" style="display: none;">
@@ -188,6 +223,11 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
         apply: 0,
         add_to_queue: 0,
     };
+
+    /**
+     * Register cells matrix selection abort controller (can be re-declared).
+     */
+    let vboRateMatrixController = new AbortController();
 
     /**
      * Register function for loading the room rates.
@@ -279,8 +319,8 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                                         .forEach((roomRowDay) => {
                                             // get the day Y-m-d value
                                             let ymd = roomRowDay.getAttribute('data-day');
-                                            let ymdMidnight = new Date(ymd);
-                                            ymdMidnight.setHours(0, 0, 0, 0);
+                                            let [parseYear, parseMonth, parseDay] = ymd.split('-').map(Number);
+                                            let ymdMidnight = new Date(parseYear, parseMonth - 1, parseDay);
 
                                             // check whether the day is in the past
                                             let isPast = todayMidnight > ymdMidnight;
@@ -373,7 +413,14 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                         (queueData) => {
                             // temporary data removed from dock
                             document.querySelectorAll('.vbo-cell-pending-update').forEach((pending_cell) => {
+                                // remove pending update class
                                 pending_cell.classList.remove('vbo-cell-pending-update');
+                                // restore initial rate in case rates were set for increase/decrease
+                                let rateAmountEl = pending_cell.querySelector('.vbo-roomrates-cell-rate-amount');
+                                if (rateAmountEl && pending_cell.getAttribute('data-init-rate')) {
+                                    rateAmountEl.innerHTML = VBOCore.getCurrency().format(pending_cell.getAttribute('data-init-rate'));
+                                    pending_cell.setAttribute('data-init-rate', '');
+                                }
                             });
                         }
                     );
@@ -407,11 +454,13 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                                 return;
                             }
 
+                            // parse the date elements
+                            let [parseFromYear, parseFromMonth, parseFromDay] = prevData.fromdate.split('-').map(Number);
+                            let [parseToYear, parseToMonth, parseToDay] = prevData.todate.split('-').map(Number);
+
                             // build the date objects
-                            let iterDate = new Date(prevData.fromdate);
-                            let end = new Date(prevData.todate);
-                            iterDate.setHours(0, 0, 0, 0);
-                            end.setHours(0, 0, 0, 0);
+                            let iterDate = new Date(parseFromYear, parseFromMonth - 1, parseFromDay);
+                            let end = new Date(parseToYear, parseToMonth - 1, parseToDay);
 
                             // loop through the dates interval
                             while (iterDate <= end) {
@@ -474,8 +523,26 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
 
                                     let rateAmountEl = listingDayRateCell.querySelector('.vbo-roomrates-cell-rate-amount');
                                     if (rateAmountEl) {
+                                        // store the initial rate value
+                                        if (!listingDayRateCell.getAttribute('data-init-rate')) {
+                                            listingDayRateCell.setAttribute('data-init-rate', rateAmountEl.textContent.replace(/[^0-9\.]+/g, ''));
+                                        }
+
                                         // cell is not occupied by a reservation, update the rate from the previous queue
-                                        rateAmountEl.innerHTML = VBOCore.getCurrency().format(prevData.rate);
+                                        if (prevData?.rate_type === 'addsub') {
+                                            // increase/decrease rates
+                                            let addsub_op = prevData?.addsub_op == 1 ? '+' : '-';
+                                            if (prevData?.addsub_value == 1) {
+                                                // percent
+                                                rateAmountEl.innerHTML = addsub_op + ' ' + prevData.addsub_amount + '%';
+                                            } else {
+                                                // fixed
+                                                rateAmountEl.innerHTML = addsub_op + ' ' + VBOCore.getCurrency().format(prevData.addsub_amount);
+                                            }
+                                        } else {
+                                            // fixed rate
+                                            rateAmountEl.innerHTML = VBOCore.getCurrency().format(prevData.rate);
+                                        }
 
                                         if (prevData.minlos) {
                                             // update minimum stay from the previous queue
@@ -510,7 +577,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
     /**
      * Register function to hide the room rates.
      */
-    const vboActionHideRoomRates = () => {
+    const vboActionHideRoomRates = (unregisterEvents) => {
         // hide rows for multi-unit room-types
         document
             .querySelectorAll('.vbo-roomrates-row')
@@ -525,6 +592,11 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                 cell.closest('td').classList.remove('vbo-grid-avcell-rates');
                 cell.remove();
             });
+
+        if (unregisterEvents) {
+            // use the abort controller to destroy all the events previously registered
+            vboRateMatrixController.abort();
+        }
     };
 
     /**
@@ -716,6 +788,8 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             return;
         }
 
+        let [parseYear, parseMonth, parseDay] = day.split('-').map(Number);
+
         if (cell.matches('.vbo-roomrates-cell-day')) {
             // multi-unit room row cell
             listingId = cell.closest('tr.vbo-roomrates-row').getAttribute('data-roomid');
@@ -730,9 +804,8 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
 
         if (!vboActionRoomRateData.start) {
             // start selection
-            let startDate = new Date(day);
+            let startDate = new Date(parseYear, parseMonth - 1, parseDay);
             let todayMidnight = new Date();
-            startDate.setHours(0, 0, 0, 0);
             todayMidnight.setHours(0, 0, 0, 0);
 
             if (todayMidnight > startDate) {
@@ -752,8 +825,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             return;
         }
 
-        let endDate = new Date(day);
-        endDate.setHours(0, 0, 0, 0);
+        let endDate = new Date(parseYear, parseMonth - 1, parseDay);
 
         if (endDate < vboActionRoomRateData.start) {
             // date in the past clicked, reset selection
@@ -910,6 +982,8 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             return;
         }
 
+        let [parseYear, parseMonth, parseDay] = day.split('-').map(Number);
+
         if (cell.matches('.vbo-roomrates-cell-day')) {
             // multi-unit room row cell
             listingId = cell.closest('tr.vbo-roomrates-row').getAttribute('data-roomid');
@@ -922,8 +996,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             return;
         }
 
-        let dayDate = new Date(day);
-        dayDate.setHours(0, 0, 0, 0);
+        let dayDate = new Date(parseYear, parseMonth - 1, parseDay);
 
         // always delete the selected class from any middle-cell
         document
@@ -1004,6 +1077,10 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
      * Register function to add event listeners for the room rate cells.
      */
     const vboActionRegisterRoomRateEvents = () => {
+        // make sure to clean any previous abort controller usage
+        vboRateMatrixController.abort();
+        vboRateMatrixController = new AbortController();
+
         // scan all rate cells
         document
             .querySelectorAll('.vbo-grid-avcell-rates')
@@ -1021,6 +1098,8 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                     }
 
                     vboActionRoomRateHandleClick(element, e);
+                }, {
+                    signal: vboRateMatrixController.signal,
                 });
 
                 // mouseover listener
@@ -1036,6 +1115,8 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                     }
 
                     vboActionRoomRateHandleHover(element);
+                }, {
+                    signal: vboRateMatrixController.signal,
                 });
             });
     };
@@ -1154,17 +1235,27 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             listingsInvolved.push(listingCells[0].closest('tr').getAttribute('data-roomid'));
         });
 
-        let setrate = parseFloat(document.querySelector('#roverw-newrate').value);
+        // gather rates modification values
+        let rateType = document.querySelector('.vbo-roverw-newrwrap').getAttribute('data-rate-type') || 'fixed';
         let setminlos = document.querySelector('#roverw-newrestr').value;
         let invoke_vcm = document.querySelector('input[name="roverw-newrate-vcm"]:checked') ? 1 : 0;
+        let addsub_op = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsop"]')?.value : 0;
+        let addsub_amount = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsamount"]')?.value : 0;
+        let addsub_value = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsval"]')?.value : 0;
+        let setrate = parseFloat(document.querySelector('#roverw-newrate').value);
 
         if (!listingsInvolved.length) {
             alert('No listings to update.');
             return;
         }
 
-        if (isNaN(setrate) || setrate <= 0) {
+        if (rateType === 'fixed' && (isNaN(setrate) || setrate <= 0)) {
             alert('Invalid rate amount.');
+            return;
+        }
+
+        if (rateType === 'addsub' && (isNaN(addsub_amount) || addsub_amount <= 0)) {
+            alert('Invalid amount for increasing/decreasing rates.');
             return;
         }
 
@@ -1202,20 +1293,28 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             ota_pricing = null;
         }
 
+        // tell whether derived rate plans should be skipped
+        let skipDerivedEl = document.querySelector('input[name="overw-skip-derived"]');
+        let skipDerivedRates = skipDerivedEl && skipDerivedEl.checked ? 1 : 0;
+
         // build the list of update requests (one per listing)
         let requestList = [];
         listingsInvolved.forEach((listingId) => {
             requestList.push({
                 id_room: listingId,
                 id_price: vboActionRoomRplansMap[listingId],
+                rate_type: rateType,
                 rate: setrate,
+                addsub_op: addsub_op,
+                addsub_amount: addsub_amount,
+                addsub_value: addsub_value,
                 vcm: invoke_vcm,
                 minlos: setminlos,
                 fromdate: VBOCore.formatDate(vboActionRoomRateData.start, 'Y-m-d'),
                 todate: VBOCore.formatDate(vboActionRoomRateData.end, 'Y-m-d'),
                 rateclosed: 0,
                 ota_pricing: ota_pricing,
-                skip_derived: 0,
+                skip_derived: skipDerivedRates,
             });
         });
 
@@ -1283,11 +1382,56 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                             // cell is occupied by a reservation, nothing to update
                             return;
                         }
-                        rateAmountEl.innerHTML = VBOCore.getCurrency().format(setrate);
+
+                        // access cell day
+                        let cellDay = selectedCell.getAttribute('data-day') || '';
+
+                        // listing ID and rate plan ID involved
+                        let parsedListingId = null;
+                        let parsedRateId = null;
+
+                        // build date-part of expected response key by removing leading zeros in month-days and months
+                        let expectedRespKey = cellDay.replace(/-(0)([1-9]{1})/g, "-$2");
+                        let keyParts = expectedRespKey.split('-');
+                        expectedRespKey = [keyParts[2], keyParts[1], keyParts[0]].join('-');
+
+                        // access parent cell row
+                        let parentRow = selectedCell.closest('tr[data-roomid]');
+                        if (parentRow) {
+                            // set listing ID and rate plan ID involved
+                            parsedListingId = parentRow.getAttribute('data-roomid');
+                            parsedRateId = parentRow.getAttribute('data-rateid') || vboActionRoomRplansMap[parsedListingId];
+                        }
+
+                        // finalise expected response key parts
+                        expectedRespKey += '-' + (parsedRateId || '');
+
+                        // scan all operation results to find the desired response property
+                        let responseFound = false;
+                        responseContainer.forEach((responseData) => {
+                            if (responseFound) {
+                                return;
+                            }
+                            if (responseData.hasOwnProperty(expectedRespKey) && responseData[expectedRespKey]['idroom'] == parsedListingId) {
+                                // turn flag on
+                                responseFound = true;
+                                // set rate applied from response obtained
+                                rateAmountEl.innerHTML = VBOCore.getCurrency().format(responseData[expectedRespKey]['cost']);
+                            }
+                        });
+
+                        if (!responseFound && rateType !== 'addsub' && !isNaN(setrate)) {
+                            // set rate requested to be applied
+                            rateAmountEl.innerHTML = VBOCore.getCurrency().format(setrate);
+                        }
+
                         if (setminlos) {
+                            // populate minimum stay
                             let minlosEl = selectedCell.querySelector('.vbo-roomrates-cell-minlos');
                             minlosEl.innerHTML = '<?php VikBookingIcons::e('moon'); ?> ' + setminlos;
                         }
+
+                        // set updated class to cell
                         selectedCell.classList.add('vbo-cell-new-update');
                     });
                 });
@@ -1313,17 +1457,27 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             listingsInvolved.push(listingCells[0].closest('tr').getAttribute('data-roomid'));
         });
 
-        let setrate = parseFloat(document.querySelector('#roverw-newrate').value);
+        // gather rates modification values
+        let rateType = document.querySelector('.vbo-roverw-newrwrap').getAttribute('data-rate-type') || 'fixed';
         let setminlos = document.querySelector('#roverw-newrestr').value;
         let invoke_vcm = document.querySelector('input[name="roverw-newrate-vcm"]:checked') ? 1 : 0;
+        let addsub_op = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsop"]')?.value : 0;
+        let addsub_amount = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsamount"]')?.value : 0;
+        let addsub_value = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsval"]')?.value : 0;
+        let setrate = parseFloat(document.querySelector('#roverw-newrate').value);
 
         if (!listingsInvolved.length) {
             alert('No listings to update.');
             return;
         }
 
-        if (isNaN(setrate) || setrate <= 0) {
+        if (rateType === 'fixed' && (isNaN(setrate) || setrate <= 0)) {
             alert('Invalid rate amount.');
+            return;
+        }
+
+        if (rateType === 'addsub' && (isNaN(addsub_amount) || addsub_amount <= 0)) {
+            alert('Invalid amount for increasing/decreasing rates.');
             return;
         }
 
@@ -1361,6 +1515,10 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             ota_pricing = null;
         }
 
+        // tell whether derived rate plans should be skipped
+        let skipDerivedEl = document.querySelector('input[name="overw-skip-derived"]');
+        let skipDerivedRates = skipDerivedEl && skipDerivedEl.checked ? 1 : 0;
+
         // build the list of update requests (one per listing)
         let requestList = [];
         listingsInvolved.forEach((listingId) => {
@@ -1368,14 +1526,18 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                 id_room: listingId,
                 id_price: vboActionRoomRplansMap[listingId],
                 _roomName: vboActionRoomNames[listingId],
+                rate_type: rateType,
                 rate: setrate,
+                addsub_op: addsub_op,
+                addsub_amount: addsub_amount,
+                addsub_value: addsub_value,
                 vcm: invoke_vcm,
                 minlos: setminlos,
                 fromdate: VBOCore.formatDate(vboActionRoomRateData.start, 'Y-m-d'),
                 todate: VBOCore.formatDate(vboActionRoomRateData.end, 'Y-m-d'),
                 rateclosed: 0,
                 ota_pricing: ota_pricing,
-                skip_derived: 0,
+                skip_derived: skipDerivedRates,
             });
         });
 
@@ -1396,7 +1558,14 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             (queueData) => {
                 // temporary data removed from dock
                 document.querySelectorAll('.vbo-cell-pending-update').forEach((pending_cell) => {
+                    // remove pending update class
                     pending_cell.classList.remove('vbo-cell-pending-update');
+                    // restore initial rate in case rates were set for increase/decrease
+                    let rateAmountEl = pending_cell.querySelector('.vbo-roomrates-cell-rate-amount');
+                    if (rateAmountEl && pending_cell.getAttribute('data-init-rate')) {
+                        rateAmountEl.innerHTML = VBOCore.getCurrency().format(pending_cell.getAttribute('data-init-rate'));
+                        pending_cell.setAttribute('data-init-rate', '');
+                    }
                 });
             }
         );
@@ -1409,7 +1578,29 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                     // cell is occupied by a reservation, nothing to update
                     return;
                 }
-                rateAmountEl.innerHTML = VBOCore.getCurrency().format(setrate);
+
+                // store the initial rate value
+                if (!selectedCell.getAttribute('data-init-rate')) {
+                    selectedCell.setAttribute('data-init-rate', rateAmountEl.textContent.replace(/[^0-9\.]+/g, ''));
+                }
+
+                // display how the rate will be applied
+                if (rateType === 'addsub') {
+                    // increase/decrease rates
+                    let addsub_op_char = addsub_op == 1 ? '+' : '-';
+                    if (addsub_value == 1) {
+                        // percent
+                        rateAmountEl.innerHTML = addsub_op_char + ' ' + addsub_amount + '%';
+                    } else {
+                        // fixed
+                        rateAmountEl.innerHTML = addsub_op_char + ' ' + VBOCore.getCurrency().format(addsub_amount);
+                    }
+                } else {
+                    // fixed rate
+                    rateAmountEl.innerHTML = VBOCore.getCurrency().format(setrate);
+                }
+
+                // handle minimum stay information display
                 if (setminlos) {
                     let minlosEl = selectedCell.querySelector('.vbo-roomrates-cell-minlos');
                     minlosEl.innerHTML = '<?php VikBookingIcons::e('moon'); ?> ' + setminlos;
@@ -1506,8 +1697,56 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
 
                         // update the involved cells
                         document.querySelectorAll('.vbo-grid-avcell-rates.vbo-cell-pending-update').forEach((pendingCell) => {
+                            // handle cell class
                             pendingCell.classList.remove('vbo-cell-pending-update');
                             pendingCell.classList.add('vbo-cell-new-update');
+
+                            // handle new rate applied
+                            let rateAmountEl = pendingCell.querySelector('.vbo-roomrates-cell-rate-amount');
+                            if (!rateAmountEl) {
+                                // cell is occupied by a reservation, nothing to update
+                                return;
+                            }
+
+                            // access cell day
+                            let cellDay = pendingCell.getAttribute('data-day') || '';
+
+                            // listing ID and rate plan ID involved
+                            let parsedListingId = null;
+                            let parsedRateId = null;
+
+                            // build date-part of expected response key by removing leading zeros in month-days and months
+                            let expectedRespKey = cellDay.replace(/-(0)([1-9]{1})/g, "-$2");
+                            let keyParts = expectedRespKey.split('-');
+                            expectedRespKey = [keyParts[2], keyParts[1], keyParts[0]].join('-');
+
+                            // access parent cell row
+                            let parentRow = pendingCell.closest('tr[data-roomid]');
+                            if (parentRow) {
+                                // set listing ID and rate plan ID involved
+                                parsedListingId = parentRow.getAttribute('data-roomid');
+                                parsedRateId = parentRow.getAttribute('data-rateid') || vboActionRoomRplansMap[parsedListingId];
+                            }
+
+                            // finalise expected response key parts
+                            expectedRespKey += '-' + (parsedRateId || '');
+
+                            // scan all operation results to find the desired response property
+                            let responseFound = false;
+                            responseContainer.forEach((responseData) => {
+                                if (responseFound) {
+                                    return;
+                                }
+                                if (responseData.hasOwnProperty(expectedRespKey) && responseData[expectedRespKey]['idroom'] == parsedListingId) {
+                                    // turn flag on
+                                    responseFound = true;
+                                    // set rate applied from response obtained
+                                    rateAmountEl.innerHTML = VBOCore.getCurrency().format(responseData[expectedRespKey]['cost']);
+                                }
+                            });
+
+                            // if the desired response key was not found, we do nothing, as the queue
+                            // must have already restored the rates data alteration details for this cell
                         });
 
                         // dismiss the modal upon completion, after having updated the involved cells
@@ -1539,20 +1778,36 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             // contain the dates
             let updateDatesEl = document.createElement('span');
             updateDatesEl.classList.add('vbo-rates-queue-data-dates');
-            updateDatesEl.innerText = updateData.fromdate + ' - ' + updateData.todate;
+            updateDatesEl.innerHTML = '<span class="badge badge-info">' + updateData.fromdate + '</span> - <span class="badge badge-info">' + updateData.todate + '</span>';
             updateEl.append(updateDatesEl);
 
             // contain the rate
             let updateRatesEl = document.createElement('span');
             updateRatesEl.classList.add('vbo-rates-queue-data-rate');
-            updateRatesEl.innerHTML = VBOCore.getCurrency().format(updateData.rate);
+            let updateRatesBadgeEl = document.createElement('span');
+            updateRatesBadgeEl.classList.add('badge', 'badge-warning');
+            if (updateData?.rate_type === 'addsub') {
+                // increase/decrease rates
+                let addsub_op = updateData?.addsub_op == 1 ? '+' : '-';
+                if (updateData?.addsub_value == 1) {
+                    // percent
+                    updateRatesBadgeEl.innerHTML = addsub_op + ' ' + updateData.addsub_amount + '%';
+                } else {
+                    // fixed
+                    updateRatesBadgeEl.innerHTML = addsub_op + ' ' + VBOCore.getCurrency().format(updateData.addsub_amount);
+                }
+            } else {
+                // fixed rate
+                updateRatesBadgeEl.innerHTML = VBOCore.getCurrency().format(updateData.rate);
+            }
+            updateRatesEl.append(updateRatesBadgeEl);
             updateEl.append(updateRatesEl);
 
             if (updateData.minlos) {
                 // contain the minimum stay
                 let updateMinlosEl = document.createElement('span');
                 updateMinlosEl.classList.add('vbo-rates-queue-data-minlos');
-                updateMinlosEl.innerHTML = '<?php VikBookingIcons::e('moon'); ?> ' + updateData.minlos;
+                updateMinlosEl.innerHTML = '<span class="badge"><?php VikBookingIcons::e('moon'); ?> ' + updateData.minlos + '</span>';
                 updateEl.append(updateMinlosEl);
             }
 
@@ -1598,7 +1853,14 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                     (queueData) => {
                         // temporary data removed from dock
                         document.querySelectorAll('.vbo-cell-pending-update').forEach((pending_cell) => {
+                            // remove pending update class
                             pending_cell.classList.remove('vbo-cell-pending-update');
+                            // restore initial rate in case rates were set for increase/decrease
+                            let rateAmountEl = pending_cell.querySelector('.vbo-roomrates-cell-rate-amount');
+                            if (rateAmountEl && pending_cell.getAttribute('data-init-rate')) {
+                                rateAmountEl.innerHTML = VBOCore.getCurrency().format(pending_cell.getAttribute('data-init-rate'));
+                                pending_cell.setAttribute('data-init-rate', '');
+                            }
                         });
                     }
                 );
@@ -1644,6 +1906,9 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                         onError(err_mess, true);
                     }
 
+                    // recursively call the same function to process the next request, if any
+                    vboActionDispatchRatesUpdateRequests(requests, onProgress, onComplete, onError);
+
                     // abort
                     return;
                 }
@@ -1667,6 +1932,9 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                         // unrecoverable error
                         onError(err, true);
                     }
+
+                    // recursively call the same function to process the next request, if any
+                    vboActionDispatchRatesUpdateRequests(requests, onProgress, onComplete, onError);
                 }
             },
             (err) => {
@@ -1678,6 +1946,9 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                     // connection error
                     onError(err_mess, false);
                 }
+
+                // recursively call the same function to process the next request, if any
+                vboActionDispatchRatesUpdateRequests(requests, onProgress, onComplete, onError);
             }
         );
     };
@@ -1696,7 +1967,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
 
         // set operation details first
         jQuery('.vbo-overview-action-raterestr-listings').text(listingsText);
-        jQuery('.vbo-overview-action-raterestr-dates').text(start_day_key + ' - ' + end_day_key);
+        jQuery('.vbo-overview-action-raterestr-dates').html('<span class="badge badge-info">' + start_day_key + '</span> - <span class="badge badge-info">' + end_day_key + '</span>');
 
         // the room-ota relations wrapper
         let wrapper = jQuery('.vbo-roverw-setnewrate-vcm-otas');
@@ -1843,10 +2114,11 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
 
                     // get the current rate to set
                     let current_room_rate = jQuery('#roverw-newrate').val();
+                    let current_rate_type = document.querySelector('.vbo-roverw-newrwrap').getAttribute('data-rates-type');
                     if (current_room_rate) {
                         // dispatch the event to trigger the re-calculation of the OTA rates
                         VBOCore.emitEvent('vbo-roverv-setnewrate-calc-ota-pricing', {
-                            rate: current_room_rate,
+                            rate: current_rate_type != 'addsub' ? current_room_rate : 0,
                         });
                     }
                 });
@@ -1958,7 +2230,8 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
 
                 // check the current rate value
                 let current_room_rate = jQuery('#roverw-newrate').val();
-                if (current_room_rate) {
+                let current_rate_type = document.querySelector('.vbo-roverw-newrwrap').getAttribute('data-rates-type');
+                if (current_room_rate && current_rate_type != 'addsub') {
                     // dispatch the event to allow the actual calculation of the OTA rate
                     VBOCore.emitEvent('vbo-roverv-setnewrate-calc-ota-pricing', {
                         rate: current_room_rate,
@@ -2572,6 +2845,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
         // configure the currency object
         VBOCore.getCurrency({
             symbol:     <?php echo json_encode($currencysymb) ?: '"$"'; ?>,
+            position:   <?php echo json_encode(VikBooking::getCurrencyPosition()); ?>,
             digits:     <?php echo intval($currency_digits); ?>,
             decimals:   <?php echo json_encode($currency_decimals) ?: '"."'; ?>,
             thousands:  <?php echo json_encode($currency_thousands) ?: '","'; ?>,
@@ -2591,7 +2865,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                 class: 'vbo-context-menu-entry-secondary',
                 text: <?php echo json_encode(JText::translate('VBO_RATES_AND_RESTR')); ?>,
                 icon: () => {
-                    return this.activeState ? '<?php echo VikBookingIcons::i('toggle-on'); ?>' : '<?php echo VikBookingIcons::i('toggle-off'); ?>';
+                    return this.activeState ? '<?php echo VikBookingIcons::i('toggle-on', 'vbo-enabled-icon'); ?>' : '<?php echo VikBookingIcons::i('toggle-off'); ?>';
                 },
                 action: (root, event) => {
                     // get all month tables
@@ -2624,7 +2898,7 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                         vboActionLoadRoomRates(from_date, to_date, listingIds);
                     } else {
                         // hide room rates
-                        vboActionHideRoomRates();
+                        vboActionHideRoomRates(true);
                     }
                 },
                 disabled: () => {
@@ -2699,10 +2973,81 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             });
         }
 
-        // start context menu on the proper button element
+        // start context menu on the proper actions button element
         jQuery('.vbo-context-menu-overview-actions').vboContextMenu({
             placement: 'bottom-left',
             buttons: btns,
+        });
+
+        // start context menu on the button element to choose the new rates type
+        const fixedRateLbl = <?php echo json_encode(JText::translate('VBO_SET_FIXED_RATE')); ?>;
+        const adjustRatesLbl = <?php echo json_encode(JText::translate('VBO_INCR_DECR_RATES')); ?>;
+        jQuery('.vbo-context-menu-rate-type').vboContextMenu({
+            placement: 'bottom-center',
+            buttons: [
+                {
+                    activeState: true,
+                    rateType: 'fixed',
+                    class: 'vbo-context-menu-entry-secondary',
+                    text: fixedRateLbl,
+                    separator: false,
+                    icon: function() {
+                        return this.activeState === true ? '<?php echo VikBookingIcons::i('check-square'); ?>' : '<?php echo VikBookingIcons::i('far fa-square'); ?>';
+                    },
+                    action: function(root, event) {
+                        // make the active state property enabled
+                        this.activeState = true;
+
+                        // update data attribute for the preference chosen
+                        document.querySelector('.vbo-roverw-newrwrap').setAttribute('data-rate-type', 'fixed');
+
+                        // update element action title
+                        document.querySelector('.vbo-roverw-action-rates-title').textContent = fixedRateLbl;
+
+                        // toggle visible element for defining the new rate
+                        document.querySelector('.vbo-roverw-newrcont[data-rate-type="fixed"]').style.display = '';
+                        document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"]').style.display = 'none';
+
+                        // parse all context menu buttons to set the proper active state
+                        jQuery('.vbo-context-menu-rate-type').vboContextMenu('buttons').forEach((btn) => {
+                            if (btn.rateType != 'fixed') {
+                                btn.activeState = false;
+                            }
+                        });
+                    },
+                },
+                {
+                    activeState: false,
+                    rateType: 'addsub',
+                    class: 'vbo-context-menu-entry-secondary',
+                    text: adjustRatesLbl,
+                    separator: false,
+                    icon: function() {
+                        return this.activeState === true ? '<?php echo VikBookingIcons::i('check-square'); ?>' : '<?php echo VikBookingIcons::i('far fa-square'); ?>';
+                    },
+                    action: function(root, event) {
+                        // make the active state property enabled
+                        this.activeState = true;
+
+                        // update data attribute for the preference chosen
+                        document.querySelector('.vbo-roverw-newrwrap').setAttribute('data-rate-type', 'addsub');
+
+                        // update element action title
+                        document.querySelector('.vbo-roverw-action-rates-title').textContent = adjustRatesLbl;
+
+                        // toggle visible element for defining the new rate
+                        document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"]').style.display = '';
+                        document.querySelector('.vbo-roverw-newrcont[data-rate-type="fixed"]').style.display = 'none';
+
+                        // parse all context menu buttons to set the proper active state
+                        jQuery('.vbo-context-menu-rate-type').vboContextMenu('buttons').forEach((btn) => {
+                            if (btn.rateType != 'addsub') {
+                                btn.activeState = false;
+                            }
+                        });
+                    },
+                }
+            ],
         });
 
         // register listener to reset the room-rate selection upon Esc keyup event

@@ -462,6 +462,86 @@ class VikBookingControllerTaskmanager extends JControllerAdmin
     }
 
     /**
+     * AJAX endpoint to repeat (re-schedule) an existing TM task.
+     * 
+     * @return  void
+     * 
+     * @since   1.18.4 (J) - 1.8.4 (WP)
+     */
+    public function repeatTask()
+    {
+        $app = JFactory::getApplication();
+
+        if (!JSession::checkToken()) {
+            // missing CSRF-proof token
+            VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
+        }
+
+        $task_id  = $app->input->getUInt('task_id', 0);
+        $interval = $app->input->getString('interval', '');
+
+        if (!$interval) {
+            // missing value
+            VBOHttpDocument::getInstance($app)->close(400, 'Repeating value is required.');
+        }
+
+        // get task record
+        $record = VBOTaskModelTask::getInstance()->getItem($task_id);
+        if (!$record) {
+            // task not found
+            VBOHttpDocument::getInstance($app)->close(404, 'Task record not found.');
+        }
+
+        // wrap task record into a registry
+        $task = VBOTaskTaskregistry::getInstance((array) $record);
+
+        // task due date and time
+        $due_date = $task->getDueDate(true, 'Y-m-d H:i:s');
+        $due_time = $task->getDueDate(true, 'H:i:s');
+
+        // normalize properties for storing a new task record
+        unset(
+            $record->id,
+            $record->createdon,
+            $record->modifiedon,
+            $record->beganon,
+            $record->finishedon,
+            $record->beganby,
+            $record->finishedby,
+            $record->archived,
+            $record->workstartedon,
+            $record->realduration
+        );
+
+        // calculate the new due date
+        if (preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', $interval)) {
+            // we've got a date in Y-m-d format
+            $record->dueon = $interval . ' ' . $due_time;
+        } elseif (preg_match('/^([0-9]+)\s?(days?|weeks?|months?)$/i', $interval, $matches)) {
+            $record->dueon = date('Y-m-d H:i:s', strtotime(sprintf('+%d %s', (int) $matches[1], strtolower($matches[2])), strtotime($due_date)));
+        } else {
+            // unrecognized repeating interval
+            VBOHttpDocument::getInstance($app)->close(400, 'Unrecognized repeating interval.');
+        }
+
+        // keep the same assignees as before
+        $record->assignees = $task->getAssigneeIds();
+
+        // store the record
+        $newTaskId = VBOTaskModelTask::getInstance()->save($record);
+
+        if (!$newTaskId) {
+            // query failed
+            VBOHttpDocument::getInstance($app)->close(500, 'Could not store the task database record. Please try again.');
+        }
+
+        // send the response to output
+        VBOHttpDocument::getInstance($app)->json([
+            'taskId' => $newTaskId,
+        ]);
+    }
+
+    /**
      * AJAX endpoint to load the tasks for a given area, listings and dates.
      * 
      * @return  void

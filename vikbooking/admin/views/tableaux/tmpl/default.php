@@ -20,6 +20,7 @@ $tots = $this->tots;
 $vbo_app = VikBooking::getVboApplication();
 $vbo_app->loadSelect2();
 $vbo_app->loadDatePicker();
+$vbo_app->prepareJavaScriptCurrency();
 
 JHtml::fetch('script', VBO_ADMIN_URI . 'resources/js_upload/jquery.stickytableheaders.min.js');
 
@@ -33,7 +34,6 @@ if ($nowdf == "%d/%m/%Y") {
 }
 $datesep = VikBooking::getDateSeparator(true);
 $juidf = $nowdf == "%d/%m/%Y" ? 'dd/mm/yy' : ($nowdf == "%m/%d/%Y" ? 'mm/dd/yy' : 'yy/mm/dd');
-$currencysymb = VikBooking::getCurrencySymb();
 
 $month = VikRequest::getInt('month', 0, 'request');
 $printtableaux = VikRequest::getInt('printtableaux', 0, 'request');
@@ -689,8 +689,7 @@ var vboMessages = {
 	checkoutLbl: "<?php echo addslashes(JText::translate('VBRELEASEAT')); ?>",
 	numChildren: "<?php echo addslashes(JText::translate('VBEDITORDERCHILDREN')); ?>",
 	totalAmount: "<?php echo addslashes(JText::translate('VBEDITORDERNINE')); ?>",
-	totalPaid: "<?php echo addslashes(JText::translate('VBPEDITBUSYTOTPAID')); ?>",
-	currencySymb: "<?php echo $currencysymb; ?>"
+	totalPaid: "<?php echo addslashes(JText::translate('VBPEDITBUSYTOTPAID')); ?>"
 };
 
 function registerHoveringTooltip(that) {
@@ -828,9 +827,9 @@ function loadTooltipBookings(bid) {
 					bcont += "<div class=\"vbo-overview-tip-bprovenience\"><span class=\"vbo-overview-tip-lbl\"><?php echo addslashes(JText::translate('VBPVIEWORDERCHANNEL')); ?></span><span class=\"vbo-overview-tip-cnt\">"+v.channelimg+"</span></div>";
 				}
 				bcont += "<div class=\"vbo-overview-tip-bookingcont-total\">";
-				bcont += "<div class=\"vbo-overview-tip-btot\"><span class=\"vbo-overview-tip-lbl\">"+vboMessages.totalAmount+"</span><span class=\"vbo-overview-tip-cnt\">"+vboMessages.currencySymb+" "+v.format_tot+"</span></div>";
+				bcont += "<div class=\"vbo-overview-tip-btot\"><span class=\"vbo-overview-tip-lbl\">"+vboMessages.totalAmount+"</span><span class=\"vbo-overview-tip-cnt\">" + VBOCore.getCurrency().display(v.format_tot) + "</span></div>";
 				if (v.totpaid > 0.00) {
-					bcont += "<div class=\"vbo-overview-tip-btot\"><span class=\"vbo-overview-tip-lbl\">"+vboMessages.totalPaid+"</span><span class=\"vbo-overview-tip-cnt\">"+vboMessages.currencySymb+" "+v.format_totpaid+"</span></div>";
+					bcont += "<div class=\"vbo-overview-tip-btot\"><span class=\"vbo-overview-tip-lbl\">"+vboMessages.totalPaid+"</span><span class=\"vbo-overview-tip-cnt\">" + VBOCore.getCurrency().display(v.format_totpaid) + "</span></div>";
 				}
 				var getnotes = v.adminnotes;
 				if (getnotes !== null && getnotes.length) {
@@ -967,7 +966,7 @@ function vboAddFest(that) {
 	}).done(function(res) {
 		// parse the JSON response that contains the fest object for the passed date
 		try {
-			var stored_fest = JSON.parse(res);
+			var stored_fest = typeof res === 'string' ? JSON.parse(res) : res;
 			if (!vboFests.hasOwnProperty(stored_fest['dt'])) {
 				// we need to add the proper class to all cells to show that there is a fest
 				jQuery('td.vbo-tableaux-daycell[data-ymd="'+stored_fest['dt']+'"]').addClass('vbo-tableaux-festcell');
@@ -1380,13 +1379,13 @@ jQuery(function() {
 
 	jQuery(document).mouseup(function(e) {
 		if (!hovtip && !vbodialogfests_on && !vbodialogrdaynotes_on) {
-			return false;
+			return;
 		}
 		if (hovtip) {
 			var vbo_overlay_cont = jQuery(".vbo-overview-tipblock");
 			if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {
 				hideVboTooltip();
-				return true;
+				return;
 			}
 		}
 		if (vbodialogfests_on) {

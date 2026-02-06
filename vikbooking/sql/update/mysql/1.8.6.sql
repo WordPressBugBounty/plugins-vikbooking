@@ -1,0 +1,1 @@
+ALTER TABLE `#__vikbooking_notifications` CHANGE `cta_data` `cta_data` varchar(1024) DEFAULT NULL; 

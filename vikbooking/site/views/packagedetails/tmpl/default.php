@@ -101,19 +101,58 @@ if (!empty($package['img'])) {
 		</div>
 	<?php
 }
-/**
- * @wponly 	we try to parse any shortcode inside the texts of the package
- */
-$package['descr'] = do_shortcode($package['descr']);
-$package['conditions'] = do_shortcode($package['conditions']);
-//
+
+// descriptive texts
+if (VBOPlatformDetection::isWordPress()) {
+	/**
+	 * @wponly 	we try to parse any shortcode inside the texts of the package
+	 */
+	$package['descr'] = do_shortcode(wpautop($package['descr']));
+	$package['conditions'] = do_shortcode(wpautop($package['conditions']));
+} else {
+	//BEGIN: Joomla Content Plugins Rendering
+	JPluginHelper::importPlugin('content');
+	$myItem = JTable::getInstance('content');
+	$myItem->text = $package['descr'];
+	$objparams = array();
+	if (class_exists('JEventDispatcher')) {
+		$dispatcher = JEventDispatcher::getInstance();
+		$dispatcher->trigger('onContentPrepare', array('com_vikbooking.packagedetails', &$myItem, &$objparams, 0));
+	} else {
+		/**
+		 * @joomla4only
+		 */
+		$dispatcher = JFactory::getApplication();
+		if (method_exists($dispatcher, 'triggerEvent')) {
+			$dispatcher->triggerEvent('onContentPrepare', array('com_vikbooking.packagedetails', &$myItem, &$objparams, 0));
+		}
+	}
+	$package['descr'] = $myItem->text;
+
+	$myItem->text = $package['conditions'];
+	if (class_exists('JEventDispatcher')) {
+		$dispatcher = JEventDispatcher::getInstance();
+		$dispatcher->trigger('onContentPrepare', array('com_vikbooking.packagedetails', &$myItem, &$objparams, 0));
+	} else {
+		/**
+		 * @joomla4only
+		 */
+		$dispatcher = JFactory::getApplication();
+		if (method_exists($dispatcher, 'triggerEvent')) {
+			$dispatcher->triggerEvent('onContentPrepare', array('com_vikbooking.packagedetails', &$myItem, &$objparams, 0));
+		}
+	}
+	$package['conditions'] = $myItem->text;
+	//END: Joomla Content Plugins Rendering
+}
+
 ?>
 		<div class="vbo-pkgdet-descrprice-block">
 			<div class="vbo-pkgdet-descr">
 				<?php echo $package['descr'] ?>
 			</div>
 			<div class="vbo-pkgdet-cost">
-				<span class="vbo-pkglist-pkg-price"><span class="vbo_currency"><?php echo $currencysymb; ?></span> <span class="vbo_price"><?php echo VikBooking::numberFormat(($tax_summary ? $package['cost'] : VikBooking::sayPackagePlusIva($package['cost'], $package['idiva']))); ?></span></span>
+				<span class="vbo-pkglist-pkg-price"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat(($tax_summary ? $package['cost'] : VikBooking::sayPackagePlusIva($package['cost'], $package['idiva']))), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></span>
 				<span class="vbo-pkglist-pkg-priceper"><?php echo implode(', ', $costfor); ?></span>
 			</div>
 		</div>

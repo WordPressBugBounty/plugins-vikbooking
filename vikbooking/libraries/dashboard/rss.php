@@ -112,7 +112,7 @@ class JDashboardWidgetVikBookingRss extends JDashboardWidget
 			// try to download feeds
 			$feeds = $this->rss->download($options);
 		}
-		catch (Exception $e)
+		catch (Throwable $e)
 		{
 			// go ahead silently
 			$feeds = array();

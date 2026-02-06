@@ -55,6 +55,8 @@ class VikBookingControllerMaintenance extends JControllerAdmin
                 'id_price'   => $id_price,
                 'from_date'  => $from_date,
                 'to_date'    => $to_date,
+                // flag to ignore the skip list
+                'forced'     => true,
             ]);
 
             $result = VBOPerformanceCleaner::listingSeasonSnapshot();
@@ -66,8 +68,29 @@ class VikBookingControllerMaintenance extends JControllerAdmin
             VBOHttpDocument::getInstance($app)->json($result);
         }
 
-        $app->enqueueMessage(sprintf('Cleaning completed with %d records removed', (int) ($result['records_removed']) ?? 0));
+        $app->enqueueMessage(sprintf('Cleaning completed with %d records removed', (int) ($result['records_removed'] ?? 0)));
         $app->redirect('index.php?option=com_vikbooking&task=seasons');
+        $app->close();
+    }
+
+    /**
+     * Task introduced to normalize customer records using "short" PIN codes.
+     * 
+     * @since   1.18.6 (J) - 1.8.6 (WP)
+     */
+    public function normalize_short_pins()
+    {
+        $app = JFactory::getApplication();
+
+        if (!JSession::checkToken() && !JSession::checkToken('get')) {
+            VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
+        }
+
+        // trigger normalization
+        VikBooking::getCPinInstance()->normalizeShortPins();
+
+        $app->enqueueMessage(JText::translate('VBOCHECKINSTATUSUPDATED'), 'success');
+        $app->redirect('index.php?option=com_vikbooking');
         $app->close();
     }
 }

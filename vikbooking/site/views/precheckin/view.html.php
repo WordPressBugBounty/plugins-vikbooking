@@ -14,8 +14,12 @@ jimport('joomla.application.component.view');
 
 class VikbookingViewPrecheckin extends JViewVikBooking
 {
-	function display($tpl = null)
+	public function display($tpl = null)
 	{
+		// set noindex instruction for robots
+		$document = JFactory::getDocument();
+		$document->setMetaData('robots', 'noindex, nofollow');
+
 		$dbo = JFactory::getDbo();
 		$mainframe = JFactory::getApplication();
 		$vbo_tn = VikBooking::getTranslator();

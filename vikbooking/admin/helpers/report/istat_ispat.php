@@ -1956,15 +1956,15 @@ JS
 			// scan all properties returned
 			foreach ($xmlBody->return as $returnNode) {
 				// get the property name and id
-				$property_id = $returnNode->struttura ?? 0;
-				$property_name = $returnNode->name ?? '';
+				$property_id = (string) ($returnNode->struttura ?? 0);
+				$property_name = (string) ($returnNode->name ?? '');
 
 				// push property found
 				$properties[$property_id] = $property_name;
 
 				// get the readable properties name and id
-				$property_id_read = $returnNode->struttura ?? '??';
-				$property_name_read = $returnNode->name ?? '----';
+				$property_id_read = (string) ($returnNode->struttura ?? '??');
+				$property_name_read = (string) ($returnNode->name ?? '----');
 
 				// build HTML property string
 				$html .= '<li>' . sprintf('ID <strong>%s</strong> - <strong>%s</strong>', $property_id_read, $property_name_read) . '</li>';

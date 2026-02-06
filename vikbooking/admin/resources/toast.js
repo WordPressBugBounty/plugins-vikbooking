@@ -73,7 +73,7 @@
 					// above the toast message
 					VBOToast.mouseHover = true;
 				}, () => {
-					if (VBOToast.mouseHover) {
+					if (VBOToast.mouseHover && VBOToast.disposeDelay) {
 						// reset timeout
 						clearTimeout(VBOToast.timerHandler);
 
@@ -223,13 +223,42 @@
 
 			content.attr('style', style);
 
-			// slide in the toast message
-			toast.addClass('toast-slide-in');
-
 			// overwrite delay in case it was specified
 			if (message.hasOwnProperty('delay')) {
-				delay = message.delay;
+				let ms = parseInt(message.delay);
+
+				if (isNaN(delay)) {
+					// do not auto-dispose
+					delay = 0;
+				} else {
+					// use the given delay
+					delay = Math.abs(message.delay);
+				}
 			}
+
+			// register delay
+			VBOToast.disposeDelay = delay;
+
+			if (VBOToast.disposeDelay) {
+				// register timer to dispose the toast message once the specified
+				// delay is passed
+				VBOToast.timerHandler = setTimeout(VBOToast.dispose, delay);
+			} else {
+				// flag timer handler to properly process the queue
+				VBOToast.timerHandler = true;
+
+				// dispose only after clicking the notification
+				toast.addClass('clickable').on('click', () => {
+					// force closure because we are above the toast
+					// and the mouseHover flag could be active
+					VBOToast.dispose(true);
+				});
+			}
+
+			setTimeout(() => {
+				// slide in the toast message
+				toast.addClass('toast-slide-in ready');
+			}, 32);
 
 			// execute callback, if specified
 			if (message.hasOwnProperty('callback') && typeof message.callback === 'function') {
@@ -240,13 +269,6 @@
 				// auto-play the sound when the message slide in
 				VBOToastSound.play(message.sound, delay * 2);
 			}
-
-			// register delay
-			VBOToast.disposeDelay = delay;
-
-			// register timer to dispose the toast message once the specified
-			// delay is passed
-			VBOToast.timerHandler = setTimeout(VBOToast.dispose, delay);
 		}
 
 		/**
@@ -356,6 +378,7 @@
 	VBOToast.POSITION_TOP_LEFT      = 'top-left';
 	VBOToast.POSITION_TOP_CENTER    = 'top-center';
 	VBOToast.POSITION_TOP_RIGHT     = 'top-right';
+	VBOToast.POSITION_CENTER_CENTER = 'center-center';
 	VBOToast.POSITION_BOTTOM_LEFT   = 'bottom-left';
 	VBOToast.POSITION_BOTTOM_CENTER = 'bottom-center';
 	VBOToast.POSITION_BOTTOM_RIGHT  = 'bottom-right';

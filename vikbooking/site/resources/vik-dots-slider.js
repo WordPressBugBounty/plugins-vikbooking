@@ -26,7 +26,7 @@
 			images: [],
 			captions: [],
 			containerClass: 'vik-dots-slider-container',
-			containerHeight: '200px',
+			containerHeight: '260px',
 			innerClass: 'vik-dots-slider-inner',
 			slidesClass: 'vik-dots-slider-slides',
 			slideClass: 'vik-dots-slider-slide',

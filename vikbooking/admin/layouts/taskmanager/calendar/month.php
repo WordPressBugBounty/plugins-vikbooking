@@ -170,10 +170,13 @@ for ($d = 0; $d < 7; $d++) {
                         $statusName = $status->getName();
                     }
 
+                    // get task due time
+                    $dueTime = $task->getDueDate($local = true, $format = 'H:i:s');
+
                     // get task assignee details
                     $assignees = $task->getAssigneeDetails();
                     ?>
-                    <div class="vbo-tm-calendar-month-day-task vbo-tm-color <?php echo $statusColor ?: 'gray'; ?> <?php echo $statusName ? 'vbo-tooltip vbo-tooltip-top' : ''; ?>" data-task-id="<?php echo $task->getID(); ?>" data-area-id="<?php echo $task->getAreaID(); ?>" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', $statusName); ?>">
+                    <div class="vbo-tm-calendar-month-day-task vbo-tm-color <?php echo $statusColor ?: 'gray'; ?> <?php echo $statusName ? 'vbo-tooltip vbo-tooltip-top' : ''; ?>" data-task-id="<?php echo $task->getID(); ?>" data-area-id="<?php echo $task->getAreaID(); ?>" data-due-time="<?php echo $dueTime; ?>" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', $statusName); ?>">
                         <div class="vbo-tm-calendar-month-day-task-wrap">
                             <div class="vbo-tm-calendar-task-title">
                                 <?php echo $task->getTitle(); ?>
@@ -351,6 +354,11 @@ for ($d = 0; $d < 7; $d++) {
             });
 
         /**
+         * Store the original task day-cell container for drag & drop.
+         */
+        let taskOriginDnD = null;
+
+        /**
          * Register listeners for editing an existing task.
          */
         document
@@ -389,9 +397,20 @@ for ($d = 0; $d < 7; $d++) {
                     return;
                 }
 
+                // register click event
                 taskElement.addEventListener('click', (event) => {
                     event.preventDefault();
                     event.stopPropagation();
+
+                    // access the container day-cell
+                    let taskDayCell = taskElement.closest('.vbo-tm-calendar-month-day');
+
+                    // check if event is in the future (after today)
+                    let isFuture = true;
+                    if (taskDayCell && new Date(taskDayCell.getAttribute('data-date') + ' 00:00:00') <= new Date()) {
+                        // task is in the past
+                        isFuture = false;
+                    }
 
                     // define the modal delete button
                     let delete_btn = $('<button></button>')
@@ -495,6 +514,163 @@ for ($d = 0; $d < 7; $d++) {
                             );
                         });
 
+                    let save_btn_content = null;
+
+                    if (!isFuture) {
+                        // define the "actions" button to allow repeating the task
+                        let actions_btn = $('<button></button>')
+                            .attr('type', 'button')
+                            .addClass('btn btn-success')
+                            .html('<?php VikBookingIcons::e('ellipsis-h'); ?>');
+
+                        // define the callback to repeat the task
+                        const repeatTaskFunc = function(interval) {
+                            // start loading animation
+                            VBOCore.emitEvent('vbo-tm-edittask-loading');
+
+                            // make the request
+                            VBOCore.doAjax(
+                                "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=taskmanager.repeatTask'); ?>",
+                                {
+                                    task_id: taskId,
+                                    interval: interval,
+                                },
+                                (resp) => {
+                                    // trigger filters-changed event on success
+                                    VBOCore.emitEvent('vbo-tm-filters-changed', {
+                                        filters: vboTmFilters,
+                                    });
+
+                                    // dismiss the modal
+                                    VBOCore.emitEvent('vbo-tm-edittask-dismiss');
+                                },
+                                (error) => {
+                                    // display error message
+                                    alert(error.responseText);
+
+                                    // stop loading
+                                    VBOCore.emitEvent('vbo-tm-edittask-loading');
+                                }
+                            );
+                        };
+
+                        // define the context menu for the actions button
+                        $(actions_btn).vboContextMenu({
+                            placement: 'top-left',
+                            buttons: [
+                                {
+                                    class: 'btngroup',
+                                    text: <?php echo json_encode(JText::translate('VBO_REPEAT')); ?>,
+                                    disabled: true,
+                                },
+                                {
+                                    class: 'vbo-context-menu-entry-secondary',
+                                    text: <?php echo json_encode(JText::translate('VBOTOMORROW')); ?>,
+                                    action: (root, event) => {
+                                        repeatTaskFunc('1 day');
+                                    },
+                                },
+                                {
+                                    class: 'vbo-context-menu-entry-secondary',
+                                    text: <?php echo json_encode(JText::sprintf('VBO_REL_EXP_FUTURE', sprintf('2 %s', strtolower(JText::translate('VBCONFIGSEARCHPMAXDATEDAYS'))))); ?>,
+                                    separator: true,
+                                    action: (root, event) => {
+                                        repeatTaskFunc('2 days');
+                                    },
+                                },
+                                {
+                                    class: 'vbo-context-menu-entry-secondary',
+                                    text: <?php echo json_encode(JText::sprintf('VBO_REL_EXP_FUTURE', sprintf('1 %s', strtolower(JText::translate('VBOWEEK'))))); ?>,
+                                    action: (root, event) => {
+                                        repeatTaskFunc('1 week');
+                                    },
+                                },
+                                {
+                                    class: 'vbo-context-menu-entry-secondary',
+                                    text: <?php echo json_encode(JText::sprintf('VBO_REL_EXP_FUTURE', sprintf('2 %s', strtolower(JText::translate('VBCONFIGSEARCHPMAXDATEWEEKS'))))); ?>,
+                                    separator: true,
+                                    action: (root, event) => {
+                                        repeatTaskFunc('2 weeks');
+                                    },
+                                },
+                                {
+                                    class: 'vbo-context-menu-entry-secondary',
+                                    text: <?php echo json_encode(JText::sprintf('VBO_REL_EXP_FUTURE', sprintf('1 %s', strtolower(JText::translate('VBPVIEWRESTRICTIONSTWO'))))); ?>,
+                                    action: (root, event) => {
+                                        repeatTaskFunc('1 month');
+                                    },
+                                },
+                                {
+                                    class: 'vbo-context-menu-entry-secondary',
+                                    text: <?php echo json_encode(JText::translate('VBPVIEWORDERSONE')); ?>,
+                                    action: (root, event) => {
+                                        // display dialog modal
+                                        let dialogBody = document.createElement('div');
+                                        dialogBody.classList.add('vbo-admin-container', 'vbo-admin-container-full', 'vbo-admin-container-compact');
+                                        let wrap = document.createElement('div');
+                                        wrap.classList.add('vbo-params-wrap');
+                                        let paramContainer = document.createElement('div');
+                                        paramContainer.classList.add('vbo-param-container');
+                                        let paramLabel = document.createElement('div');
+                                        paramLabel.classList.add('vbo-param-label');
+                                        paramLabel.innerText = <?php echo json_encode(JText::translate('VBPVIEWORDERSONE')); ?>;
+                                        let paramSetting = document.createElement('div');
+                                        paramSetting.classList.add('vbo-param-setting');
+                                        let dateControl = document.createElement('input');
+                                        dateControl.setAttribute('type', 'date');
+                                        dateControl.setAttribute('min', new Date().getFullYear() + '-01-01');
+
+                                        // build dialog body
+                                        paramSetting.append(dateControl);
+                                        paramContainer.append(paramLabel);
+                                        paramContainer.append(paramSetting);
+                                        wrap.append(paramContainer);
+                                        dialogBody.append(wrap);
+
+                                        // build dialog buttons
+                                        let dialogCancelBtn = document.createElement('button');
+                                        dialogCancelBtn.setAttribute('type', 'button');
+                                        dialogCancelBtn.classList.add('btn');
+                                        dialogCancelBtn.innerText = <?php echo json_encode(JText::translate('VBANNULLA')); ?>;
+                                        dialogCancelBtn.addEventListener('click', () => {
+                                            VBOCore.emitEvent('vbo-tm-repeat-task-date-dismiss');
+                                        });
+                                        let dialogApplyBtn = document.createElement('button');
+                                        dialogApplyBtn.setAttribute('type', 'button');
+                                        dialogApplyBtn.classList.add('btn', 'btn-primary');
+                                        dialogApplyBtn.innerText = <?php echo json_encode(JText::translate('VBAPPLY')); ?>;
+                                        dialogApplyBtn.addEventListener('click', () => {
+                                            if (dateControl.value) {
+                                                VBOCore.emitEvent('vbo-tm-repeat-task-date-dismiss');
+                                                repeatTaskFunc(dateControl.value);
+                                            }
+                                        });
+
+                                        // render modal
+                                        VBOCore.displayModal({
+                                            suffix:        'vbo-tm-repeat-task-date',
+                                            extra_class:   'vbo-modal-rounded vbo-modal-dialog',
+                                            title:         <?php echo json_encode(JText::translate('VBO_REPEAT')); ?>,
+                                            body_prepend:  true,
+                                            lock_scroll:   true,
+                                            body:          dialogBody,
+                                            footer_left:   dialogCancelBtn,
+                                            footer_right:  dialogApplyBtn,
+                                            dismiss_event: 'vbo-tm-repeat-task-date-dismiss',
+                                        });
+                                    },
+                                },
+                            ],
+                        });
+
+                        // define modal button to include the actions button
+                        save_btn_content = $('<div></div>')
+                            .addClass('btn-group')
+                            .addClass('vbo-context-menu-btn-group')
+                            .append(save_btn)
+                            .append(actions_btn);
+                    }
+
                     // display modal
                     let modalBody = VBOCore.displayModal({
                         suffix:         'tm_edittask_modal',
@@ -504,7 +680,7 @@ for ($d = 0; $d < 7; $d++) {
                         lock_scroll:    true,
                         escape_dismiss: false,
                         footer_left:    delete_btn,
-                        footer_right:   save_btn,
+                        footer_right:   save_btn_content || save_btn,
                         loading_event:  'vbo-tm-edittask-loading',
                         dismiss_event:  'vbo-tm-edittask-dismiss',
                     });
@@ -545,8 +721,121 @@ for ($d = 0; $d < 7; $d++) {
                     );
                 });
 
+                // set draggable attribute
+                taskElement.setAttribute('draggable', true);
+
+                // register dragstart event
+                taskElement.addEventListener('dragstart', (event) => {
+                    // set task ID within data transfer
+                    event.dataTransfer.setData('text/plain', taskId);
+
+                    // update task day-cell origin
+                    taskOriginDnD = taskElement.closest('.vbo-tm-calendar-month-day');
+
+                    // add dragging class
+                    setTimeout(() => taskElement.classList.add('dragging'), 0);
+                });
+
+                // register dragend event
+                taskElement.addEventListener('dragend', (event) => {
+                    // remove dragging class
+                    taskElement.classList.remove('dragging');
+
+                    // ensure the drop zone is accepted, or snap back to original position
+                    let taskDayCell = taskElement.closest('.vbo-tm-calendar-month-day');
+                    if (!taskDayCell && taskOriginDnD) {
+                        // snap back
+                        taskOriginDnD.prepend(taskElement);
+                    }
+                });
+
                 // turn flag on for listener set
                 taskElement.clickListener = true;
+            });
+
+        /**
+         * Register listeners for dropping a task inside a day-cell.
+         */
+        document
+            .querySelectorAll('.vbo-tm-calendar-month-day:not(.vbo-tm-calendar-month-day-empty)')
+            .forEach((dayCell) => {
+                // register dragover event
+                dayCell.addEventListener('dragover', (event) => {
+                    if (dayCell != taskOriginDnD) {
+                        event.preventDefault();
+                        dayCell.classList.add('drag-over');
+                    }
+                });
+
+                // register dragleave event
+                dayCell.addEventListener('dragleave', (event) => {
+                    dayCell.classList.remove('drag-over');
+                });
+
+                // register the drop event
+                dayCell.addEventListener('drop', (event) => {
+                    event.preventDefault();
+                    dayCell.classList.remove('drag-over');
+
+                    // access the dropped task ID within data transfer
+                    const taskId = event.dataTransfer.getData('text/plain');
+                    if (!taskId) {
+                        // abort
+                        return;
+                    }
+
+                    // access the dropped task element
+                    const taskElement = document.querySelector('.vbo-tm-calendar-month-day-task[data-task-id="' + taskId + '"]');
+                    if (!taskElement) {
+                        // abort
+                        return;
+                    }
+
+                    // access the task container and target for this day
+                    let taskContainer = dayCell.querySelector('.vbo-tm-calendar-month-day-tasks');
+
+                    if (!taskContainer) {
+                        // create element on an empty day-cell
+                        taskContainer = document.createElement('div');
+                        taskContainer.classList.add('vbo-tm-calendar-month-day-tasks');
+
+                        // append new task container
+                        dayCell.append(taskContainer);
+                    }
+
+                    if (!taskOriginDnD || dayCell.getAttribute('data-date') == taskOriginDnD.getAttribute('data-date')) {
+                        // abort for invalid target cell
+                        return;
+                    }
+
+                    // add updating class
+                    taskElement.classList.add('updating');
+
+                    // move task onto the dropped cell
+                    taskContainer.prepend(taskElement);
+
+                    // make the request
+                    VBOCore.doAjax(
+                        "<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=taskmanager.updateTask'); ?>",
+                        {
+                            data: {
+                                id: taskId,
+                                dueon: dayCell.getAttribute('data-date') + ' ' + taskElement.getAttribute('data-due-time'),
+                            },
+                        },
+                        (resp) => {
+                            // get rid of the upating class upon completion
+                            // taskElement.classList.remove('updating');
+                        },
+                        (error) => {
+                            // display error message
+                            alert(error.responseText);
+
+                            // snap back
+                            taskOriginDnD.prepend(taskElement);
+                        }
+                    );
+                });
             });
 
     });

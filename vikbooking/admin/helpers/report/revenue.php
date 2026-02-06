@@ -522,10 +522,12 @@ class VikBookingReportRevenue extends VikBookingReport
 					$filter_rooms = (array) ($pidroom ?: $plistings);
 
 					// count the rooms booked in case of rooms filtering
+					$booking_rooms_aff = 0;
 					if ($filter_rooms) {
 						foreach ($gbook as $sgbook) {
 							if (in_array($sgbook['idroom'], $filter_rooms)) {
 								$rooms_sold++;
+								$booking_rooms_aff++;
 							}
 						}
 					} else {
@@ -557,6 +559,11 @@ class VikBookingReportRevenue extends VikBookingReport
 
 					// calculate net revenue and taxes
 					$tot_net = $gbook[0]['total'] - (float) $gbook[0]['tot_taxes'] - (float) $gbook[0]['tot_city_taxes'] - (float) $gbook[0]['tot_fees'] - (float) $gbook[0]['tot_damage_dep'] - (float) $gbook[0]['cmms'];
+
+					if ($filter_rooms && !$booking_rooms_aff) {
+						// no revenue involved
+						$tot_net = 0;
+					}
 
 					if ($room_base_total && (!((float) $gbook[0]['tot_taxes']) || !VikBooking::ivaInclusa())) {
 						/**

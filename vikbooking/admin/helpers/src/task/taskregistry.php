@@ -211,6 +211,18 @@ final class VBOTaskTaskregistry
     }
 
     /**
+     * Tells if the task was generated through AI.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.4 (J) - 1.8.4 (WP)
+     */
+    public function isAI()
+    {
+        return (bool) $this->get('ai', 0);
+    }
+
+    /**
      * Returns the list of tag IDs for the current task.
      * 
      * @return  array

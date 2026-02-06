@@ -10,10 +10,10 @@
 
 defined('ABSPATH') or die('No script kiddies please!');
 
-$rooms 		= $this->rooms;
-$category 	= $this->category;
-$vbo_tn 	= $this->vbo_tn;
-$navig 		= $this->navig;
+$rooms    = $this->rooms;
+$category = $this->category;
+$vbo_tn   = $this->vbo_tn;
+$navig    = $this->navig;
 
 $currencysymb 	= VikBooking::getCurrencySymb();
 $pitemid 		= VikRequest::getString('Itemid', '', 'request');
@@ -178,7 +178,7 @@ foreach ($rooms as $r) {
 			if ($r['cost'] > 0 || !empty($custprice)) {
 			?>
 							<div class="vbsrowpricediv">
-								<span class="room_cost"><span class="vbo_currency"><?php echo $currencysymb; ?></span> <span class="vbo_price"><?php echo (!empty($custprice) ? VikBooking::numberFormat($custprice) : VikBooking::numberFormat($r['cost'])); ?></span></span>
+								<span class="room_cost"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat(($custprice ?: $r['cost'])), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></span>
 								<span class="vbliststartfrom"><?php echo $custpricetxt; ?></span>
 								<?php
 								if (!empty($custpricesubtxt)) {

@@ -566,11 +566,33 @@ class VikBookingController extends JControllerVikBooking
 		}
 
 		/**
-		 * Custom check-in/out times due to late check-out/early check-in options.
+		 * Custom check-in/out times due to late check-out/early check-in options or custom listing settings.
 		 * 
 		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 * @since 	1.18.3 (J) - 1.8.3 (WP) added support to check-in/out times at listing-level.
 		 */
 		$custom_checkinout = [];
+		if (count($rooms) === 1) {
+			$listing_custom_checkin = VikBooking::getRoomParam('checkin', ($rooms[(key($rooms))]['params'] ?? ''));
+			$listing_custom_checkout = VikBooking::getRoomParam('checkout', ($rooms[(key($rooms))]['params'] ?? ''));
+			if ($listing_custom_checkin) {
+				// set listing-level check-in time in seconds
+				$listing_custom_checkin_parts = explode(':', $listing_custom_checkin);
+				$listing_custom_checkin = (intval($listing_custom_checkin_parts[0]) * 3600) + (intval($listing_custom_checkin_parts[1]) * 60);
+			}
+			if ($listing_custom_checkout) {
+				// set listing-level check-out time in seconds
+				$listing_custom_checkout_parts = explode(':', $listing_custom_checkout);
+				$listing_custom_checkout = (intval($listing_custom_checkout_parts[0]) * 3600) + (intval($listing_custom_checkout_parts[1]) * 60);
+			}
+			if ($listing_custom_checkin || $listing_custom_checkout) {
+				// set listing-level check-in/out times in seconds
+				$custom_checkinout = [
+					(int) $listing_custom_checkin,
+					(int) $listing_custom_checkout,
+				];
+			}
+		}
 
 		$selopt = [];
 		$optstr = [];
@@ -829,7 +851,7 @@ class VikBookingController extends JControllerVikBooking
 
 		$strisdue = number_format($isdue, 2) . 'vikbooking';
 		$ptotdue = number_format($ptotdue, 2) . 'vikbooking';
-		if ($strisdue != $ptotdue) {
+		if ($strisdue != $ptotdue && abs(round($isdue, 2) - round((float) $ptotdue, 2)) <= 0.01) {
 			showSelectVb(JText::translate('VBINCONGRTOT'));
 			return;
 		}
@@ -1077,6 +1099,13 @@ class VikBookingController extends JControllerVikBooking
 			$booking_record->phone = $phone_number;
 			$booking_record->pkg = $is_package === true ? (int)$pkg['id'] : null;
 			$booking_record->split_stay = !empty($split_stay) ? 1 : 0;
+
+			/**
+			 * Trigger event to allow third party plugins to overwrite any booking property before it gets created.
+			 * 
+			 * @since 	1.18.3 (J) - 1.8.3 (WP)
+			 */
+			VBOFactory::getPlatform()->getDispatcher()->trigger('onBeforeCreateBookingRecord', [$booking_record, $rooms, $tars, $selopt, $arrpeople]);
 
 			$dbo->insertObject('#__vikbooking_orders', $booking_record, 'id');
 
@@ -1368,9 +1397,40 @@ class VikBookingController extends JControllerVikBooking
 				$mod_paymcount++;
 			}
 
-			$q = "UPDATE `#__vikbooking_orders` SET `custdata`=".$dbo->quote($custdata).",`ts`='".$nowts."',`days`=".$dbo->quote($pdays).",`checkin`=".$dbo->quote($pcheckin).",`checkout`=".$dbo->quote($pcheckout).",`custmail`=".$dbo->quote($useremail).",`ujid`='".$currentUser->id."',`coupon`=".($usedcoupon === true ? $dbo->quote($strcouponeff) : "NULL").",`roomsnum`='".count($rooms)."',`total`='".$isdue."',`channel`=".(is_array($vcmchanneldata) ? $dbo->quote($vcmchanneldata['name']) : (!empty($mod_booking['channel']) ? $dbo->quote($mod_booking['channel']) : 'NULL')).",`paymcount`=".$mod_paymcount.",`adminnotes`=".$dbo->quote($mod_notes).",`lang`=".$dbo->quote($langtag).",`country`=".(!empty($usercountry) ? $dbo->quote($usercountry) : 'NULL').",`tot_taxes`='".$tot_taxes."',`tot_city_taxes`='".$tot_city_taxes."',`tot_fees`='".$tot_fees."',`tot_damage_dep`='".$tot_damage_dep."',`phone`=".$dbo->quote($phone_number).",`pkg`=".($is_package === true ? (int)$pkg['id'] : "NULL")." WHERE `id`=".(int)$mod_booking['id'].";";
+			$q = $dbo->getQuery(true)
+				->update($dbo->qn('#__vikbooking_orders'))
+				->set($dbo->qn('custdata') . ' = ' . $dbo->q($custdata))
+				->set($dbo->qn('ts') . ' = ' . $nowts)
+				->set($dbo->qn('days') . ' = ' . $pdays)
+				->set($dbo->qn('checkin') . ' = ' . $dbo->q($pcheckin))
+				->set($dbo->qn('checkout') . ' = ' . $dbo->q($pcheckout))
+				->set($dbo->qn('custmail') . ' = ' . $dbo->q($useremail))
+				->set($dbo->qn('ujid') . ' = ' . (int) $currentUser->id)
+				->set($dbo->qn('coupon') . ' = ' . ($usedcoupon === true ? $dbo->q($strcouponeff) : 'NULL'))
+				->set($dbo->qn('roomsnum') . ' = ' . count($rooms))
+				->set($dbo->qn('total') . ' = ' . $isdue)
+				->set($dbo->qn('channel') . ' = ' . (is_array($vcmchanneldata) ? $dbo->q($vcmchanneldata['name']) : (!empty($mod_booking['channel']) ? $dbo->q($mod_booking['channel']) : 'NULL')))
+				->set($dbo->qn('paymcount') . ' = ' . $mod_paymcount)
+				->set($dbo->qn('adminnotes') . ' = ' . $dbo->q($mod_notes))
+				->set($dbo->qn('lang') . ' = ' . $dbo->q($langtag))
+				->set($dbo->qn('country') . ' = ' . (!empty($usercountry) ? $dbo->q($usercountry) : 'NULL'))
+				->set($dbo->qn('tot_taxes') . ' = ' . $tot_taxes)
+				->set($dbo->qn('tot_city_taxes') . ' = ' . $tot_city_taxes)
+				->set($dbo->qn('tot_fees') . ' = ' . $tot_fees)
+				->set($dbo->qn('tot_damage_dep') . ' = ' . $tot_damage_dep)
+				->set($dbo->qn('phone') . ' = ' . $dbo->q($phone_number))
+				->set($dbo->qn('pkg') . ' = ' . ($is_package === true ? (int) $pkg['id'] : 'NULL'))
+				->where($dbo->qn('id') . ' = ' . (int) $mod_booking['id']);
+
 			$dbo->setQuery($q);
 			$dbo->execute();
+
+			/**
+			 * Trigger event to allow third party plugins to run after the booking is modified.
+			 * 
+			 * @since 	1.18.3 (J) - 1.8.3 (WP)
+			 */
+			VBOFactory::getPlatform()->getDispatcher()->trigger('onAfterModifyBookingRecord', [$mod_booking, $rooms, $tars, $selopt, $arrpeople]);
 
 			// remove the coupon used (should never been allowed for modifications)
 			if ($usedcoupon == true && $coupon['type'] == 2) {
@@ -1437,6 +1497,13 @@ class VikBookingController extends JControllerVikBooking
 			$booking_record->phone = $phone_number;
 			$booking_record->pkg = $is_package === true ? (int)$pkg['id'] : null;
 			$booking_record->split_stay = !empty($split_stay) ? 1 : 0;
+
+			/**
+			 * Trigger event to allow third party plugins to overwrite any booking property before it gets created.
+			 * 
+			 * @since 	1.18.3 (J) - 1.8.3 (WP)
+			 */
+			VBOFactory::getPlatform()->getDispatcher()->trigger('onBeforeCreateBookingRecord', [$booking_record, $rooms, $tars, $selopt, $arrpeople]);
 
 			$dbo->insertObject('#__vikbooking_orders', $booking_record, 'id');
 
@@ -2079,6 +2146,13 @@ class VikBookingController extends JControllerVikBooking
 			$row['sid'] = $row['idorderota'];
 		}
 
+		/**
+         * Trigger event to allow third-party plugins to manipulate the transaction data.
+         * 
+         * @since 	1.18.5 (J) - 1.8.5 (WP)
+         */
+        VBOFactory::getPlatform()->getDispatcher()->trigger('onInitPaymentTransaction', [&$row, &$payment['params'], []]);
+
 		if (VBOPlatformDetection::isWordPress()) {
 			/**
 			 * @wponly 	The payment gateway is now loaded 
@@ -2161,8 +2235,8 @@ class VikBookingController extends JControllerVikBooking
 		 * 
 		 * @since 	1.16.9 (J) - 1.6.9 (WP)
 		 */
-		if (strlen($newpaymentlog) > 65000) {
-			$newpaymentlog = substr($newpaymentlog, 0, 65000) . '...';
+		if (strlen($newpaymentlog) > 55000) {
+			$newpaymentlog = substr($newpaymentlog, 0, 55000) . '...';
 		}
 
 		if ($array_result['verified'] == 1) {
@@ -2460,6 +2534,11 @@ class VikBookingController extends JControllerVikBooking
 
 	public function currencyconverter()
 	{
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		$session = JFactory::getSession();
 		$pprices = VikRequest::getVar('prices', array(0));
 		$pfromsymbol = VikRequest::getString('fromsymbol', '', 'request');
@@ -2595,6 +2674,11 @@ class VikBookingController extends JControllerVikBooking
 
 	public function validatepin()
 	{
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		$cpin = VikBooking::getCPinIstance();
 
 		$ppin = VikRequest::getString('pin', '', 'request');
@@ -2763,6 +2847,13 @@ class VikBookingController extends JControllerVikBooking
 
 						// push the transaction currency information
 						$order[0]['transaction_currency'] = VikBooking::getCurrencyCodePp();
+
+						/**
+				         * Trigger event to allow third-party plugins to manipulate the transaction data.
+				         * 
+				         * @since 	1.18.5 (J) - 1.8.5 (WP)
+				         */
+				        VBOFactory::getPlatform()->getDispatcher()->trigger('onInitRefundTransaction', [&$order[0], &$payment['params']]);
 
 						/**
 						 * @wponly 	The payment gateway is loaded 
@@ -3022,14 +3113,12 @@ class VikBookingController extends JControllerVikBooking
 	public function operatorlogin()
 	{
 		/**
-		 * Extra security fix for the login form token.
-		 * 
-		 * @since 	September 8th 2020
+		 * Secure the login form token.
 		 */
-		if (!JFactory::getSession()->checkToken()) {
-			throw new Exception("The security token did not match.", 403);
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			throw new Exception('The security token did not match.', 403);
 		}
-		//
 
 		$app = JFactory::getApplication();
 		$pauthcode = VikRequest::getString('authcode', '', 'request');
@@ -3079,10 +3168,11 @@ class VikBookingController extends JControllerVikBooking
 
 		$dbo 	 = JFactory::getDbo();
 		$app 	 = JFactory::getApplication();
-		$sid 	 = VikRequest::getString('sid', '', 'request');
-		$ts 	 = VikRequest::getString('ts', '', 'request');
-		$pguests = VikRequest::getVar('guests', array());
-		$pitemid = VikRequest::getInt('Itemid', 0, 'request');
+
+		$sid 	 = $app->input->getString('sid', '');
+		$ts 	 = $app->input->getString('ts', '');
+		$pguests = $app->input->get('guests', [], 'array');
+		$pitemid = $app->input->getInt('Itemid', 0);
 
 		$q = "SELECT `o`.* FROM `#__vikbooking_orders` AS `o` WHERE (`o`.`sid`=" . $dbo->quote($sid) . " OR `o`.`idorderota`=" . $dbo->quote($sid) . ") AND `o`.`ts`=" . $dbo->quote($ts) . " AND `o`.`status`='confirmed';";
 		$dbo->setQuery($q);
@@ -3120,8 +3210,14 @@ class VikBookingController extends JControllerVikBooking
 		if ($precheckin) {
 			// make sure the limit of days in advance is reflected
 			$precheckin_mind = VikBooking::precheckinMinOffset();
-			$precheckin_lim_ts = strtotime("+{$precheckin_mind} days 00:00:00");
-			$precheckin = ($precheckin_lim_ts <= $order['checkin'] || ($precheckin_mind === 1 && time() <= $order['checkin']));
+			if ($precheckin_mind < 0) {
+				// validation made prior to check-out date and time
+				$precheckin = time() <= strtotime("{$precheckin_mind} days 23:59:59", $order['checkout']);
+			} else {
+				// classic validation prior to check-in date and time
+				$precheckin_lim_ts = strtotime("+{$precheckin_mind} days 00:00:00");
+				$precheckin = ($precheckin_lim_ts <= $order['checkin'] || ($precheckin_mind === 1 && time() <= $order['checkin']));
+			}
 		}
 		if (!$precheckin) {
 			// raise error and redirect in case of website or OTA booking
@@ -3226,6 +3322,7 @@ class VikBookingController extends JControllerVikBooking
 			throw new Exception('No extra services selected', 404);
 		}
 
+		// find the involved reservation, direct or OTA
 		$q = "SELECT `o`.* FROM `#__vikbooking_orders` AS `o` WHERE (`o`.`sid`=" . $dbo->quote($sid) . " OR `o`.`idorderota`=" . $dbo->quote($sid) . ") AND `o`.`ts`=" . $dbo->quote($ts) . ";";
 		$dbo->setQuery($q);
 		$order = $dbo->loadAssoc();
@@ -3233,7 +3330,8 @@ class VikBookingController extends JControllerVikBooking
 			throw new Exception('Booking not found', 404);
 		}
 
-		$q = "SELECT `or`.*,`r`.`name` AS `room_name` FROM `#__vikbooking_ordersrooms` AS `or`,`#__vikbooking_rooms` AS `r` WHERE `or`.`idorder`=".(int)$order['id']." AND `or`.`idroom`=`r`.`id` ORDER BY `or`.`id` ASC;";
+		// obtain the involved rooms (include room "params")
+		$q = "SELECT `or`.*,`r`.`name` AS `room_name`,`r`.`params` AS `room_params` FROM `#__vikbooking_ordersrooms` AS `or`,`#__vikbooking_rooms` AS `r` WHERE `or`.`idorder`=".(int)$order['id']." AND `or`.`idroom`=`r`.`id` ORDER BY `or`.`id` ASC;";
 		$dbo->setQuery($q);
 		$orderrooms = $dbo->loadAssocList();
 		if (!$orderrooms) {
@@ -3266,12 +3364,42 @@ class VikBookingController extends JControllerVikBooking
 		}
 
 		/**
-		 * Custom check-in/out times due to late check-out/early check-in options.
+		 * Custom check-in/out times due to late check-out/early check-in options or custom listing settings.
 		 * 
 		 * @since 	1.17.2 (J) - 1.7.2 (WP)
+		 * @since 	1.18.3 (J) - 1.8.3 (WP) added support to check-in/out times at listing-level.
 		 */
 		$custom_checkinout = [];
+		if (count($orderrooms) === 1) {
+			$listing_custom_checkin = VikBooking::getRoomParam('checkin', ($orderrooms[(key($orderrooms))]['room_params'] ?? ''));
+			$listing_custom_checkout = VikBooking::getRoomParam('checkout', ($orderrooms[(key($orderrooms))]['room_params'] ?? ''));
+			if ($listing_custom_checkin) {
+				// set listing-level check-in time in seconds
+				$listing_custom_checkin_parts = explode(':', $listing_custom_checkin);
+				$listing_custom_checkin = (intval($listing_custom_checkin_parts[0]) * 3600) + (intval($listing_custom_checkin_parts[1]) * 60);
+			}
+			if ($listing_custom_checkout) {
+				// set listing-level check-out time in seconds
+				$listing_custom_checkout_parts = explode(':', $listing_custom_checkout);
+				$listing_custom_checkout = (intval($listing_custom_checkout_parts[0]) * 3600) + (intval($listing_custom_checkout_parts[1]) * 60);
+			}
+			if ($listing_custom_checkin || $listing_custom_checkout) {
+				// set listing-level check-in/out times in seconds
+				$custom_checkinout = [
+					(int) $listing_custom_checkin,
+					(int) $listing_custom_checkout,
+				];
+			}
+		}
 
+		/**
+		 * Gather the damage deposit options to be paid separately.
+		 * 
+		 * @since 	1.18.6 (J) - 1.8.6 (WP)
+		 */
+		$separate_dd_options = [];
+
+		// build the extras booked
 		$extras_booked = [];
 		foreach ($orderrooms as $kor => $or) {
 			if (!isset($paddopt[$kor]) || !$paddopt[$kor]) {
@@ -3313,6 +3441,27 @@ class VikBookingController extends JControllerVikBooking
 					];
 				}
 
+				/**
+				 * Check if this is a damage deposit with a separate payment window.
+				 * 
+				 * @since 	1.18.6 (J) - 1.8.6 (WP)
+				 */
+				if (($opt_params['damagedep'] ?? 0) && !empty($opt_params['damagedep_settings']['paywhen'])) {
+					// damage deposit option with separate payment defined
+					$future_payable_dd = true;
+					if (!empty($opt_params['damagedep_settings']['bmaxlos']) && ($order['days'] ?? 1) > $opt_params['damagedep_settings']['bmaxlos']) {
+						// maximum nights of stay validation failed
+						$future_payable_dd = false;
+					} elseif (empty($opt_params['damagedep_settings']['payid'])) {
+						// separate payment method ID validation failed
+						$future_payable_dd = false;
+					}
+					if ($future_payable_dd === true) {
+						// push damage deposit option ID to be paid separately
+						$separate_dd_options[] = (int) $optid;
+					}
+				}
+
 				// push option booked
 				$extras_booked[] = [
 					'id'        => $optid,
@@ -3339,6 +3488,7 @@ class VikBookingController extends JControllerVikBooking
 		$currency  = VikBooking::getCurrencySymb();
 		$totrooms  = count($orderrooms);
 		$increase  = 0;
+		$future_dd = 0;
 		$add_tax   = 0;
 		$extraslog = [];
 		foreach ($extras_booked as $extra) {
@@ -3374,6 +3524,11 @@ class VikBookingController extends JControllerVikBooking
 			$increase += $floatoptprice;
 			$add_tax  += $floatoptprice - $netoptprice;
 			array_push($extraslog, ($totrooms > 1 ? $extra['room_name'] . ': ' : '') . $extra['name'] . ($extra['quant'] > 1 ? ' (x' . $extra['quant'] . ')' : '') . ' ' . $currency . ' ' . VikBooking::numberFormat($floatoptprice));
+
+			if (in_array((int) $extra['id'], $separate_dd_options)) {
+				// this is a damage deposit option that will be paid separately
+				$future_dd += $floatoptprice;
+			}
 		}
 
 		$newtotbooking = $order['total'] + $increase;
@@ -3388,7 +3543,7 @@ class VikBookingController extends JControllerVikBooking
 			->set($dbo->qn('total') . ' = ' . $dbo->q($newtotbooking))
 			->set($dbo->qn('paymcount') . ' = ' . ($order['status'] == 'confirmed' && (int)$order['paymcount'] < 1 ? '1' : $order['paymcount']))
 			->set($dbo->qn('tot_taxes') . ' = ' . $dbo->q($new_tot_taxes))
-			->set($dbo->qn('payable') . ' = ' . $dbo->q(((float)$order['payable'] + $increase)))
+			->set($dbo->qn('payable') . ' = ' . $dbo->q(((float)$order['payable'] + $increase - $future_dd)))
 			->where($dbo->qn('id') . ' = ' . (int) $order['id']);
 
 		/**
@@ -4095,6 +4250,11 @@ class VikBookingController extends JControllerVikBooking
 	 */
 	public function add_roomdaynote()
 	{
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		$dt 	 = VikRequest::getString('dt', '', 'request');
 		$idroom  = VikRequest::getInt('idroom', 0, 'request');
 		$subunit = VikRequest::getInt('subunit', 0, 'request');
@@ -4161,24 +4321,24 @@ class VikBookingController extends JControllerVikBooking
 	/**
 	 * AJAX endpoint to upload customer documents during the pre-checkin.
 	 * 
-	 * @throws 	Exception
-	 * 
 	 * @since 	1.14 (J) - 1.4.0 (WP)
+	 * @since 	1.18.6 (J) - 1.8.6 (WP) added support for MRZ detection through Channel Manager.
 	 */
 	public function precheckin_upload_docs()
 	{
+		$app   = JFactory::getApplication();
+		$dbo   = JFactory::getDbo();
+		$input = $app->input;
+
 		if (!JSession::checkToken()) {
 			// missing CSRF-proof token
-			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
 		}
 
-		$dbo 	= JFactory::getDbo();
-		$app 	= JFactory::getApplication();
-		$input  = $app->input;
-
-		// get request values
-		$order_sid 	 = $input->getString('sid', '');
-		$order_ts 	 = $input->getString('ts', '');
+		// gather request values
+		$order_sid = $input->getString('sid', '');
+		$order_ts  = $input->getString('ts', '');
+		$use_mrz   = $input->getBool('mrz', false);
 		/**
 		 * This is a simple file uploading process, but if
 		 * we wanted to automatically update the pax_data,
@@ -4186,52 +4346,56 @@ class VikBookingController extends JControllerVikBooking
 		 */
 		$room_index  = $input->getInt('room_index', 0);
 		$guest_index = $input->getInt('guest_index', 0);
-		$pax_index 	 = $input->getString('pax_index', '');
+		$pax_index   = $input->getString('pax_index', '');
 
 		if (empty($order_sid) || empty($order_ts)) {
-			throw new Exception('Missing booking details', 404);
+			VBOHttpDocument::getInstance($app)->close(404, 'Missing booking details');
 		}
 
 		$q = "SELECT `o`.*,(SELECT SUM(`or`.`adults`) FROM `#__vikbooking_ordersrooms` AS `or` WHERE `or`.`idorder`=`o`.`id`) AS `tot_adults` FROM `#__vikbooking_orders` AS `o` WHERE (`o`.`sid`=" . $dbo->quote($order_sid) . " OR `o`.`idorderota`=" . $dbo->quote($order_sid) . ") AND `o`.`ts`=" . $dbo->quote($order_ts) . " AND `o`.`status`='confirmed';";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			throw new Exception('Booking not found', 404);
-		}
 		$order = $dbo->loadAssoc();
+		if (!$order) {
+			VBOHttpDocument::getInstance($app)->close(404, 'Booking not found');
+		}
 
 		$customer = array();
 		$q = "SELECT `c`.*,`co`.`idorder`,`co`.`signature`,`co`.`pax_data`,`co`.`comments`,`co`.`checkindoc` FROM `#__vikbooking_customers` AS `c` LEFT JOIN `#__vikbooking_customers_orders` `co` ON `c`.`id`=`co`.`idcustomer` WHERE `co`.`idorder`=".$order['id'].";";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			// one customer must be assigned to this booking for the pre-checkin
-			throw new Exception('No customers associated to this booking', 404);
-		}
 		$customer = $dbo->loadObject();
+		if (!$customer) {
+			// one customer must be assigned to this booking for the pre-checkin
+			VBOHttpDocument::getInstance($app)->close(404, 'No customers associated to this booking');
+		}
 
 		// make sure pre-checkin is allowed
 		$precheckin = VikBooking::precheckinEnabled();
 		if ($precheckin) {
 			// make sure the limit of days in advance is reflected
 			$precheckin_mind = VikBooking::precheckinMinOffset();
-			$precheckin_lim_ts = strtotime("+{$precheckin_mind} days 00:00:00");
-			$precheckin = ($precheckin_lim_ts <= $order['checkin'] || ($precheckin_mind === 1 && time() <= $order['checkin']));
+			if ($precheckin_mind < 0) {
+				// validation made prior to check-out date and time
+				$precheckin = time() <= strtotime("{$precheckin_mind} days 23:59:59", $order['checkout']);
+			} else {
+				// classic validation prior to check-in date and time
+				$precheckin_lim_ts = strtotime("+{$precheckin_mind} days 00:00:00");
+				$precheckin = ($precheckin_lim_ts <= $order['checkin'] || ($precheckin_mind === 1 && time() <= $order['checkin']));
+			}
 		}
 		if (!$precheckin) {
-			throw new Exception('Pre-checkin not allowed at this time', 403);
+			VBOHttpDocument::getInstance($app)->close(403, 'Pre-checkin not allowed at this time');
 		}
 
 		// get uploaded files array (use "raw" to avoid filtering the file to upload)
 		$files = $input->files->get('docs', array(), 'raw');
-		if (!count($files)) {
-			throw new Exception('No files to be uploaded', 500);
+		if (!$files) {
+			VBOHttpDocument::getInstance($app)->close(500, 'No files to be uploaded');
 		}
 
 		if (isset($files['name'])) {
 			// we have a single associative array, we need to push it within a list,
 			// because the upload iterates the $files array
-			$files = array($files);
+			$files = [$files];
 		}
 
 		// fetch documents folder path
@@ -4243,26 +4407,24 @@ class VikBookingController extends JControllerVikBooking
 			$customer->seed = uniqid();
 
 			// create blocks for hashed folder
-			$parts = array(
+			$parts = [
 				$customer->first_name,
 				$customer->last_name,
 				md5(serialize($customer)),
-			);
+			];
 
 			// join fetched parts
 			$customer->docsfolder = strtolower(implode('-', array_filter($parts)));
 
 			if (strlen($customer->docsfolder) < 16) {
-				throw new Exception('Possible security breach. Please specify as many details as possible.', 400);
+				VBOHttpDocument::getInstance($app)->close(400, 'Possible security breach. Please specify as many details as possible.');
 			}
-
-			jimport('joomla.filesystem.folder');
 
 			// create a folder for this customer
 			$created = JFolder::create($dirpath . $customer->docsfolder);
 
 			if (!$created) {
-				throw new Exception(sprintf('Unable to create the folder [%s]', $dirpath . $customer->docsfolder), 403);
+				VBOHttpDocument::getInstance($app)->close(403, sprintf('Unable to create the folder [%s]', $dirpath . $customer->docsfolder));
 			}
 
 			unset($customer->seed);
@@ -4274,8 +4436,10 @@ class VikBookingController extends JControllerVikBooking
 			$dbo->updateObject('#__vikbooking_customers', $record, 'id');
 		}
 
-		// prepare the response array of uploaded-file objects
-		$response = array();
+		// prepare the response with the uploaded-file objects
+		$response = [
+			'uploads' => [],
+		];
 		$upload_err = null;
 
 		// compose prefix for all files uploaded (must end with an underscrore for View's compatibility)
@@ -4299,7 +4463,7 @@ class VikBookingController extends JControllerVikBooking
 				// set a valid URL for the uploaded file
 				$result->url = str_replace(DIRECTORY_SEPARATOR, '/', str_replace(VBO_CUSTOMERS_PATH . DIRECTORY_SEPARATOR, VBO_CUSTOMERS_URI, $result->path));
 				// push uploaded file
-				array_push($response, $result);
+				array_push($response['uploads'], $result);
 			}
 
 		} catch (Exception $e) {
@@ -4307,13 +4471,54 @@ class VikBookingController extends JControllerVikBooking
 			$upload_err = $e;
 		}
 
-		if (!count($response)) {
-			throw ($upload_err !== null ? $upload_err : (new Exception('No files could actually be uploaded', 500)));
+		if (!$response['uploads']) {
+			// raise an error
+			if ($upload_err instanceof Exception) {
+				VBOHttpDocument::getInstance($app)->close($upload_err->getCode() ?: 500, $upload_err->getMessage());
+			}
+			VBOHttpDocument::getInstance($app)->close(500, 'No files could actually be uploaded');
 		}
 
-		// output the response
-		echo json_encode($response);
-		exit;
+		if ($use_mrz) {
+			// file upload completed, detect MRZ codes from uploaded documents
+			$mrzImageUrls = array_values(array_filter(array_map(function($uploaded) {
+				return $uploaded->url ?? '';
+			}, $response['uploads'])));
+
+			// set response properties for MRZ detection result
+			$response['mrz'] = [
+				'data'     => null,
+				'raw'      => null,
+				'verified' => null,
+				'error'    => null,
+			];
+
+			try {
+				// let the AI model service analyse the uploaded documents
+				$mrzResult = (new VCMAiModelService)->mrzDetection($mrzImageUrls);
+
+				// let the current pax-fields data collector parse the extracted MRZ data
+				$mrzMappedFields = VBOCheckinPax::getInstance()
+					->getMRZMapper()
+					->setVerified((bool) ($mrzResult->valid ?? false))
+					->mapDetectedProperties((array) ($mrzResult->data ?? null))
+					->getMappedFields();
+
+				// set MRZ validation result within the response
+				$response['mrz']['data']     = $mrzMappedFields;
+				$response['mrz']['raw']      = ($mrzResult->data ?? null);
+				$response['mrz']['verified'] = (bool) $mrzResult->valid ?? false;
+			} catch (Exception $e) {
+				// catch the error message
+				$response['mrz']['error'] = $e->getMessage();
+			} catch (Throwable $e) {
+				// catch the PHP error
+				$response['mrz']['error'] = sprintf('Fatal error caught: %s', $e->getMessage());
+			}
+		}
+
+		// send response to output
+		VBOHttpDocument::getInstance($app)->json($response);
 	}
 
 	/**
@@ -4820,5 +5025,139 @@ class VikBookingController extends JControllerVikBooking
 	{
 		VBOFactory::getCrontabSimulator()->run();
 		exit;
+	}
+
+	/**
+	 * End-point used to route at runtime the link to the requested room details page.
+	 * Originally introduced to improve landing page URL accuracy with Google VR.
+	 * 
+	 * @return  void
+	 * 
+	 * @since   1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public function route_listing_details()
+	{
+		$app = JFactory::getApplication();
+
+		$listing_id = $app->input->getUint('listing_id', 0);
+
+		if (!$listing_id) {
+			VBOHttpDocument::getInstance($app)->close(400, 'Missing listing ID.');
+		}
+
+		// make sure the requested listing exists
+		$listing_data = VikBooking::getRoomInfo($listing_id);
+
+		if (!$listing_data) {
+			VBOHttpDocument::getInstance($app)->close(404, 'Listing not found.');
+		}
+
+		if (empty($listing_data['avail'])) {
+			VBOHttpDocument::getInstance($app)->close(404, 'Listing currently unavailable.');
+		}
+
+		// get user country and locale (preferred language), if available, to find the best language
+		$user_country = $app->input->getString('country', '');
+		$user_lang 	  = $app->input->getString('ulang', '');
+		$user_country = empty($user_country) && !empty($user_lang) ? $user_lang : $user_country;
+		$best_lang 	  = (!empty($user_country) || !empty($user_lang)) && class_exists('VikChannelManager') ? VikChannelManager::guessBookingLangFromCountry($user_country, $user_lang) : '';
+
+		/**
+		 * Adjust best language in case the default website lang is different than English and
+		 * the visitor speaks a foreign language. This way we make English the best language.
+		 * I.E. Website default lang is IT, visitor's lang is DE, we make it land on EN because DE isn't available.
+		 */
+		$current_lang = JFactory::getLanguage()->getTag();
+		if (empty($best_lang) && !empty($user_lang) && substr(strtolower($user_lang), 0, 2) != 'en' && substr(strtolower($current_lang), 0, 2) != 'en') {
+			// check if English is available
+			foreach (VikBooking::getVboApplication()->getKnownLanguages() as $ltag => $ldet) {
+				if (substr(strtolower($ltag), 0, 2) == 'en') {
+					// grab this English-esque language
+					$best_lang = $ltag;
+					break;
+				}
+			}
+		}
+
+		// build query arguments for routing
+		$route_query_args = [
+			'option' => 'com_vikbooking',
+			'view'   => 'roomdetails',
+			'roomid' => $listing_id,
+		];
+
+		// route the best URI (if possible)
+		try {
+			// find the best page id for the URL according to the CMS
+			$itemid = null;
+
+			if (VBOPlatformDetection::isWordPress()) {
+				/**
+				 * @wponly  route the best Shortcode for the booking process ("room details" or "search form").
+				 * 			the best booking language is passed over the model to find the best shortcode.
+				 */
+				$model 	= JModel::getInstance('vikbooking', 'shortcodes', 'admin');
+
+				// grab all Shortcodes and parse them to find the best one for this room, if any
+				$shortcodes = $model->all();
+				foreach ($shortcodes as $shortcode) {
+					if ($shortcode->type != 'roomdetails' || empty($shortcode->post_id)) {
+						continue;
+					}
+					$page_params = json_decode($shortcode->json);
+					if (!is_object($page_params) || !isset($page_params->roomid) || (int) $page_params->roomid != $listing_id) {
+						continue;
+					}
+					if (!empty($best_lang) && $shortcode->lang == $best_lang) {
+						// always give higher priority to the exact lang
+						$itemid = $shortcode->post_id;
+					}
+					if (empty($itemid)) {
+						// in case no perfect lang found, use this post id for this room-type
+						$itemid = $shortcode->post_id;
+					}
+				}
+
+				if (empty($itemid)) {
+					// default to the best shortcode for this lang of type "search form"
+					$itemid = $model->best(['vikbooking'], $best_lang);
+					if (!$itemid) {
+						// if we really get to this point, try to fetch the first non-empty shortcode, if any
+						$shortcodes = $model->all($columns = 'post_id', $full = true);
+						if ($shortcodes) {
+							// grab the very first active shortcode, no matter what's the type of it
+							$itemid = $shortcodes[0]->post_id;
+						}
+					}
+				}
+			} else {
+				/**
+				 * @joomlaonly  inject the language to the query arguments list before routing
+				 */
+				if (!empty($best_lang)) {
+					$route_query_args['lang'] = $best_lang;
+				}
+
+				if (class_exists('VCMFactory')) {
+					$best_menuitem_id = VCMFactory::getPlatform()->getPagerouter()->findProperPageId(['roomdetails'], ['roomid' => $room_type_id, 'lang' => $best_lang]);
+
+					if ($best_menuitem_id) {
+						$itemid = $best_menuitem_id;
+					} else {
+						$itemid = VCMFactory::getPlatform()->getPagerouter()->findProperPageId(['vikbooking'], $best_lang);
+					}
+				}
+			}
+
+			// route final URL with all arguments
+			$routed_url = VikBooking::externalroute($route_query_args, false, $itemid);
+		} catch (Throwable $e) {
+			// raise an error
+			VBOHttpDocument::getInstance($app)->close(500, 'Could not route to the requested page.');
+		}
+
+		// redirect the request to the proper page
+		$app->redirect($routed_url);
+		$app->close();
 	}
 }

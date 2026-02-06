@@ -158,19 +158,28 @@ if (!empty($data['task_id'])) {
                     if (!empty($data['task_id'])) {
                         ?>
                         <div class="vbo-param-container">
-                            <div class="vbo-param-label vbo-param-label-icn-wrap">
-                                <span class="vbo-param-label-icn"><?php VikBookingIcons::e('hashtag'); ?></span>
-                                <span class="vbo-param-label-txt"><?php echo JText::translate('VBO_TASK'); ?></span>
+                            <div class="vbo-param-label vbo-param-label-icn-wrap" style="display: flex; justify-content: space-between; align-items: start; margin-right: 0;">
+                                <span>
+                                    <span class="vbo-param-label-icn"><?php VikBookingIcons::e('hashtag'); ?></span>
+                                    <span class="vbo-param-label-txt"><?php echo JText::translate('VBO_TASK'); ?></span>
+                                </span>
+                            <?php if (count($history) > 1): ?>
+                                <a href="javascript:void(0)" class="tm-toggle-history-timeline">
+                                    <?php VikBookingIcons::e('history') ?>
+                                    <span><?php echo JText::translate('VBO_HISTORY_SHOW_ACTIVITIES'); ?></span>
+                                </a>
+                            <?php endif; ?>
                             </div>
-                            <div class="vbo-param-setting" style="display: flex; justify-content: space-between; align-items: start;">
+                            <div class="vbo-param-setting">
                                 <span class="badge badge-info"><?php echo $task->getID(); ?></span>
-
-                                <?php if (count($history) > 1): ?>
-                                    <a href="javascript:void(0)" class="tm-toggle-history-timeline">
-                                        <?php VikBookingIcons::e('history') ?>
-                                        <span><?php echo JText::translate('VBO_HISTORY_SHOW_ACTIVITIES'); ?></span>
-                                    </a>
-                                <?php endif; ?>
+                            <?php
+                            if ($task->isAI()) {
+                                ?>
+                                <span class="badge badge-ai"><?php echo JText::translate('VBO_AI_LABEL_DEF'); ?></span>
+                                <?php
+                            }
+                            ?>
+                                <span class="badge badge"><?php echo $task->getAreaName($task->getAreaID()); ?></span>
                             </div>
                         </div>
                         <?php

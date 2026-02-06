@@ -17,7 +17,6 @@ defined('ABSPATH') or die('No script kiddies please!');
 // JSON-decode room parameters
 $rparams = json_decode($this->room['params'], true);
 
-$currencysymb = VikBooking::getCurrencySymb();
 $vbdateformat = VikBooking::getDateFormat();
 $datesep = VikBooking::getDateSeparator();
 if ($vbdateformat == "%d/%m/%Y") {

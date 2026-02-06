@@ -49,8 +49,8 @@ final class VBOPerformanceCleaner
         $affected_records = 0;
 
         if (!in_array('seasons', $skip_checks)) {
-            // clean up expired seasonal records
-            $affected_records += self::pricingAlterations();
+            // clean up expired seasonal records (expired at least 7 days ago)
+            $affected_records += self::pricingAlterations(7);
 
             // clean up ghost records
             $affected_records += self::ghostRecords();
@@ -60,17 +60,250 @@ final class VBOPerformanceCleaner
     }
 
     /**
+     * Performs a general database optimization.
+     * 
+     * @param   ?array  $options    Optional optimization options.
+     * 
+     * @return  array               Optimization results.
+     * 
+     * @since   1.18.5 (J) - 1.8.5 (WP)
+     */
+    public static function optimizeDatabase(?array $options = null)
+    {
+        // operation results pool
+        $results = [];
+
+        // check whether database optimization should run
+        $min_ts = mktime(date('G'), 0, 0, date('n'), date('j'), date('Y'));
+        $max_ts = mktime(date('G'), 59, 59, date('n'), date('j'), date('Y'));
+        $scheduled_ts = 0;
+        if ($db_opt_time = VBOFactory::getConfig()->get('dboptimizetime')) {
+            $time_parts = explode(':', $db_opt_time);
+            $scheduled_ts = mktime((int) $time_parts[0], (int) ($time_parts[1] ?? 0), 0, date('n'), date('j'), date('Y'));
+        }
+
+        if (!($options['forced'] ?? 0) && (!$scheduled_ts || !($scheduled_ts >= $min_ts && $scheduled_ts <= $max_ts))) {
+            // execution not allowed at all or at this time
+            return $results;
+        }
+
+        // check, at this point, if some custom optimization options were set
+        if ($custom_options = VBOFactory::getConfig()->getArray('db_optimize_options', [])) {
+            // merge default options with custom ones
+            $options = array_merge(($options ?: []), $custom_options);
+        }
+
+        // define script max execution time
+        ignore_user_abort(true);
+        ini_set('max_execution_time', (int) ($options['max_execution_time'] ?? 600));
+        set_time_limit((int) ($options['max_execution_time'] ?? 600));
+
+        // operations time start
+        $microStart = microtime(true);
+
+        // list of database optimization operations
+        $db_operations = [
+            'listings_global_snapshot' => function($options) {
+                // get rid of redundant pricing alteration records by performing a global listing snapshot
+                return static::listingsGlobalSnapshot($options);
+            },
+            'delete_old_guest_messages' => function($options) {
+                // get rid of the "old" guest messages
+                return static::deleteOldGuestMessages($options);
+            },
+        ];
+
+        foreach ($db_operations as $operation_name => $operation_callback) {
+            if (isset($options['ignore_' . $operation_name])) {
+                // skip this operation
+                continue;
+            }
+
+            try {
+                // execute the operation callback
+                $results[$operation_name] = $operation_callback($options);
+            } catch (Exception $e) {
+                // push the error
+                $results[$operation_name] = $e;
+            }
+        }
+
+        // operations time end
+        $microEnd = microtime(true);
+
+        // set the total execution time in seconds
+        $results['_durationSeconds'] = round(($microEnd - $microStart) / 1000, 2);
+
+        if (!($options['ignore_notification'] ?? 0)) {
+            // store an entry within the notifications center
+            try {
+                VBOFactory::getNotificationCenter()
+                    ->store([
+                        [
+                            'sender'  => 'website',
+                            'type'    => 'info',
+                            'title'   => JText::translate('VBO_MAINTENANCE'),
+                            'summary' => JText::sprintf('VBO_DB_OPTIM_DURATION', $results['_durationSeconds']),
+                        ],
+                    ]);
+            } catch (Exception $e) {
+                // do nothing
+            }
+        }
+
+        // return the pool of results
+        return $results;
+    }
+
+    /**
+     * Performs a global rates snapshot over all listings.
+     * 
+     * @param   ?array  $options    Optional execution options.
+     * 
+     * @return  array               Snapshot results.
+     * 
+     * @since   1.18.5 (J) - 1.8.5 (WP)
+     */
+    public static function listingsGlobalSnapshot(?array $options = null)
+    {
+        // get all listings
+        $listingsData = VikBooking::getAvailabilityInstance()->loadRooms($options['listing_ids'] ?? [], $max = 0, $anew = true);
+
+        // filter out the unpublished ones, if any
+        $listingsData = array_filter($listingsData, function($listing) {
+            return !empty($listing['avail']);
+        });
+
+        // shuffle the elements
+        shuffle($listingsData);
+
+        // build snapshot data
+        $snapshotData = [
+            'listing_id'   => null,
+            'id_price'     => $options['id_price'] ?? null,
+            'from_date'    => date('Y-m-d'),
+            'to_date'      => date('Y-m-d', strtotime(sprintf('+%d months', (int) ($options['months'] ?? 3)))),
+            'skip_derived' => true,
+            'use_cache'    => true,
+            'forced'       => true,
+        ];
+
+        // processing results
+        $processingResults = [];
+
+        // process listings
+        foreach ($listingsData as $listing) {
+            try {
+                // inject options
+                static::setOptions(
+                    array_merge(
+                        $snapshotData,
+                        [
+                            'listing_id' => $listing['id'],
+                        ]
+                    )
+                );
+
+                // perform listing rates snapshot
+                $snapshotResult = static::listingSeasonSnapshot();
+
+                // process the result
+                if ($options['full_response'] ?? null) {
+                    // set the full snapshot response
+                    $processingResults[$listing['id']] = $snapshotResult;
+                } else {
+                    // include only errors, if any
+                    $processingResults[$listing['id']] = array_column($snapshotResult, 'errors');
+                }
+            } catch (Exception $e) {
+                $processingResults[$listing['id']] = $e->getMessage();
+            }
+        }
+
+        return $processingResults;
+    }
+
+    /**
+     * Deletes the guest messages that belong to past reservations.
+     * 
+     * @param   ?array  $options    Optional execution options.
+     * 
+     * @return  array               Deletion results.
+     * 
+     * @since   1.18.5 (J) - 1.8.5 (WP)
+     */
+    public static function deleteOldGuestMessages(?array $options = null)
+    {
+        $dbo = JFactory::getDbo();
+
+        $results = [
+            '_threadsDeleted'  => 0,
+            '_messagesDeleted' => 0,
+        ];
+
+        try {
+            // get all the "expired" threads
+            $dbo->setQuery(
+                $dbo->getQuery(true)
+                    ->select([
+                        $dbo->qn('t.id'),
+                        $dbo->qn('t.idorder'),
+                        $dbo->qn('o.checkout'),
+                    ])
+                    ->from($dbo->qn('#__vikchannelmanager_threads', 't'))
+                    ->leftJoin($dbo->qn('#__vikbooking_orders', 'o') . ' ON ' . $dbo->qn('t.idorder') . ' = ' . $dbo->qn('o.id'))
+                    ->where($dbo->qn('o.checkout') . ' < ' . strtotime(sprintf('-%d months', (int) ($options['past_months'] ?? 9))))
+            );
+
+            $threads = $dbo->loadAssocList();
+
+            if (!$threads) {
+                // nothing to clean
+                return $results;
+            }
+
+            // delete guest messages
+            $dbo->setQuery(
+                $dbo->getQuery(true)
+                    ->delete($dbo->qn('#__vikchannelmanager_threads_messages'))
+                    ->where($dbo->qn('idthread') . ' IN (' . implode(', ', array_map('intval', array_column($threads, 'id'))) . ')')
+            );
+            $dbo->execute();
+
+            $results['_messagesDeleted'] += (int) $dbo->getAffectedRows();
+
+            // delete threads
+            $dbo->setQuery(
+                $dbo->getQuery(true)
+                    ->delete($dbo->qn('#__vikchannelmanager_threads'))
+                    ->where($dbo->qn('id') . ' IN (' . implode(', ', array_map('intval', array_column($threads, 'id'))) . ')')
+            );
+            $dbo->execute();
+
+            $results['_threadsDeleted'] += (int) $dbo->getAffectedRows();
+        } catch (Exception $e) {
+            // do nothing
+        }
+
+        return $results;
+    }
+
+    /**
      * Cleans up expired season pricing records.
      * 
-     * @return  int     The number of rows affected.
+     * @param   ?int    $pastDays   Optional days in the past to use as target date.
+     * 
+     * @return  int                 The number of rows affected.
+     * 
+     * @since   1.18.4 (J) - 1.8.4 (WP) added argument $pastDays.
      */
-    public static function pricingAlterations()
+    public static function pricingAlterations(?int $pastDays = null)
     {
         $dbo = JFactory::getDbo();
 
         $affected = 0;
 
-        $nowinfo = getdate();
+        $nowinfo = is_int($pastDays) ? getdate(strtotime(sprintf('-%d days', abs($pastDays)))) : getdate();
 
         $year_base = mktime(0, 0, 0, 1, 1, $nowinfo['year']);
         $midnight_base = ($nowinfo['hours'] * 3600) + ($nowinfo['minutes'] * 60) + $nowinfo['seconds'];
@@ -232,15 +465,19 @@ final class VBOPerformanceCleaner
      * @return  array   Seasons snapshot operation results.
      * 
      * @throws  Exception
+     * 
+     * @since   1.18.3 (J) - 1.8.3 (WP) performance skip list preferences applied.
      */
     public static function listingSeasonSnapshot()
     {
         $dbo = JFactory::getDbo();
 
-        $listing_id = (int) (static::$options['listing_id'] ?? null);
-        $id_price   = (int) (static::$options['id_price'] ?? null);
-        $from_date  = static::$options['from_date'] ?? date('Y-m-d');
-        $to_date    = static::$options['to_date'] ?? date('Y-m-d', strtotime('+3 months'));
+        $listing_id   = (int) (static::$options['listing_id'] ?? null);
+        $id_price     = (int) (static::$options['id_price'] ?? null);
+        $from_date    = static::$options['from_date'] ?? date('Y-m-d');
+        $to_date      = static::$options['to_date'] ?? date('Y-m-d', strtotime('+3 months'));
+        $skip_derived = (bool) (static::$options['skip_derived'] ?? true);
+        $use_cache    = (bool) (static::$options['use_cache'] ?? false);
 
         if (!$listing_id) {
             throw new Exception('Missing required listing ID.', 400);
@@ -250,7 +487,17 @@ final class VBOPerformanceCleaner
             throw new Exception('Invalid dates provided.', 400);
         }
 
+        // list of operations that should be skipped
+        $skip_checks = VBOFactory::getConfig()->getArray('performance_cleaner_skip_list', []);
+
+        // ensure season records cleaning is not disabled, unless forced
+        if (in_array('seasons', $skip_checks) && !(static::$options['forced'] ?? false)) {
+            // abort the process
+            return [];
+        }
+
         // obtain a pricing snapshot for the given listing and dates
+        // given rate plan ID or main one will be used (single rate plan only)
         $snapshot = VBOModelPricing::getInstance()->getRoomRates([
             'from_date'    => $from_date,
             'to_date'      => $to_date,
@@ -258,6 +505,7 @@ final class VBOPerformanceCleaner
             'id_price'     => $id_price,
             'all_rplans'   => false,
             'restrictions' => false,
+            'use_cache'    => $use_cache,
         ]);
 
         // confirm the rate plan ID
@@ -277,7 +525,7 @@ final class VBOPerformanceCleaner
         }
 
         if (!$involved_seasons) {
-            throw new Exception('No seasonal records to clean for the given listing and dates.', 500);
+            throw new Exception('No seasonal records to clean for the given listing and dates.', 406);
         }
 
         // clean up database records
@@ -340,14 +588,16 @@ final class VBOPerformanceCleaner
             try {
                 // set the new rate for this calculated interval
                 VBOModelPricing::getInstance([
-                    'from_date'   => $season_snap['from'],
-                    'to_date'     => $season_snap['to'],
-                    'id_room'     => $listing_id,
-                    'id_price'    => $id_price,
-                    'rate'        => $season_snap['cost'],
-                    'min_los'     => 0,
-                    'max_los'     => 0,
-                    'update_otas' => false,
+                    'from_date'    => $season_snap['from'],
+                    'to_date'      => $season_snap['to'],
+                    'id_room'      => $listing_id,
+                    'id_price'     => $id_price,
+                    'rate'         => $season_snap['cost'],
+                    'min_los'      => 0,
+                    'max_los'      => 0,
+                    'update_otas'  => false,
+                    'skip_derived' => $skip_derived,
+                    'use_cache'    => $use_cache,
                 ])->modifyRateRestrictions();
             } catch (Exception $e) {
                 // silently push the error

@@ -14,6 +14,7 @@
 - Reports/Spain/Mossos d'Esquadra   (999)
 
 - Reports/Italy/ISPAT           (998)
+- Reports/Italy/OTRS            (998)
 - Reports/Italy/Ross1000        (998)
 - Reports/Italy/Spot Easy       (998)
 - Reports/Italy/VIT Albergatori (998)

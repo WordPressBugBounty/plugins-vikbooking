@@ -25,6 +25,10 @@ class VikBookingViewTaskmanager extends JViewVikBooking
 	 */
 	public function display($tpl = null)
 	{
+		if (!JFactory::getUser()->authorise('core.vbo.pms', 'com_vikbooking') && !JFactory::getUser()->authorise('core.vbo.tm', 'com_vikbooking')) {
+			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
+		}
+
 		// Set the toolbar
 		$this->addToolBar();
 

@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2025-07-24 23:59+0200\n"
-"PO-Revision-Date: 2025-07-25 00:22+0200\n"
+"POT-Creation-Date: 2026-01-21 16:58+0100\n"
+"PO-Revision-Date: 2026-01-21 16:59+0100\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: it_IT\n"
@@ -10,19 +10,19 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.6\n"
+"X-Generator: Poedit 3.5\n"
 "X-Poedit-Basepath: ..\n"
 "X-Poedit-KeywordsList: __;_e;_x:1,2c\n"
 "X-Poedit-SearchPath-0: libraries/language\n"
-"X-Poedit-SearchPath-1: modules/mod_vikbooking_channelrates/language/"
-"handler.php\n"
+"X-Poedit-SearchPath-1: modules/mod_vikbooking_channelrates/language/handler."
+"php\n"
 "X-Poedit-SearchPath-2: modules/mod_vikbooking_currencyconverter/language/"
 "handler.php\n"
 "X-Poedit-SearchPath-3: modules/mod_vikbooking_horizontalsearch/language/"
 "handler.php\n"
 "X-Poedit-SearchPath-4: modules/mod_vikbooking_rooms/language/handler.php\n"
-"X-Poedit-SearchPath-5: modules/mod_vikbooking_otareviews/language/"
-"handler.php\n"
+"X-Poedit-SearchPath-5: modules/mod_vikbooking_otareviews/language/handler."
+"php\n"
 "X-Poedit-SearchPath-6: libraries/html\n"
 "X-Poedit-SearchPath-7: libraries/lite/manager.php\n"
 "X-Poedit-SearchPathExcluded-0: libraries/html/license/lite.php\n"
@@ -428,9 +428,9 @@ msgstr ""
 
 #: libraries/html/license/update.php:16
 msgid ""
-"Your PRO license is expired, if you proceed with the update, you'll lose "
-"access to the features unlocked with the PRO version. We strongly recommend "
-"to update the plugin only after renewing your license.\n"
+"Your PRO license has expired. If you proceed with the update, you'll lose "
+"access to the features unlocked by the PRO version. We strongly recommend "
+"updating the plugin only after renewing your license.\n"
 "Would you like to proceed anyway?"
 msgstr ""
 "La tua licenza PRO è scaduta. Se procedi con l'installazione "
@@ -915,7 +915,7 @@ msgstr "Vik Booking - Modifica metodo pagamento"
 msgid "Vik Booking - Availability Overview"
 msgstr "Vik Booking - Panoramica disponibilità"
 
-#: libraries/language/admin.php:246 libraries/language/system.php:452
+#: libraries/language/admin.php:246 libraries/language/system.php:608
 msgid "Main Settings"
 msgstr "Impostazioni principali"
 
@@ -1122,30 +1122,37 @@ msgid "1 Year"
 msgstr "1 anno"
 
 #: libraries/language/admin.php:384 libraries/language/site.php:462
+#: libraries/language/system.php:600
 msgid "Sun"
 msgstr "Dom"
 
 #: libraries/language/admin.php:387 libraries/language/site.php:465
+#: libraries/language/system.php:576
 msgid "Mon"
 msgstr "Lun"
 
 #: libraries/language/admin.php:390 libraries/language/site.php:468
+#: libraries/language/system.php:580
 msgid "Tue"
 msgstr "Mar"
 
 #: libraries/language/admin.php:393 libraries/language/site.php:471
+#: libraries/language/system.php:584
 msgid "Wed"
 msgstr "Mer"
 
 #: libraries/language/admin.php:396 libraries/language/site.php:474
+#: libraries/language/system.php:588
 msgid "Thu"
 msgstr "Gio"
 
 #: libraries/language/admin.php:399 libraries/language/site.php:477
+#: libraries/language/system.php:592
 msgid "Fri"
 msgstr "Ven"
 
 #: libraries/language/admin.php:402 libraries/language/site.php:480
+#: libraries/language/system.php:596
 msgid "Sat"
 msgstr "Sab"
 
@@ -1791,24 +1798,28 @@ msgstr ""
 "Per vedere i dettagli della tua prenotazione, visita la pagina seguente"
 
 #: libraries/language/admin.php:918 libraries/language/site.php:381
+#: libraries/language/system.php:452
 #: modules/mod_vikbooking_channelrates/language/handler.php:184
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:213
 msgid "January"
 msgstr "Gennaio"
 
 #: libraries/language/admin.php:921 libraries/language/site.php:384
+#: libraries/language/system.php:456
 #: modules/mod_vikbooking_channelrates/language/handler.php:187
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:216
 msgid "February"
 msgstr "Febbraio"
 
 #: libraries/language/admin.php:924 libraries/language/site.php:387
+#: libraries/language/system.php:460
 #: modules/mod_vikbooking_channelrates/language/handler.php:190
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:219
 msgid "March"
 msgstr "Marzo"
 
 #: libraries/language/admin.php:927 libraries/language/site.php:390
+#: libraries/language/system.php:464
 #: modules/mod_vikbooking_channelrates/language/handler.php:193
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:222
 msgid "April"
@@ -1816,48 +1827,56 @@ msgstr "Aprile"
 
 #: libraries/language/admin.php:930 libraries/language/admin.php:2376
 #: libraries/language/site.php:393 libraries/language/site.php:1170
+#: libraries/language/system.php:468
 #: modules/mod_vikbooking_channelrates/language/handler.php:196
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:225
 msgid "May"
 msgstr "Maggio"
 
 #: libraries/language/admin.php:933 libraries/language/site.php:396
+#: libraries/language/system.php:472
 #: modules/mod_vikbooking_channelrates/language/handler.php:199
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:228
 msgid "June"
 msgstr "Giugno"
 
 #: libraries/language/admin.php:936 libraries/language/site.php:399
+#: libraries/language/system.php:476
 #: modules/mod_vikbooking_channelrates/language/handler.php:202
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:231
 msgid "July"
 msgstr "Luglio"
 
 #: libraries/language/admin.php:939 libraries/language/site.php:402
+#: libraries/language/system.php:480
 #: modules/mod_vikbooking_channelrates/language/handler.php:205
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:234
 msgid "August"
 msgstr "Agosto"
 
 #: libraries/language/admin.php:942 libraries/language/site.php:405
+#: libraries/language/system.php:484
 #: modules/mod_vikbooking_channelrates/language/handler.php:208
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:237
 msgid "September"
 msgstr "Settembre"
 
 #: libraries/language/admin.php:945 libraries/language/site.php:408
+#: libraries/language/system.php:488
 #: modules/mod_vikbooking_channelrates/language/handler.php:211
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:240
 msgid "October"
 msgstr "Ottobre"
 
 #: libraries/language/admin.php:948 libraries/language/site.php:411
+#: libraries/language/system.php:492
 #: modules/mod_vikbooking_channelrates/language/handler.php:214
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:243
 msgid "November"
 msgstr "Novembre"
 
 #: libraries/language/admin.php:951 libraries/language/site.php:414
+#: libraries/language/system.php:496
 #: modules/mod_vikbooking_channelrates/language/handler.php:217
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:246
 msgid "December"
@@ -2165,6 +2184,7 @@ msgstr "Giorni della settimana"
 
 #: libraries/language/admin.php:1236 libraries/language/admin.php:2289
 #: libraries/language/site.php:564 libraries/language/site.php:708
+#: libraries/language/system.php:572
 #: modules/mod_vikbooking_channelrates/language/handler.php:160
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:189
 msgid "Sunday"
@@ -2172,6 +2192,7 @@ msgstr "Domenica"
 
 #: libraries/language/admin.php:1239 libraries/language/admin.php:2292
 #: libraries/language/site.php:567 libraries/language/site.php:711
+#: libraries/language/system.php:548
 #: modules/mod_vikbooking_channelrates/language/handler.php:163
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:192
 msgid "Monday"
@@ -2179,6 +2200,7 @@ msgstr "Lunedì"
 
 #: libraries/language/admin.php:1242 libraries/language/admin.php:2295
 #: libraries/language/site.php:570 libraries/language/site.php:714
+#: libraries/language/system.php:552
 #: modules/mod_vikbooking_channelrates/language/handler.php:166
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:195
 msgid "Tuesday"
@@ -2186,6 +2208,7 @@ msgstr "Martedì"
 
 #: libraries/language/admin.php:1245 libraries/language/admin.php:2298
 #: libraries/language/site.php:573 libraries/language/site.php:717
+#: libraries/language/system.php:556
 #: modules/mod_vikbooking_channelrates/language/handler.php:169
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:198
 msgid "Wednesday"
@@ -2193,6 +2216,7 @@ msgstr "Mercoledì"
 
 #: libraries/language/admin.php:1248 libraries/language/admin.php:2301
 #: libraries/language/site.php:576 libraries/language/site.php:720
+#: libraries/language/system.php:560
 #: modules/mod_vikbooking_channelrates/language/handler.php:172
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:201
 msgid "Thursday"
@@ -2200,6 +2224,7 @@ msgstr "Giovedì"
 
 #: libraries/language/admin.php:1251 libraries/language/admin.php:2304
 #: libraries/language/site.php:579 libraries/language/site.php:723
+#: libraries/language/system.php:564
 #: modules/mod_vikbooking_channelrates/language/handler.php:175
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:204
 msgid "Friday"
@@ -2207,6 +2232,7 @@ msgstr "Venerdì"
 
 #: libraries/language/admin.php:1254 libraries/language/admin.php:2307
 #: libraries/language/site.php:582 libraries/language/site.php:726
+#: libraries/language/system.php:568
 #: modules/mod_vikbooking_channelrates/language/handler.php:178
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:207
 msgid "Saturday"
@@ -3169,7 +3195,7 @@ msgstr ""
 "Nel caso di costi obbligatori, il sistema ha bisogno di sapere se questa "
 "opzione è una tassa di soggiorno, o un costo fisso come i costi di pulizia/"
 "biancheria, da pagarsi al momento della prenotazione. Lascia queste "
-"impostazioni disabilitate se l’Opzione non è una tassa o un costo fisso, ma "
+"impostazioni disabilitate se l'opzione non è una tassa o un costo fisso, ma "
 "soltanto un servizio extra opzionale."
 
 #: libraries/language/admin.php:2061
@@ -4819,11 +4845,11 @@ msgstr "Tipo di prezzo"
 
 #: libraries/language/admin.php:3432
 msgid "Set New Rate"
-msgstr "Imposta nuovo prezzo"
+msgstr "Imposta nuova tariffa"
 
 #: libraries/language/admin.php:3435
 msgid "Error while setting new rates. Missing data"
-msgstr "Errore, dati mancanti per impostare un nuovo prezzo"
+msgstr "Errore, dati mancanti per impostare una nuova tariffa"
 
 #: libraries/language/admin.php:3438
 msgid "Error while setting new rates. No rates"
@@ -5831,9 +5857,9 @@ msgstr ""
 "trasmetterà le tariffe seguendo le regole che sono state precedentemente "
 "configurate nel sistema. Le regole sono prese dalle precedenti esecuzioni "
 "della funzione ‘Azioni di Massa - Carica Tariffe’. Per esempio, se hai "
-"precedentemente inviato i prezzi incrementati del n% a canali come "
-"Booking.com o Expedia, il Channel Manager invierà i prezzi seguendo le "
-"stesse regole che hai già usato."
+"precedentemente inviato i prezzi incrementati del n% a canali come Booking."
+"com o Expedia, il Channel Manager invierà i prezzi seguendo le stesse regole "
+"che hai già usato."
 
 #: libraries/language/admin.php:4152
 msgid "Channel Manager Update Response"
@@ -5910,9 +5936,9 @@ msgstr ""
 "quindi può essere vuoto. Un esempio di attributo potrebbe essere &quot;costi "
 "di cancellazione&quot;. Dalla pagina tariffario, potrai specificare il "
 "valore dell’attributo per ogni numero di notti di soggiorno. Per esempio, da "
-"1 a 7 notti: &quot;acconto non rimborsato&quot;. Da 8 a 14 notti: "
-"&quot;rimborso 50% deposito (acconto)&quot;. L’attributo sarà visibile ai "
-"clienti durante il processo di prenotazione."
+"1 a 7 notti: &quot;acconto non rimborsato&quot;. Da 8 a 14 notti: &quot;"
+"rimborso 50% deposito (acconto)&quot;. L’attributo sarà visibile ai clienti "
+"durante il processo di prenotazione."
 
 #: libraries/language/admin.php:4200
 msgid "Cancellation Policy"
@@ -7115,13 +7141,13 @@ msgstr ""
 msgid "Customer Documents"
 msgstr "Documenti cliente"
 
-#: libraries/language/admin.php:4962
+#: libraries/language/admin.php:4962 libraries/language/site.php:2470
 msgid "Upload File"
 msgstr "Carica File"
 
-#: libraries/language/admin.php:4965
-msgid "or DRAG FILES HERE"
-msgstr "o TRASCINA FILE QUI"
+#: libraries/language/admin.php:4965 libraries/language/site.php:2473
+msgid "or drag and drop files here"
+msgstr "o trascina e rilascia file qui"
 
 #: libraries/language/admin.php:4968
 msgid "Press ESC from keyboard to stop deleting the files"
@@ -10202,7 +10228,7 @@ msgstr "Vedi tutti"
 msgid "Copied"
 msgstr "Copiato"
 
-#: libraries/language/admin.php:6736
+#: libraries/language/admin.php:6736 libraries/language/site.php:2476
 msgid "Read more"
 msgstr "Leggi tutto"
 
@@ -10318,7 +10344,7 @@ msgid "Mark all as read"
 msgstr "Segna tutte come lette"
 
 #. TRANSLATORS: Click the button to visit the URL and take action
-#: libraries/language/admin.php:6809
+#: libraries/language/admin.php:6809 libraries/language/site.php:2491
 msgctxt "Click the button to visit the URL and take action"
 msgid "Take action"
 msgstr "Intervieni"
@@ -11692,7 +11718,8 @@ msgstr "Paesi esteri"
 msgid "Housekeeping & Cleaning"
 msgstr "Housekeeping e Pulizie"
 
-#: libraries/language/admin.php:7677
+#: libraries/language/admin.php:7677 libraries/language/admin.php:8331
+#: libraries/language/site.php:2498
 msgid "Maintenance"
 msgstr "Manutenzione"
 
@@ -11792,7 +11819,7 @@ msgstr "Etichetta"
 msgid "Color"
 msgstr "Colore"
 
-#: libraries/language/admin.php:7746 libraries/language/system.php:456
+#: libraries/language/admin.php:7746 libraries/language/system.php:612
 #: modules/mod_vikbooking_horizontalsearch/language/handler.php:44
 msgid "Title"
 msgstr "Titolo"
@@ -11914,6 +11941,7 @@ msgid "Board"
 msgstr "Bacheca"
 
 #: libraries/language/admin.php:7845 libraries/language/adminsys.php:250
+#: libraries/language/site.php:2461
 msgid "List"
 msgstr "Lista"
 
@@ -12037,7 +12065,7 @@ msgstr ""
 "<p>Ciao {recipient},</p><p>{sender} ha lasciato un messaggio nella "
 "conversazione <strong>{context}</strong>.</p><p>{sender} ha scritto:</"
 "p><blockquote>{message}</blockquote><br><br><p>Puoi rispondere visitando il "
-"seguente link:<br><a href=\\\"{url}\\\" target=\\\"_blank\\\">{url}</a></p>"
+"seguente link:<br><a href=\"{url}\" target=\"_blank\">{url}</a></p>"
 
 #: libraries/language/admin.php:7932
 msgid "- Blank message -"
@@ -12439,6 +12467,484 @@ msgstr "Seleziona prenotazione"
 msgid "Reservations cannot be moved onto this row."
 msgstr "Le prenotazioni non possono essere spostate su questa riga."
 
+#: libraries/language/admin.php:8163
+msgid "Drop your files here to upload them."
+msgstr "Rilascia qui i file per caricarli."
+
+#: libraries/language/admin.php:8166
+msgid "Guests Registration Data"
+msgstr "Dati registrazione ospiti"
+
+#: libraries/language/admin.php:8169
+msgid ""
+"Check-in must be later than check-out. Otherwise, an extra turnover night "
+"will be added after each stay."
+msgstr ""
+"Il check-in deve essere successivo al check-out. In caso contrario, verrà "
+"aggiunta una notte extra di turnover dopo ogni soggiorno."
+
+#: libraries/language/admin.php:8172
+msgid "Position"
+msgstr "Posizione"
+
+#: libraries/language/admin.php:8175
+msgid "Before price"
+msgstr "Prima del prezzo"
+
+#: libraries/language/admin.php:8178
+msgid "After price"
+msgstr "Dopo il prezzo"
+
+#: libraries/language/admin.php:8181
+msgid "Minimum advance booking notice"
+msgstr "Minimo preavviso di prenotazione"
+
+#: libraries/language/admin.php:8184
+msgid "Search Filters"
+msgstr "Filtri di ricerca"
+
+#: libraries/language/admin.php:8187
+msgid "Expected payout"
+msgstr "Pagamento previsto"
+
+#: libraries/language/admin.php:8190
+msgid "Repeat"
+msgstr "Ripeti"
+
+#: libraries/language/admin.php:8193
+msgid "Door Access Control"
+msgstr "Controllo accessi porte"
+
+#: libraries/language/admin.php:8196
+msgid ""
+"Manage integrations with supported smart lock and door access providers."
+msgstr ""
+"Gestisci le integrazioni con fornitori di smart lock ed accessi a porte con "
+"codice."
+
+#: libraries/language/admin.php:8199
+msgid "Provider"
+msgstr "Fornitore"
+
+#: libraries/language/admin.php:8202
+msgid "Devices"
+msgstr "Dispositivi"
+
+#: libraries/language/admin.php:8205
+msgid "Connected listings"
+msgstr "Appartamenti connessi"
+
+#: libraries/language/admin.php:8208
+msgid "Passcode generation"
+msgstr "Generazione codici accesso"
+
+#: libraries/language/admin.php:8211
+msgid "At the time of booking"
+msgstr "Al momento della prenotazione"
+
+#: libraries/language/admin.php:8214
+msgid "Before check-in"
+msgstr "Prima del check-in"
+
+#: libraries/language/admin.php:8217
+msgid "Synchronize"
+msgstr "Sincronizza"
+
+#: libraries/language/admin.php:8220
+msgid "Lock"
+msgstr "Blocca"
+
+#: libraries/language/admin.php:8223
+msgid "List Passcodes"
+msgstr "Lista codici accesso"
+
+#: libraries/language/admin.php:8226
+msgid "Search Passcode"
+msgstr "Ricerca codice accesso"
+
+#: libraries/language/admin.php:8229
+msgid "Optional search keyword."
+msgstr "Termine di ricerca opzionale."
+
+#: libraries/language/admin.php:8232
+msgid "Create Passcode"
+msgstr "Genera codice accesso"
+
+#: libraries/language/admin.php:8235
+msgid "Passcode Name"
+msgstr "Nome codice accesso"
+
+#: libraries/language/admin.php:8238
+msgid "Optional passcode name for an easier identification."
+msgstr ""
+"Nome opzionale del codice di accesso per una più semplice identificazione."
+
+#: libraries/language/admin.php:8241
+msgid "Passcode validity start date and time."
+msgstr "Data e ora di inizio validità del codice di accesso."
+
+#: libraries/language/admin.php:8244
+msgid "Passcode validity end date and time."
+msgstr "Data e ora di fine validità del codice di accesso."
+
+#: libraries/language/admin.php:8247
+msgid "Delete Passcode"
+msgstr "Elimina codice accesso"
+
+#: libraries/language/admin.php:8250
+msgid "Unlock the device to grant entry."
+msgstr "Sblocca il dispositivo per consentire l'accesso."
+
+#: libraries/language/admin.php:8253
+msgid "Lock the device to restrict entry."
+msgstr "Blocca il dispositivo per limitare l'accesso."
+
+#: libraries/language/admin.php:8256
+msgid "List all the device passcodes."
+msgstr "Elenca tutti i codici di accesso del dispositivo."
+
+#: libraries/language/admin.php:8259
+msgid "Create a random passcode for the device."
+msgstr "Genera un codice di accesso casuale per il dispositivo."
+
+#: libraries/language/admin.php:8262
+msgid "Delete a passcode from the device."
+msgstr "Elimina un codice di accesso dal dispositivo."
+
+#: libraries/language/admin.php:8265
+msgid "Create Custom Passcode"
+msgstr "Crea codice accesso personalizzato"
+
+#: libraries/language/admin.php:8268
+msgid "Create a custom passcode for the device."
+msgstr "Crea un codice di accesso personalizzato per il dispositivo."
+
+#: libraries/language/admin.php:8271
+msgid "Passcode"
+msgstr "Codice di accesso"
+
+#: libraries/language/admin.php:8274
+msgid "AI Support"
+msgstr "Supporto IA"
+
+#: libraries/language/admin.php:8277
+msgid "Allow AI assistants to schedule tasks from guest requests."
+msgstr ""
+"Consenti agli assistenti IA di pianificare attività sulla base delle "
+"richieste degli ospiti."
+
+#: libraries/language/admin.php:8280
+msgid "Access Control"
+msgstr "Controllo Accessi"
+
+#: libraries/language/admin.php:8283
+msgid "Access Control - New Passcode"
+msgstr "Controllo Accessi - Nuovo codice"
+
+#: libraries/language/admin.php:8286
+msgid "Access Control - Passcode Modified"
+msgstr "Controllo Accessi - Codice modificato"
+
+#: libraries/language/admin.php:8289
+msgid "Access Control - Passcode Cancelled"
+msgstr "Controllo Accessi - Codice cancellato"
+
+#. TRANSLATORS: Door Access Control framework successfully generated a passcode to open a lock.
+#: libraries/language/admin.php:8293 libraries/language/site.php:2483
+#, php-format
+msgctxt ""
+"Door Access Control framework successfully generated a passcode to open a "
+"lock."
+msgid "Passcode %s successfully generated for the device \"%s\"."
+msgstr "Codice di accesso %s generato con successo per il dispositivo \"%s\"."
+
+#. TRANSLATORS: Door Access Control framework successfully deleted a passcode for a lock.
+#: libraries/language/admin.php:8297 libraries/language/site.php:2487
+#, php-format
+msgctxt ""
+"Door Access Control framework successfully deleted a passcode for a lock."
+msgid "The passcode was successfully deleted from the device \"%s\"."
+msgstr "Codice di accesso eliminato con successo dal dispositivo \"%s\"."
+
+#: libraries/language/admin.php:8300
+msgid ""
+"Allow AI assistants to share access codes or unlock doors upon guest "
+"requests during their stay."
+msgstr ""
+"Consenti agli assistenti IA di condividere i codici di accesso o sbloccare "
+"le porte su richiesta degli ospiti durante il soggiorno."
+
+#: libraries/language/admin.php:8303
+msgid "Passcodes"
+msgstr "Codici di accesso"
+
+#: libraries/language/admin.php:8306
+msgid ""
+"For listings with multiple devices, you can choose to use the same passcode "
+"for all devices or generate a unique passcode for each one."
+msgstr ""
+"Per gli alloggi con più dispositivi, puoi scegliere se utilizzare lo stesso "
+"codice di accesso per tutti oppure generare un codice univoco per ciascuno."
+
+#: libraries/language/admin.php:8309
+msgid "One per device"
+msgstr "Uno per dispositivo"
+
+#: libraries/language/admin.php:8312
+msgid "One per booking"
+msgstr "Uno per prenotazione"
+
+#: libraries/language/admin.php:8315
+msgid "Choose a device from the list."
+msgstr "Seleziona un dispositivo dalla lista."
+
+#: libraries/language/admin.php:8318
+msgid ""
+"If enabled, the balance of OTA reservations paid with a Virtual Credit Card "
+"will be automatically collected on the card's activation date (requires an "
+"eligible payment processor)."
+msgstr ""
+"Se abilitata, la somma delle prenotazioni OTA pagate con Carta di Credito "
+"Virtuale verrà automaticamente incassata alla data di attivazione della "
+"carta (è richiesto un processore di pagamento idoneo)."
+
+#: libraries/language/admin.php:8321
+msgid "Leave empty to generate a random passcode."
+msgstr "Lascia vuoto per generare un codice di accesso casuale."
+
+#: libraries/language/admin.php:8324
+msgid "Select the time when the operation should run."
+msgstr "Seleziona l'orario in cui l'operazione deve essere eseguita."
+
+#. TRANSLATORS: i.e. Database optimization completed in 20 seconds.
+#: libraries/language/admin.php:8328 libraries/language/site.php:2495
+#, php-format
+msgctxt "i.e. Database optimization completed in 20 seconds."
+msgid "Database optimization completed in %d seconds."
+msgstr "Ottimizzazione database completata in %d secondi."
+
+#: libraries/language/admin.php:8334
+msgid "Activity Logs"
+msgstr "Registro attività"
+
+#: libraries/language/admin.php:8337
+msgid "View all recorded activities for the device."
+msgstr "Visualizza tutte le attività registrate per il dispositivo."
+
+#: libraries/language/admin.php:8340
+msgid "Notify on first access"
+msgstr "Notifica al primo accesso"
+
+#: libraries/language/admin.php:8343
+msgid "Get notified when the generated access code is used for the first time."
+msgstr ""
+"Ricevi una notifica quando il codice di accesso generato viene utilizzato "
+"per la prima volta."
+
+#: libraries/language/admin.php:8346
+msgid "Access Control - First Access"
+msgstr "Controllo Accessi - Primo accesso"
+
+#: libraries/language/admin.php:8349
+msgid "Variation"
+msgstr "Variazione"
+
+#: libraries/language/admin.php:8352
+msgid "Revenue Manager"
+msgstr "Revenue Manager"
+
+#: libraries/language/admin.php:8355
+msgid "RMS - Booking Pace"
+msgstr "RMS - Ritmo prenotazioni"
+
+#: libraries/language/admin.php:8358
+msgid "RMS - Occupancy Pace"
+msgstr "RMS - Andamento occupazione"
+
+#: libraries/language/admin.php:8361
+msgid "New Bookings"
+msgstr "Nuove prenotazioni"
+
+#. TRANSLATORS: i.e. "Same time 2 years ago" or "Same time 3 years ago"
+#: libraries/language/admin.php:8365
+#, php-format
+msgctxt "i.e. \"Same time 2 years ago\" or \"Same time 3 years ago\""
+msgid "Same time %d years ago"
+msgstr "Stesso periodo di %d anni fa"
+
+#: libraries/language/admin.php:8368
+msgid "Same time last year"
+msgstr "Stesso periodo dell'anno scorso"
+
+#: libraries/language/admin.php:8371
+msgid "Pickup date"
+msgstr "Data di pickup"
+
+#: libraries/language/admin.php:8374
+msgid "Pickup date start"
+msgstr "Data inizio pickup"
+
+#: libraries/language/admin.php:8377
+msgid "Pickup date end"
+msgstr "Data fine pickup"
+
+#: libraries/language/admin.php:8380
+msgid "Target date"
+msgstr "Data di analisi"
+
+#: libraries/language/admin.php:8383
+msgid "Target date start"
+msgstr "Data inizio analisi"
+
+#: libraries/language/admin.php:8386
+msgid "Target date end"
+msgstr "Data fine analisi"
+
+#: libraries/language/admin.php:8389
+msgid "Compare against"
+msgstr "Confronta con"
+
+#: libraries/language/admin.php:8392
+msgid "Align by weekday"
+msgstr "Allinea giorni della settimana"
+
+#: libraries/language/admin.php:8395
+msgid "Rate History"
+msgstr "Storico tariffa"
+
+#. TRANSLATORS: Short version of "Previous"
+#: libraries/language/admin.php:8399
+msgctxt "Short version of \"Previous\""
+msgid "Prev"
+msgstr "Prec."
+
+#. TRANSLATORS: Can be displayed next to "Prev", so use a short form when translating
+#: libraries/language/admin.php:8403
+msgctxt ""
+"Can be displayed next to \"Prev\", so use a short form when translating"
+msgid "Next"
+msgstr "Succ."
+
+#: libraries/language/admin.php:8406
+msgid "AI - Training Drafts"
+msgstr "IA - Bozze di addestramento"
+
+#: libraries/language/admin.php:8409
+msgid "Review and approve AI-generated training drafts before they are used."
+msgstr ""
+"Rivedi e approva le bozze di training generate dall'IA prima che vengano "
+"utilizzate."
+
+#: libraries/language/admin.php:8412
+msgid "Review training draft"
+msgstr "Rivedi bozza di addestramento"
+
+#: libraries/language/admin.php:8415
+msgid "Approve"
+msgstr "Approva"
+
+#: libraries/language/admin.php:8418
+msgid "Reject"
+msgstr "Rifiuta"
+
+#. TRANSLATORS: Plural form for "Review %d new training drafts created from your guest replies to enable future automated responses."
+#: libraries/language/admin.php:8422
+#, php-format
+msgctxt ""
+"Plural form for \"Review %d new training drafts created from your guest "
+"replies to enable future automated responses.\""
+msgid ""
+"Review %d new training drafts created from your guest replies to enable "
+"future automated responses."
+msgstr ""
+"Rivedi %d nuove bozze di addestramento create a partire dalle tue risposte "
+"agli ospiti per facilitare risposte automatiche future."
+
+#: libraries/language/admin.php:8425
+msgid ""
+"Review one new training draft created from your guest replies to enable "
+"future automated responses."
+msgstr ""
+"Rivedi una nuova bozza di addestramento creata a partire dalle tue risposte "
+"agli ospiti per facilitare risposte automatiche future."
+
+#: libraries/language/admin.php:8428
+msgid ""
+"Warning: some customer records are using short, numeric and insecure PIN "
+"codes."
+msgstr ""
+"Attenzione: alcuni record dei clienti utilizzano codici PIN brevi, numerici "
+"e non sicuri."
+
+#: libraries/language/admin.php:8431
+msgid "Cancellation date"
+msgstr "Data di cancellazione"
+
+#: libraries/language/admin.php:8434
+msgid "Set Fixed Rate"
+msgstr "Imposta tariffa fissa"
+
+#: libraries/language/admin.php:8437
+msgid "Increase/Decrease Rates"
+msgstr "Aumenta/diminuisci tariffe"
+
+#: libraries/language/admin.php:8440
+msgid "Display OTA Rates"
+msgstr "Mostra tariffe OTA"
+
+#. TRANSLATORS: Door Access Control framework successfully updated a passcode for a lock.
+#: libraries/language/admin.php:8444
+#, php-format
+msgctxt ""
+"Door Access Control framework successfully updated a passcode for a lock."
+msgid "The passcode was successfully updated on the device \"%s\"."
+msgstr "Codice di accesso aggiornato con successo sul dispositivo \"%s\"."
+
+#: libraries/language/admin.php:8447
+msgid "Update Passcode"
+msgstr "Aggiorna codice accesso"
+
+#: libraries/language/admin.php:8450
+msgid "Update a passcode on the device."
+msgstr "Aggiorna un codice di accesso sul dispositivo."
+
+#: libraries/language/admin.php:8453
+msgid "Enabled for all bookings"
+msgstr "Abilitata per tutte le prenotazioni"
+
+#: libraries/language/admin.php:8456
+msgid ""
+"Enabling Automatic Payment Collection will schedule charges for all eligible "
+"bookings on the provided credit card at its activation date and time."
+msgstr ""
+"L'attivazione della Riscossione Automatica dei Pagamenti pianificherà gli "
+"addebiti per tutte le prenotazioni idonee sulla carta di credito fornita, "
+"alla data e all'ora di attivazione."
+
+#: libraries/language/admin.php:8459
+msgid ""
+"Disabling Automatic Payment Collection will stop all automatic credit card "
+"charges for OTA bookings and require payments to be collected manually."
+msgstr ""
+"La disattivazione della Riscossione Automatica dei Pagamenti interromperà "
+"tutti gli addebiti automatici sulle carte di credito per le prenotazioni OTA "
+"e richiederà la riscossione manuale dei pagamenti."
+
+#: libraries/language/admin.php:8462
+msgid ""
+"Automatic payment collection is enabled for all bookings. Charges will be "
+"automatically scheduled upon receiving the OTA notification for the card "
+"activation date."
+msgstr ""
+"La riscossione automatica dei pagamenti è abilitata per tutte le "
+"prenotazioni. Gli addebiti verrano pianificati automaticamente alla "
+"ricezione della notifica di attivazione della carta di credito da parte "
+"dell'OTA."
+
+#: libraries/language/admin.php:8465
+msgid "Inline-Scroll"
+msgstr "Inline-Scroll"
+
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
 msgstr "Vik Booking"
@@ -12697,7 +13203,7 @@ msgstr ""
 msgid "Layout style"
 msgstr "Stile layout"
 
-#: libraries/language/adminsys.php:247
+#: libraries/language/adminsys.php:247 libraries/language/site.php:2464
 msgid "Grid"
 msgstr "Griglia"
 
@@ -12980,8 +13486,8 @@ msgstr "Preoccupato per gli overbooking?"
 #: libraries/language/adminsys.php:419
 msgid ""
 "Vik Booking + Vik Channel Manager is the only native WordPress suite "
-"officially certified as a <strong>Premier Connectivity Partner of "
-"Booking.com and Airbnb.</strong>"
+"officially certified as a <strong>Premier Connectivity Partner of Booking."
+"com and Airbnb.</strong>"
 msgstr ""
 "La suite di plugin Vik Booking + Vik Channel Manager è la prima ed unica "
 "soluzione nativa per WordPress ad essere ufficialmente certificata come "
@@ -14653,8 +15159,8 @@ msgstr "La data massima nel futuro consentita per prenotare è %s"
 
 #: libraries/language/site.php:1521
 #, php-format
-msgid "Minimum days in advance for bookings is %d"
-msgstr "Il numero minimo di giorni in anticipo per prenotare è %d"
+msgid "Minimum days in advance for bookings is %s"
+msgstr "Il numero minimo di giorni in anticipo per prenotare è %s"
 
 #: libraries/language/site.php:1524
 msgid "the number of guests selected"
@@ -15265,6 +15771,29 @@ msgstr "Per favore completa il processo di verifica dell'identità."
 msgid "Invalid identity verification values"
 msgstr "Valori di verifica dell'identità invalidi"
 
+#: libraries/language/site.php:2467
+msgid "Filters"
+msgstr "Filtri"
+
+#: libraries/language/site.php:2479
+msgid "Price range"
+msgstr "Fascia di prezzo"
+
+#: libraries/language/site.php:2501
+msgid ""
+"Please upload clear photos or scans of this guest's identity document (front "
+"and back if applicable). These images will be automatically analyzed to "
+"extract document details and help pre-fill the check-in information."
+msgstr ""
+"Carica foto o scansioni nitide del documento di identità di questo ospite "
+"(fronte e retro, se applicabile). Le immagini verranno analizzate "
+"automaticamente per estrarre i dati del documento e velocizzare la "
+"compilazione delle informazioni di check-in."
+
+#: libraries/language/site.php:2504
+msgid "Analyzing documents"
+msgstr "Analisi dei documenti in corso"
+
 #: libraries/language/system.php:46
 msgid "Error"
 msgstr "Errore"
@@ -15554,15 +16083,75 @@ msgstr "%d settimane fa."
 msgid "a week ago."
 msgstr "una settimana fa."
 
-#: libraries/language/system.php:460
+#: libraries/language/system.php:500
+msgctxt "January abbreviation"
+msgid "Jan"
+msgstr "Gen"
+
+#: libraries/language/system.php:504
+msgctxt "February abbreviation"
+msgid "Feb"
+msgstr "Feb"
+
+#: libraries/language/system.php:508
+msgctxt "March abbreviation"
+msgid "Mar"
+msgstr "Mar"
+
+#: libraries/language/system.php:512
+msgctxt "April abbreviation"
+msgid "Apr"
+msgstr "Apr"
+
+#: libraries/language/system.php:516
+msgctxt "May abbreviation"
+msgid "May"
+msgstr "Mag"
+
+#: libraries/language/system.php:520
+msgctxt "June abbreviation"
+msgid "Jun"
+msgstr "Giu"
+
+#: libraries/language/system.php:524
+msgctxt "July abbreviation"
+msgid "Jul"
+msgstr "Lug"
+
+#: libraries/language/system.php:528
+msgctxt "August abbreviation"
+msgid "Aug"
+msgstr "Ago"
+
+#: libraries/language/system.php:532
+msgctxt "September abbreviation"
+msgid "Sep"
+msgstr "Set"
+
+#: libraries/language/system.php:536
+msgctxt "October abbreviation"
+msgid "Oct"
+msgstr "Ott"
+
+#: libraries/language/system.php:540
+msgctxt "November abbreviation"
+msgid "Nov"
+msgstr "Nov"
+
+#: libraries/language/system.php:544
+msgctxt "December abbreviation"
+msgid "Dec"
+msgstr "Dic"
+
+#: libraries/language/system.php:616
 msgid "Optional widget title to display."
 msgstr "Titolo opzionale da mostrare per il widget."
 
-#: libraries/language/system.php:464
+#: libraries/language/system.php:620
 msgid "Preview is not available"
 msgstr "Anteprima non disponibile"
 
-#: libraries/language/system.php:472
+#: libraries/language/system.php:628
 msgid ""
 "The Pro license for VikBooking has expired. Do not install any updates or "
 "you will downgrade the plugin to the Free version."
@@ -16270,6 +16859,9 @@ msgstr "no"
 #: modules/mod_vikbooking_rooms/language/handler.php:204
 msgid "Sleep"
 msgstr "Posto letto"
+
+#~ msgid "or DRAG FILES HERE"
+#~ msgstr "o TRASCINA FILE QUI"
 
 #~ msgid "Scheduled Cron Jobs"
 #~ msgstr "Cron jobs programmati"

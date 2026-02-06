@@ -13,7 +13,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 /**
  * Critical Dates handler class for Vik Booking.
  *
- * @since 	1.13.5
+ * @since 	1.13.5 (J) - 1.3.5 (WP)
  */
 class VikBookingCriticalDates
 {
@@ -30,9 +30,7 @@ class VikBookingCriticalDates
 	 * @see 	getInstance()
 	 */
 	protected function __construct()
-	{
-		
-	}
+	{}
 
 	/**
 	 * Returns the global Critical Dates object, either
@@ -57,7 +55,7 @@ class VikBookingCriticalDates
 	 * @param 	int 		$idroom 	the ID of the room involved.
 	 * @param 	int 		$subunit 	the index of the sub-unit (0 by default).
 	 * @param 	string 		$key 		the key name of the note.
-	 * @param 	boolean 	$get 		whether to get the found record.
+	 * @param 	bool 		$get 		whether to get the found record.
 	 *
 	 * @return 	mixed 		True/array if festivity exists, false otherwise.
 	 */
@@ -68,19 +66,19 @@ class VikBookingCriticalDates
 		$subunit = intval($subunit);
 
 		$dbo = JFactory::getDbo();
-		$q = "SELECT * FROM `#__vikbooking_critical_dates` WHERE `dt`=" . $dbo->quote($ymd) . " AND `idroom`={$idroom} AND `subunit`={$subunit};";
+
+		$q = "SELECT * FROM `#__vikbooking_critical_dates` WHERE `dt`=" . $dbo->q($ymd) . " AND `idroom`={$idroom} AND `subunit`={$subunit};";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$note = $dbo->loadAssoc();
+		if (!$note) {
 			return false;
 		}
-		$note = $dbo->loadAssoc();
-		
+
 		$notes_info = json_decode($note['info']);
 		if (!$notes_info) {
 			return false;
 		}
-		
+
 		// update this information in the array in case it needs to be returned
 		$note['info'] = $notes_info;
 
@@ -90,6 +88,7 @@ class VikBookingCriticalDates
 				return $get ? $note : true;
 			}
 		}
+
 		return false;
 	}
 
@@ -102,49 +101,52 @@ class VikBookingCriticalDates
 	 * @param 	int 		$idroom 	the ID of the room involved.
 	 * @param 	int 		$subunit 	the index of the sub-unit (0 by default).
 	 *
-	 * @return 	boolean 	True if the new record is stored or updated, false otherwise.
+	 * @return 	bool 		True if the new record is stored or updated, false otherwise.
 	 */
 	public function storeDayNote($note, $ymd, $idroom = 0, $subunit = 0)
 	{
 		// vars validation
 		$idroom  = intval($idroom);
 		$subunit = intval($subunit);
-		if (!is_array($note) || !count($note) || (empty($note['name']) && empty($note['descr']))) {
+		if (!is_array($note) || (empty($note['name']) && empty($note['descr']))) {
 			return false;
 		}
+
 		if (!isset($note['type'])) {
 			$note['type'] = 'custom';
 		}
+
 		if (!isset($note['ts'])) {
 			$note['ts'] = time();
 		}
+
 		if (!empty($note['name'])) {
 			// make sure the "name" does not contain commas, which may be used by JS as separator in the readable notes data attribute
 			$note['name'] = trim(str_replace(',', '', $note['name']));
 		}
 
 		$dbo = JFactory::getDbo();
-		$q = "SELECT * FROM `#__vikbooking_critical_dates` WHERE `dt`=" .$dbo->quote($ymd) . " AND `idroom`={$idroom} AND `subunit`={$subunit}";
+
+		$q = "SELECT * FROM `#__vikbooking_critical_dates` WHERE `dt`=" .$dbo->q($ymd) . " AND `idroom`={$idroom} AND `subunit`={$subunit}";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
+		$prevNote = $dbo->loadAssoc();
+		if (!$prevNote) {
 			// create a new record
-			$q = "INSERT INTO `#__vikbooking_critical_dates` (`dt`, `idroom`, `subunit`, `info`) VALUES (".$dbo->quote($ymd).", ".$dbo->quote($idroom).", ".$dbo->quote($subunit).", ".$dbo->quote(json_encode(array($note))).");";
+			$q = "INSERT INTO `#__vikbooking_critical_dates` (`dt`, `idroom`, `subunit`, `info`) VALUES (".$dbo->q($ymd).", ".$dbo->q($idroom).", ".$dbo->q($subunit).", ".$dbo->q(json_encode(array($note))).");";
 			$dbo->setQuery($q);
 			$dbo->execute();
 
-			return ((int)$dbo->insertid() > 0);
+			return (bool) ((int) $dbo->insertid());
 		}
 		
 		// update current record by pushing the note into the existing info array of objects
-		$notes  = $dbo->loadAssoc();
-		$notes_arr  = json_decode($notes['info']);
-		array_push($notes_arr, (object)$note);
-		$q = "UPDATE `#__vikbooking_critical_dates` SET `info`=".$dbo->quote(json_encode($notes_arr))." WHERE `id`={$notes['id']};";
+		$notes_arr = json_decode($prevNote['info']);
+		array_push($notes_arr, (object) $prevNote);
+		$q = "UPDATE `#__vikbooking_critical_dates` SET `info`=".$dbo->q(json_encode($notes_arr))." WHERE `id`={$prevNote['id']};";
 		$dbo->setQuery($q);
 		$dbo->execute();
 
-		return ((int)$dbo->getAffectedRows() > 0);
+		return (bool) ((int) $dbo->getAffectedRows());
 	}
 
 	/**
@@ -158,7 +160,7 @@ class VikBookingCriticalDates
 	 * @param 	int 		$subunit 	the subunit of the room ID.
 	 * @param 	string 		$type 		the key name of the note ('custom' for manual entries).
 	 *
-	 * @return 	boolean 	True if the fest is removed, false otherwise.
+	 * @return 	bool 		True if the fest is removed, false otherwise.
 	 */
 	public function deleteDayNote($index, $ymd, $idroom = 0, $subunit = 0, $type = 'custom')
 	{
@@ -192,9 +194,9 @@ class VikBookingCriticalDates
 		
 		$dbo = JFactory::getDbo();
 		if ($drop_record) {
-			$q = "DELETE FROM `#__vikbooking_critical_dates` WHERE `dt`=" . $dbo->quote($ymd) . " AND `idroom`={$idroom} AND `subunit`={$subunit}";
+			$q = "DELETE FROM `#__vikbooking_critical_dates` WHERE `dt`=" . $dbo->q($ymd) . " AND `idroom`={$idroom} AND `subunit`={$subunit}";
 		} else {
-			$q = "UPDATE `#__vikbooking_critical_dates` SET `info`=".$dbo->quote(json_encode($record['info']))." WHERE `dt`=" . $dbo->quote($ymd) . " AND `idroom`={$idroom} AND `subunit`={$subunit}";
+			$q = "UPDATE `#__vikbooking_critical_dates` SET `info`=".$dbo->q(json_encode($record['info']))." WHERE `dt`=" . $dbo->q($ymd) . " AND `idroom`={$idroom} AND `subunit`={$subunit}";
 		}
 		$dbo->setQuery($q);
 		$dbo->execute();
@@ -206,51 +208,48 @@ class VikBookingCriticalDates
 	 * Loads the room day notes of any type and returns and associative
 	 * array indexed by date with decoded notes information.
 	 * 
-	 * @param 	string 		$from_ymd 	the optional minimum date in Y-m-d (defaults to today).
-	 * @param 	string 		$to_ymd 	the optional maximum date in Y-m-d (defaults to none).
-	 * @param 	int 		$idroom 	the optional room id filter
-	 * @param 	int 		$subunit 	the optional room index filter
+	 * @param 	string 		$from_ymd 	Optional minimum date in Y-m-d (defaults to today).
+	 * @param 	string 		$to_ymd 	Optional maximum date in Y-m-d (defaults to none).
+	 * @param 	int 		$idroom 	Optional room id filter.
+	 * @param 	int 		$subunit 	Optional room index filter.
 	 *
-	 * @return 	array 		the list of festivities found in Vik Booking.
+	 * @return 	array 		the list of festivities found in VikBooking.
 	 */
 	public function loadRoomDayNotes($from_ymd = null, $to_ymd = null, $idroom = null, $subunit = null)
 	{
 		$dbo = JFactory::getDbo();
 
-		$rdnotes = array();
+		$rdnotes = [];
+
 		if (empty($from_ymd)) {
 			$from_ymd = date('Y-m-d');
 		}
 
-		$clauses = array();
-		array_push($clauses, "`dt`>=" . $dbo->quote($from_ymd));
+		$clauses = [];
+		array_push($clauses, "`dt` >= " . $dbo->q($from_ymd));
 
 		if (!empty($to_ymd)) {
-			array_push($clauses, "`dt`<=" . $dbo->quote($to_ymd));
+			array_push($clauses, "`dt` <= " . $dbo->q($to_ymd));
 		}
 		if ($idroom !== null && is_int($idroom)) {
-			array_push($clauses, "`idroom`=" . (int)$idroom);
+			array_push($clauses, "`idroom`=" . (int) $idroom);
 		}
 		if ($subunit !== null && is_int($subunit)) {
-			array_push($clauses, "`subunit`=" . (int)$subunit);
+			array_push($clauses, "`subunit`=" . (int) $subunit);
 		}
 		
 		$q = "SELECT * FROM `#__vikbooking_critical_dates` WHERE " . implode(' AND ', $clauses) . " ORDER BY `dt` ASC;";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows()) {
-			$all_notes = $dbo->loadAssocList();
-			// make sure to decode all notes infos
-			foreach ($all_notes as $k => $v) {
-				$v['info'] = json_decode($v['info']);
+		$all_notes = $dbo->loadAssocList();
 
-				$keyid = $v['dt'] . '_' . (int)$v['idroom'] . '_' . (int)$v['subunit'];
-				
-				$rdnotes[$keyid] = $v;
-			}
+		// make sure to decode all notes infos
+		foreach ($all_notes as $k => $v) {
+			$v['info'] = json_decode($v['info']);
+			$keyid = $v['dt'] . '_' . ((int) $v['idroom']) . '_' . ((int) $v['subunit']);
+			// set room-day note
+			$rdnotes[$keyid] = $v;
 		}
 
 		return $rdnotes;
 	}
-
 }

@@ -997,11 +997,11 @@ class VikBookingReportOccupancyRanking extends VikBookingReport
 	 * needs to access the Chart data rendered by this report.
 	 * Defines some properties and accepts instructions through the arg.
 	 * 
-	 * @param 	mixed 	$data 	null or mixed for requested Chart data.
+	 * @param 	?array 	$data 	null or mixed for requested Chart data.
 	 *
 	 * @return 	string 	the HTML of the canvas element.
 	 */
-	public function getChart($data = null)
+	public function getChart(?array $data = null)
 	{
 		if (!count($this->rows) && !$this->getReportData()) {
 			return '';
@@ -1077,7 +1077,7 @@ class VikBookingReportOccupancyRanking extends VikBookingReport
 
 		// the canvas element ID and tag
 		$canvas_id 	 = 'vbo-report-chart-canvas';
-		$canvas_html = '<canvas id="' . $canvas_id . '"></canvas>';
+		$canvas_html = '<canvas id="' . $canvas_id . '" class="vbo-report-chart-canvas"></canvas>';
 
 		// additional Chart properties
 		$chart_type = is_array($data) && !empty($data['type']) ? $data['type'] : 'line';

@@ -74,7 +74,7 @@ if (!(count($packages) > 0)) {
 		</div>
 		<div class="vbo-pkglist-pkg-bthree">
 			<div class="vbo-pkglist-pkg-cost">
-				<span class="vbo-pkglist-pkg-price"><span class="vbo_currency"><?php echo $currencysymb; ?></span> <span class="vbo_price"><?php echo VikBooking::numberFormat(($tax_summary ? $package['cost'] : VikBooking::sayPackagePlusIva($package['cost'], $package['idiva']))); ?></span></span>
+				<span class="vbo-pkglist-pkg-price"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat(($tax_summary ? $package['cost'] : VikBooking::sayPackagePlusIva($package['cost'], $package['idiva']))), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></span>
 				<span class="vbo-pkglist-pkg-priceper"><?php echo implode(', ', $costfor); ?></span>
 			</div>
 			<div class="vbo-pkglist-pkg-details">

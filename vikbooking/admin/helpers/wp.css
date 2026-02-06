@@ -22,10 +22,10 @@ input[type="date"], input[type="datetime-local"], input[type="datetime"], input[
 	color: var(--vbo-config-title-color);
 	background: var(--vbo-basic-btn);
 }
-.vbo-btn-toolbar .btn[type="submit"], .vbo-btn-toolbar .btn[type="button"] {
+.vbo-btn-toolbar .btn[type="submit"], .vbo-btn-toolbar .btn[type="button"], .vbo-reports-filters-wrap .btn[type="button"] {
 	padding: 10px 12px !important;
 }
-.vbo-btn-toolbar .btn i {
+.vbo-btn-toolbar .btn i, .vbo-reports-filters-wrap .btn i {
 	margin-right: 0;
 }
 .vbo-secondinfo-overlay-block h4 {
@@ -43,10 +43,10 @@ input[type="date"], input[type="datetime-local"], input[type="datetime"], input[
 .vbo-info-overlay-content .btn-success, .vbo-info-overlay-content .btn-danger {
 	padding: 10px 14px;
 }
-.vbo-quickres-head .vbo-quickres-head-right .select2-selection--single, .vbo-btn-toolbar .select2-selection--single, .vbo-editbooking-room-switch .select2-selection--single {
+.vbo-quickres-head .vbo-quickres-head-right .select2-selection--single, .vbo-btn-toolbar .select2-selection--single, .vbo-editbooking-room-switch .select2-selection--single, .vbo-reports-filters-wrap .select2-selection--single {
 	height: 40px !important;
 }
-.vbo-ratesoverview-entryinline .select2-container--default .select2-selection--single .select2-selection__rendered, .vbo-reports-container .select2-container--default .select2-selection--single .select2-selection__rendered {
+.vbo-ratesoverview-entryinline .select2-container--default .select2-selection--single .select2-selection__rendered, .vbo-reports-container .select2-container--default .select2-selection--single .select2-selection__rendered, .vbo-reports-filters-wrap .select2-container--default .select2-selection--single .select2-selection__rendered {
 	line-height: 40px !important;
 }
 .vikwp-extra-more {
@@ -718,7 +718,7 @@ input[type="number"], #vbo-addnumnight, #vbo-numnights, #vbo-numadults, #vbo-num
 	vertical-align: bottom;
 }
 .vbo-reports-filters-outer .vbo-reports-filters-report .vbo-report-filter-wrap {
-	vertical-align: bottom;
+	vertical-align: top;
 }
 .vbo-report-layout-type {
 	margin-top: 20px;
@@ -736,9 +736,6 @@ input[type="number"], #vbo-addnumnight, #vbo-numnights, #vbo-numadults, #vbo-num
 /*** eInvoicing ***/
 .vbo-drivers-filters-outer > div {
 	display: block;
-}
-.vbo-drivers-custom-actions {
-	margin-top: 10px;
 }
 .vbo-drivers-output table td .btn.btn-primary {
 	padding: 4px 12px;
@@ -1605,7 +1602,7 @@ h1.vikwp-download-error {
 		flex-wrap: wrap;
 	}
 	.vbo-report-sheetnchart .vbo-report-sheet {
-		flex-basis: 100%;
+		width: 100%;
 		margin-right: 0;
 	}
 	.vbo-report-sheetnchart .vbo-report-chart-meta {

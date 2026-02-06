@@ -48,6 +48,7 @@ $tmpl = VikRequest::getVar('tmpl');
 $set_parent_status = '';
 $now_info = getdate();
 $today_midnight = mktime(0, 0, 0, $now_info['mon'], $now_info['mday'], $now_info['year']);
+$grace_ts = mktime(0, 0, 0, $now_info['mon'], $now_info['mday'] - 2, $now_info['year']);
 $colortags = VikBooking::loadBookingsColorTags();
 $otachannel = '';
 $otachannel_name = '';
@@ -473,7 +474,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 								}
 							}
 							?>
-								<?php echo $currencysymb; ?> <?php echo VikBooking::numberFormat($or['cust_cost']); ?>
+								<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($or['cust_cost']), $currencysymb); ?>
 							</span>
 							<?php
 						} elseif (array_key_exists($num, $tars) && !empty($tars[$num][0]['idprice'])) {
@@ -483,7 +484,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 								<?php echo VikBooking::getPriceName($tars[$num][0]['idprice']); ?> 
 							<?php
 							if (!empty($or['room_cost'])) {
-								echo $currencysymb.' '.VikBooking::numberFormat(VikBooking::sayCostPlusIva($display_rate, $tars[$num][0]['idprice']));
+								echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat(VikBooking::sayCostPlusIva($display_rate, $tars[$num][0]['idprice'])), $currencysymb);
 							}
 							?>
 							</span>
@@ -586,7 +587,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 							$tmpopr = VikBooking::sayOptionalsPlusIva($realcost, $actopt['idiva']);
 							?>
 							<div class="vbo-roomdet-foot-options">
-								<?php echo ($stept[1] > 1 ? $stept[1]." " : "").$actopt['name'].(!$hide_price ? " ".$currencysymb." ".VikBooking::numberFormat($tmpopr) : ''); ?>
+								<?php echo ($stept[1] > 1 ? $stept[1]." " : "").$actopt['name'].(!$hide_price ? " " . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tmpopr), $currencysymb) : ''); ?>
 							</div>
 							<?php
 						}
@@ -605,7 +606,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 						foreach ($cur_extra_costs as $eck => $ecv) {
 							?>
 							<div class="vbo-roomdet-foot-extras">
-								<?php echo $ecv['name']." ".$currencysymb." ".VikBooking::numberFormat(VikBooking::sayOptionalsPlusIva($ecv['cost'], $ecv['idtax'])); ?>
+								<?php echo $ecv['name'] . " " . VikBooking::formatCurrencyNumber(VikBooking::numberFormat(VikBooking::sayOptionalsPlusIva($ecv['cost'], $ecv['idtax'])), $currencysymb); ?>
 							</div>
 							<?php
 						}
@@ -692,8 +693,18 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 									// this is a default pax field, we skip it
 									continue;
 								}
+								// obtain field label and field type
 								$precheckin_field_lbl = isset($pre_pax_fields[$extrak]) ? $pre_pax_fields[$extrak] : $extrak;
 								$precheckin_field_typ = isset($pre_pax_fields_attributes[$extrak]) && $pre_pax_fields_attributes[$extrak] == 'file' ? 'file' : 'text';
+								// ensure the field should be displayed
+								if (substr($extrak, 0, 1) === '_') {
+									// this is a "protected" pax field to be kept within a hidden input field and no labels
+									?>
+						<input type="hidden" data-gind="<?php echo $g; ?>" class="vbo-paxfield" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $extrak; ?>]" value="<?php echo htmlspecialchars($extrav); ?>" />
+									<?php
+									// do not display anyting else
+									continue;
+								}
 								?>
 						<div class="vbo-roomdet-guest-detail vbo-roomdet-guest-detail-precheckin">
 							<div class="vbo-roomdet-guest-detail-lbl">
@@ -758,7 +769,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 			}
 			?>
 				<span class="vbo-checkin-payment-detail-lbl"><?php echo $usectag; ?><strong><?php echo JText::translate('VBEDITORDERNINE'); ?></strong></span>
-				<span class="vbo-checkin-payment-detail-v"><?php echo (strlen($otacurrency) > 0 ? '('.$otacurrency.') '.$currencysymb : $currencysymb); ?> <?php echo VikBooking::numberFormat($order['total']); ?></span>
+				<span class="vbo-checkin-payment-detail-v"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($order['total']), (strlen($otacurrency) > 0 ? '('.$otacurrency.') '.$currencysymb : $currencysymb)); ?></span>
 			</div>
 		<?php
 		if (!empty($order['totpaid']) && $order['totpaid'] > 0) {
@@ -766,14 +777,14 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 			?>
 			<div class="vbo-checkin-payment-detail">
 				<span class="vbo-checkin-payment-detail-lbl"><?php echo JText::translate('VBAMOUNTPAID'); ?></span>
-				<span class="vbo-checkin-payment-detail-v"><?php echo $currencysymb; ?> <?php echo VikBooking::numberFormat($order['totpaid']); ?></span>
+				<span class="vbo-checkin-payment-detail-v"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($order['totpaid']), $currencysymb); ?></span>
 			</div>
 			<?php
 			if ($diff_to_pay > 0) {
 				?>
 			<div class="vbo-checkin-payment-detail">
 				<span class="vbo-checkin-payment-detail-lbl"><?php echo JText::translate('VBTOTALREMAINING'); ?></span>
-				<span class="vbo-checkin-payment-detail-v"><?php echo $currencysymb; ?> <span id="vbo-checkin-remaining"><?php echo VikBooking::numberFormat($diff_to_pay); ?></span></span>
+				<span class="vbo-checkin-payment-detail-v"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($diff_to_pay), $currencysymb, ['%s', '<span id="vbo-checkin-remaining">%s</span>']); ?></span>
 			</div>
 			<div class="vbo-checkin-payment-detail">
 				<span class="vbo-checkin-payment-detail-lbl"><?php echo JText::translate('VBONEWAMOUNTPAID'); ?></span>
@@ -834,7 +845,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 	<div class="vbo-checkin-commands-wrap">
 		<div class="vbo-checkin-commands-inner">
 		<?php
-		if ($today_midnight < $order['checkout']) {
+		if ($today_midnight < $order['checkout'] || $grace_ts < $order['checkout']) {
 			$allowed_btns = array();
 			if ($order['checked'] <= 0) {
 				//check-in btn only for no-status or no-show
@@ -1323,7 +1334,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 		/* Overlay for Customer Notes, Booking Notes, Payment Logs - Start */
 		jQuery(document).mouseup(function(e) {
 			if (!vbo_overlay_on) {
-				return false;
+				return;
 			}
 			var vbo_overlay_cont = jQuery(".vbo-info-overlay-content");
 			if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {

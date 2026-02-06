@@ -46,6 +46,7 @@ $vbo_app = VikBooking::getVboApplication();
 $vbo_app->loadSelect2();
 $vbo_app->loadDatePicker();
 $vbo_app->loadDatesRangePicker();
+$vbo_app->loadContextMenuAssets();
 
 $is_mobile = VikBooking::detectUserAgent(false, false);
 
@@ -57,6 +58,7 @@ $df = $vbo_df == "%d/%m/%Y" ? 'd/m/Y' : ($vbo_df == "%m/%d/%Y" ? 'm/d/Y' : 'Y/m/
 $juidf = $vbo_df == "%d/%m/%Y" ? 'dd/mm/yy' : ($vbo_df == "%m/%d/%Y" ? 'mm/dd/yy' : 'yy/mm/dd');
 
 $currencysymb = VikBooking::getCurrencySymb();
+$currencypos  = VikBooking::getCurrencyPosition();
 list($currency_digits, $currency_decimals, $currency_thousands) = explode(':', VikBooking::getNumberFormatData());
 
 // immediately define the maximum visible days
@@ -109,7 +111,7 @@ while ($cell_count < $MAX_DAYS) {
 	$today_tsin = mktime($pcheckinh, $pcheckinm, 0, $iter_date['mon'], $iter_date['mday'], $iter_date['year']);
 	$today_tsout = mktime($pcheckouth, $pcheckoutm, 0, $iter_date['mon'], ($iter_date['mday'] + 1), $iter_date['year']);
 
-	$listing_tars = VikBooking::applySeasonalPrices($main_room_rates, $today_tsin, $today_tsout, $cached_seasons);
+	$listing_tars = VikBooking::applySeasonalPrices($main_room_rates, $today_tsin, $today_tsout, $cached_seasons, VikBooking::getWdaySeasonRecords());
 
 	// scan the tariff results
 	foreach ($listing_tars as $listing_id => $tars) {
@@ -184,6 +186,7 @@ var vboMapMons = $json_short_mons;
 var vboRoomOtaRels = $json_room_ota_rels;
 var vboListingsMiniThumbnails = $json_mini_thumbnails;
 var vbo_currency_symbol = "$currencysymb";
+var vbo_currency_position = "$currencypos";
 var vbo_currency_digits = "$currency_digits";
 var vbo_currency_decimals = "$currency_decimals";
 var vbo_currency_thousands = "$currency_thousands";
@@ -358,21 +361,23 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 
 	<div class="vbo-ratesoverview-caltab-cont" style="display: <?php echo count($this->req_room_ids) > 1 || (!empty($cookie_tab) && $cookie_tab == 'cal') ? 'block' : 'none'; ?>;">
 		<?php
-		if (count($this->req_room_ids) > 1) {
-			// display room name here when multiple rooms as well as the OBP toggle
-			if (!isset($vbo_show_toggle_obp)) {
-				// toggle button for showing/hiding the occupancy based pricing rules
-				$vbo_show_toggle_obp = 1;
-				$obp_status = $cookie->get('vboRovwObp', 1, 'int');
-				?>
-		<div class="vbo-ratesoverview-obp-toggle" data-obpstartstatus="<?php echo $obp_status; ?>" style="display: none;">
-			<div class="vbo-ratesoverview-obp-toggle-inner vbo-toggle-small">
-				<?php echo $vbo_app->printYesNoButtons('show_obp', JText::translate('VBYES'), JText::translate('VBNO'), $obp_status, 1, 0, "vboToggleOBPRows();"); ?>
-				<span class="vbo-ratesoverview-obp-toggle-txt" onclick="jQuery(this).parent().find('input').trigger('click');"><?php echo JText::translate('VBOROVERVOBP'); ?></span>
+		// display the "Actions" button only once
+		if (!isset($vbo_actions_btn_shown)) {
+			// turn flag on
+			$vbo_actions_btn_shown = 1;
+			?>
+		<div class="vbo-roverv-actions-wrapper">
+			<div class="vbo-roverv-actions-content">
+				<button type="button" class="btn vbo-context-menu-btn vbo-context-menu-btn-raw vbo-context-menu-roverv-actions">
+					<span class="vbo-context-menu-lbl"><?php echo JText::translate('VBCRONACTIONS'); ?></span>
+					<span class="vbo-context-menu-ico"><?php VikBookingIcons::e('sort-down'); ?></span>
+				</button>
 			</div>
 		</div>
-				<?php
-			}
+			<?php
+		}
+		if (count($this->req_room_ids) > 1) {
+			// display room name here when multiple rooms displayed
 			?>
 		<div class="vbo-ratesoverview-roomdetails">
 			<h3 class="vbo-ratesoverview-roomname" data-idroom="<?php echo $roomrow['id']; ?>"><?php echo $roomrow['name']; ?></h3>
@@ -524,7 +529,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 							$derived_icn = '<span class="badge badge-warning"><i class="' . VikBookingIcons::i('link') . '"></i></span> ';
 						}
 						?>
-						<tr class="vbo-roverviewtablerow" id="vbo-roverw-<?php echo $roomrate['id'].'-'.$roomrate['idroom']; ?>">
+						<tr class="vbo-roverviewtablerow" id="vbo-roverw-<?php echo $roomrate['id'].'-'.$roomrate['idroom']; ?>" data-idprice="<?php echo $roomrate['idprice']; ?>">
 							<td class="vbo-roverv-rplan<?php echo $rplan_minlos || $rplan_haslos ? ' vbo-roverv-rplan-restricted' : ''; ?>" data-defrate="<?php echo $roomrate['cost']; ?>" data-roomname="<?php echo htmlspecialchars($roomrow['name']); ?>" data-room-plan="<?php echo $roomrate['idroom'] . '-' . $roomrate['idprice'] ?>" data-has-derived-rates="<?php echo in_array($roomrate['idprice'], $have_derived_rates) ? '1' : '0'; ?>">
 								<span class="vbo-rplan-name<?php echo $derived_str ? ' vbo-rplan-is-derived' : ''; ?>" title="<?php echo $this->escape($derived_str); ?>"><?php echo $derived_icn . $roomrate['name']; ?></span>
 							<?php
@@ -569,7 +574,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 								$today_tsin = mktime($pcheckinh, $pcheckinm, 0, $nowts['mon'], $nowts['mday'], $nowts['year']);
 								$today_tsout = mktime($pcheckouth, $pcheckoutm, 0, $nowts['mon'], ($nowts['mday'] + 1), $nowts['year']);
 
-								$tars = VikBooking::applySeasonsRoom([$roomrate], $today_tsin, $today_tsout, [], $cached_seasons);
+								$tars = VikBooking::applySeasonsRoom([$roomrate], $today_tsin, $today_tsout, [], $cached_seasons, VikBooking::getWdaySeasonRecords());
 							}
 
 							// store the OBP overrides for this day and rate plan
@@ -585,8 +590,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 
 							?>
 							<td align="center" class="<?php echo $dclass.' cell-'.$nowts['mday'].'-'.$nowts['mon']; ?>" id="<?php echo $id_block; ?>" data-vboprice="<?php echo $tars[0]['cost']; ?>" data-vbodate="<?php echo date('Y-m-d', $nowts[0]); ?>" data-vbodateread="<?php echo $days_labels[$nowts['wday']].', '.$months_labels[$nowts['mon']-1].' '.$nowts['mday']; ?>" data-vbospids="<?php echo (array_key_exists('spids', $tars[0]) && count($tars[0]['spids']) > 0 ? implode('-', $tars[0]['spids']) : ''); ?>"<?php echo $style; ?>>
-								<span class="vbo-rplan-currency"><?php echo $currencysymb; ?></span>
-								<span class="vbo-rplan-price"><?php echo $tars[0]['cost']; ?></span>
+								<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tars[0]['cost']), $currencysymb, ['<span class="vbo-rplan-currency">%s</span>', '<span class="vbo-rplan-price">%s</span>']); ?>
 							</td>
 							<?php
 
@@ -651,7 +655,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 								// charge
 								if ($diffusageprice['valpcent'] == 1) {
 									// fixed value
-									$occ_diff = '+ ' . $currencysymb . ' ' . $diffusageprice['value'];
+									$occ_diff = '+ ' . VikBooking::formatCurrencyNumber($diffusageprice['value'], $currencysymb);
 								} else {
 									// percentage value
 									$occ_diff = '+ ' . $diffusageprice['value'] . '%';
@@ -660,7 +664,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 								// discount
 								if ($diffusageprice['valpcent'] == 1) {
 									// fixed value
-									$occ_diff = '- ' . $currencysymb . ' ' . $diffusageprice['value'];
+									$occ_diff = '- ' . VikBooking::formatCurrencyNumber($diffusageprice['value'], $currencysymb);
 								} else {
 									// percentage value
 									$occ_diff = '- ' . $diffusageprice['value'] . '%';
@@ -1052,7 +1056,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 						$s_val_diff = (($timeseason['diffcost'] - abs($timeseason['diffcost'])) > 0.00 ? VikBooking::numberFormat($timeseason['diffcost']) : intval($timeseason['diffcost']))." %";
 					} else {
 						//absolute
-						$s_val_diff = $currencysymb.''.VikBooking::numberFormat($timeseason['diffcost']);
+						$s_val_diff = VikBooking::formatCurrencyNumber(VikBooking::numberFormat($timeseason['diffcost']), $currencysymb, ['spacing' => '']);
 					}
 					$s_explanation = array();
 					if (empty($timeseason['year'])) {
@@ -1130,7 +1134,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 								}
 								?>
 								<span class="vbo-seasons-calendar-pricecost">
-									<span class="vbo_currency"><?php echo $currencysymb; ?></span><span class="vbo_price"><?php echo VikBooking::numberFormat($tar['cost']); ?></span>
+									<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tar['cost']), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>', 'spacing' => '']); ?>
 								</span>
 							</div>
 								<?php
@@ -1160,7 +1164,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 						$s_val_diff = (($s['diffcost'] - abs($s['diffcost'])) > 0.00 ? VikBooking::numberFormat($s['diffcost']) : intval($s['diffcost']))." %";
 					} else {
 						//absolute
-						$s_val_diff = $currencysymb.''.VikBooking::numberFormat($s['diffcost']);
+						$s_val_diff = VikBooking::formatCurrencyNumber(VikBooking::numberFormat($s['diffcost']), $currencysymb, ['spacing' => '']);
 					}
 					?>
 				<tr class="vbo-seasons-calendar-seasonrow">
@@ -1274,7 +1278,7 @@ foreach (VikBooking::getAvailabilityInstance()->loadRatePlans() as $rate_plan) {
 								}
 								?>
 								<span class="vbo-seasons-calendar-pricecost">
-									<span class="vbo_currency"><?php echo $currencysymb; ?></span><span class="vbo_price"><?php echo VikBooking::numberFormat($tar['cost']); ?></span>
+									<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tar['cost']), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>', 'spacing' => '']); ?>
 								</span>
 							</div>
 								<?php
@@ -1337,18 +1341,43 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 		</div>
 		<div class="vbo-roverw-setnewrate">
 			<div class="vbo-roverw-setnewrate-title">
-				<h4><?php VikBookingIcons::e('calculator'); ?> <?php echo JText::translate('VBO_RATES_AND_RESTR'); ?></h4>
+				<h4><?php VikBookingIcons::e('tag'); ?> <?php echo JText::translate('VBO_RATES_AND_RESTR'); ?></h4>
 				<div class="vbo-roverw-setnewrate-skip-derived vbo-toggle-small vbo-toggle-mini" style="display: none;">
 					<label for="roverw-skip-derived-on" class="vbo-roverw-setnewrate-skip-derived-lbl"><?php echo JText::translate('VBO_SKIP_DERIVED_RPLANS'); ?></label>
 					<?php echo $vbo_app->printYesNoButtons('roverw-skip-derived', JText::translate('VBYES'), JText::translate('VBNO'), 0, 1, 0); ?>
 				</div>
 			</div>
 			<div class="vbo-roverw-flexnew">
-				<div class="vbo-roverw-newrwrap">
-					<h4><?php VikBookingIcons::e('edit'); ?> <?php echo JText::translate('VBRATESOVWSETNEWRATE'); ?></h4>
-					<div class="vbo-roverw-newrcont">
+				<div class="vbo-roverw-newrwrap" data-rate-type="fixed">
+					<h4>
+						<button type="button" class="vbo-btn-transparent vbo-context-menu-rate-type">
+							<span class="vbo-transparent-wrap">
+								<?php VikBookingIcons::e('edit'); ?>
+								<span class="vbo-roverw-action-rates-title"><?php echo JText::translate('VBRATESOVWSETNEWRATE'); ?></span>
+								<?php VikBookingIcons::e('chevron-down'); ?>
+							</span>
+						</button>
+					</h4>
+					<div class="vbo-roverw-newrcont" data-rate-type="fixed">
 						<label for="roverw-newrate" class="vbo-roverw-setnewrate-currency"><?php echo $currencysymb; ?></label>
 						<input type="number" step="any" min="0" id="roverw-newrate" value="" placeholder="" size="7" />
+					</div>
+					<div class="vbo-roverw-newrcont" data-rate-type="addsub" style="display: none;">
+						<div class="vbo-roverw-setnewrate-addsub-elem">
+							<select data-rate-type-rule="rmodsop">
+								<option value="1">+</option>
+								<option value="0">-</option>
+							</select>
+						</div>
+						<div class="vbo-roverw-setnewrate-addsub-elem">
+							<input type="number" value="" step="any" min="0" data-rate-type-rule="rmodsamount" />
+						</div>
+						<div class="vbo-roverw-setnewrate-addsub-elem">
+							<select data-rate-type-rule="rmodsval">
+								<option value="0"><?php echo $currencysymb; ?></option>
+								<option value="1">%</option>
+							</select>
+						</div>
 					</div>
 				</div>
 				<div class="vbo-roverw-newrestr-wrap" style="display: none;">
@@ -1764,6 +1793,16 @@ var vbolistener = null;
 
 jQuery(function() {
 
+	// configure the currency object
+    VBOCore.getCurrency({
+		symbol:     <?php echo json_encode($currencysymb) ?: '"$"'; ?>,
+		position:   <?php echo json_encode($currencypos); ?>,
+		digits:     <?php echo intval($currency_digits); ?>,
+		decimals:   <?php echo json_encode($currency_decimals) ?: '"."'; ?>,
+		thousands:  <?php echo json_encode($currency_thousands) ?: '","'; ?>,
+		noDecimals: 1,
+    });
+
 	// fests
 	jQuery(document.body).on("click", "td.bluedays", function() {
 		if (jQuery(this).hasClass('skip-bluedays-click')) {
@@ -2027,6 +2066,7 @@ jQuery(function() {
 		// access the currency object
 		let currencyObj = VBOCore.getCurrency({
 			symbol:     vbo_currency_symbol,
+			position:   vbo_currency_position,
 			digits:     vbo_currency_digits,
 			decimals:   vbo_currency_decimals,
 			thousands:  vbo_currency_thousands,
@@ -2112,6 +2152,252 @@ jQuery(function() {
 			will_alter_elem.innerHTML = currencyObj.format(ota_rate_amount, ota_currency_options);
 		});
 	}, 200));
+
+	// start context menu on the proper actions button element
+	jQuery('.vbo-context-menu-roverv-actions').vboContextMenu({
+		placement: 'bottom-right',
+		buttons: [
+			{
+				activeState: <?php echo $cookie->get('vboRovwObp', 1, 'int') ? 'true' : 'false'; ?>,
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBOROVERVOBP')); ?>,
+				separator: true,
+				icon: function() {
+					return this.activeState ? '<?php echo VikBookingIcons::i('toggle-on', 'vbo-enabled-icon'); ?>' : '<?php echo VikBookingIcons::i('toggle-off'); ?>';
+				},
+				action: function(root, event) {
+					// toggle state
+					this.activeState = !this.activeState;
+
+					// toggle OBP rows
+					vboToggleOBPRows(this.activeState);
+				},
+			},
+			{
+				activeState: false,
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBO_SHOW_OTA_RATES')); ?>,
+				separator: false,
+				icon: function() {
+					return this.activeState ? '<?php echo VikBookingIcons::i('toggle-on', 'vbo-enabled-icon'); ?>' : '<?php echo VikBookingIcons::i('toggle-off'); ?>';
+				},
+				action: function(root, event) {
+					// toggle state
+					this.activeState = !this.activeState;
+
+					if (!this.activeState) {
+						// remove all OTA-rate rows
+						document.querySelectorAll('tr.vbo-roverviewtablerow-otarates').forEach((row) => {
+							row.remove();
+						});
+						// abort
+						return;
+					}
+
+					// access trigger elements
+					let ctx_elem = document.querySelector('.vbo-context-menu-roverv-actions');
+					let lbl_elem = ctx_elem.querySelector('.vbo-context-menu-lbl');
+					let orig_lbl = lbl_elem.innerText;
+
+					// start loading animation
+					ctx_elem.loading = 1;
+					lbl_elem.innerHTML = '<?php VikBookingIcons::e('circle-notch', 'fa-spin fa-fw'); ?>';
+
+					// load and display OTA-rate rows
+					VBOCore.doAjax(
+						"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=pricing.loadOtaRateRecords'); ?>",
+						{
+							from_date: <?php echo json_encode(date('Y-m-d', $this->tsstart)); ?>,
+							days: <?php echo $this->max_days; ?>,
+							room_ids: <?php echo json_encode(array_keys($this->roomrows)); ?>,
+						},
+						(res) => {
+							// stop loading animation
+							lbl_elem.innerHTML = '';
+							lbl_elem.innerText = orig_lbl;
+							ctx_elem.loading = 0;
+
+							try {
+								// check the response
+								let obj_res = typeof res === 'string' ? JSON.parse(res) : res;
+
+								if (!obj_res?.records) {
+									// abort and display message
+									throw new Error(<?php echo json_encode(JText::translate('VBO_NO_RECORDS_FOUND')); ?>);
+								}
+
+								// render response records
+								obj_res.records.reverse().forEach((otaRecord) => {
+									// find the current room table
+									let tableEl = document.querySelector('table.vbratesoverviewtable[data-idroom="' + otaRecord?.id_room + '"]');
+									if (!tableEl) {
+										return;
+									}
+
+									// find the current room rable rate plan row
+									let rowElement = tableEl.querySelector('tr.vbo-roverviewtablerow[data-idprice="' + otaRecord?.id_price + '"]');
+									if (!rowElement) {
+										return;
+									}
+
+									// build row element
+									let otaRowEl = document.createElement('tr');
+									otaRowEl.classList.add('vbo-roverviewtablerow-otarates');
+									otaRowEl.setAttribute('data-channel-id', otaRecord?.id_channel);
+
+									// build first row cell for channel details
+									let mainRowCell = document.createElement('td');
+									let channelWrap = document.createElement('span');
+									channelWrap.classList.add('vbo-roverv-ota-wrap');
+									if (obj_res?.data[otaRecord?.id_channel]?.logo) {
+										// append channel logo
+										let channelLogo = document.createElement('img');
+										channelLogo.classList.add('vbo-roverv-ota-logo');
+										channelLogo.setAttribute('src', obj_res.data[otaRecord.id_channel].logo);
+										channelWrap.append(channelLogo);
+									}
+									let channelName = otaRecord?.id_channel || '';
+									if (obj_res?.data[otaRecord?.id_channel]?.name) {
+										channelName = obj_res.data[otaRecord.id_channel].name;
+									}
+									// append channel name
+									let channelNameEl = document.createElement('span');
+									channelNameEl.textContent = channelName;
+									channelWrap.append(channelNameEl);
+									// append content to main row cell
+									mainRowCell.append(channelWrap);
+
+									// append first cell to row
+									otaRowEl.append(mainRowCell);
+
+									// build the OTA cell rates
+									for (const [ymdDay, dayRate] of Object.entries((otaRecord?.rates || {}))) {
+										// build current day identifier by removing leading zeros in month-days and months
+										let noLeadingZerosDt = ymdDay.replace(/-(0)([1-9]{1})/g, "-$2");
+										let dtParts = noLeadingZerosDt.split('-');
+
+										// build day rate cell
+										let cellIdElements = [
+											'cell',
+											dtParts[2],
+											dtParts[1],
+											dtParts[0],
+											otaRecord?.id_room,
+											'otarate',
+										];
+										let dayRateCellEl = document.createElement('td');
+										dayRateCellEl.classList.add('vbo-roverw-rplan-otarate');
+										dayRateCellEl.setAttribute('id', cellIdElements.join('-'));
+										dayRateCellEl.setAttribute('align', 'center');
+
+										if (!dayRate) {
+											// must be a null nightly rate
+											dayRateCellEl.textContent = '---';
+										} else {
+											// format currency price
+											dayRateCellEl.innerHTML = VBOCore.getCurrency().format(dayRate);
+										}
+
+										// append day cell to row
+										otaRowEl.append(dayRateCellEl);
+									}
+
+									// we can insert the row underneath the room rate plan row
+									rowElement.insertAdjacentElement('afterend', otaRowEl);
+								});
+							} catch(err) {
+								// display error
+								alert(err);
+							}
+						},
+						(err) => {
+							alert(err.responseText || 'Request failed');
+							// stop loading animation
+							lbl_elem.innerHTML = '';
+							lbl_elem.innerText = orig_lbl;
+							ctx_elem.loading = 0;
+						}
+					);
+				},
+				disabled: () => {
+					let ctx_elem = document.querySelector('.vbo-context-menu-roverv-actions');
+
+					return ctx_elem?.loading == 1;
+				}
+			},
+		],
+	});
+
+	// start context menu on the button element to choose the new rates type
+	const fixedRateLbl = <?php echo json_encode(JText::translate('VBRATESOVWSETNEWRATE')); ?>;
+	const adjustRatesLbl = <?php echo json_encode(JText::translate('VBO_INCR_DECR_RATES')); ?>;
+	jQuery('.vbo-context-menu-rate-type').vboContextMenu({
+		placement: 'bottom-center',
+		buttons: [
+			{
+				activeState: true,
+				rateType: 'fixed',
+				class: 'vbo-context-menu-entry-secondary',
+				text: fixedRateLbl,
+				separator: false,
+				icon: function() {
+					return this.activeState === true ? '<?php echo VikBookingIcons::i('check-square'); ?>' : '<?php echo VikBookingIcons::i('far fa-square'); ?>';
+				},
+				action: function(root, event) {
+					// make the active state property enabled
+					this.activeState = true;
+
+					// update data attribute for the preference chosen
+					document.querySelector('.vbo-roverw-newrwrap').setAttribute('data-rate-type', 'fixed');
+
+					// update element action title
+					document.querySelector('.vbo-roverw-action-rates-title').textContent = fixedRateLbl;
+
+					// toggle visible element for defining the new rate
+					document.querySelector('.vbo-roverw-newrcont[data-rate-type="fixed"]').style.display = '';
+					document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"]').style.display = 'none';
+
+					// parse all context menu buttons to set the proper active state
+					jQuery('.vbo-context-menu-rate-type').vboContextMenu('buttons').forEach((btn) => {
+						if (btn.rateType != 'fixed') {
+							btn.activeState = false;
+						}
+					});
+				},
+			},
+			{
+				activeState: false,
+				rateType: 'addsub',
+				class: 'vbo-context-menu-entry-secondary',
+				text: adjustRatesLbl,
+				separator: false,
+				icon: function() {
+					return this.activeState === true ? '<?php echo VikBookingIcons::i('check-square'); ?>' : '<?php echo VikBookingIcons::i('far fa-square'); ?>';
+				},
+				action: function(root, event) {
+					// make the active state property enabled
+					this.activeState = true;
+
+					// update data attribute for the preference chosen
+					document.querySelector('.vbo-roverw-newrwrap').setAttribute('data-rate-type', 'addsub');
+
+					// update element action title
+					document.querySelector('.vbo-roverw-action-rates-title').textContent = adjustRatesLbl;
+
+					// toggle visible element for defining the new rate
+					document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"]').style.display = '';
+					document.querySelector('.vbo-roverw-newrcont[data-rate-type="fixed"]').style.display = 'none';
+
+					// parse all context menu buttons to set the proper active state
+					jQuery('.vbo-context-menu-rate-type').vboContextMenu('buttons').forEach((btn) => {
+						if (btn.rateType != 'addsub') {
+							btn.activeState = false;
+						}
+					});
+				},
+			}
+		],
+	});
 
 });
 
@@ -2264,7 +2550,7 @@ function vboAddFest() {
 		(res) => {
 			// parse the JSON response that contains the fest object for the passed date
 			try {
-				var stored_fest = JSON.parse(res);
+				var stored_fest = typeof res === 'string' ? JSON.parse(res) : res;
 				if (!vboFests.hasOwnProperty(stored_fest['dt'])) {
 					// we need to add the proper class to all cells to show that there is a fest
 					jQuery('td.bluedays[data-ymd="'+stored_fest['dt']+'"]').addClass('vbo-roverv-festcell');
@@ -2589,8 +2875,8 @@ function vboCheckVcmRatesChanges() {
 				jQuery('.vbo-ratesoverview-right-inner').hide();
 			} else {
 				//display the VCM link for updating the rates on the OTAs
-				var obj_res = JSON.parse(res);
-				var esitcont = "";
+				let obj_res = typeof res === 'string' ? JSON.parse(res) : res;
+				let esitcont = "";
 				if (obj_res.changesCount > 0 && obj_res.hasOwnProperty('changesData') && obj_res.changesData.hasOwnProperty('dfrom')) {
 					esitcont += "<span class=\"vbo-ratesoverview-vcmwarn-close\"> <i class=\"vboicn-cancel-circle\"></i></span>";
 					esitcont += "<span class=\"vbo-ratesoverview-vcmwarn-count\"><i class=\"vboicn-notification\"></i> <span>"+roverw_messages.vcmRatesChanged.replace("%d", obj_res.changesCount)+"</span></span>";
@@ -2984,24 +3270,35 @@ function vboRatesOvervSetRoomOtaRelations(room_id, rplan_id) {
 }
 
 function setNewRates() {
-	var all_blocks = getAllBlocksBetween(vbolistener.first, vbolistener.last, true);
-	var toval = jQuery("#roverw-newrate").val();
-	var tovalint = parseFloat(toval);
-	var invoke_vcm = jQuery('input[name="roverw-newrate-vcm"]').is(':checked') ? 1 : 0;
-	var setminlos = jQuery('#roverw-newrestr').val();
-	var closerplan = 0;
+	// access cells selected
+	let all_blocks = getAllBlocksBetween(vbolistener.first, vbolistener.last, true);
 
-	if (all_blocks === false || !toval.length || isNaN(tovalint) || tovalint <= 0) {
+	// gather rates modification values
+	let toval = parseFloat(jQuery("#roverw-newrate").val());
+	let invoke_vcm = jQuery('input[name="roverw-newrate-vcm"]').is(':checked') ? 1 : 0;
+	let setminlos = jQuery('#roverw-newrestr').val();
+	let closerplan = 0;
+	let rateType = document.querySelector('.vbo-roverw-newrwrap').getAttribute('data-rate-type') || 'fixed';
+	let addsub_op = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsop"]')?.value : 0;
+	let addsub_amount = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsamount"]')?.value : 0;
+	let addsub_value = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsval"]')?.value : 0;
+
+	if (all_blocks === false || (rateType === 'fixed' && (isNaN(toval) || toval <= 0))) {
+		alert(roverw_messages.setNewRatesMissing);
+		return false;
+	}
+
+	if (rateType === 'addsub' && (isNaN(addsub_amount) || addsub_amount <= 0)) {
 		alert(roverw_messages.setNewRatesMissing);
 		return false;
 	}
 
 	// set cookie to remember the action to invoke VCM for this combination of room-rateplan
-	var nd = new Date();
+	let nd = new Date();
 	nd.setTime(nd.getTime() + (365*24*60*60*1000));
 	document.cookie = "vboVcmRov"+vbolistener.first.idroom+vbolistener.first.rplan+"="+invoke_vcm+"; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
 	// check whether all blocks have closed the rate plan
-	var allblocksclosed = true;
+	let allblocksclosed = true;
 	jQuery.each(all_blocks, function(k, v) {
 		if (!v.hasClass('vbo-roverw-rplan-off')) {
 			allblocksclosed = false;
@@ -3052,7 +3349,11 @@ function setNewRates() {
 			e4j_debug: debug_mode,
 			id_room: vbolistener.first.idroom,
 			id_price: vbolistener.first.rplan,
+			rate_type: rateType,
 			rate: toval,
+			addsub_op: addsub_op,
+			addsub_amount: addsub_amount,
+			addsub_value: addsub_value,
 			vcm: invoke_vcm,
 			minlos: setminlos,
 			fromdate: vbolistener.first.toDate("yy-mm-dd"),
@@ -3072,18 +3373,21 @@ function setNewRates() {
 
 			try {
 				// display new rates in all_blocks IDs
-				var restr_set = false;
-				var obj_res = typeof res === 'string' ? JSON.parse(res) : res;
+				let restr_set = false;
+				let obj_res = typeof res === 'string' ? JSON.parse(res) : res;
+
+				// memorize the cells whose new minimum stay was set, to avoid issues with multiple and derived rate plans
+				let minStayCellsUpdated = [];
 
 				jQuery.each(obj_res, function(k, v) {
 					if (k == 'vcm') {
 						return true;
 					}
 
-					var elem = jQuery("#cell-"+k+"-"+vbolistener.first.idroom);
+					let elem = jQuery("#cell-"+k+"-"+vbolistener.first.idroom);
 					if (elem.length) {
 						elem.find(".vbo-rplan-price").html(v.cost);
-						var spids = '';
+						let spids = '';
 						if (v.hasOwnProperty('spids')) {
 							jQuery.each(v.spids, function(spk, spv) {
 								spids += spv+'-';
@@ -3095,26 +3399,29 @@ function setNewRates() {
 						// check if restrictions were set
 						if (v.hasOwnProperty('newminlos')) {
 							// always convert v.newminlos to a string to avoid errors with indexOf
-							var newminlos = v.newminlos+'';
+							let newminlos = v.newminlos+'';
 							if (newminlos.indexOf('e4j.error') >= 0) {
 								// an error occurred
 								alert(newminlos.replace("e4j.error.", ""));
 							} else {
 								// get cell identifier part
 								restr_set = true;
-								var cell_parts = k.split('-');
-								var restr_elem = jQuery('#cell-'+cell_parts[0]+'-'+cell_parts[1]+'-'+cell_parts[2]+'-'+vbolistener.first.idroom+'-restr');
-								if (restr_elem.length) {
-									var restr_cont = restr_elem.find('.vbo-roverw-curminlos');
+								let cell_parts = k.split('-');
+								let cell_identifier = cell_parts[0]+'-'+cell_parts[1]+'-'+cell_parts[2]+'-'+vbolistener.first.idroom;
+								let restr_elem = jQuery('#cell-' + cell_identifier + '-restr');
+								if (restr_elem.length && !minStayCellsUpdated.includes(cell_identifier)) {
+									let restr_cont = restr_elem.find('.vbo-roverw-curminlos');
 									restr_cont.html(newminlos);
 									if (parseInt(newminlos) > 1) {
 										restr_cont.addClass('vbo-roverw-curminlos-active');
 									} else {
 										restr_cont.removeClass('vbo-roverw-curminlos-active');
 									}
+									// store flag for cell being updated with minimum stay
+									minStayCellsUpdated.push(cell_identifier);
 								}
 								// attempt to remove an eventual orphan list
-								var orphan_elem = jQuery('.vbo-ratesoverview-orphan-dt[data-dt="'+cell_parts[0]+'-'+cell_parts[1]+'-'+cell_parts[2]+'-'+vbolistener.first.idroom+'"]');
+								let orphan_elem = jQuery('.vbo-ratesoverview-orphan-dt[data-dt="' + cell_identifier + '"]');
 								if (orphan_elem.length) {
 									if (orphan_elem.length < 2) {
 										jQuery('#vbo-ratesoverview-orphans-wrapper-'+vbolistener.first.idroom).fadeOut(400, function() {
@@ -3188,7 +3495,7 @@ function modRoomRatePlan(mode) {
 					VBOCore.emitEvent('vbo-loading-modal-roverv-newratesrestr');
 				} else {
 					// apply new classes in all_blocks IDs
-					var obj_res = JSON.parse(res);
+					let obj_res = typeof res === 'string' ? JSON.parse(res) : res;
 					jQuery.each(obj_res, function(k, v) {
 						var elem = jQuery("#cell-"+k+"-"+vbolistener.first.idroom);
 						if (elem.length) {
@@ -3424,13 +3731,15 @@ CalendarListener.prototype.isLastPicked = function() {
 
 /* Dates selection - End */
 
-function vboToggleOBPRows() {
-	jQuery('tr.vbo-roverviewtablerow-occupancy').toggle();
-	var newcookieval = 0;
-	if (jQuery('tr.vbo-roverviewtablerow-occupancy').length && jQuery('tr.vbo-roverviewtablerow-occupancy').is(':visible')) {
-		newcookieval = 1;
+function vboToggleOBPRows(showRows) {
+	if (showRows) {
+		jQuery('tr.vbo-roverviewtablerow-occupancy').show();
+	} else {
+		jQuery('tr.vbo-roverviewtablerow-occupancy').hide();
 	}
-	var nd = new Date();
+
+	let newcookieval = showRows ? 1 : 0;
+	let nd = new Date();
 	nd.setTime(nd.getTime() + (365*24*60*60*1000));
 	document.cookie = "vboRovwObp=" + newcookieval + "; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
 }
@@ -3481,13 +3790,10 @@ jQuery(function() {
 		location.reload();
 	});
 
-	// toggle OBP rows
-	if (jQuery('.vbo-ratesoverview-obp-toggle').length && jQuery('tr.vbo-roverviewtablerow-occupancy').length) {
-		jQuery('.vbo-ratesoverview-obp-toggle').show();
-		var initial = jQuery('.vbo-ratesoverview-obp-toggle').attr('data-obpstartstatus');
-		if (initial == '0') {
-			jQuery('tr.vbo-roverviewtablerow-occupancy').hide();
-		}
+	// check for OBP rows initial status
+	if (!(<?php echo $cookie->get('vboRovwObp', 1, 'int'); ?>) && jQuery('tr.vbo-roverviewtablerow-occupancy').length) {
+		// hide occupancy rows when page loads for cookie preferences
+		jQuery('tr.vbo-roverviewtablerow-occupancy').hide();
 	}
 	//
 	jQuery(".vbo-ratesoverview-tab-los").click(function() {
@@ -3584,7 +3890,7 @@ jQuery(function() {
 				num_children: children
 			},
 			(res) => {
-				res = JSON.parse(res);
+				res = typeof res === 'string' ? JSON.parse(res) : res;
 				res = res[0];
 				if (res.indexOf('e4j.error') >= 0 ) {
 					jQuery(".vbo-ratesoverview-calculation-response").html("<p class='vbo-warning'>" + res.replace("e4j.error.", "") + "</p>").fadeIn();

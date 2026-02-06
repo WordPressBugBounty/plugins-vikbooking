@@ -204,7 +204,7 @@ class VikBookingConditionalRuleRoomUpgrade extends VikBookingConditionalRule
 				}
 				?>
 					<div style="margin-top: 5px;">
-						<span style="font-weight: bold;"><?php echo $currencysymb . ' ' . VikBooking::numberFormat($upgrade_sol['upgrade_cost']); ?></span><?php
+						<span style="font-weight: bold;"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($upgrade_sol['upgrade_cost']), $currencysymb); ?></span><?php
 					if (isset($upg_data['discount']) && $upg_data['discount'] > 0) {
 						?><span style="margin-left: 10px; color: #52aa20;"><?php echo JText::sprintf('VBO_YOU_SAVE_PCENT', $upg_data['discount'] . '%'); ?></span><?php
 					}

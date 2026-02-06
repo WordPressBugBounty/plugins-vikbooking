@@ -2,8 +2,8 @@
 /**
  * @package     VikBooking
  * @subpackage  com_vikbooking
- * @author      Alessio Gaggii - e4j - Extensionsforjoomla.com
- * @copyright   Copyright (C) 2018 e4j - Extensionsforjoomla.com. All rights reserved.
+ * @author      Alessio Gaggii - E4J srl
+ * @copyright   Copyright (C) 2026 E4J srl. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com
  */
@@ -21,7 +21,6 @@ JHtml::fetch('script', VBO_SITE_URI.'resources/jquery-ui.min.js');
 // load VBO core JS
 VikBooking::getVboApplication()->loadCoreJS();
 
-$currencysymb = VikBooking::getCurrencySymb();
 $datesep = VikBooking::getDateSeparator();
 $nowdf = VikBooking::getDateFormat();
 if ($nowdf == "%d/%m/%Y") {
@@ -122,6 +121,14 @@ JText::script('VBO_PLEASE_WAIT');
 			<input type="hidden" name="ts" value="<?php echo $this->order['ts']; ?>" />
 			<input type="hidden" name="Itemid" value="<?php echo $pitemid; ?>" />
 		<?php
+		/**
+		 * Tell whether the pax fields driver supports MRZ detection for uploaded documents (IDs).
+		 * 
+		 * @since 	1.18.6 (J) - 1.8.6 (WP)
+		 */
+		$mrzDetectionSupport = $pax_fields_obj->supportsMRZDetection();
+
+		// iterate all rooms within the reservation
 		foreach ($this->orderrooms as $ind => $or) {
 			$num = $ind + 1;
 			// total guests details available
@@ -152,185 +159,206 @@ JText::script('VBO_PLEASE_WAIT');
 							<div class="vbo-precheckin-adult-num">
 								<span><?php echo JText::sprintf('VBOGUESTNUM', $g); ?></span>
 							</div>
-						<?php
-						/**
-						 * Overrides tip: to add and collect custom details from each guest it is possible to push more
-						 * pairs of key-values to $pax_fields. For example, a custom value could be pushed like this:
-						 * 
-						 * $pax_fields['custom_field_key'] = 'Custom Field Name';
-						 * $pax_fields_attributes['custom_field_key'] = 'text';
-						 * 
-						 * @see 	the best way to customize the guest fields is to use the apposite plugin hooks/events.
-						 */
-						$pax_field_ind = 1;
-						foreach ($pax_fields as $paxk => $paxv) {
-							// determine the pax field rendering type
-
-							if (isset($pax_fields_attributes[$paxk]) && is_array($pax_fields_attributes[$paxk])) {
-								// select with choices
-								$field_rendering_type = 'select';
-							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'country') {
-								// field of type country
-								$field_rendering_type = 'country';
-							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'calendar') {
-								// datepicker calendar
-								$field_rendering_type = 'calendar';
-							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'file') {
-								// file upload (multiple files allowed)
-								$field_rendering_type = 'file';
-							} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'text') {
-								// text
-								$field_rendering_type = 'text';
-							} else {
-								// custom pax-field type
-								$field_rendering_type = 'paxfield';
-							}
-
-							// the pax-field HTML string, if any
-							$pax_field_html = '';
-
-							// run pre-flight check to ensure the paxfield is compatible with the current guest
-							if ($field_rendering_type === 'paxfield') {
-								/**
-								 * Attempt to render a custom field previously installed through a third party plugin.
-								 * If no such field type is found, the object will default to the "text" type.
-								 * 
-								 * @since 	1.16.3 (J) - 1.6.3 (WP)
-								 */
-
-								// get an instance of the VBOCheckinPaxfield object
-								$pax_field_obj = $pax_fields_obj->getField($paxk);
-
-								// detect the current type of guest
-								$guest_type = $g > $arrpeople[$num]['adults'] ? 'child' : 'adult';
-
-								// set object data
-								$pax_field_obj->setGuestType($guest_type)
-									->setFieldNumber($pax_field_ind)
-									->setGuestNumber($g)
-									->setGuestData($current_guest)
-									->setRoomIndex($ind)
-									->setBooking($this->order)
-									->setBookingRooms($this->orderrooms)
-									->setRoomGuests($arrpeople[$num]['adults'], $arrpeople[$num]['children'])
-									->setTotalRooms(count($arrpeople));
-
-								// render input field
-								$pax_field_html = $pax_fields_obj->render($pax_field_obj);
-								if (empty($pax_field_html)) {
-									// nothing to display, increase the counter and continue
-									$pax_field_ind++;
-									continue;
-								}
-							}
-
-							// open field container
-							?>
-							<div class="vbo-precheckin-guest-detail<?php echo isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'file' ? ' vbo-precheckin-guest-detail-files' : ''; ?>">
-								<label for="pax-field-<?php echo $paxv . '-' . $ind . '-' . $g . '-' . $paxk; ?>"><?php echo $paxv; ?></label>
+							<div class="vbo-precheckin-guest-fields">
 							<?php
+							/**
+							 * Overrides tip: to add and collect custom details from each guest it is possible to push more
+							 * pairs of key-values to $pax_fields. For example, a custom value could be pushed like this:
+							 * 
+							 * $pax_fields['custom_field_key'] = 'Custom Field Name';
+							 * $pax_fields_attributes['custom_field_key'] = 'text';
+							 * 
+							 * @see 	the best way to customize the guest fields is to use the apposite plugin hooks/events.
+							 */
+							$pax_field_ind = 1;
+							foreach ($pax_fields as $paxk => $paxv) {
+								// determine the pax field rendering type
 
-							if ($field_rendering_type === 'paxfield') {
-								// render the custom pax-field input element
+								if (isset($pax_fields_attributes[$paxk]) && is_array($pax_fields_attributes[$paxk])) {
+									// select with choices
+									$field_rendering_type = 'select';
+								} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'country') {
+									// field of type country
+									$field_rendering_type = 'country';
+								} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'calendar') {
+									// datepicker calendar
+									$field_rendering_type = 'calendar';
+								} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'file') {
+									// file upload (multiple files allowed)
+									$field_rendering_type = 'file';
+								} elseif (isset($pax_fields_attributes[$paxk]) && $pax_fields_attributes[$paxk] == 'text') {
+									// text
+									$field_rendering_type = 'text';
+								} else {
+									// custom pax-field type
+									$field_rendering_type = 'paxfield';
+								}
 
-								// access the implementor object
-								$implementor = $pax_fields_obj->getFieldTypeImplementor($pax_field_obj);
+								// the pax-field HTML string, if any
+								$pax_field_html = '';
 
-								// check if a particular CSS class has been defined
-								$field_container_class = $implementor->getContainerClassAttr();
-								$field_container_class = !empty($field_container_class) ? " $field_container_class" : '';
+								// run pre-flight check to ensure the paxfield is compatible with the current guest
+								if ($field_rendering_type === 'paxfield') {
+									/**
+									 * Attempt to render a custom field previously installed through a third party plugin.
+									 * If no such field type is found, the object will default to the "text" type.
+									 * 
+									 * @since 	1.16.3 (J) - 1.6.3 (WP)
+									 */
 
-								// display the custom field type
-								?>
-								<div class="vbo-precheckin-custom-field<?php echo $field_container_class; ?>">
-									<?php echo $pax_field_html; ?>
-								</div>
+									// get an instance of the VBOCheckinPaxfield object
+									$pax_field_obj = $pax_fields_obj->getField($paxk);
+
+									// detect the current type of guest
+									$guest_type = $g > $arrpeople[$num]['adults'] ? 'child' : 'adult';
+
+									// set object data
+									$pax_field_obj->setGuestType($guest_type)
+										->setFieldNumber($pax_field_ind)
+										->setGuestNumber($g)
+										->setGuestData($current_guest)
+										->setRoomIndex($ind)
+										->setBooking($this->order)
+										->setBookingRooms($this->orderrooms)
+										->setRoomGuests($arrpeople[$num]['adults'], $arrpeople[$num]['children'])
+										->setTotalRooms(count($arrpeople));
+
+									// render input field
+									$pax_field_html = $pax_fields_obj->render($pax_field_obj);
+									if (empty($pax_field_html)) {
+										// nothing to display, increase the counter and continue
+										$pax_field_ind++;
+										continue;
+									}
+								}
+
+								// open field container by determining the classes to set
+								$fieldClasses = [];
+								if (($pax_fields_attributes[$paxk] ?? '') === 'file') {
+									$fieldClasses[] = 'vbo-precheckin-guest-detail-files';
+									if ($mrzDetectionSupport) {
+										$fieldClasses[] = 'vbo-precheckin-guest-files-mrz';
+									}
+								}
+								?><div class="vbo-precheckin-guest-detail<?php echo $fieldClasses ? ' ' . implode(' ', $fieldClasses) : ''; ?>" data-rindex="<?php echo $ind; ?>" data-gindex="<?php echo $g; ?>" data-paxk="<?php echo JHtml::fetch('esc_attr', $paxk); ?>">
+									<label for="vbo-room-pax-field-<?php echo $ind . '-' . $g . '-' . $pax_field_ind; ?>"><?php echo $paxv; ?></label>
 								<?php
-							} elseif ($field_rendering_type === 'select') {
-								// select with choices
-								?>
-								<select name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]">
-									<option></option>
-								<?php
-								$opt_ind = 1;
-								foreach ($pax_fields_attributes[$paxk] as $attrk => $attrv) {
-									$paxv_selected = isset($current_guest[$paxk]) && ($current_guest[$paxk] == $attrv || (!is_numeric($attrk) && $current_guest[$paxk] == $attrk));
-									if (!$paxv_selected && isset($current_guest[$paxk]) && is_numeric($current_guest[$paxk])) {
-										/**
-										 * It is safe to compare such select tags, which usually refer to "gender",
-										 * to even numeric values in order to attempt to pre-select the current value.
-										 */
-										$paxv_selected = ($opt_ind == $current_guest[$paxk]);
+
+								if ($field_rendering_type === 'paxfield') {
+									// render the custom pax-field input element
+
+									// access the implementor object
+									$implementor = $pax_fields_obj->getFieldTypeImplementor($pax_field_obj);
+
+									// check if a particular CSS class has been defined
+									$field_container_class = $implementor->getContainerClassAttr();
+									$field_container_class = !empty($field_container_class) ? " $field_container_class" : '';
+
+									// display the custom field type
+									?>
+									<div class="vbo-precheckin-custom-field<?php echo $field_container_class; ?>">
+										<?php echo $pax_field_html; ?>
+									</div>
+									<?php
+								} elseif ($field_rendering_type === 'select') {
+									// select with choices
+									?>
+									<select id="vbo-room-pax-field-<?php echo $ind . '-' . $g . '-' . $pax_field_ind; ?>" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]">
+										<option></option>
+									<?php
+									$opt_ind = 1;
+									foreach ($pax_fields_attributes[$paxk] as $attrk => $attrv) {
+										$paxv_selected = isset($current_guest[$paxk]) && ($current_guest[$paxk] == $attrv || (!is_numeric($attrk) && $current_guest[$paxk] == $attrk));
+										if (!$paxv_selected && isset($current_guest[$paxk]) && is_numeric($current_guest[$paxk])) {
+											/**
+											 * It is safe to compare such select tags, which usually refer to "gender",
+											 * to even numeric values in order to attempt to pre-select the current value.
+											 */
+											$paxv_selected = ($opt_ind == $current_guest[$paxk]);
+										}
+										?>
+										<option value="<?php echo !is_numeric($attrk) ? $attrk : $attrv; ?>"<?php echo ($paxv_selected ? ' selected="selected"' : ''); ?>><?php echo $attrv; ?></option>
+										<?php
+										$opt_ind++;
 									}
 									?>
-									<option value="<?php echo !is_numeric($attrk) ? $attrk : $attrv; ?>"<?php echo ($paxv_selected ? ' selected="selected"' : ''); ?>><?php echo $attrv; ?></option>
+									</select>
 									<?php
-									$opt_ind++;
-								}
-								?>
-								</select>
-								<?php
-							} elseif ($field_rendering_type === 'country') {
-								// field of type country
-								echo VikBooking::getCountriesSelect('guests['.$ind.']['.$g.']['.$paxk.']', $all_countries, (isset($current_guest[$paxk]) ? $current_guest[$paxk] : ''), $paxv);
-							} elseif ($field_rendering_type === 'calendar') {
-								// datepicker calendar
-								?>
-								<input type="text" autocomplete="off" data-gind="<?php echo $g; ?>" class="vbo-paxfield vbo-paxfield-datepicker" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]" value="<?php echo (isset($current_guest[$paxk]) ? $this->escape($current_guest[$paxk]) : ''); ?>" />
-								<?php
-							} elseif ($field_rendering_type === 'file') {
-								// file upload (multiple files allowed)
-								?>
-								<input type="hidden" id="vbo-paxfield-curfiles-<?php echo $ind . '-' . $g . '-' . $paxk; ?>" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]" value="<?php echo (isset($current_guest[$paxk]) ? $this->escape($current_guest[$paxk]) : ''); ?>" />
+								} elseif ($field_rendering_type === 'country') {
+									// field of type country
+									echo VikBooking::getCountriesSelect('guests['.$ind.']['.$g.']['.$paxk.']', $all_countries, (string) ($current_guest[$paxk] ?? ''), (string) $paxv, 'vbo-room-pax-field-' . $ind . '-' . $g . '-' . $pax_field_ind);
+								} elseif ($field_rendering_type === 'calendar') {
+									// datepicker calendar
+									?>
+									<input type="text" autocomplete="off" data-gind="<?php echo $g; ?>" class="vbo-paxfield vbo-paxfield-datepicker" id="vbo-room-pax-field-<?php echo $ind . '-' . $g . '-' . $pax_field_ind; ?>" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]" value="<?php echo (isset($current_guest[$paxk]) ? $this->escape($current_guest[$paxk]) : ''); ?>" readonly />
+									<?php
+								} elseif ($field_rendering_type === 'file') {
+									// file upload (multiple files allowed)
+									?>
+									<input type="hidden" id="vbo-paxfield-curfiles-<?php echo $ind . '-' . $g . '-' . $paxk; ?>" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]" value="<?php echo (isset($current_guest[$paxk]) ? $this->escape($current_guest[$paxk]) : ''); ?>" />
 
-								<div class="vbo-paxfield-upload-container">
-									<button type="button" class="btn vbo-pref-color-btn-secondary vbo-precheckin-uploadfile" data-roomi="<?php echo $ind; ?>" data-guesti="<?php echo $g; ?>" data-paxk="<?php echo $paxk; ?>"><?php VikBookingIcons::e('camera'); ?> <?php echo JText::translate('VBOUPSELLADD'); ?></button>
-									<div class="vbo-paxfield-upload-progress-wrap" id="vbo-paxfield-upload-progress-<?php echo $ind . '-' . $g . '-' . $paxk; ?>" style="display: none;">
-										<div class="vbo-paxfield-upload-progress">&nbsp;</div>
-									</div>
-								</div>
-								
-								<div class="vbo-paxfield vbo-paxfield-files" id="vbo-paxfield-files-<?php echo $ind . '-' . $g . '-' . $paxk; ?>" data-gselector="<?php echo $ind . '-' . $g . '-' . $paxk; ?>">
-								<?php
-								if (isset($current_guest[$paxk]) && !empty($current_guest[$paxk])) {
-									$guest_files = explode('|', $current_guest[$paxk]);
-									foreach ($guest_files as $gfk => $guest_file) {
-										if (empty($guest_file) || strpos($guest_file, 'http') !== 0) {
-											continue;
-										}
-										$furl_segments = explode('/', $guest_file);
-										$guest_fname = $furl_segments[(count($furl_segments) - 1)];
-										$read_fname = substr($guest_fname, (strpos($guest_fname, '_') + 1));
+									<div class="vbo-paxfield-upload-wrapper">
+									<?php
+									if ($mrzDetectionSupport) {
+										// display the proper instructions for guidance
 										?>
-									<div class="vbo-paxfield-file-uploaded">
-										<span class="vbo-paxfield-file-uploaded-rm"><?php VikBookingIcons::e('times-circle'); ?></span>
-										<a href="<?php echo $guest_file; ?>" target="_blank">
-											<?php VikBookingIcons::e('image'); ?>
-											<span><?php echo $read_fname; ?></span>
-										</a>
-									</div>
+										<div class="vbo-paxfield-upload-instructions">
+											<span><?php VikBookingIcons::e('info-circle'); ?> <?php echo JText::translate('VBO_DOCS_UPLOAD_MRZ_HELP'); ?></span>
+										</div>
 										<?php
 									}
-								}
-								?>
-								</div>
-								<?php
-							} else {
-								// text
-								?>
-								<input type="text" autocomplete="off" data-gind="<?php echo $g; ?>" class="vbo-paxfield" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]" value="<?php echo (isset($current_guest[$paxk]) ? $this->escape($current_guest[$paxk]) : ''); ?>" />
-								<?php
-							}
+									?>
 
-							// close field container
+										<div class="vbo-paxfield-upload-container">
+											<button type="button" class="btn vbo-pref-color-btn-secondary vbo-precheckin-uploadfile" data-roomi="<?php echo $ind; ?>" data-guesti="<?php echo $g; ?>" data-paxk="<?php echo JHtml::fetch('esc_attr', $paxk); ?>"><?php VikBookingIcons::e('camera'); ?> <?php echo JText::translate('VBOUPSELLADD'); ?></button>
+											<div class="vbo-paxfield-upload-progress-wrap" id="vbo-paxfield-upload-progress-<?php echo $ind . '-' . $g . '-' . $paxk; ?>" style="display: none;">
+												<div class="vbo-paxfield-upload-progress">&nbsp;</div>
+											</div>
+										</div>
+										
+										<div class="vbo-paxfield vbo-paxfield-files" id="vbo-paxfield-files-<?php echo $ind . '-' . $g . '-' . $paxk; ?>" data-gselector="<?php echo $ind . '-' . $g . '-' . $paxk; ?>">
+										<?php
+										if (isset($current_guest[$paxk]) && !empty($current_guest[$paxk])) {
+											$guest_files = explode('|', $current_guest[$paxk]);
+											foreach ($guest_files as $gfk => $guest_file) {
+												if (empty($guest_file) || strpos($guest_file, 'http') !== 0) {
+													continue;
+												}
+												$furl_segments = explode('/', $guest_file);
+												$guest_fname = $furl_segments[(count($furl_segments) - 1)];
+												$read_fname = substr($guest_fname, (strpos($guest_fname, '_') + 1));
+												?>
+											<div class="vbo-paxfield-file-uploaded">
+												<span class="vbo-paxfield-file-uploaded-rm"><?php VikBookingIcons::e('times-circle'); ?></span>
+												<a href="<?php echo $guest_file; ?>" target="_blank">
+													<?php VikBookingIcons::e('image'); ?>
+													<span><?php echo $read_fname; ?></span>
+												</a>
+											</div>
+												<?php
+											}
+										}
+										?>
+										</div>
+
+									</div>
+									<?php
+								} else {
+									// text
+									?>
+									<input type="text" autocomplete="off" data-gind="<?php echo $g; ?>" class="vbo-paxfield" id="vbo-room-pax-field-<?php echo $ind . '-' . $g . '-' . $pax_field_ind; ?>" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $paxk; ?>]" value="<?php echo (isset($current_guest[$paxk]) ? $this->escape($current_guest[$paxk]) : ''); ?>" />
+									<?php
+								}
+
+								// close field container
+								?>
+								</div><?php
+
+								// increase field counter
+								$pax_field_ind++;
+							}
 							?>
 							</div>
-							<?php
-
-							// increase field counter
-							$pax_field_ind++;
-						}
-						?>
 						</div>
 						<?php
 					}
@@ -354,13 +382,15 @@ JText::script('VBO_PLEASE_WAIT');
 
 <script type="text/javascript">
 	/**
-	 * Declare global score variables
+	 * Declare global scope variables
 	 */
 	var vbo_prechin_current_room  = null,
 		vbo_prechin_current_guest = null,
 		vbo_prechin_current_paxk  = null,
 		vbo_typingtoast_displayed = false,
 		vbo_typingtoast_changes   = 0;
+
+	const mrzDetection = <?php echo (int) $mrzDetectionSupport; ?>;
 
 	/**
 	 * Displays a toast message
@@ -516,17 +546,32 @@ JText::script('VBO_PLEASE_WAIT');
 	}
 
 	/**
-	 * Updates the progress bar for the current uploading process
+	 * Updates the progress bar for the current uploading process.
+	 * If MRZ is supported, the upload progress will reach 100% before
+	 * the request is actually completed.
 	 */
-	function vboUploadSetProgress(selector_suffix, progress) {
+	function vboUploadSetProgress(selector_suffix, progress, mrzSupported) {
 		progress = Math.max(0, progress);
 		progress = Math.min(100, progress);
 
-		var progress_wrap = jQuery('#vbo-paxfield-upload-progress-' + selector_suffix);
-		if (!progress_wrap.length) {
+		const progress_wrap = document.querySelector('#vbo-paxfield-upload-progress-' + selector_suffix);
+		if (!progress_wrap) {
 			return;
 		}
-		progress_wrap.find('.vbo-paxfield-upload-progress').width(progress + '%').html(progress + '%');
+
+		const progressEl = progress_wrap.querySelector('.vbo-paxfield-upload-progress');
+
+		// update progress element width
+		progressEl.style.width = progress + '%';
+
+		// update progress element content
+		if (progress >= 99 && mrzSupported) {
+			// display status message for analysing documents through MRZ
+			progressEl.textContent = <?php echo json_encode(JText::translate('VBO_ANALYSING_DOCS')); ?> + '...';
+		} else {
+			// update progress content
+			progressEl.textContent = progress + '%';
+		}
 	}
 
 	/**
@@ -534,7 +579,7 @@ JText::script('VBO_PLEASE_WAIT');
 	 */
 	function vboUploadDocuments(files) {
 		// create form data object
-		var formData = new FormData();
+		const formData = new FormData();
 
 		// set booking and pre-checkin information
 		formData.append('sid', '<?php echo empty($this->order['sid']) && !empty($this->order['idorderota']) ? $this->order['idorderota'] : $this->order['sid']; ?>');
@@ -543,11 +588,15 @@ JText::script('VBO_PLEASE_WAIT');
 		formData.append('guest_index', vbo_prechin_current_guest);
 		formData.append('pax_index', vbo_prechin_current_paxk);
 
+		if (mrzDetection) {
+			formData.append('mrz', 1);
+		}
+
 		// selector suffix is composed of room, guest and pax field indexes
-		var selector_suffix = vbo_prechin_current_room + '-' + vbo_prechin_current_guest + '-' + vbo_prechin_current_paxk;
+		let selector_suffix = vbo_prechin_current_room + '-' + vbo_prechin_current_guest + '-' + vbo_prechin_current_paxk;
 
 		// iterate files selected and append them to the form data
-		for (var i = 0; i < files.length; i++) {
+		for (let i = 0; i < files.length; i++) {
 			formData.append('docs[]', files[i]);
 		}
 
@@ -561,7 +610,7 @@ JText::script('VBO_PLEASE_WAIT');
 			// form data
 			formData,
 			// success callback
-			function(response) {
+			(response) => {
 				// hide progress wrap
 				jQuery('#vbo-paxfield-upload-progress-' + selector_suffix).hide();
 				// unset progress
@@ -569,35 +618,40 @@ JText::script('VBO_PLEASE_WAIT');
 
 				// parse response
 				try {
-					var obj_res = JSON.parse(response),
-						uploaded_urls = [];
+					const obj_res = typeof response === 'string' ? JSON.parse(response) : response;
+					const uploaded_urls = [];
 
-					for (var i in obj_res) {
-						if (!obj_res.hasOwnProperty(i) || !obj_res[i].hasOwnProperty('url')) {
+					for (let i in (obj_res.uploads || [])) {
+						if (!obj_res.uploads.hasOwnProperty(i) || !obj_res.uploads[i].hasOwnProperty('url')) {
 							continue;
 						}
-						uploaded_urls.push(obj_res[i]['url']);
+						uploaded_urls.push(obj_res.uploads[i]['url']);
 					}
+
 					if (!uploaded_urls.length) {
-						console.log('no valid URLs returned', response);
+						console.error('no valid URLs returned', response);
 						return false;
 					}
+
 					// update hidden field
-					var hidden_inp = jQuery('#vbo-paxfield-curfiles-' + selector_suffix);
-					var current_guest_files = hidden_inp.val().split('|');
+					let hidden_inp = jQuery('#vbo-paxfield-curfiles-' + selector_suffix);
+					let current_guest_files = hidden_inp.val().split('|');
 					if (!current_guest_files.length || !current_guest_files[0].length) {
 						current_guest_files = [];
 					}
+
 					// merge current files with new ones uploaded
-					var new_guest_files = current_guest_files.concat(uploaded_urls);
+					let new_guest_files = current_guest_files.concat(uploaded_urls);
+
 					// update hidden input field to contain all files
 					hidden_inp.val(new_guest_files.join('|'));
+
 					// display links for the newly uploaded files
-					var uploaded_content = '';
-					for (var i = 0; i < uploaded_urls.length; i++) {
-						var furl_segments = uploaded_urls[i].split('/');
-						var guest_fname = furl_segments[(furl_segments.length - 1)];
-						var read_fname = guest_fname.substr((guest_fname.indexOf('_') + 1));
+					let uploaded_content = '';
+					for (let i = 0; i < uploaded_urls.length; i++) {
+						let furl_segments = uploaded_urls[i].split('/');
+						let guest_fname = furl_segments[(furl_segments.length - 1)];
+						let read_fname = guest_fname.substr((guest_fname.indexOf('_') + 1));
 
 						uploaded_content += '<div class="vbo-paxfield-file-uploaded">';
 						uploaded_content += '	<span class="vbo-paxfield-file-uploaded-rm"><?php VikBookingIcons::e('times-circle'); ?></span>';
@@ -607,8 +661,49 @@ JText::script('VBO_PLEASE_WAIT');
 						uploaded_content += '	</a>';
 						uploaded_content += '</div>';
 					}
+
 					// append the new content
 					jQuery('#vbo-paxfield-files-' + selector_suffix).append(uploaded_content);
+
+					// check if some fields should be populated from MRZ data detection
+					if (mrzDetection && obj_res?.mrz?.data) {
+						// iterate MRZ data properties map
+						obj_res.mrz.data.forEach((propertyMap) => {
+							if (!propertyMap?.id) {
+								// unexpected property format
+								return;
+							}
+
+							// set the value to apply to field
+							let propertyValue = propertyMap?.value || '';
+
+							// select field container
+							let fieldContainer = document.querySelector('.vbo-precheckin-guest-detail[data-rindex="' + vbo_prechin_current_room + '"][data-gindex="' + vbo_prechin_current_guest + '"][data-paxk="' + propertyMap.id + '"]');
+							if (!fieldContainer) {
+								// no matching element found in DOM
+								return;
+							}
+
+							// select input element
+							let paxFieldElement = fieldContainer.querySelector('input[name*="' + propertyMap.id + '"], textarea[name*="' + propertyMap.id + '"], select[name*="' + propertyMap.id + '"]');
+							if (!paxFieldElement) {
+								// no matching input element found in DOM
+								return;
+							}
+
+							// set field value
+							if (paxFieldElement.matches('input[type="checkbox"]')) {
+								// checkbox input field
+								paxFieldElement.checked = propertyValue ? true : false;
+							} else {
+								// input field accepts value property
+								paxFieldElement.value = propertyValue;
+							}
+
+							// attempt to trigger the change event on the field element
+							paxFieldElement.dispatchEvent(new Event('change'));
+						});
+					}
 
 					// display toast message
 					vboPresentToast(Joomla.JText._('VBO_PRECHECKIN_TOAST_HELP'), 4000, function() {
@@ -619,7 +714,7 @@ JText::script('VBO_PLEASE_WAIT');
 				}
 			},
 			// failure callback
-			function(error) {
+			(error) => {
 				alert(Joomla.JText._('VBO_UPLOAD_FAILED'));
 				// hide progress wrap
 				jQuery('#vbo-paxfield-upload-progress-' + selector_suffix).hide();
@@ -629,9 +724,9 @@ JText::script('VBO_PLEASE_WAIT');
 				console.error(error);
 			},
 			// progress callback
-			function(progress) {
+			(progress) => {
 				// update progress bar
-				vboUploadSetProgress(selector_suffix, progress);
+				vboUploadSetProgress(selector_suffix, progress, mrzDetection);
 			}
 		);
 	}

@@ -11,7 +11,11 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 $vbo_app = VikBooking::getVboApplication();
-$geo = VikBooking::getGeocodingInstance()->loadAssets();
+$geo = VikBooking::getGeocodingInstance()->loadAssets([
+	'callback'  => 'vbo_gm_ready',
+	'libraries' => 'marker',
+	'loading'   => 'async',
+]);
 $geo_supported = $geo->isSupported();
 $rooms_params = count($this->row) ? json_decode($this->row['params'], true) : array();
 

@@ -820,8 +820,11 @@ class VikBooking
 				 * will be already set to the time 23:59:59.
 				 * 
 				 * @since 	1.13 (J) - 1.2.18 (WP)
+				 * @since 	1.18.3 (J) - 1.8.3 (WP) timestamps ending with 9 for a range greater than 1 day indicate that the restriction end time
+				 * 			is already set to 23:59:59 (VCM Connector may be responsible), so no seconds should be added or the restriction end date
+				 *  		will be the day after, and if after the check-in time, it may be included.
 				 */
-				$end_operator = date('Y-m-d', $restr['dfrom']) != date('Y-m-d', $restr['dto']) ? 82799 : 0;
+				$end_operator = date('Y-m-d', $restr['dfrom']) != date('Y-m-d', $restr['dto']) && substr((string) $restr['dto'], -1, 1) != 9 ? 82799 : 0;
 
 				if ($restr['dfrom'] <= $restrcheckin[0] && ($restr['dto'] + $end_operator) >= $restrcheckin[0]) {
 					// restriction found for this date range based on arrival date, check if compliant
@@ -1259,7 +1262,7 @@ class VikBooking
 		}
 
 		$currencyname = self::getCurrencyName();
-		$prev_total = $currencyname.' '.self::numberFormat($old_booking['total']);
+		$prev_total = self::formatCurrencyNumber(self::numberFormat($old_booking['total']), $currencyname);
 
 		return JText::sprintf('VBOBOOKMODLOGSTR', $datemod, $prev_dates, $prev_rooms, $prev_total);
 	}
@@ -1789,20 +1792,9 @@ class VikBooking
 	 * 
 	 * @since 	1.12
 	 */
-	public static function precheckinEnabled() {
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='precheckinenabled';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			// enable the pre-checkin by default
-			$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES('precheckinenabled', '1');";
-			$dbo->setQuery($q);
-			$dbo->execute();
-			return 1;
-		}
-		$s = $dbo->loadResult();
-		return intval($s);
+	public static function precheckinEnabled()
+	{
+		return (int) VBOFactory::getConfig()->getBool('precheckinenabled', true);
 	}
 
 	/**
@@ -1813,20 +1805,9 @@ class VikBooking
 	 * 
 	 * @since 	1.12
 	 */
-	public static function precheckinMinOffset() {
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='precheckinminoffset';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			// set the limit to 1 day before arrival by default
-			$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES('precheckinminoffset', '1');";
-			$dbo->setQuery($q);
-			$dbo->execute();
-			return 1;
-		}
-		$s = $dbo->loadResult();
-		return intval($s);
+	public static function precheckinMinOffset()
+	{
+		return VBOFactory::getConfig()->getInt('precheckinminoffset', 0);
 	}
 
 	/**
@@ -1836,19 +1817,9 @@ class VikBooking
 	 * 
 	 * @since 	1.13
 	 */
-	public static function upsellingEnabled() {
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='upselling';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!$dbo->getNumRows()) {
-			// enable the upselling feature by default
-			$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES('upselling', '1');";
-			$dbo->setQuery($q);
-			$dbo->execute();
-			return true;
-		}
-		return (intval($dbo->loadResult()) > 0);
+	public static function upsellingEnabled()
+	{
+		return VBOFactory::getConfig()->getBool('upselling', true);
 	}
 
 	/**
@@ -2155,6 +2126,33 @@ class VikBooking
 	}
 
 	/**
+	 * Retrieves the listing-level minimum advance booking offset.
+	 * 
+	 * @param 	int 	$idroom 	The listing ID to evaluate.
+	 * @param 	bool 	$period 	Whether to format the value as a period string.
+	 * 
+	 * @return 	int|string|null		Number of hours or period string ("2H"), if set.
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public static function getMinDateFutureListing($idroom, $period = false)
+	{
+		$config = VBOFactory::getConfig();
+
+		$room_level_min_notice = $config->get("room_{$idroom}_min_adv_notice", null);
+
+		if (is_null($room_level_min_notice) || $room_level_min_notice === '') {
+			return null;
+		}
+
+		if ($period) {
+			return sprintf('%dH', (int) $room_level_min_notice);
+		}
+
+		return (int) $room_level_min_notice;
+	}
+
+	/**
 	 * Returns the maximum advance booking notice (offset) as a period.
 	 * It either returns the global configuration setting, or the value
 	 * defined at room-level, if any and if requested.
@@ -2234,7 +2232,55 @@ class VikBooking
 		return '';
 	}
 
-	public static function validateMinDaysAdvance($checkints) {
+	/**
+	 * Validates the minimum advance booking notice against the requested check-in
+	 * timestamp. The method supports the validation at both room and property levels.
+	 * 
+	 * @param 	int 	$checkints 	The check-in date timestamp.
+	 * @param 	int 	$idroom 	Optional room ID for room-level validation.
+	 * 
+	 * @return 	int|float			Minimum days (int) or hours (float) in advance required.
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) introduced $idroom argument for room-level.
+	 */
+	public static function validateMinDaysAdvance($checkints, $idroom = 0)
+	{
+		if ($idroom) {
+			// listing-level minimum advance booking notice (hours, could be null or 0)
+			$minhadv = self::getMinDateFutureListing($idroom);
+
+			// perform listing-level validation only when value is set
+			if (!$minhadv) {
+				// validation passed
+				return '';
+			}
+
+			// access listing params
+			$listing_data = self::getRoomInfo($idroom, ['params'], $no_cache = true);
+			if ($listing_data['params'] ?? null) {
+				// access listing-level check-in time
+				$listing_checkin = self::getRoomParam('checkin', $listing_data['params']);
+				if ($listing_checkin) {
+					// overwrite check-in time
+					$listing_checkin_parts = explode(':', $listing_checkin);
+					$checkin_hours = (int) $listing_checkin_parts[0];
+					$checkin_minutes = (int) $listing_checkin_parts[1];
+					// read current check-in date-time
+					$tsinfo = getdate($checkints);
+					// update check-in time with proper hours, minutes and seconds
+					$checkints = mktime($checkin_hours, $checkin_minutes, 0, $tsinfo['mon'], $tsinfo['mday'], $tsinfo['year']);
+				}
+			}
+
+			if ($checkints < strtotime('+' . $minhadv . ($minhadv > 1 ? 'hours' : 'hour'))) {
+				return $minhadv >= 24 ? floor($minhadv / 24) : ($minhadv / 24);
+			}
+
+			// validation passed without checking the global settings when listing ID given
+			return '';
+		}
+
+		// global validation
 		$mindadv = self::getMinDaysAdvance(true);
 		if ($mindadv > 0) {
 			$tsinfo = getdate($checkints);
@@ -2244,6 +2290,7 @@ class VikBooking
 			}
 		}
 
+		// validation passed
 		return '';
 	}
 	
@@ -2548,7 +2595,19 @@ class VikBooking
 		return $cdjs;
 	}
 
-	public static function validateClosingDates($checkints, $checkoutts, $df = null)
+	/**
+	 * Given stay date timestamps, tells if the booking is disallowed due to global closing dates.
+	 * 
+	 * @param 	int 	$checkints 	The check-in date timestamp.
+	 * @param 	int 	$checkoutts The check-in date timestamp.
+	 * @param 	?string $df 		Optional date format to return the closed stay dates.
+	 * @param 	bool 	$closingcmp True to obtain the stay components affected by a global closure.
+	 * 
+	 * @return 	string|array 		Empty string if no closures, closure dates string or affected components list.
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) added argument $closingcmp to improve the search suggestion details.
+	 */
+	public static function validateClosingDates($checkints, $checkoutts, $df = null, $closingcmp = false)
 	{
 		$cd = self::getClosingDates();
 
@@ -2560,10 +2619,23 @@ class VikBooking
 		$margin_seconds = 22 * 60 * 60;
 
 		foreach ($cd as $k => $v) {
+			// determine if the stay dates are closed
 			$inner_closed = ($checkints >= $v['from'] && $checkints <= ($v['to'] + $margin_seconds));
 			$outer_closed = ($checkoutts >= $v['from'] && $checkoutts <= ($v['to'] + $margin_seconds));
 			$middle_closed = ($checkints <= $v['from'] && $checkoutts >= ($v['to'] + $margin_seconds));
+
 			if ($inner_closed || $outer_closed || $middle_closed) {
+				// stay dates are closed
+				if ($closingcmp) {
+					// return the components affected by the globally closed dates to allow analysis
+					return [
+						'checkin'  => $inner_closed,
+						'checkout' => $outer_closed,
+						'stay'     => $middle_closed,
+					];
+				}
+
+				// return the string with the range of dates closed globally
 				return date($df, $v['from']) . ' - ' . date($df, $v['to']);
 			}
 		}
@@ -2574,74 +2646,30 @@ class VikBooking
 	/**
 	 * Whether the categories dropdown filter menu should be displayed.
 	 * 
-	 * @param 	boolean 	$skipsession 	[optional] re-read the configuration setting.
+	 * @param 	bool 	$skipsession 	[optional] re-read the configuration setting.
 	 * 
-	 * @return 	boolean
+	 * @return 	bool
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) argument $skipsession is deprecated.
 	 */
 	public static function showCategoriesFront($skipsession = true)
 	{
-		$dbo = JFactory::getDbo();
-		if ($skipsession) {
-			$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='showcategories';";
-			$dbo->setQuery($q);
-			$dbo->execute();
-			if ($dbo->getNumRows() > 0) {
-				$s = $dbo->loadAssocList();
-				return (intval($s[0]['setting']) == 1);
-			}
-			return false;
-		}
-		$session = JFactory::getSession();
-		$sval = $session->get('vbshowCategoriesFront', '');
-		if (strlen($sval)) {
-			return (intval($sval) == 1 ? true : false);
-		}
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='showcategories';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$s = $dbo->loadAssocList();
-			$session->set('vbshowCategoriesFront', $s[0]['setting']);
-			return (intval($s[0]['setting']) == 1);
-		}
-		return false;
+		return VBOFactory::getConfig()->getBool('showcategories', false);
 	}
 	
 	/**
 	 * Whether the number of children dropdown menu should be displayed.
 	 * Defaults to skip the session values and to re-read the configuration setting.
 	 * 
-	 * @param 	boolean 	$skipsession 	[optional] re-read the configuration setting.
+	 * @param 	bool 	$skipsession 	[optional] re-read the configuration setting.
 	 * 
-	 * @return 	boolean
+	 * @return 	bool
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) argument $skipsession is deprecated.
 	 */
 	public static function showChildrenFront($skipsession = true)
 	{
-		$dbo = JFactory::getDbo();
-		if ($skipsession) {
-			$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='showchildren';";
-			$dbo->setQuery($q);
-			$dbo->execute();
-			if ($dbo->getNumRows() > 0) {
-				$s = $dbo->loadAssocList();
-				return (intval($s[0]['setting']) == 1);
-			}
-			return false;
-		}
-		$session = JFactory::getSession();
-		$sval = $session->get('vbshowChildrenFront', '');
-		if (strlen($sval)) {
-			return (intval($sval) == 1 ? true : false);
-		}
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='showchildren';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows() > 0) {
-			$s = $dbo->loadAssocList();
-			$session->set('vbshowChildrenFront', $s[0]['setting']);
-			return (intval($s[0]['setting']) == 1);
-		}
-		return false;
+		return VBOFactory::getConfig()->getBool('showchildren', true);
 	}
 
 	public static function allowBooking()
@@ -2903,6 +2931,65 @@ class VikBooking
 		$getCurrencySymb = VBOFactory::getConfig()->get('currencysymb', '');
 
 		return $getCurrencySymb;
+	}
+
+	/**
+	 * Returns the configured currency position: either "before" or "after".
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public static function getCurrencyPosition()
+	{
+		// cache value in static var
+		static $getCurrencyPos = null;
+
+		if ($getCurrencyPos) {
+			return $getCurrencyPos;
+		}
+
+		$getCurrencyPos = VBOFactory::getConfig()->get('currencypos', 'before');
+
+		return $getCurrencyPos;
+	}
+
+	/**
+	 * Given a number, formats it according to currency preferences.
+	 * 
+	 * @param 	string 	$number 	The number to format.
+	 * @param 	?string $currency 	Optional currency to use.
+	 * @param 	?array 	$config 	Optional format configuration (i.e. currency/number "HTML template").
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public static function formatCurrencyNumber(string $number, ?string $currency = null, ?array $config = null)
+	{
+		// get the currency symbol/value to use
+		$currency = $currency ?: self::getCurrencySymb();
+
+		// obtain currency template (wildcard expected)
+		if (is_string($config[0] ?? null) || is_string($config['currency'] ?? null)) {
+			// apply templating to string
+			$currency = sprintf($config[0] ?? $config['currency'], $currency);
+		}
+
+		// obtain number template
+		if (is_string($config[1] ?? null) || is_string($config['number'] ?? null)) {
+			// apply templating to string
+			$number = sprintf($config[1] ?? $config['number'], $number);
+		}
+
+		// default value spacing (empty white space)
+		$spacing = (string) ($config['spacing'] ?? ' ');
+
+		if (self::getCurrencyPosition() === 'after') {
+			return sprintf('%s' . $spacing . '%s', $number, $currency);
+		}
+
+		return sprintf('%s' . $spacing . '%s', $currency, $number);
 	}
 
 	public static function getCurrencyCodePp()
@@ -4319,12 +4406,14 @@ class VikBooking
 	 * 
 	 * @param 	string 	$amenities 	Room amenities string.
 	 * @param 	?object $vbo_tn 	Optional VBOTranslator.
+	 * @param 	bool 	$all 		True for loading all records when no amenities given.
 	 * 
 	 * @return 	array
 	 * 
 	 * @since 	1.17.3 (J) - 1.7.3 (WP)
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) added argument $all.
 	 */
-	public static function loadRoomAmenities($amenities, $vbo_tn = null)
+	public static function loadRoomAmenities($amenities, $vbo_tn = null, $all = false)
 	{
 		$dbo = JFactory::getDbo();
 
@@ -4339,14 +4428,17 @@ class VikBooking
 		$list = [];
 		$where = array_filter($where);
 
+		$query = $dbo->getQuery(true)
+			->select('*')
+			->from($dbo->qn('#__vikbooking_characteristics'))
+			->order($dbo->qn('ordering') . ' ASC');
+
 		if ($where) {
-			$dbo->setQuery(
-				$dbo->getQuery(true)
-					->select('*')
-					->from($dbo->qn('#__vikbooking_characteristics'))
-					->where($dbo->qn('id') . ' IN (' . implode(', ', $where) . ')')
-					->order($dbo->qn('ordering') . ' ASC')
-			);
+			$query->where($dbo->qn('id') . ' IN (' . implode(', ', $where) . ')');
+		}
+
+		if ($where || $all) {
+			$dbo->setQuery($query);
 			$list = $dbo->loadAssocList();
 			if ($list && is_object($vbo_tn)) {
 				$vbo_tn->translateContents($list, '#__vikbooking_characteristics');
@@ -5556,6 +5648,14 @@ class VikBooking
 			->set(['booking', 'rooms'], [$order_info, $rooms])
 			->parseTokens($parsed);
 
+		/**
+		 * Parse all Door Access Control tags.
+		 * 
+		 * @since 	1.18.4 (J) - 1.8.4 (WP)
+		 */
+		VBOFactory::getDoorAccessControl()
+			->parseTokens((new VBOBookingRegistry($order_info, $rooms)), $parsed);
+
 		// special tokens (tags) replacement
 		$parsed = str_replace("{logo}", $company_logo, $parsed);
 		$parsed = str_replace("{company_name}", $company_name, $parsed);
@@ -5712,7 +5812,7 @@ class VikBooking
 				}
 			}
 			$fareprice = isset($faredets[1]) ? trim(str_replace($currencyname, "", $faredets[1])) : 0;
-			$orderdetails .= '<div class="service-amount" style="float: right;"><span>'.$currencyname.' '.self::numberFormat($fareprice).'</span></div></div>';
+			$orderdetails .= '<div class="service-amount" style="float: right;"><span>' . self::formatCurrencyNumber(self::numberFormat($fareprice), $currencyname) . '</span></div></div>';
 			// options
 			if (isset($options[$num]) && is_array($options[$num]) && count($options[$num]) > 0) {
 				foreach ($options[$num] as $oo) {
@@ -5721,7 +5821,7 @@ class VikBooking
 						if (!empty($optinfo)) {
 							$splitopt = explode(":", $optinfo);
 							$optprice = trim(str_replace($currencyname, "", $splitopt[1]));
-							$orderdetails .= '<div class="roomoption"><span>'.$splitopt[0].'</span><div class="service-amount" style="float: right;"><span>'.$currencyname.' '.self::numberFormat($optprice).'</span></div></div>';
+							$orderdetails .= '<div class="roomoption"><span>'.$splitopt[0].'</span><div class="service-amount" style="float: right;"><span>' . self::formatCurrencyNumber(self::numberFormat($optprice), $currencyname) . '</span></div></div>';
 						}
 					}
 				}
@@ -5735,7 +5835,7 @@ class VikBooking
 		// coupon
 		if (!empty($order_info['coupon'])) {
 			$expcoupon = explode(";", $order_info['coupon']);
-			$orderdetails .= '<br/><div class="discount"><span>'.JText::translate('VBCOUPON').' '.$expcoupon[2].'</span><div class="service-amount" style="float: right;"><span>- '.$currencyname.' '.self::numberFormat($expcoupon[1]).'</span></div></div>';
+			$orderdetails .= '<br/><div class="discount"><span>'.JText::translate('VBCOUPON').' '.$expcoupon[2].'</span><div class="service-amount" style="float: right;"><span>- ' . self::formatCurrencyNumber(self::numberFormat($expcoupon[1]), $currencyname) . '</span></div></div>';
 		}
 
 		// discount and payment method
@@ -5758,12 +5858,12 @@ class VikBooking
 					if ($payment_info['val_pcent'] == 1) {
 						// fixed value
 						$total -= $payment_info['charge'];
-						$orderdetails .= '<br/><div class="discount"><span>'.$payment_info['name'].'</span><div class="service-amount" style="float: right;"><span>- '.$currencyname.' '.self::numberFormat($payment_info['charge']).'</span></div></div>';
+						$orderdetails .= '<br/><div class="discount"><span>'.$payment_info['name'].'</span><div class="service-amount" style="float: right;"><span>- ' . self::formatCurrencyNumber(self::numberFormat($payment_info['charge']), $currencyname) . '</span></div></div>';
 					} else {
 						// percent value
 						$percent_disc = $total * $payment_info['charge'] / 100;
 						$total -= $percent_disc;
-						$orderdetails .= '<br/><div class="discount"><span>'.$payment_info['name'].'</span><div class="service-amount" style="float: right;"><span>- '.$currencyname.' '.self::numberFormat($percent_disc).'</span></div></div>';
+						$orderdetails .= '<br/><div class="discount"><span>'.$payment_info['name'].'</span><div class="service-amount" style="float: right;"><span>- ' . self::formatCurrencyNumber(self::numberFormat($percent_disc), $currencyname) . '</span></div></div>';
 					}
 				}
 			}
@@ -5773,7 +5873,7 @@ class VikBooking
 		$parsed = str_replace("{order_details}", $orderdetails, $parsed);
 
 		// additional information
-		$parsed = str_replace("{order_total}", $currencyname.' '.self::numberFormat($total), $parsed);
+		$parsed = str_replace("{order_total}", self::formatCurrencyNumber(self::numberFormat($total), $currencyname), $parsed);
 		$parsed = str_replace("{footer_emailtext}", $footermess, $parsed);
 		$parsed = str_replace("{order_link}", '<a href="'.$link.'">'.$link.'</a>', $parsed);
 		$parsed = str_replace("{booking_link}", $link, $parsed);
@@ -5790,7 +5890,7 @@ class VikBooking
 					$deposit_amount = $total * $percentdeposit / 100;
 				}
 				if ($deposit_amount > 0) {
-					$deposit_str = '<div class="deposit"><span>'.JText::translate('VBLEAVEDEPOSIT').'</span><div class="service-amount" style="float: right;"><strong>'.$currencyname.' '.self::numberFormat($deposit_amount).'</strong></div></div>';
+					$deposit_str = '<div class="deposit"><span>'.JText::translate('VBLEAVEDEPOSIT').'</span><div class="service-amount" style="float: right;"><strong>' . self::formatCurrencyNumber(self::numberFormat($deposit_amount), $currencyname) . '</strong></div></div>';
 				}
 			}
 		}
@@ -5799,21 +5899,21 @@ class VikBooking
 		// Amount Paid - Remaining Balance - Refunded Amount - Cancellation Fee
 		$totpaid_str = '';
 		if ($order_info['refund'] > 0) {
-			$totpaid_str .= '<div class="amountpaid amountrefunded"><span>' . JText::translate('VBO_AMOUNT_REFUNDED') . '</span><div class="service-amount" style="float: right;"><strong>' . $currencyname . ' ' . self::numberFormat($order_info['refund']) . '</strong></div></div>';
+			$totpaid_str .= '<div class="amountpaid amountrefunded"><span>' . JText::translate('VBO_AMOUNT_REFUNDED') . '</span><div class="service-amount" style="float: right;"><strong>' . self::formatCurrencyNumber(self::numberFormat($order_info['refund']), $currencyname) . '</strong></div></div>';
 		}
 		if ($order_info['status'] != 'cancelled') {
 			$tot_paid = $order_info['totpaid'];
 			$diff_topay = (float)$total - (float)$tot_paid;
 			if ((float)$tot_paid > 0) {
-				$totpaid_str .= '<div class="amountpaid"><span>'.JText::translate('VBAMOUNTPAID').'</span><div class="service-amount" style="float: right;"><strong>'.$currencyname.' '.self::numberFormat($tot_paid).'</strong></div></div>';
+				$totpaid_str .= '<div class="amountpaid"><span>'.JText::translate('VBAMOUNTPAID').'</span><div class="service-amount" style="float: right;"><strong>' . self::formatCurrencyNumber(self::numberFormat($tot_paid), $currencyname) . '</strong></div></div>';
 				// only in case the remaining balance is greater than 1 to avoid commissions issues
 				if ($diff_topay > 1) {
-					$totpaid_str .= '<div class="amountpaid"><span>'.JText::translate('VBTOTALREMAINING').'</span><div class="service-amount" style="float: right;"><strong>'.$currencyname.' '.self::numberFormat($diff_topay).'</strong></div></div>';
+					$totpaid_str .= '<div class="amountpaid"><span>'.JText::translate('VBTOTALREMAINING').'</span><div class="service-amount" style="float: right;"><strong>' . self::formatCurrencyNumber(self::numberFormat($diff_topay), $currencyname) . '</strong></div></div>';
 				}
 			}
 		}
 		if ($order_info['status'] == 'cancelled' && isset($order_info['canc_fee']) && $order_info['canc_fee'] > 0) {
-			$totpaid_str .= '<div class="amountpaid amountcancfee"><span>' . JText::translate('VBO_CANC_FEE') . '</span><div class="service-amount" style="float: right;"><strong>' . $currencyname . ' ' . self::numberFormat($order_info['canc_fee']) . '</strong></div></div>';
+			$totpaid_str .= '<div class="amountpaid amountcancfee"><span>' . JText::translate('VBO_CANC_FEE') . '</span><div class="service-amount" style="float: right;"><strong>' . self::formatCurrencyNumber(self::numberFormat($order_info['canc_fee']), $currencyname) . '</strong></div></div>';
 		}
 		$parsed = str_replace("{order_total_paid}", $totpaid_str, $parsed);
 
@@ -7032,19 +7132,44 @@ class VikBooking
 	}
 
 	/**
+	 * Fetches all season records affecting week days with no dates.
+	 * Useful to avoid duplicate queries and cache/preload the records.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.18.5 (J) - 1.8.5 (WP)
+	 */
+	public static function getWdaySeasonRecords()
+	{
+		static $cached_wdayseasons = null;
+
+		if (!is_null($cached_wdayseasons)) {
+			return $cached_wdayseasons;
+		}
+
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery("SELECT * FROM `#__vikbooking_seasons` WHERE ((`from` = 0 AND `to` = 0) OR (`from` IS NULL AND `to` IS NULL));");
+		$cached_wdayseasons = $dbo->loadAssocList();
+
+		return $cached_wdayseasons;
+	}
+
+	/**
 	 * Applies the seasonal rates over a list of room rate records.
 	 * 
 	 * @param 	array 	$arr 	        list of room rate records.
 	 * @param 	int 	$from 	        unix timestamp for start date.
 	 * @param 	int 	$to 	        unix timestamp for end date.
 	 * @param 	array  	$seasons_dates 	array of seasons with dates filter taken from the DB to avoid multiple queries (VCM)
-	 * @param 	array  	$seasons_wdays 	array of seasons with weekdays filter (only) taken from the DB to avoid multiple queries (VCM)
+	 * @param 	?array  $seasons_wdays 	array of seasons with weekdays filter (only) taken from the DB to avoid multiple queries (VCM)
 	 * 
 	 * @return 	array 			        list of manipulated room rate records.
 	 * 
 	 * @since 	1.18.0 (J) - 1.8.0 (WP) added support to records caching and preloading with args $seasons_dates and $seasons_wdays.
+	 * @since 	1.18.5 (J) - 1.8.5 (WP) argument $seasons_wdays is nullable to allow preloading an empty list of records and save queries.
 	 */
-	public static function applySeasonalPrices(array $arr, $from, $to, array $seasons_dates = [], array $seasons_wdays = [])
+	public static function applySeasonalPrices(array $arr, $from, $to, array $seasons_dates = [], ?array $seasons_wdays = null)
 	{
 		static $cached_seasons = [];
 
@@ -7638,16 +7763,13 @@ class VikBooking
 		// week days with no season
 		$roomschange = array_unique($roomschange);
 		$totspecials = 0;
-		if (!$seasons_wdays) {
-			$q = "SELECT * FROM `#__vikbooking_seasons` WHERE ((`from` = 0 AND `to` = 0) OR (`from` IS NULL AND `to` IS NULL));";
-
+		if (!is_array($seasons_wdays)) {
 			if ($cache_signature_wdays && isset($cached_seasons[$cache_signature_wdays])) {
 				// avoid making a query
 				$specials = $cached_seasons[$cache_signature_wdays];
 			} else {
 				// get the week-days-with-no-season records by running the query
-				$dbo->setQuery($q);
-				$specials = $dbo->loadAssocList();
+				$specials = self::getWdaySeasonRecords();
 			}
 
 			// count records
@@ -7868,19 +7990,20 @@ class VikBooking
 	}
 
 	/**
-	 * Applies the special prices over an array of tariffs.
-	 * The function is also used by VCM (>= 1.6.5) with specific arguments.
+	 * Applies the seasonal rates over room rate records.
 	 *
 	 * @param 	array  		$arr 			array of tariffs taken from the DB
 	 * @param 	int  		$from 			start timestamp
 	 * @param 	int  		$to 			end timestamp
 	 * @param 	array  		$parsed_season 	array of a season to parse (used to render the seasons calendars in back-end and front-end)
-	 * @param 	array  		$seasons_dates 	(VBO 1.10) array of seasons with dates filter taken from the DB to avoid multiple queries (VCM)
-	 * @param 	array  		$seasons_wdays 	(VBO 1.10) array of seasons with weekdays filter (only) taken from the DB to avoid multiple queries (VCM)
+	 * @param 	array  		$seasons_dates 	array of seasons with dates filter taken from the DB to avoid multiple queries (VCM)
+	 * @param 	?array 		$seasons_wdays 	array of seasons with weekdays filter (only) taken from the DB to avoid multiple queries (VCM)
 	 *
 	 * @return 	array
+	 * 
+	 * @since 	1.18.5 (J) - 1.8.5 (WP) argument $seasons_wdays is nullable to allow preloading an empty list of records and save queries.
 	 */
-	public static function applySeasonsRoom(array $arr, $from, $to, array $parsed_season = [], array $seasons_dates = [], array $seasons_wdays = [])
+	public static function applySeasonsRoom(array $arr, $from, $to, array $parsed_season = [], array $seasons_dates = [], ?array $seasons_wdays = null)
 	{
 		static $cached_seasons = [];
 
@@ -8534,16 +8657,13 @@ class VikBooking
 		// week days with no season
 		$roomschange = array_unique($roomschange);
 		$totspecials = 0;
-		if (!$seasons_wdays) {
-			$q = "SELECT * FROM `#__vikbooking_seasons` WHERE ((`from` = 0 AND `to` = 0) OR (`from` IS NULL AND `to` IS NULL));";
-
+		if (!is_array($seasons_wdays)) {
 			if ($cache_signature_wdays && isset($cached_seasons[$cache_signature_wdays])) {
 				// avoid making a query
 				$specials = $cached_seasons[$cache_signature_wdays];
 			} else {
 				// get the week-days-with-no-season records by running the query
-				$dbo->setQuery($q);
-				$specials = $dbo->loadAssocList();
+				$specials = self::getWdaySeasonRecords();
 			}
 
 			// count records
@@ -9579,6 +9699,14 @@ class VikBooking
 			->set(['booking', 'rooms'], [$booking, $booking_rooms])
 			->parseTokens($tpl);
 
+		/**
+		 * Parse all Door Access Control tags.
+		 * 
+		 * @since 	1.18.4 (J) - 1.8.4 (WP)
+		 */
+		VBOFactory::getDoorAccessControl()
+			->parseTokens((new VBOBookingRegistry($booking, $booking_rooms)), $tpl);
+
 		$vbo_df = self::getDateFormat();
 		$df = $vbo_df == "%d/%m/%Y" ? 'd/m/Y' : ($vbo_df == "%m/%d/%Y" ? 'm/d/Y' : 'Y-m-d');
 		$datesep = self::getDateSeparator();
@@ -9653,6 +9781,14 @@ class VikBooking
 		self::getConditionalRulesInstance()
 			->set(['booking', 'rooms'], [$booking, $booking_rooms])
 			->parseTokens($tpl);
+
+		/**
+		 * Parse all Door Access Control tags.
+		 * 
+		 * @since 	1.18.4 (J) - 1.8.4 (WP)
+		 */
+		VBOFactory::getDoorAccessControl()
+			->parseTokens((new VBOBookingRegistry($booking, $booking_rooms)), $tpl);
 
 		$vbo_df = self::getDateFormat();
 		$df = $vbo_df == "%d/%m/%Y" ? 'd/m/Y' : ($vbo_df == "%m/%d/%Y" ? 'm/d/Y' : 'Y-m-d');
@@ -9942,7 +10078,6 @@ class VikBooking
 		self::getConditionalRulesInstance()
 			->set(['booking', 'rooms'], [$booking, $booking_rooms])
 			->parseTokens($parsed);
-		//
 
 		$dbo = JFactory::getDbo();
 		if (is_null($vbo_tn)) {
@@ -10361,9 +10496,9 @@ class VikBooking
 
 			$inv_rows .= '<tr>'."\n";
 			$inv_rows .= '<td>' . $rooms[$num]['room_name'] . (!empty($split_stay_str) ? '<br/>' . $split_stay_str : '') . '<br/>' . nl2br(rtrim($price_descr['name'], "\n")) . '</td>' . "\n";
-			$inv_rows .= '<td>'.$booking['currencyname'].' '.self::numberFormat(($price_descr['tot'] - $price_descr['tax'])).'</td>'."\n";
-			$inv_rows .= '<td>'.$booking['currencyname'].' '.self::numberFormat($price_descr['tax']).'</td>'."\n";
-			$inv_rows .= '<td>'.$booking['currencyname'].' '.self::numberFormat($price_descr['tot']).'</td>'."\n";
+			$inv_rows .= '<td>' . self::formatCurrencyNumber(self::numberFormat(($price_descr['tot'] - $price_descr['tax'])), $booking['currencyname']) . '</td>'."\n";
+			$inv_rows .= '<td>' . self::formatCurrencyNumber(self::numberFormat($price_descr['tax']), $booking['currencyname']) . '</td>'."\n";
+			$inv_rows .= '<td>' . self::formatCurrencyNumber(self::numberFormat($price_descr['tot']), $booking['currencyname']) . '</td>'."\n";
 			if (!empty($pdfparams['show_lines_taxrate_col'])) {
 				$inv_rows .= '<td>' . (isset($price_descr['tax_rate']) ? $price_descr['tax_rate'] : '0') . '%</td>'."\n";
 			}
@@ -10373,9 +10508,9 @@ class VikBooking
 				foreach ($optstr[$num] as $optk => $optv) {
 					$inv_rows .= '<tr>'."\n";
 					$inv_rows .= '<td>'.$optv['name'].'</td>'."\n";
-					$inv_rows .= '<td>'.$booking['currencyname'].' '.self::numberFormat(($optv['tot'] - $optv['tax'])).'</td>'."\n";
-					$inv_rows .= '<td>'.$booking['currencyname'].' '.self::numberFormat($optv['tax']).'</td>'."\n";
-					$inv_rows .= '<td>'.$booking['currencyname'].' '.self::numberFormat($optv['tot']).'</td>'."\n";
+					$inv_rows .= '<td>' . self::formatCurrencyNumber(self::numberFormat(($optv['tot'] - $optv['tax'])), $booking['currencyname']) . '</td>'."\n";
+					$inv_rows .= '<td>' . self::formatCurrencyNumber(self::numberFormat($optv['tax']), $booking['currencyname']) . '</td>'."\n";
+					$inv_rows .= '<td>' . self::formatCurrencyNumber(self::numberFormat($optv['tot']), $booking['currencyname']) . '</td>'."\n";
 					if (!empty($pdfparams['show_lines_taxrate_col'])) {
 						$inv_rows .= '<td>' . (isset($optv['tax_rate']) ? $optv['tax_rate'] : '0') . '%</td>'."\n";
 					}
@@ -10394,7 +10529,7 @@ class VikBooking
 			$inv_rows .= '<td>'.$usedcoupon[2].'</td>'."\n";
 			$inv_rows .= '<td></td>'."\n";
 			$inv_rows .= '<td></td>'."\n";
-			$inv_rows .= '<td>- '.$booking['currencyname'].' '.self::numberFormat($usedcoupon[1]).'</td>'."\n";
+			$inv_rows .= '<td>- ' . self::formatCurrencyNumber(self::numberFormat($usedcoupon[1]), $booking['currencyname']) . '</td>'."\n";
 			$inv_rows .= '</tr>'."\n";
 			$rows_written += 2;
 		}
@@ -10407,7 +10542,7 @@ class VikBooking
 			$inv_rows .= '<td>' . JText::translate('VBO_AMOUNT_REFUNDED') . '</td>'."\n";
 			$inv_rows .= '<td></td>'."\n";
 			$inv_rows .= '<td></td>'."\n";
-			$inv_rows .= '<td>- '.$booking['currencyname'].' '.self::numberFormat($booking['refund']).'</td>'."\n";
+			$inv_rows .= '<td>- ' . self::formatCurrencyNumber(self::numberFormat($booking['refund']), $booking['currencyname']) . '</td>'."\n";
 			$inv_rows .= '</tr>'."\n";
 			$rows_written += 2;
 		}
@@ -10424,9 +10559,9 @@ class VikBooking
 		}
 		//invoice price description - End
 		$parsed = str_replace("{invoice_products_descriptions}", $inv_rows, $parsed);
-		$parsed = str_replace("{invoice_totalnet}", $booking['currencyname'].' '.self::numberFormat(($isdue - $tot_taxes)), $parsed);
-		$parsed = str_replace("{invoice_totaltax}", $booking['currencyname'].' '.self::numberFormat($tot_taxes), $parsed);
-		$parsed = str_replace("{invoice_grandtotal}", $booking['currencyname'].' '.self::numberFormat($isdue), $parsed);
+		$parsed = str_replace("{invoice_totalnet}", self::formatCurrencyNumber(self::numberFormat(($isdue - $tot_taxes)), $booking['currencyname']), $parsed);
+		$parsed = str_replace("{invoice_totaltax}", self::formatCurrencyNumber(self::numberFormat($tot_taxes), $booking['currencyname']), $parsed);
+		$parsed = str_replace("{invoice_grandtotal}", self::formatCurrencyNumber(self::numberFormat($isdue), $booking['currencyname']), $parsed);
 		$parsed = str_replace("{inv_notes}", ($booking['inv_notes'] ?? ''), $parsed);
 
 		// invoice tax summary
@@ -10441,7 +10576,7 @@ class VikBooking
 			$taxsum_rows .= '<tr>' . "\n";
 			$taxsum_rows .= '<td>' . $tax_name . '</td>' . "\n";
 			$taxsum_rows .= '<td>' . $tax_rate . '%</td>' . "\n";
-			$taxsum_rows .= '<td>' . $booking['currencyname'] . ' ' . self::numberFormat($tax_amount) . '</td>' . "\n";
+			$taxsum_rows .= '<td>' . self::formatCurrencyNumber(self::numberFormat($tax_amount), $booking['currencyname']) . '</td>' . "\n";
 			$taxsum_rows .= '</tr>' . "\n";
 		}
 		$parsed = str_replace("{invoice_tax_summary}", $taxsum_rows, $parsed);
@@ -11205,6 +11340,14 @@ class VikBooking
 			->set(['booking', 'rooms'], [$booking, $booking_rooms])
 			->parseTokens($parsed);
 
+		/**
+		 * Parse all Door Access Control tags.
+		 * 
+		 * @since 	1.18.4 (J) - 1.8.4 (WP)
+		 */
+		VBOFactory::getDoorAccessControl()
+			->parseTokens((new VBOBookingRegistry($booking, $booking_rooms)), $parsed);
+
 		return $parsed;
 	}
 
@@ -11356,18 +11499,18 @@ class VikBooking
 		return $all_countries;
 	}
 
-	public static function getCountriesSelect($name, $all_countries = array(), $current_value = '', $empty_value = ' ')
+	public static function getCountriesSelect(string $name, array $all_countries = [], ?string $current_value = '', ?string $empty_value = ' ', ?string $idAttr = null)
 	{
-		if (!count($all_countries)) {
+		if (!$all_countries) {
 			$all_countries = self::getCountriesArray();
 		}
 
-		$countries = '<select name="'.$name.'">'."\n";
+		$countries = '<select ' . ($idAttr ? 'id="' . $idAttr . '" ' : '') . 'name="' . $name . '">' . "\n";
 		if (strlen($empty_value)) {
-			$countries .= '<option value="">'.$empty_value.'</option>'."\n";
+			$countries .= '<option value="">' . $empty_value . '</option>' . "\n";
 		}
 		foreach ($all_countries as $v) {
-			$countries .= '<option value="'.$v['country_3_code'].'"'.($v['country_3_code'] == $current_value ? ' selected="selected"' : '').'>'.$v['country_name'].'</option>'."\n";
+			$countries .= '<option value="' . $v['country_3_code'] . '"' . ($v['country_3_code'] == $current_value ? ' selected="selected"' : '') . '>' . $v['country_name'] . '</option>' . "\n";
 		}
 		$countries .= '</select>';
 
@@ -13094,6 +13237,7 @@ class VikBooking
 			array_push($css_classes, '.vbo-pref-color-element { background-color: ' . $pref_colors['bgcolor'] . ' !important; color: ' . $pref_colors['fontcolor'] . ' !important; }');
 			array_push($css_classes, '.vbo-pref-bordercolor { border-color: ' . $pref_colors['bgcolor'] . ' !important; }');
 			array_push($css_classes, '.vbo-pref-bordertext { color: ' . $pref_colors['bgcolor'] . ' !important; border-color: ' . $pref_colors['bgcolor'] . ' !important; }');
+			array_push($css_classes, '.vbo-pref-background { background: ' . $pref_colors['bgcolor'] . ' !important; }');
 			// buttons with backgrounds
 			array_push($css_classes, '.vbo-pref-color-btn { background-color: ' . $pref_colors['bgcolor'] . ' !important; color: ' . $pref_colors['fontcolor'] . ' !important; }');
 			// stepbar
@@ -13120,6 +13264,10 @@ class VikBooking
 			}');
 			array_push($css_classes, '.ui-datepicker td.checkin-date a:hover, .ui-datepicker td.checkout-date a:hover, .ui-datepicker-calendar td.ui-datepicker-current-day > *:hover {
 				color: ' . $pref_colors['fontcolor'] . ' !important;
+			}');
+			// dual slider
+			array_push($css_classes, '.vbo-dual-slider-wrap input[type="range"]::-webkit-slider-thumb, .vbo-dual-slider-wrap input[type="range"]::-moz-range-thumb {
+				background: ' . $pref_colors['bgcolor'] . ' !important;
 			}');
 			// operators tableaux
 			if ($view == 'tableaux') {

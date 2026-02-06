@@ -16,7 +16,6 @@ $wmonthsel = $this->wmonthsel;
 $busy = $this->busy;
 $vbo_tn = $this->vbo_tn;
 
-$currencysymb = VikBooking::getCurrencySymb();
 $showpartlyres=VikBooking::showPartlyReserved();
 $vbdateformat = VikBooking::getDateFormat();
 if ($vbdateformat == "%d/%m/%Y") {

@@ -155,6 +155,13 @@ class VikBookingAvailability
 		if (!class_exists('TACVBO')) {
 			require_once VBO_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'tac.vikbooking.php';
 		}
+
+		/**
+		 * Set default nights transfer ratio.
+		 * 
+		 * @since 	1.18.5 (J) - 1.8.5 (WP)
+		 */
+		$this->setNightsTransfersRatio();
 	}
 
 	/**
@@ -307,17 +314,20 @@ class VikBookingAvailability
 
 		$dbo->setQuery($q);
 
-		return array_values(array_unique($dbo->loadColumn()));
+		return array_values(array_unique(array_map('intval', $dbo->loadColumn())));
 	}
 
 	/**
 	 * Loads a list of room categories.
 	 * 
-	 * @return 	array 	The associative list of categories.
+	 * @param 	bool 	$public 	True for excluding the "private" categories.
+	 * 
+	 * @return 	array 				The associative list of categories.
 	 * 
 	 * @since 	1.17.6 (J) - 1.7.6 (WP)
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) added argument $public.
 	 */
-	public function loadRoomCategories()
+	public function loadRoomCategories($public = false)
 	{
 		$dbo = JFactory::getDbo();
 
@@ -331,7 +341,15 @@ class VikBookingAvailability
 				->order($dbo->qn('name') . ' ASC')
 		);
 
-		return $dbo->loadAssocList();
+		$categories = $dbo->loadAssocList();
+
+		if ($public) {
+			$categories = array_values(array_filter($categories, function($category) {
+				return substr((string) $category['name'], 0, 1) !== '_';
+			}));
+		}
+
+		return $categories;
 	}
 
 	/**
@@ -344,7 +362,8 @@ class VikBookingAvailability
 	 * @return 	array 			the associative list of rooms.
 	 * 
 	 * @since 	1.16.10 (J) - 1.6.10 (WP) added arguments $ids, $max.
-	 * @since 	1.17.5 (J) - 1.7.5 (WP)  added argument $anew.
+	 * @since 	1.17.5 (J) - 1.7.5 (WP) added argument $anew.
+	 * @since 	1.18.6 (J) - 1.8.6 (WP) added support to negative IDs for category IDs.
 	 */
 	public function loadRooms(array $ids = [], $max = 0, $anew = false)
 	{
@@ -373,7 +392,25 @@ class VikBookingAvailability
 			->from($dbo->qn('#__vikbooking_rooms'));
 
 		if ($ids) {
+			// cast all IDs to signed integers
 			$ids = array_map('intval', $ids);
+
+			// normalize listing IDs to support (negative) category IDs
+	        $categoryIds = array_filter($ids, function($id) {
+	            return $id < 0;
+	        });
+
+	        if ($categoryIds) {
+	        	// filter out negative IDs
+	        	$ids = array_values(array_filter($ids, function($id) {
+		            return $id > 0;
+		        }));
+
+		        // include the listing IDs from category IDs, if any
+		        $ids = array_values(array_unique(array_merge($ids, $this->filterRoomCategories($categoryIds))));
+	        }
+
+			// set query clause
 			$q->where($dbo->qn('id') . ' IN (' . implode(', ', $ids) . ')');
 		}
 
@@ -526,16 +563,18 @@ class VikBookingAvailability
 	 * Returns a list of rate plans derived from the given parent rate plan ID.
 	 * 
 	 * @param 	int 	$parent_rate_id 	The parent rate plan ID.
+	 * @param 	?array 	$all_rate_plans 	Optional cached rate plans list.
 	 * 
 	 * @return 	array
 	 * 
 	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 * @since 	1.18.5 (J) - 1.8.5 (WP) added argument $all_rate_plans.
 	 */
-	public function getDerivedRatePlans(int $parent_rate_id)
+	public function getDerivedRatePlans(int $parent_rate_id, ?array $all_rate_plans = null)
 	{
 		$derived_rplans = [];
 
-		foreach ($this->loadRatePlans() as $rp_id => $rplan) {
+		foreach (($all_rate_plans ?: $this->loadRatePlans()) as $rp_id => $rplan) {
 			if ($rplan['derived_id'] && $rplan['derived_id'] == $parent_rate_id && $rplan['derived_data']) {
 				// this rate plan is derived from the given parent rate plan
 				$derived_rplans[] = $rplan;
@@ -1215,7 +1254,7 @@ class VikBookingAvailability
 		}
 
 		// make sure all nights requested can be satisfied by at least one room
-		foreach ($groupdays as $gday) {
+		foreach ($groupdays as $gday_index => $gday) {
 			$day_key = date('Y-m-d', $gday);
 			$day_av  = false;
 			foreach ($avroom_nights as $rid => $av_nights) {
@@ -1225,8 +1264,9 @@ class VikBookingAvailability
 					break;
 				}
 			}
-			if (!$day_av) {
-				// this night is not available in any room, unable to proceed
+			// ensure there's availability for this day, or permit if it's the check-out day
+			if (!$day_av && !($gday_index === (count($groupdays) - 1) && $this->inonout_allowed)) {
+				// this night of stay is not available in any room, unable to proceed
 				return [];
 			}
 		}
@@ -1443,6 +1483,9 @@ class VikBookingAvailability
 					$altered_sols = true;
 				}
 			}
+		} else {
+			// split stays have been disabled
+			$split_stay_sols = [];
 		}
 
 		if ($altered_sols && count($split_stay_sols)) {
@@ -2441,19 +2484,19 @@ class VikBookingAvailability
 	{
 		$config = VBOFactory::getConfig();
 
-		return (int)$config->get('split_stay_ratio', 50);
+		return (int) $config->get('split_stay_ratio', 50);
 	}
 
 	/**
 	 * Sets the nights/transfers ratio for split stays. Use it to start applying limits.
 	 * 
-	 * @param 	mixed 	$ratio 	integer value, or the default config setting will be applied.
+	 * @param 	?int 	$ratio 	Optional ratio integer value, or default value will apply.
 	 * 
 	 * @return 	self
 	 * 
 	 * @since 	1.16.0 (J) - 1.6.0 (WP)
 	 */
-	public function setNightsTransfersRatio($ratio = null)
+	public function setNightsTransfersRatio(?int $ratio = null)
 	{
 		if (is_int($ratio)) {
 			$this->nights_transfers_ratio = $ratio;
@@ -2473,7 +2516,7 @@ class VikBookingAvailability
 	 */
 	public function isFrontBooking()
 	{
-		return (bool)$this->is_front_booking;
+		return (bool) $this->is_front_booking;
 	}
 
 	/**

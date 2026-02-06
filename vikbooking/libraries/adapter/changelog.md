@@ -1,5 +1,45 @@
 # Framework Changelog
 
+### 10.1.68
+
+*Release date - 15 January 2026*
+
+##### CHANGE
+
+* `JObject::getProperties()` is now able to exclude all the protected and private properties.
+
+---
+
+### 10.1.67
+
+*Release date - 15 December 2025*
+
+##### BUG FIXES
+
+* Fixed a warning thrown by SimplePie, used to download RSS feeds.
+
+---
+
+### 10.1.66
+
+*Release date - 17 September 2025*
+
+##### CHANGE
+
+* `JDocument::setMetaData()` is now able to set the "robots" meta data by using the `wp_robots` filter.
+
+---
+
+### 10.1.65
+
+*Release date - 30 July 2025*
+
+##### BUG FIXES
+
+* Prevented the headers sent warning triggered by wp-cron.
+
+---
+
 ### 10.1.64
 
 *Release date - 15 July 2025*

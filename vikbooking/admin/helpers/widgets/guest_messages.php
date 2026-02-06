@@ -269,6 +269,9 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				}
 				if ($bid_convo == $gmessage->idorderota && strcasecmp((string)$gmessage->channel, 'vikbooking')) {
 					// specific OTA conversation to bubble found
+					// make sure to use the internal booking ID rather than the OTA booking ID
+					$bid_convo = $gmessage->idorder ?: $bid_convo;
+					// request conversation to be popped up
 					$bubble_convo = $bid_convo;
 					break;
 				}

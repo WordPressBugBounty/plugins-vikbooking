@@ -195,7 +195,7 @@ if (!empty($this->room['moreimgs'])) {
 					<div class="vblistroomnamedivprice">
 						<div class="vblistroomname vbo-pref-color-text">
 							<span class="vbliststartfromrdet"><?php echo JText::translate('VBLISTSFROM'); ?></span>
-							<span class="room_cost"><span class="vbo_currency"><?php echo $currencysymb; ?></span> <span class="vbo_price"><?php echo (!empty($custprice) ? VikBooking::numberFormat($custprice) : VikBooking::numberFormat($this->room['cost'])); ?></span></span>
+							<span class="room_cost"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat(($custprice ?: $this->room['cost'])), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></span>
 						<?php
 						if (!empty($custpricetxt)) {
 							?>

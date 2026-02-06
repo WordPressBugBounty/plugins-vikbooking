@@ -32,6 +32,15 @@ class VikBookingHelperAdminWidgets
 	protected static $helper = null;
 
 	/**
+	 * List of preloaded widgets.
+	 *
+	 * @var array
+	 * 
+	 * @since  1.18.3 (J) - 1.8.3 (WP)
+	 */
+	protected static $preloaded = [];
+
+	/**
 	 * The database handler instance.
 	 *
 	 * @var object
@@ -388,11 +397,15 @@ class VikBookingHelperAdminWidgets
 
 			if ($preload) {
 				// preload widget's CSS/JS assets (if any)
-				$watch_data = $widget->preload();
+				$watch_data = array_key_exists($id, static::$preloaded) ? static::$preloaded[$id] : $widget->preload();
+
 				if ($watch_data) {
 					// assign watching data to this widget
 					$watch[$id] = $watch_data;
 				}
+
+				// overwrite cache for the preloaded widget result
+				static::$preloaded[$id] = $watch_data;
 			}
 
 			// build widget info object

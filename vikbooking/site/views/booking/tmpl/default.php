@@ -59,6 +59,9 @@ $wdays_map 	= [
 	JText::translate('VBWEEKDAYSIX')
 ];
 
+// count payment processor instances
+$payProcessorInstances = 0;
+
 $isdue = 0;
 $isdue_orig = 0;
 $imp = 0;
@@ -178,7 +181,7 @@ foreach ($orderrooms as $kor => $or) {
 			if (!isset($optbought[$num])) {
 				$optbought[$num] = '';
 			}
-			$optbought[$num] .= "<div class=\"vbo-booking-item-row\"><span class=\"vbo-booking-pricename\">".($stept[1] > 1 ? $stept[1] . " " : "") . $actopt['name'] . "</span> <span class=\"vbo-booking-pricedet\"><span class=\"vbo_currency\">" . $currencysymb . "</span> <span class=\"vbo_price\">" . VikBooking::numberFormat($tmpopr) . "</span></span></div>";
+			$optbought[$num] .= "<div class=\"vbo-booking-item-row\"><span class=\"vbo-booking-pricename\">".($stept[1] > 1 ? $stept[1] . " " : "") . $actopt['name'] . "</span> <span class=\"vbo-booking-pricedet\">" . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tmpopr), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']) . "</span></div>";
 		}
 	}
 
@@ -191,7 +194,7 @@ foreach ($orderrooms as $kor => $or) {
 			$isdue += $ecplustax;
 			$isdue_orig += $ecplustax;
 			$imp += !empty($ecv['idtax']) ? VikBooking::sayOptionalsMinusIva($ecv['cost'], $ecv['idtax']) : $ecv['cost'];
-			$extraservices[$num] .= "<div class=\"vbo-booking-item-row\"><span class=\"vbo-booking-pricename\">".$ecv['name']."</span> <span class=\"vbo-booking-pricedet\"><span class=\"vbo_currency\">" . $currencysymb . "</span> <span class=\"vbo_price\">" . VikBooking::numberFormat($ecplustax) . "</span></span></div>";
+			$extraservices[$num] .= "<div class=\"vbo-booking-item-row\"><span class=\"vbo-booking-pricename\">".$ecv['name']."</span> <span class=\"vbo-booking-pricedet\">" . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($ecplustax), $currencysymb, ['<span class="vbo_currency">%s</span>' , '<span class="vbo_price">%s</span>']) . "</span></div>";
 		}
 	}
 }
@@ -226,6 +229,19 @@ $canc_allowed = ($resmodcanc > 1 && $resmodcanc != 2 && $this->is_refundable > 0
 $ts_info = getdate($ord['ts']);
 $checkin_info = getdate($ord['checkin']);
 $checkout_info = getdate($ord['checkout']);
+
+/**
+ * Custom listing check-in and check-out times.
+ * 
+ * @since 	1.18.3 (J) - 1.8.3 (WP)
+ */
+$listing_custom_checkin = '';
+$listing_custom_checkout = '';
+if (($ord['roomsnum'] ?? 0) == 1) {
+	$listing_params = VikBooking::getRoomInfo(($orderrooms[(key($orderrooms))]['idroom'] ?? 0), ['params'], true)['params'] ?? '';
+	$listing_custom_checkin = VikBooking::getRoomParam('checkin', $listing_params);
+	$listing_custom_checkout = VikBooking::getRoomParam('checkout', $listing_params);
+}
 
 // the current booking URI
 $current_booking_uri = JRoute::rewrite('index.php?option=com_vikbooking&view=booking&sid='.(!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']).'&ts='.$ord['ts'].(!empty($bestitemid) ? '&Itemid='.$bestitemid : (!empty($pitemid) ? '&Itemid='.$pitemid : '')));
@@ -304,11 +320,23 @@ if ($ord['status'] == 'confirmed') {
 		?>
 			<div class="vbo-booking-details-bookinfo">
 				<span class="vbo-booking-details-bookinfo-lbl"><?php echo JText::translate('VBDAL'); ?></span>
-				<span class="vbo-booking-details-bookinfo-val"><?php echo $wdays_map[$checkin_info['wday']].', '.date(str_replace("/", $datesep, $df).' H:i', $ord['checkin']); ?></span>
+				<span class="vbo-booking-details-bookinfo-val"><?php
+					if ($listing_custom_checkin) {
+						echo $wdays_map[$checkin_info['wday']] . ', ' . date(str_replace("/", $datesep, $df), $ord['checkin']) . ' ' . $listing_custom_checkin;
+					} else {
+						echo $wdays_map[$checkin_info['wday']] . ', ' . date(str_replace("/", $datesep, $df) . ' H:i', $ord['checkin']);
+					}
+				?></span>
 			</div>
 			<div class="vbo-booking-details-bookinfo">
 				<span class="vbo-booking-details-bookinfo-lbl"><?php echo JText::translate('VBAL'); ?></span>
-				<span class="vbo-booking-details-bookinfo-val"><?php echo $wdays_map[$checkout_info['wday']].', '.date(str_replace("/", $datesep, $df).' H:i', $ord['checkout']); ?></span>
+				<span class="vbo-booking-details-bookinfo-val"><?php
+					if ($listing_custom_checkout) {
+						echo $wdays_map[$checkout_info['wday']] . ', ' . date(str_replace("/", $datesep, $df), $ord['checkout']) . ' ' . $listing_custom_checkout;
+					} else {
+						echo $wdays_map[$checkout_info['wday']] . ', ' . date(str_replace("/", $datesep, $df) . ' H:i', $ord['checkout']);
+					}
+				?></span>
 			</div>
 			<div class="vbo-booking-details-bookinfo">
 				<span class="vbo-booking-details-bookinfo-lbl"><?php echo JText::translate('VBDAYS'); ?></span>
@@ -375,8 +403,14 @@ if ($ord['status'] == 'confirmed') {
 	if ($precheckin) {
 		// make sure the limit of days in advance is reflected
 		$precheckin_mind = VikBooking::precheckinMinOffset();
-		$precheckin_lim_ts = strtotime("+{$precheckin_mind} days 00:00:00");
-		$precheckin = ($precheckin_lim_ts <= $ord['checkin'] || ($precheckin_mind === 1 && time() <= $ord['checkin']));
+		if ($precheckin_mind < 0) {
+			// validation made prior to check-out date and time
+			$precheckin = time() <= strtotime("{$precheckin_mind} days 23:59:59", $ord['checkout']);
+		} else {
+			// classic validation prior to check-in date and time
+			$precheckin_lim_ts = strtotime("+{$precheckin_mind} days 00:00:00");
+			$precheckin = ($precheckin_lim_ts <= $ord['checkin'] || ($precheckin_mind === 1 && time() <= $ord['checkin']));
+		}
 	}
 
 	/**
@@ -553,8 +587,7 @@ foreach ($orderrooms as $kor => $or) {
 				<span class="vbvordcoststitlemain">
 					<span class="vbo-booking-pricename"><?php echo $pricenames[$num]; ?></span>
 					<span class="room_cost">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span> 
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($or['cust_cost']); ?></span>
+						<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($or['cust_cost']), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?>
 					</span>
 				</span>
 			</div>
@@ -602,8 +635,7 @@ foreach ($orderrooms as $kor => $or) {
 				<span class="vbvordcoststitlemain">
 					<span class="vbo-booking-pricename"><?php echo $pricenames[$num]; ?></span>
 					<span class="room_cost">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span> 
-						<span class="vbo_price"<?php echo $ord['status'] == 'confirmed' && $or['room_cost'] > 0 ? ' data-vborigprice="'.VikBooking::numberFormat($or['room_cost']).'"' : ''; ?>><?php echo VikBooking::numberFormat($tars[$num]['calctar']); ?></span>
+						<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tars[$num]['calctar']), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price"' . ($ord['status'] == 'confirmed' && $or['room_cost'] > 0 ? ' data-vborigprice="'.VikBooking::numberFormat($or['room_cost']).'"' : '') . '>%s</span>']); ?>
 					</span>
 				</span>
 			</div>
@@ -707,8 +739,7 @@ if ($usedcoupon === true) {
 		<div class="vbo-booking-cost-val">
 			<span class="vbo-booking-cost-val-number">
 				<span>-</span>
-				<span class="vbo_currency<?php echo $extra_css; ?>"><?php echo $currencysymb; ?></span> 
-				<span class="vbo_price<?php echo $extra_css; ?>"><?php echo VikBooking::numberFormat($expcoupon[1]); ?></span>
+				<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($expcoupon[1]), $currencysymb, ['<span class="vbo_currency' . $extra_css . '">%s</span>', '<span class="vbo_price' . $extra_css . '">%s</span>']); ?>
 			</span>
 		</div>
 	</div>
@@ -722,8 +753,7 @@ if ($ord['refund'] > 0) {
 		</div>
 		<div class="vbo-booking-cost-val">
 			<span class="vbo-booking-cost-val-number">
-				<span class="vbo_currency<?php echo $extra_css; ?>"><?php echo $currencysymb; ?></span> 
-				<span class="vbo_price<?php echo $extra_css; ?>"><?php echo VikBooking::numberFormat($ord['refund']); ?></span>
+				<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($ord['refund']), $currencysymb, ['<span class="vbo_currency' . $extra_css . '">%s</span>', '<span class="vbo_price' . $extra_css . '">%s</span>']); ?>
 			</span>
 		</div>
 	</div>
@@ -736,8 +766,7 @@ if ($ord['refund'] > 0) {
 		</div>
 		<div class="vbo-booking-cost-val">
 			<span class="vbo-booking-cost-val-number">
-				<span class="vbo_currency<?php echo $extra_css; ?>"><?php echo $currencysymb; ?></span> 
-				<span class="vbo_price<?php echo $extra_css; ?>"><?php echo VikBooking::numberFormat(($ord['status'] == 'confirmed' ? $ord['total'] : $isdue)); ?></span>
+				<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat(($ord['status'] == 'confirmed' ? $ord['total'] : $isdue)), $currencysymb, ['<span class="vbo_currency' . $extra_css . '">%s</span>', '<span class="vbo_price' . $extra_css . '">%s</span>']); ?>
 			</span>
 		</div>
 	</div>
@@ -798,6 +827,20 @@ if ($payable && $isotabooking && stripos($ord['channel'], 'airbnbapi') === 0 && 
 	}
 }
 
+/**
+ * Check if we have an outstanding balance after a deposit paid for a direct booking.
+ * 
+ * @since 	1.18.6 (J) - 1.8.6 (WP)
+ */
+$pay_balance_days_adv = (int) VBOFactory::getConfig()->get('depbalancedays');
+if ($pay_balance_days_adv > 0 && !((float) $ord['payable']) && $ord['status'] == 'confirmed' && empty($ord['idorderota']) && $ord['totpaid'] > 0 && $ord['total'] > $ord['totpaid']) {
+	// ensure the outstanding balance for direct booking is payable at this time
+	if ($ord['ts'] < strtotime(sprintf('-%d days', $pay_balance_days_adv), $ord['checkin'])) {
+		// outstanding balance not yet payable according to settings
+		$payable = false;
+	}
+}
+
 if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multiplePayments() && $ord['total'] > 0 && $payable) {
 	// write again the payment form because the order was not fully paid
 
@@ -830,9 +873,20 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 	}
 
 	$transaction_name = VikBooking::getPaymentName();
-	$remainingamount = $ord['payable'] > 0 ? $ord['payable'] : ($ord['total'] - ($ord['totpaid'] + ($this->damage_deposit_payment['damagedep_gross'] ?? 0)));
 	$leave_deposit = 0;
 	$percentdeposit = "";
+
+	// calculate the outstanding balance to pay
+	if ($ord['payable'] > 0) {
+		$remainingamount = $ord['payable'];
+	} else {
+		$prev_dd_paid = 0;
+		if ($this->prev_dd_payments || ($this->damage_deposit_payment['payment_window'] ?? [])) {
+			$prev_dd_paid = $this->damage_deposit_payment['damagedep_gross'] ?? 0;
+		}
+		$prev_recorded_payment = $ord['totpaid'] + $prev_dd_paid;
+		$remainingamount = $ord['total'] - $prev_recorded_payment;
+	}
 
 	$array_order = [];
 	$array_order['details'] = $ord;
@@ -866,8 +920,7 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 		</div>
 		<div class="vbo-booking-cost-val">
 			<span class="vbo-booking-cost-val-number">
-				<span class="vbo_currency vbo_keepcost"><?php echo $currencysymb; ?></span> 
-				<span class="vbo_price vbo_keepcost"><?php echo VikBooking::numberFormat($ord['totpaid']); ?></span>
+				<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($ord['totpaid']), $currencysymb, ['<span class="vbo_currency vbo_keepcost">%s</span>', '<span class="vbo_price vbo_keepcost">%s</span>']); ?>
 			</span>
 		</div>
 	</div>
@@ -877,14 +930,30 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 		</div>
 		<div class="vbo-booking-cost-val">
 			<span class="vbo-booking-cost-val-number">
-				<span class="vbo_currency vbo_keepcost"><?php echo $currencysymb; ?></span> 
-				<span class="vbo_price vbo_keepcost"><?php echo VikBooking::numberFormat($remainingamount); ?></span>
+				<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($remainingamount), $currencysymb, ['<span class="vbo_currency vbo_keepcost">%s</span>', '<span class="vbo_price vbo_keepcost">%s</span>']); ?>
 			</span>
 		</div>
 	</div>
 
 	<div class="vbvordpaybutton">
 	<?php
+	// build and inject transaction metadata
+	$array_order['tn_metadata'] = [
+		'booking_id'     => $ord['id'],
+		'source'         => (($ord['channel'] ?? '') ?: 'Website'),
+		'ota_booking_id' => (($ord['idorderota'] ?? '') ?: ''),
+	];
+
+	// increase payment processor instances
+	$payProcessorInstances++;
+
+	/**
+     * Trigger event to allow third-party plugins to manipulate the transaction data.
+     * 
+     * @since 	1.18.5 (J) - 1.8.5 (WP)
+     */
+    VBOFactory::getPlatform()->getDispatcher()->trigger('onInitPaymentTransaction', [&$array_order, &$payment['params'], []]);
+
 	if (VBOPlatformDetection::isWordPress()) {
 		/**
 		 * @wponly 	The payment gateway is now loaded 
@@ -932,13 +1001,13 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 		</div>
 		<div class="vbo-booking-cost-val">
 			<span class="vbo-booking-cost-val-number">
-				<span class="vbo_currency vbo_keepcost"><?php echo $currencysymb; ?></span> 
-				<span class="vbo_price vbo_keepcost"><?php echo VikBooking::numberFormat($ord['totpaid']); ?></span>
+				<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($ord['totpaid']), $currencysymb, ['<span class="vbo_currency vbo_keepcost">%s</span>', '<span class="vbo_price vbo_keepcost">%s</span>']); ?>
 			</span>
 		</div>
 	</div>
 		<?php
-		if (!$ota_will_pay && $remainingamount > 0) {
+		$is_rembal_ota_cmms = $isotabooking && stripos($ord['channel'], 'airbnbapi') === 0 && round($remainingamount, 2) == round($ord['cmms'], 2);
+		if (!$ota_will_pay && $remainingamount > 0 && !$is_rembal_ota_cmms) {
 			?>
 	<div class="vbo-booking-cost-detail vbo-booking-cost-detail-remainingbalance">
 		<div class="vbo-booking-cost-lbl">
@@ -946,8 +1015,7 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 		</div>
 		<div class="vbo-booking-cost-val">
 			<span class="vbo-booking-cost-val-number">
-				<span class="vbo_currency vbo_keepcost"><?php echo $currencysymb; ?></span> 
-				<span class="vbo_price vbo_keepcost"><?php echo VikBooking::numberFormat($remainingamount); ?></span>
+				<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($remainingamount), $currencysymb, ['<span class="vbo_currency vbo_keepcost">%s</span>', '<span class="vbo_price vbo_keepcost">%s</span>']); ?>
 			</span>
 		</div>
 	</div>
@@ -1343,12 +1411,36 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 	<p class="vbpaymentchangetot">
 		<span class="vbpaymentnamediff">
 			<span><?php echo $payment['name']; ?></span>
-			(<?php echo ($payment['ch_disc'] == 1 ? "+" : "-").($payment['val_pcent'] == 1 ? '<span class="vbo_currency">'.$currencysymb.'</span> ' : '').'<span class="vbo_price">'.VikBooking::numberFormat($payment['charge']).'</span>'.($payment['val_pcent'] == 1 ? '' : " %"); ?>) 
+			(<?php
+				echo $payment['ch_disc'] == 1 ? '+' : '-';
+				if ($payment['val_pcent'] == 1) {
+					echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($payment['charge']), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']);
+				} else {
+					echo '<span class="vbo_price">' . VikBooking::numberFormat($payment['charge']) . '</span> %';
+				}
+			?>) 
 		</span>
-		<span class="vborddiffpayment"><span class="vbo_currency"><?php echo $currencysymb; ?></span> <span class="vbo_price"><?php echo VikBooking::numberFormat($newtotaltopay); ?></span></span>
+		<span class="vborddiffpayment"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($newtotaltopay), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></span>
 	</p>
 		<?php
 	}
+
+	// build and inject transaction metadata
+	$array_order['tn_metadata'] = [
+		'booking_id'     => $ord['id'],
+		'source'         => (($ord['channel'] ?? '') ?: 'Website'),
+		'ota_booking_id' => (($ord['idorderota'] ?? '') ?: ''),
+	];
+
+	// increase payment processor instances
+	$payProcessorInstances++;
+
+	/**
+     * Trigger event to allow third-party plugins to manipulate the transaction data.
+     * 
+     * @since 	1.18.5 (J) - 1.8.5 (WP)
+     */
+    VBOFactory::getPlatform()->getDispatcher()->trigger('onInitPaymentTransaction', [&$array_order, &$payment['params'], []]);
 
 	if (VBOPlatformDetection::isWordPress()) {
 		/**
@@ -1373,7 +1465,6 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 
 		$obj->showPayment();
 	}
-	
 	?>
 </div>
 	<?php
@@ -1383,8 +1474,9 @@ if (is_array($payment) && $ord['status'] == 'standby') {
  * Check if damage deposit should be paid separately and whether it can be paid right now.
  * 
  * @since 	1.17.6 (J) - 1.7.6 (WP)
+ * @since 	1.18.6 (J) - 1.8.6 (WP) allow damage deposit payment button only as single instance.
  */
-if ($ord['status'] == 'confirmed' && ($this->damage_deposit_payment['damagedep_gross'] ?? 0) > 0 && ($this->damage_deposit_payment['payment_window']['payable'] ?? false) && !$this->prev_dd_payments) {
+if (!$payProcessorInstances && $ord['status'] == 'confirmed' && ($this->damage_deposit_payment['damagedep_gross'] ?? 0) > 0 && ($this->damage_deposit_payment['payment_window']['payable'] ?? false) && !$this->prev_dd_payments) {
 	// damage deposit can be paid separately
 	$dd_payment = !empty($this->damage_deposit_payment['payment_window']['pay_id']) ? VikBooking::getPayment($this->damage_deposit_payment['payment_window']['pay_id'], $vbo_tn) : $payment;
 
@@ -1456,6 +1548,24 @@ if ($ord['status'] == 'confirmed' && ($this->damage_deposit_payment['damagedep_g
 	?>
 <div class="vbvordpaybutton vbo-damage-deposit-payment">
 	<?php
+	// build and inject transaction metadata
+	$array_order['tn_metadata'] = [
+		'booking_id'     => $ord['id'],
+		'source'         => (($ord['channel'] ?? '') ?: 'Website'),
+		'ota_booking_id' => (($ord['idorderota'] ?? '') ?: ''),
+		'damage_deposit' => 1,
+	];
+
+	// increase payment processor instances
+	$payProcessorInstances++;
+
+	/**
+     * Trigger event to allow third-party plugins to manipulate the transaction data.
+     * 
+     * @since 	1.18.5 (J) - 1.8.5 (WP)
+     */
+    VBOFactory::getPlatform()->getDispatcher()->trigger('onInitPaymentTransaction', [&$array_order, &$payment['params'], []]);
+
 	if (VBOPlatformDetection::isWordPress()) {
 		/**
 		 * @wponly 	The payment gateway is now loaded 
@@ -1711,8 +1821,7 @@ if ($tot_upselling) {
 						?>
 						</div>
 						<div class="vbo-upsell-option-entry-cost" data-currency="<?php echo $currencysymb; ?>" data-floatprice="<?php echo (float)$floatoptprice; ?>">
-							<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo_price"><?php echo VikBooking::numberFormat($floatoptprice); ?></span>
+							<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($floatoptprice), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?>
 						</div>
 						<div class="vbo-upsell-option-entry-input">
 							<?php echo $optquaninp; ?>
@@ -1786,7 +1895,11 @@ function vboAddExtra(kor, optid, quant) {
 	} else {
 		// multiple quantities should multiply the single raw cost not formatted
 		var optcurrency = optelem.find('.vbo-upsell-option-entry-cost').attr('data-currency');
-		newcartelem += '<div class="vbo-room-upsell-cart-option-cost">' + optcurrency + ' ' + optprice.toFixed(<?php echo (int)$formatparts[0]; ?>) + '</div>';
+		if ('<?php echo VikBooking::getCurrencyPosition(); ?>' === 'after') {
+			newcartelem += '<div class="vbo-room-upsell-cart-option-cost">' + optprice.toFixed(<?php echo (int)$formatparts[0]; ?>) + ' ' + optcurrency + '</div>';
+		} else {
+			newcartelem += '<div class="vbo-room-upsell-cart-option-cost">' + optcurrency + ' ' + optprice.toFixed(<?php echo (int)$formatparts[0]; ?>) + '</div>';
+		}
 	}
 	// increase global total
 	vbototextras += optprice;

@@ -42,6 +42,7 @@ class VikBookingHelper
 
 		$has_vcm = is_file(VCM_SITE_PATH.DIRECTORY_SEPARATOR.'helpers'.DIRECTORY_SEPARATOR.'lib.vikchannelmanager.php');
 		$backlogo = VikBooking::getBackendLogo();
+		$vbo_auth_admin = $admin_user->authorise('core.admin', 'com_vikbooking');
 		$vbo_auth_global = $admin_user->authorise('core.vbo.global', 'com_vikbooking');
 		$vbo_auth_rateplans = $admin_user->authorise('core.vbo.rateplans', 'com_vikbooking');
 		$vbo_auth_rooms = $admin_user->authorise('core.vbo.rooms', 'com_vikbooking');
@@ -50,6 +51,8 @@ class VikBookingHelper
 		$vbo_auth_availability = $admin_user->authorise('core.vbo.availability', 'com_vikbooking');
 		$vbo_auth_management = $admin_user->authorise('core.vbo.management', 'com_vikbooking');
 		$vbo_auth_pms = $admin_user->authorise('core.vbo.pms', 'com_vikbooking');
+		$vbo_auth_reports = $admin_user->authorise('core.vbo.pmsreports', 'com_vikbooking');
+		$vbo_auth_tm = $admin_user->authorise('core.vbo.tm', 'com_vikbooking');
 		$reviews_dld = 0;
 
 		// check for stored quick actions only once
@@ -419,12 +422,13 @@ class VikBookingHelper
 						</div>
 					</li><?php
 					}
-					if ($vbo_auth_pms) {
+					if ($vbo_auth_pms || $vbo_auth_reports || $vbo_auth_tm) {
 					?><li class="vbo-menu-parent-li">
 						<span><?php VikBookingIcons::e('tasks'); ?><a><?php echo JText::translate('VBMENUPMS'); ?> <?php VikBookingIcons::e('chevron-down', 'vbo-submenu-chevron'); ?></a></span>
 						<div class="vbo-submenu-wrap">
-							<ul class="vbo-submenu-ul" data-menu-scope="pms">
-								<li>
+							<ul class="vbo-submenu-ul" data-menu-scope="pms"><?php
+								if ($vbo_auth_pms) {
+								?><li>
 									<div class="<?php echo ($highlight == "operators" ? "vmenulinkactive" : "vmenulink"); ?>">
 										<a href="index.php?option=com_vikbooking&amp;task=operators">
 											<?php VikBookingIcons::e('user-tie'); ?>
@@ -443,8 +447,10 @@ class VikBookingHelper
 											</span>
 										</a>
 									</div>
-								</li>
-								<li>
+								</li><?php
+								}
+								if ($vbo_auth_admin || $vbo_auth_reports) {
+								?><li>
 									<div class="<?php echo ($highlight == "pmsreports" ? "vmenulinkactive" : "vmenulink"); ?>">
 										<a href="index.php?option=com_vikbooking&amp;task=pmsreports">
 											<?php VikBookingIcons::e('cash-register'); ?>
@@ -453,8 +459,10 @@ class VikBookingHelper
 											</span>
 										</a>
 									</div>
-								</li>
-								<li>
+								</li><?php
+								}
+								if ($vbo_auth_pms) {
+								?><li>
 									<div class="<?php echo ($highlight == "einvoicing" ? "vmenulinkactive" : "vmenulink"); ?>">
 										<a href="index.php?option=com_vikbooking&amp;task=einvoicing">
 											<?php VikBookingIcons::e('laptop-code'); ?>
@@ -463,8 +471,10 @@ class VikBookingHelper
 											</span>
 										</a>
 									</div>
-								</li>
-								<li class="vbo-menu-vcm-only">
+								</li><?php
+								}
+								if ($vbo_auth_admin || $vbo_auth_tm) {
+								?><li class="vbo-menu-vcm-only">
 									<div class="<?php echo ($highlight == "taskmanager" ? "vmenulinkactive" : "vmenulink"); ?>">
 										<a href="index.php?option=com_vikbooking&amp;view=taskmanager">
 											<?php VikBookingIcons::e('tasks'); ?>
@@ -473,8 +483,9 @@ class VikBookingHelper
 											</span>
 										</a>
 									</div>
-								</li>
-							</ul>
+								</li><?php
+								}
+							?></ul>
 						</div>
 					</li><?php
 					}

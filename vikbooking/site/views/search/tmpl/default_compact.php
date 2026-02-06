@@ -244,8 +244,7 @@ foreach ($rooms_res as $idroom => $room_res) {
 						</div>
 						<div class="vbo-room-result-body-price-amount">
 							<span class="room_cost">
-								<span class="vbo_currency"><?php echo $currencysymb; ?></span> 
-								<span class="vbo_price"><?php echo VikBooking::numberFormat($raw_roomcost); ?></span>
+								<?php echo VikBooking::formatCurrencyNumber($raw_roomcost, $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?>
 							</span>
 					<?php
 					if (isset($roominfo['promotion']) && isset($roominfo['promotion']['discount'])) {
@@ -264,8 +263,7 @@ foreach ($rooms_res as $idroom => $room_res) {
 							?>
 							<div class="vbo-room-result-price-before-discount">
 								<span class="room_cost">
-									<span class="vbo_currency"><?php echo $currencysymb; ?></span> 
-									<span class="vbo_price"><?php echo VikBooking::numberFormat($prev_amount); ?></span>
+									<?php echo VikBooking::formatCurrencyNumber($prev_amount, $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?>
 								</span>
 							</div>
 							<?php

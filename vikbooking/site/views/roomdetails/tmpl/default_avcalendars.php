@@ -370,7 +370,7 @@ if ($numcalendars > 0) {
 							}
 						}
 						$writecost = ($todaycost - intval($todaycost)) > 0.00 ? VikBooking::numberFormat($todaycost) : number_format($todaycost, 0);
-						$useday .= '<div class="vbcalpricedaycost"><div><span class="vbo_currency">' . $currencysymb . '</span> <span class="vbo_price">' . $writecost . '</span></div></div>';
+						$useday .= '<div class="vbcalpricedaycost"><div>' . VikBooking::formatCurrencyNumber($writecost, $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']) . '</div></div>';
 					} else {
 						$useday = '<span>' . $useday . '</span>';
 					}

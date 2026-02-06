@@ -11,7 +11,11 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 $vbo_app = VikBooking::getVboApplication();
-$geo = VikBooking::getGeocodingInstance()->loadAssets();
+$geo = VikBooking::getGeocodingInstance()->loadAssets([
+	'callback'  => 'vbo_gm_ready',
+	'libraries' => 'marker',
+	'loading'   => 'async',
+]);
 $geo_supported = $geo->isSupported();
 $rooms_params = count($this->row) ? json_decode($this->row['params'], true) : array();
 $geo_import_from = $geo->getImportableConfigRooms((count($this->row) ? $this->row['id'] : 0));
@@ -359,6 +363,7 @@ if ($geo_supported) {
 			var def_map_options = {
 				center: new google.maps.LatLng(jQuery('#geo_latitude').val(), jQuery('#geo_longitude').val()),
 				zoom: parseFloat(jQuery('#geo_zoom').val()),
+				mapId: 'vbo_map',
 				mapTypeId: jQuery('#geo_mtype').val()
 			};
 			// initialize Map
@@ -395,8 +400,7 @@ if ($geo_supported) {
 					disableAutoPan: true
 				});
 				// add map marker for base room-type
-				vbo_geomarker_room = new google.maps.Marker({
-					draggable: true,
+				vbo_geomarker_room = new google.maps.marker.AdvancedMarkerElement({
 					map: vbo_geomap,
 					position: {
 						lat: parseFloat(vbo_geomarker_room_pos.lat),
@@ -522,8 +526,7 @@ if ($geo_supported) {
 						disableAutoPan: true
 					});
 					// add map marker for base room-type
-					vbo_geomarker_room = new google.maps.Marker({
-						draggable: true,
+					vbo_geomarker_room = new google.maps.marker.AdvancedMarkerElement({
 						map: vbo_geomap,
 						position: results[0].geometry.location,
 						title: jQuery('input[name="cname"]').val()
@@ -598,7 +601,7 @@ if ($geo_supported) {
 				if (vbo_geomarker_units_pos.hasOwnProperty(i)) {
 					// marker index saved
 					marker_options = {
-						draggable: true,
+						gmpDraggable: true,
 						map: vbo_geomap,
 						position: {
 							lat: parseFloat(vbo_geomarker_units_pos[i].lat),
@@ -606,11 +609,49 @@ if ($geo_supported) {
 						},
 						title: marker_title
 					};
-					// set custom unit property
-					marker_options['vbo_unit'] = i;
+					// register custom unit property
+					let marker_vbo_unit = i;
 					// check if we know a custom icon for this marker
 					if (vbo_geomarker_units_pos[i].hasOwnProperty('icon')) {
-						marker_options['icon'] = vbo_geomarker_units_pos[i]['icon'];
+						// custom icon defined, identify the type to build a node
+						if (vbo_geomarker_units_pos[i]['icon']?.url) {
+							// we've got an image
+							let marker_img = document.createElement('img');
+							marker_img.src = vbo_geomarker_units_pos[i]['icon'].url;
+							if (vbo_geomarker_units_pos[i]['icon']?.scaledSize?.width) {
+								marker_img.style.width = vbo_geomarker_units_pos[i]['icon'].scaledSize.width + 'px';
+							}
+							if (vbo_geomarker_units_pos[i]['icon']?.scaledSize?.height) {
+								marker_img.style.height = vbo_geomarker_units_pos[i]['icon'].scaledSize.height + 'px';
+							}
+							// center the image
+							marker_img.style.transform = 'translate(0, 50%)';
+							// set marker content
+							marker_options['content'] = marker_img;
+						} else if (vbo_geomarker_units_pos[i]['icon']?.path) {
+							// we've got an SVG path symbol
+							let svgns = 'http://www.w3.org/2000/svg';
+							let svg = document.createElementNS(svgns, 'svg');
+							svg.setAttribute('xmlns', svgns);
+							svg.setAttribute('viewBox', '0 0 90 90');
+							svg.setAttribute('width', 90);
+							svg.setAttribute('height', 90);
+							let path = document.createElementNS(svgns, 'path');
+							path.setAttribute('d', vbo_geomarker_units_pos[i]['icon'].path);
+							path.setAttribute('fill', vbo_geomarker_units_pos[i]['icon']?.fillColor || '#eeeeee');
+							path.setAttribute('fill-opacity', vbo_geomarker_units_pos[i]['icon']?.fillOpacity || 0.9);
+							path.setAttribute('stroke-width', vbo_geomarker_units_pos[i]['icon']?.strokeWeight || 0);
+							if (vbo_geomarker_units_pos[i]['icon']?.scale && vbo_geomarker_units_pos[i]['icon']?.anchor?.x && vbo_geomarker_units_pos[i]['icon']?.anchor?.y) {
+								path.setAttribute(
+									'transform',
+									'translate(' + vbo_geomarker_units_pos[i]['icon'].anchor.x + ', ' + vbo_geomarker_units_pos[i]['icon'].anchor.y + ') scale(' + vbo_geomarker_units_pos[i]['icon'].scale + ')'
+								);
+							}
+							svg.setAttribute('data-vbo-icon-id', vbo_geomarker_units_pos[i]['icon']?.vbo_icon_id);
+							svg.appendChild(path);
+							// set marker content
+							marker_options['content'] = svg;
+						}
 					}
 					// create marker infowindow
 					var vbo_info_marker_cont = vboGenerateInfoMarkerContent(i, marker_title);
@@ -619,24 +660,24 @@ if ($geo_supported) {
 						disableAutoPan: true
 					});
 					// add unit marker to map
-					var vbo_geomarker_runit = new google.maps.Marker(marker_options);
+					var vbo_geomarker_runit = new google.maps.marker.AdvancedMarkerElement(marker_options);
 					// add listener to marker
 					vbo_geomarker_runit.addListener('dragend', function(e) {
 						// update lat and lng of room unit marker
-						var current_lat = this.getPosition().lat();
-						var current_lng = this.getPosition().lng();
-						if (vbo_geomarker_units_pos.hasOwnProperty(this['vbo_unit'])) {
-							vbo_geomarker_units_pos[this['vbo_unit']]['lat'] = current_lat;
-							vbo_geomarker_units_pos[this['vbo_unit']]['lng'] = current_lng;
+						var current_lat = e.latLng.lat();
+						var current_lng = e.latLng.lng();
+						if (vbo_geomarker_units_pos.hasOwnProperty(marker_vbo_unit)) {
+							vbo_geomarker_units_pos[marker_vbo_unit]['lat'] = current_lat;
+							vbo_geomarker_units_pos[marker_vbo_unit]['lng'] = current_lng;
 						}
 						// trigger the geo-saving event
 						document.dispatchEvent(new Event('vbo-room-geosaving'));
 					});
 					vbo_geomarker_runit.addListener('click', function() {
-						if (this['vbo_unit'] && vbo_info_markers.hasOwnProperty(this['vbo_unit'])) {
+						if (marker_vbo_unit && vbo_info_markers.hasOwnProperty(marker_vbo_unit)) {
 							// close any other open infowindow first
 							for (var m in vbo_info_markers) {
-								if (!vbo_info_markers.hasOwnProperty(m) || m == this['vbo_unit']) {
+								if (!vbo_info_markers.hasOwnProperty(m) || m == marker_vbo_unit) {
 									continue;
 								}
 								vbo_info_markers[m].close();
@@ -645,7 +686,7 @@ if ($geo_supported) {
 								// close address marker infowindow
 								vbo_info_marker_room.close();
 							}
-							vbo_info_markers[this['vbo_unit']].open(vbo_geomap, this);
+							vbo_info_markers[marker_vbo_unit].open(vbo_geomap, this);
 						} else {
 							console.error('info marker not found', this);
 						}
@@ -724,13 +765,13 @@ if ($geo_supported) {
 				}
 				// create marker
 				var marker_options = {
-					draggable: true,
+					gmpDraggable: true,
 					map: vbo_geomap,
 					position: position,
 					title: Joomla.JText._('VBODISTFEATURERUNIT') + (index + '')
 				};
-				// set custom unit property
-				marker_options['vbo_unit'] = index;
+				// register custom unit property
+				let marker_vbo_unit = index;
 				// create marker infowindow
 				var vbo_info_marker_cont = vboGenerateInfoMarkerContent(index, null);
 				var vbo_info_marker = new google.maps.InfoWindow({
@@ -738,24 +779,24 @@ if ($geo_supported) {
 					disableAutoPan: true
 				});
 				// add unit marker to map
-				var vbo_geomarker_runit = new google.maps.Marker(marker_options);
+				var vbo_geomarker_runit = new google.maps.marker.AdvancedMarkerElement(marker_options);
 				// add listener to marker
 				vbo_geomarker_runit.addListener('dragend', function(e) {
 					// update lat and lng of room unit marker
-					var current_lat = this.getPosition().lat();
-					var current_lng = this.getPosition().lng();
-					if (vbo_geomarker_units_pos.hasOwnProperty(this['vbo_unit'])) {
-						vbo_geomarker_units_pos[this['vbo_unit']]['lat'] = current_lat;
-						vbo_geomarker_units_pos[this['vbo_unit']]['lng'] = current_lng;
+					var current_lat = e.latLng.lat();
+					var current_lng = e.latLng.lng();
+					if (vbo_geomarker_units_pos.hasOwnProperty(marker_vbo_unit)) {
+						vbo_geomarker_units_pos[marker_vbo_unit]['lat'] = current_lat;
+						vbo_geomarker_units_pos[marker_vbo_unit]['lng'] = current_lng;
 					}
 					// trigger the geo-saving event
 					document.dispatchEvent(new Event('vbo-room-geosaving'));
 				});
 				vbo_geomarker_runit.addListener('click', function() {
-					if (this['vbo_unit'] && vbo_info_markers.hasOwnProperty(this['vbo_unit'])) {
+					if (marker_vbo_unit && vbo_info_markers.hasOwnProperty(marker_vbo_unit)) {
 						// close any other open infowindow first
 						for (var m in vbo_info_markers) {
-							if (!vbo_info_markers.hasOwnProperty(m) || m == this['vbo_unit']) {
+							if (!vbo_info_markers.hasOwnProperty(m) || m == marker_vbo_unit) {
 								continue;
 							}
 							vbo_info_markers[m].close();
@@ -764,7 +805,7 @@ if ($geo_supported) {
 							// close address marker infowindow
 							vbo_info_marker_room.close();
 						}
-						vbo_info_markers[this['vbo_unit']].open(vbo_geomap, this);
+						vbo_info_markers[marker_vbo_unit].open(vbo_geomap, this);
 					} else {
 						console.error('info marker not found', this);
 					}
@@ -855,50 +896,50 @@ if ($geo_supported) {
 			jQuery('.vbo-cust-geo-marker-wrapper').show();
 			vboOpenModalGeoMap();
 			// populate current values of the modal depending on the current marker icon type
-			var current_icon = vbo_geomarker_units[index].getIcon();
+			var current_icon = vbo_geomarker_units[index]?.content;
 			if (!current_icon) {
-				// default icon of Google Maps (null or undefined)
+				// default icon of Google Maps (null/undefined content)
 				jQuery('#vbo-geo-marker-icntype').val('google').trigger('change');
-			} else if (current_icon.hasOwnProperty('path')) {
+			} else if (current_icon.matches('svg') && current_icon.querySelector('path')) {
 				// SVG path symbol
 				jQuery('#vbo-geo-marker-icntype').val('symbol').trigger('change');
 				// deselect all SVG icons
 				jQuery('.vbo-cust-geo-marker-svg').attr('data-markerapply', '0');
-				// select current SVG icon by using the custom property "vbo_icon_id"
-				if (current_icon.hasOwnProperty('vbo_icon_id')) {
-					jQuery('.vbo-cust-geo-marker-svg[data-markerid="' + current_icon['vbo_icon_id'] + '"]').trigger('click');
+				// get path node
+				let svg_path = current_icon.querySelector('path');
+				let svg_icon_id = current_icon.getAttribute('data-vbo-icon-id');
+				// select current SVG icon by using the custom property "vbo_icon_id" (changed to a custom data-attribute)
+				if (svg_icon_id) {
+					jQuery('.vbo-cust-geo-marker-svg[data-markerid="' + svg_icon_id + '"]').trigger('click');
 				}
-			} else if (current_icon.hasOwnProperty('url')) {
-				// icon URL
+				// access the fill and opacity values
+				let svg_path_fill = svg_path.getAttribute('fill');
+				let svg_path_fill_opacity = svg_path.getAttribute('fill-opacity');
+				// populate additional default values
+				if (svg_path_fill) {
+					jQuery('#vbo-geo-marker-fillcolor').val(svg_path_fill);
+					jQuery('.vbo-inspector-colorpicker').css('backgroundColor', svg_path_fill);
+				}
+				if (svg_path_fill_opacity && svg_path_fill_opacity >= 0) {
+					jQuery('#vbo-geo-marker-opacity').val(svg_path_fill_opacity);
+				}
+			} else if (current_icon.matches('img')) {
+				// icon URL (img)
 				jQuery('#vbo-geo-marker-icntype').val('icon').trigger('change');
 				// set width and height, if any
-				var icon_width = null,
-					icon_height = null;
-				if (current_icon.hasOwnProperty('scaledSize') && current_icon['scaledSize'].hasOwnProperty('width')) {
-					icon_width = current_icon['scaledSize']['width'];
-					icon_height = current_icon['scaledSize']['height'];
-				} else if (current_icon.hasOwnProperty('size') && current_icon['size'].hasOwnProperty('width')) {
-					icon_width = current_icon['size']['width'];
-					icon_height = current_icon['size']['height'];
-				}
+				let icon_width = current_icon.width;
+				let icon_height = current_icon.height;
+				let icon_url = current_icon?.src || current_icon.getAttribute('src');
 				if (icon_width && icon_height) {
 					jQuery('#vbo-geo-marker-icon-width').val(icon_width);
 					jQuery('#vbo-geo-marker-icon-height').val(icon_height);
 				}
 				// try to populate the input value of the media manager
-				jQuery('input[name="marker_icon_img"]').val(current_icon['url'].replace(vbo_marker_base_uri, ''));
+				jQuery('input[name="marker_icon_img"]').val(icon_url.replace(vbo_marker_base_uri, ''));
 				// try to set the current image, if any (this changes from J to WP)
 				if (jQuery('.image-preview-wrapper').length) {
-					jQuery('.vbo-cust-geo-marker-wrapper').find('.image-preview-wrapper').html('<img src="' + current_icon['url'] + '" />').show();
+					jQuery('.vbo-cust-geo-marker-wrapper').find('.image-preview-wrapper').html('<img src="' + icon_url + '" />').show();
 				}
-			}
-			// populate default values
-			if (current_icon && current_icon.hasOwnProperty('fillColor') && current_icon['fillColor'].length) {
-				jQuery('#vbo-geo-marker-fillcolor').val(current_icon['fillColor']);
-				jQuery('.vbo-inspector-colorpicker').css('backgroundColor', current_icon['fillColor']);
-			}
-			if (current_icon && current_icon.hasOwnProperty('fillOpacity') && current_icon['fillOpacity'] >= 0) {
-				jQuery('#vbo-geo-marker-opacity').val(current_icon['fillOpacity']);
 			}
 		}
 
@@ -911,8 +952,8 @@ if ($geo_supported) {
 			if (jQuery('.vbo-cust-geo-marker-bottom[data-geomarker="' + type + '"]').length) {
 				// show requested type
 				jQuery('.vbo-cust-geo-marker-bottom[data-geomarker="' + type + '"]').show();
-				if (type == 'icon') {
-					// lower the z-index of our modal to allow the media-manager modal to be displayed on top
+				if (type == 'icon' || type == 'symbol') {
+					// lower the z-index of our modal to allow the media-manager modal or color-picker to be displayed on top
 					jQuery('.vbo-modal-overlay-block-geomap').addClass('vbo-modal-overlay-block-geomap-lowerzindex');
 				} else {
 					// restore the original z-index of our modal
@@ -932,12 +973,12 @@ if ($geo_supported) {
 				elem.hide();
 				jQuery('.vbo-cust-geo-marker-svg-newfield').show();
 				// hide all regular customization fields
-				jQuery('.vbo-geo-marker-param-container').not('.vbo-cust-geo-marker-svg-newfield').hide();
+				jQuery('.vbo-cust-geo-marker-bottom[data-geomarker="symbol"]').find('.vbo-geo-marker-param-container').not('.vbo-cust-geo-marker-svg-newfield').hide();
 			} else {
 				jQuery('.vbo-cust-geo-marker-svg-addnew').show();
 				jQuery('.vbo-cust-geo-marker-svg-newfield').hide();
 				// restore all regular customization fields
-				jQuery('.vbo-geo-marker-param-container').not('.vbo-cust-geo-marker-svg-newfield').show();
+				jQuery('.vbo-cust-geo-marker-bottom[data-geomarker="symbol"]').find('.vbo-geo-marker-param-container').not('.vbo-cust-geo-marker-svg-newfield').show();
 				// populate default styling from selected symbol
 				var current_fill = elem.find('svg').css('fill');
 				var current_opacity = elem.find('svg').css('opacity');
@@ -1036,7 +1077,7 @@ if ($geo_supported) {
 			var icntype = jQuery('#vbo-geo-marker-icntype').val();
 			if (!icntype.length || icntype == 'google') {
 				// set default icon of Google Maps (by passing null)
-				vbo_geomarker_units[vbo_current_marker_index].setIcon(null);
+				vbo_geomarker_units[vbo_current_marker_index].content = null;
 				// update icon in global object
 				if (vbo_geomarker_units_pos !== null && vbo_geomarker_units_pos.hasOwnProperty(vbo_current_marker_index)) {
 					delete vbo_geomarker_units_pos[vbo_current_marker_index]['icon'];
@@ -1109,8 +1150,29 @@ if ($geo_supported) {
 				if (icon_obj.hasOwnProperty('anchor')) {
 					symbol_obj['anchor'] = icon_obj['anchor'];
 				}
+				// build svg element
+				let svgns = 'http://www.w3.org/2000/svg';
+				let svg = document.createElementNS(svgns, 'svg');
+				svg.setAttribute('xmlns', svgns);
+				svg.setAttribute('viewBox', '0 0 90 90');
+				svg.setAttribute('width', 90);
+				svg.setAttribute('height', 90);
+				let path = document.createElementNS(svgns, 'path');
+				path.setAttribute('d', symbol_obj.path);
+				path.setAttribute('fill', symbol_obj.fillColor || '#eeeeee');
+				path.setAttribute('fill-opacity', symbol_obj.fillOpacity || 0.9);
+				path.setAttribute('stroke-width', symbol_obj.strokeWeight);
+				if (symbol_obj?.anchor?.x && symbol_obj?.anchor?.y) {
+					path.setAttribute(
+						'transform',
+						'translate(' + symbol_obj.anchor.x + ', ' + symbol_obj.anchor.y + ') scale(' + symbol_obj.scale + ')'
+					);
+				}
+				svg.appendChild(path);
+				// register custom data attribute to identify the icon id
+				svg.setAttribute('data-vbo-icon-id', symbol_obj.vbo_icon_id);
 				// update marker icon on map
-				vbo_geomarker_units[vbo_current_marker_index].setIcon(symbol_obj);
+				vbo_geomarker_units[vbo_current_marker_index].content = svg;
 				// update icon in global object
 				if (vbo_geomarker_units_pos !== null && vbo_geomarker_units_pos.hasOwnProperty(vbo_current_marker_index)) {
 					vbo_geomarker_units_pos[vbo_current_marker_index]['icon'] = symbol_obj;
@@ -1130,6 +1192,9 @@ if ($geo_supported) {
 				var icon_obj = {
 					url: icon_url
 				};
+				let marker_img = document.createElement('img');
+				marker_img.src = icon_url;
+				marker_img.style.transform = 'translate(0, 50%)';
 				var icon_width = jQuery('#vbo-geo-marker-icon-width').val();
 				var icon_height = jQuery('#vbo-geo-marker-icon-height').val();
 				if (icon_width && icon_width > 0 && icon_height > 0) {
@@ -1138,9 +1203,11 @@ if ($geo_supported) {
 						height: parseInt(icon_height)
 					}
 					icon_obj['scaledSize'] = scaledSize;
+					marker_img.style.width = icon_width + 'px';
+					marker_img.style.height = icon_height + 'px';
 				}
 				// update marker icon on map
-				vbo_geomarker_units[vbo_current_marker_index].setIcon(icon_obj);
+				vbo_geomarker_units[vbo_current_marker_index].content = marker_img;
 				// update icon in global object
 				if (vbo_geomarker_units_pos !== null && vbo_geomarker_units_pos.hasOwnProperty(vbo_current_marker_index)) {
 					vbo_geomarker_units_pos[vbo_current_marker_index]['icon'] = icon_obj;
@@ -1561,9 +1628,6 @@ if ($geo_supported) {
 			// display geocoding params, if necessary
 			vboToggleGeoParams();
 
-			// init geo map with current markers, if any
-			vboInitGeoMap();
-
 			// listener to the geocode-address change event with debounce handler.
 			document.addEventListener('vbo-geocode-address', vboDebounceEvent(vboAddressGeocoding, 500));
 
@@ -1706,6 +1770,17 @@ if ($geo_supported) {
 			 * Add event listener to the geo-saving event with debounce handler.
 			 */
 			document.addEventListener('vbo-room-geosaving', vboDebounceEvent(vboHandleGeoSaving, 500));
+
+			/**
+			 * Register promise for Google Maps async loading completion.
+			 */
+			VBOCore.onInstanceReady(() => {
+				// constantly check when Google Maps async loading is completed
+				return VBOGMapsUtils.isReady;
+			}).then(() => {
+				// init geo map with current markers, if any
+				vboInitGeoMap();
+			});
 
 		});
 	</script>

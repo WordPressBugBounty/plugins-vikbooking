@@ -215,6 +215,25 @@ final class VBOFactory
                 static::$crontabSimulator->schedule(new VBOCrontabRunnerAware('performance_cleaner', 60 * 60 * 24 * 7, function(VBOCrontabLogger $logger) {
                     VBOPerformanceCleaner::runCheck();
                 }));
+
+                /**
+                 * Run the door-access-control framework.
+                 * Should run every hour.
+                 */
+                static::$crontabSimulator->schedule(new VBOCrontabRunnerAware('door_access_control', 60 * 60, function(VBOCrontabLogger $logger) {
+                    // watch if any booking is approaching the check-in date
+                    VBOFactory::getDoorAccessControl()->handleUpcomingArrivals();
+                    // watch if passcodes get used for the first time
+                    VBOFactory::getDoorAccessControl()->watchFirstAccess();
+                }));
+
+                /**
+                 * Run database optimization.
+                 * Should run every hour.
+                 */
+                static::$crontabSimulator->schedule(new VBOCrontabRunnerAware('db_optimization', 60 * 60, function(VBOCrontabLogger $logger) {
+                    VBOPerformanceCleaner::optimizeDatabase();
+                }));
             }
 
             if (class_exists('VCMCrontabProvider')) {
@@ -306,5 +325,17 @@ final class VBOFactory
         $helpWizard->addIncludePath(VBO_ADMIN_PATH . '/helpers/src/help/wizard/drivers/');
 
         return $helpWizard;
+    }
+
+    /**
+     * Returns the Door Access Control instance.
+     * 
+     * @return  VBODooraccessFactory
+     * 
+     * @since   1.18.4 (J) - 1.8.4 (WP)
+     */
+    public static function getDoorAccessControl()
+    {
+        return VBODooraccessFactory::getInstance();
     }
 }

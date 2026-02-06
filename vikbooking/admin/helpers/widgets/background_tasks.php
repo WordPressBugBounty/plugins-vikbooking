@@ -57,7 +57,7 @@ class VikBookingAdminWidgetBackgroundTasks extends VikBookingAdminWidget
 	public function preflight()
 	{
 		// can be used only if we have at least a scheduled task
-		return count($this->crontab);
+		return (bool) count($this->crontab);
 	}
 
 	/**

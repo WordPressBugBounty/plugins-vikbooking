@@ -31,6 +31,7 @@
     --vbo-middle-color-btn: #262f39;
     --vbo-grey-blue-bg: #424954;
     --vbo-light-blue: #313f4d;
+    --vbo-white-blue-bg: #282e39;
 
     /* Config bg and text color */
     --vbo-config-bg-color: #282b33;
@@ -154,7 +155,12 @@ h2, h3 {
 .label, .badge {
     background-color: #666;
 }
-table.table th, table.table td {
+table.table th {
+    background: var(--vbo-config-child-bg-color);
+    border-top: 1px solid var(--vbo-config-border-color);
+    border-bottom: 0;
+}
+table.table td {
     background: var(--vbo-config-bg-color);
     border-top: 1px solid var(--vbo-config-border-color);
     border-bottom: 0;
@@ -377,11 +383,19 @@ body code, body pre {
     border: 1px solid rgb(216, 0, 12, .3) !important;
     background-color: rgba(255, 216, 216, 0.2) !important;
 }
+
+
 .bluedays {
     background: var(--vbo-light-color-btn) !important;
 }
 .bluedays.vbo-tablewday-wend {
     background: var(--vbo-middle-color-btn) !important;
+}
+.bluedays.vbo-overv-cell-newmonth {
+    background-color: #202c57 !important;
+}
+.vbo-roverview-table .vboverviewtablerow-subunit-unassigned td:first-child, .vbo-roverview-table .vboverviewtablerow-subunit-unassigned td.vbo-overv-avcell {
+    color: #222;
 }
 .block-picked-start, .block-picked-middle, .block-picked-end {
     background: rgba(255, 196, 153, 0.5);
@@ -1220,6 +1234,10 @@ joomla-toolbar-button .dropdown-menu  {
 .aitools-message-addon .vbo-ai-source-badge-details {
     color: #fff;
 }
+.aitools-messages-action-wrapper .aitools-uploaded-files .file-attachment {
+    background: var(--vbo-grey-blue-bg);
+    border-color: var(--vbo-config-bg-dark);
+}
 
 /* Color Tags */
 .vbo-tagcolors-elems-wrap .red, .vbo-tm-color.red, .vbo-colortag-circle.red {
@@ -1280,4 +1298,33 @@ joomla-toolbar-button .dropdown-menu  {
 }
 .vbo-history-timeline .history-timeline-change .change-details .change-events-list {
     background: #4f4f4f;   
+}
+
+/* MultiSwitcher double status */
+.vik-multiswitch-wrap.vbo-multiswitch-double .vik-multiswitch-radiobtn input:checked + .vik-multiswitch-trigger, .vik-multiswitch-wrap.vbo-multiswitch-double .vik-multiswitch-radiobtn input:checked + .vik-multiswitch-trigger + .vik-multiswitch-txt {
+	color: #444;
+}
+
+/* Reports */
+.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody .vbo-report-row-group-1 td {
+    background: var(--vbo-basic-btn-hover);
+}
+.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody tr.vbo-report-row-comparison td {
+    border-top: 1px solid #1f232b;
+}
+
+/* Pagination */
+.pagination-links .button:not(.disabled) {
+    border: 1px solid var(--vbo-light-color-btn) !important;
+    background: var(--vbo-config-bg-color) !important;
+    border-color: var(--vbo-contrast-text-color);
+}
+.pagination-links .button:not(.disabled):hover, .pagination-links .button:not(.disabled):focus {
+    border-color: var(--vbo-base-color) !important;
+    color:  var(--vbo-base-color) !important;
+}
+.pagination-links .button.disabled {
+    background: var(--vbo-basic-btn) !important;
+    color: var(--vbo-config-title-color) !important;
+    border-color: var(--vbo-config-border-color) !important;
 }

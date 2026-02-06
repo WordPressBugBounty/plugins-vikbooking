@@ -1518,7 +1518,7 @@ class VikBookingLanguageSite implements JLanguageHandler
 				$result = __('Maximum date in the future allowed for booking is %s', 'vikbooking');
 				break;
 			case 'VBOERRMINDAYSADV':
-				$result = __('Minimum days in advance for bookings is %d', 'vikbooking');
+				$result = __('Minimum days in advance for bookings is %s', 'vikbooking');
 				break;
 			case 'VBOSEARCHERRCODETHREEBASE':
 				$result = __('the number of guests selected', 'vikbooking');
@@ -2456,6 +2456,52 @@ class VikBookingLanguageSite implements JLanguageHandler
 				break;
 			case 'VBO_MEALS':
 				$result = __('Meals', 'vikbooking');
+				break;
+			case 'VBO_LIST':
+				$result = __('List', 'vikbooking');
+				break;
+			case 'VBO_GRID':
+				$result = __('Grid', 'vikbooking');
+				break;
+			case 'VBO_FILTERS':
+				$result = __('Filters', 'vikbooking');
+				break;
+			case 'VBOMANUALUPLOAD':
+				$result = __('Upload File', 'vikbooking');
+				break;
+			case 'VBODROPFILES':
+				$result = __('or drag and drop files here', 'vikbooking');
+				break;
+			case 'VBO_READ_MORE':
+				$result = __('Read more', 'vikbooking');
+				break;
+			case 'VBO_PRICE_RANGE':
+				$result = __('Price range', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_GEN_OK_DEVICE':
+				// @TRANSLATORS: Door Access Control framework successfully generated a passcode to open a lock.
+				$result = _x('Passcode %s successfully generated for the device "%s".', 'Door Access Control framework successfully generated a passcode to open a lock.', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_DEL_OK_DEVICE':
+				// @TRANSLATORS: Door Access Control framework successfully deleted a passcode for a lock.
+				$result = _x('The passcode was successfully deleted from the device "%s".', 'Door Access Control framework successfully deleted a passcode for a lock.', 'vikbooking');
+				break;
+			case 'VBO_TAKE_ACTION':
+				// @TRANSLATORS: Click the button to visit the URL and take action
+				$result = _x('Take action', 'Click the button to visit the URL and take action', 'vikbooking');
+				break;
+			case 'VBO_DB_OPTIM_DURATION':
+				// @TRANSLATORS: i.e. Database optimization completed in 20 seconds.
+				$result = _x('Database optimization completed in %d seconds.', 'i.e. Database optimization completed in 20 seconds.', 'vikbooking');
+				break;
+			case 'VBO_MAINTENANCE':
+				$result = __('Maintenance', 'vikbooking');
+				break;
+			case 'VBO_DOCS_UPLOAD_MRZ_HELP':
+				$result = __('Please upload clear photos or scans of this guest\'s identity document (front and back if applicable). These images will be automatically analyzed to extract document details and help pre-fill the check-in information.', 'vikbooking');
+				break;
+			case 'VBO_ANALYSING_DOCS':
+				$result = __('Analyzing documents', 'vikbooking');
 				break;
 		}
 

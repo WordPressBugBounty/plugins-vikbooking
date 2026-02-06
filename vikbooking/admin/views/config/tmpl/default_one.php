@@ -290,7 +290,7 @@ jQuery(function() {
 				</div>
 				<div class="vbo-param-container vbo-param-nested precheckin-params-tr" style="display: <?php echo $precheckin_enabled > 0 ? 'flex' : 'none'; ?>;">
 					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGPRECHECKINMIND'); ?></div>
-					<div class="vbo-param-setting"><input type="number" name="precheckinminoffset" value="<?php echo VikBooking::precheckinMinOffset(); ?>" min="0" /></div>
+					<div class="vbo-param-setting"><input type="number" name="precheckinminoffset" value="<?php echo VikBooking::precheckinMinOffset(); ?>" min="-7" max="365" /></div>
 				</div>
 				<div class="vbo-param-container vbo-param-nested precheckin-params-tr" style="display: <?php echo $precheckin_enabled > 0 ? 'flex' : 'none'; ?>;">
 					<div class="vbo-param-label"><?php echo JText::translate('VBO_CONF_CHECKIN_DATA'); ?></div>
@@ -436,6 +436,14 @@ jQuery(function() {
 					</div>
 					<div class="vbo-param-setting">
 						<?php echo $vbo_app->printYesNoButtons('interactive_map', JText::translate('VBYES'), JText::translate('VBNO'), (int)VikBooking::interactiveMapEnabled(), 1, 0); ?>
+					</div>
+				</div>
+				<div class="vbo-param-container vbo-param-nested" data-vbosearchtpl="classic" style="<?php echo $search_tpl != 'classic' ? 'display: none;' : ''; ?>">
+					<div class="vbo-param-label">
+						<?php echo JText::translate('VBO_SEARCH_FILTERS'); ?>
+					</div>
+					<div class="vbo-param-setting">
+						<?php echo $vbo_app->printYesNoButtons('search_filters', JText::translate('VBYES'), JText::translate('VBNO'), (int) $config->getBool('search_filters', false), 1, 0); ?>
 					</div>
 				</div>
 				<?php
@@ -721,11 +729,10 @@ jQuery(function() {
 				}
 				?>
 				<div class="vbo-param-container">
-					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGONECALENDAR'); ?></div>
+					<div class="vbo-param-label"><?php echo JText::translate('VBO_OPTIMIZE_DB_RECORDS'); ?></div>
 					<div class="vbo-param-setting">
-						<select name="calendar">
-							<option value="jqueryui"<?php echo ($calendartype == "jqueryui" ? " selected=\"selected\"" : ""); ?>>jQuery UI</option>
-						</select>
+						<input type="time" name="dboptimizetime" value="<?php echo $config->get('dboptimizetime', ''); ?>" min="00:00" max="23:30" step="1800" />
+						<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_SEL_TIME_OP_RUN'); ?></span>
 					</div>
 				</div>
 				<div class="vbo-param-container">

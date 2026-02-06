@@ -1,7 +1,7 @@
 /**
  * jQuery add-on used to support context menus.
  * 
- * @version 2.2.4
+ * @version 2.2.5
  * @author E4J srl
  * 
  * Here's a list of supported options.
@@ -10,7 +10,7 @@
  *                                  following values: click|doubleclick|rightclick|hover.
  *                                  Click will be used by default.
  * @param placement       string    Where the popup should be displayed in relation to the target.
- *                                  Accepts the following values: auto|top|right|bottom|left.
+ *                                  Accepts the following values: auto|top|right|bottom|left|center (combined).
  *                                  Auto will be used by default (at the mouse coordinates).
  * @param class           string    An optional class to use for individual styling.
  * @param buttons         object[]  A list of buttons to include within the popup menu. See the options
@@ -784,6 +784,11 @@
 			x = rootOffset.left;
 			y = rootOffset.top - popupHeight - 4;
 		}
+		// display popup above the root, centered
+		else if (config.placement == 'top-center') {
+			x = rootOffset.left + (rootWidth > popupWidth ? ((rootWidth - popupWidth) / 2) : 0);
+			y = rootOffset.top - popupHeight - 4;
+		}
 		// display the popup below the root
 		else if (config.placement == 'bottom') {
 			x = rootOffset.left + rootWidth / 2 - popupWidth / 2;
@@ -797,6 +802,11 @@
 		// display the popup below the root, to the left
 		else if (config.placement == 'bottom-left') {
 			x = rootOffset.left;
+			y = rootOffset.top + rootHeight + 4;
+		}
+		// display the popup below the root, centered
+		else if (config.placement == 'bottom-center') {
+			x = rootOffset.left + (rootWidth > popupWidth ? ((rootWidth - popupWidth) / 2) : 0);
 			y = rootOffset.top + rootHeight + 4;
 		}
 		// display the popup before the root

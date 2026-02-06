@@ -25,6 +25,20 @@ class VikBookingBuilder
 	 */
 	public static function loadLanguage()
 	{
+		static $loaded = false;
+
+		/**
+		 * Do not load the languages more than once.
+		 * 
+		 * @since 1.8.4
+		 */
+		if ($loaded)
+		{
+			return;
+		}
+
+		$loaded = true;
+
 		$app = JFactory::getApplication();
 
 		/**

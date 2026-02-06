@@ -87,7 +87,7 @@ jQuery(function() {
 	});
 	jQuery(document).mouseup(function(e) {
 		if (!vbodialog_on) {
-			return false;
+			return;
 		}
 		var vbo_overlay_cont = jQuery(".vbo-info-overlay-content");
 		if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {

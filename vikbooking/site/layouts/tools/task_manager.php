@@ -33,7 +33,11 @@ VikBookingIcons::loadRemoteAssets();
 $geo = VikBooking::getGeocodingInstance();
 
 if ($geo->isSupported()) {
-    $geo->loadAssets();
+    $geo->loadAssets([
+        'callback'  => 'vbo_gm_ready',
+        'libraries' => 'marker',
+        'loading'   => 'async',
+    ]);
 }
 
 JHtml::fetch('vbohtml.tmscripts.changestatus');

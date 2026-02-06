@@ -10,6 +10,11 @@
 
 defined('ABSPATH') or die('No script kiddies please!');
 
+/**
+ * Include the VBOCore JS class.
+ */
+VikBooking::getVboApplication()->loadCoreJS();
+
 $vbdateformat = VikBooking::getDateFormat();
 if ($vbdateformat == "%d/%m/%Y") {
 	$df = 'd/m/Y';
@@ -87,7 +92,7 @@ jQuery(function() {
 	});
 	jQuery(document).mouseup(function(e) {
 		if (!vbdialog_on) {
-			return false;
+			return;
 		}
 		var vbdialog_cont = jQuery(".vbdialog-inner");
 		if (!vbdialog_cont.is(e.target) && vbdialog_cont.has(e.target).length === 0) {
@@ -102,20 +107,20 @@ if (count($this->js_overcounter) > 0) {
 	echo 'var r_counter = {};'."\n";
 }
 ?>
-var arridroom = new Array();
+var vboRoomParty = {};
 <?php
-$arr_nr = array();
-$disp_rooms = array();
+$arr_nr = [];
+$disp_rooms = [];
 for ($ir = 1; $ir <= $this->roomsnum; $ir++) {
 	$arr_nr[$ir] = '';
-	$nowrooms = array();
+	$nowrooms = [];
 	foreach ($this->res[$ir] as $room) {
-		$nowrooms[] = '"'.$room[0]['idroom'].'"';
+		$nowrooms[] = (string) $room[0]['idroom'];
 		$disp_rooms[$ir][] = (int)$room[0]['idroom'];
 	}
-?>
-arridroom[<?php echo $ir; ?>] = new Array(<?php echo implode(",", $nowrooms); ?>);
-<?php
+	?>
+vboRoomParty[<?php echo $ir; ?>] = <?php echo json_encode($nowrooms); ?>;
+	<?php
 }
 echo 'var sel_rooms = '.json_encode($arr_nr).";\n";
 echo 'var disp_rooms = '.json_encode($disp_rooms).";\n";
@@ -215,11 +220,11 @@ function vbSelectRoom(roomnum, idroom) {
 	}
 	vbaddClass(document.getElementById('vbcontainer'+roomnum+'_'+idroom), 'room_selected');
 	document.getElementById('vbselector'+roomnum+'_'+idroom).innerHTML = '<?php echo addslashes(JText::translate('VBSELECTEDR')); ?>';
-	for (val in arridroom[roomnum]) {
-		if (arridroom[roomnum][val] != idroom) {
-			if (vbhasClass(document.getElementById('vbcontainer'+roomnum+'_'+arridroom[roomnum][val]), 'room_selected')) {
-				vbremoveClass(document.getElementById('vbcontainer'+roomnum+'_'+arridroom[roomnum][val]), 'room_selected');
-				document.getElementById('vbselector'+roomnum+'_'+arridroom[roomnum][val]).innerHTML = '<?php echo addslashes(JText::translate('VBSELECTR')); ?>';
+	for (val in vboRoomParty[roomnum]) {
+		if (vboRoomParty[roomnum][val] != idroom) {
+			if (vbhasClass(document.getElementById('vbcontainer'+roomnum+'_'+vboRoomParty[roomnum][val]), 'room_selected')) {
+				vbremoveClass(document.getElementById('vbcontainer'+roomnum+'_'+vboRoomParty[roomnum][val]), 'room_selected');
+				document.getElementById('vbselector'+roomnum+'_'+vboRoomParty[roomnum][val]).innerHTML = '<?php echo addslashes(JText::translate('VBSELECTR')); ?>';
 			}
 		}
 	}
@@ -351,21 +356,23 @@ if (count($this->mod_booking)) {
 			</div>
 		</div>
 	</div>
-<?php
-$search_tpl = VikBooking::searchResultsTmpl();
-if ($this->roomsnum < 2) {
-	/**
-	 * By default, we load the classic template file when just one room-party was requested,
-	 * or when the classic template file was chosen from the configuration settings.
-	 * To always load the compact template file, just override this file default.php to call
-	 * echo $this->loadTemplate($search_tpl);
-	 * all the times, no matter of how many rooms were requested.
-	 */
-	echo $this->loadTemplate('classic');
-} else {
-	echo $this->loadTemplate($search_tpl);
-}
-?>
+	<div class="vbo-results-body">
+	<?php
+	$search_tpl = VikBooking::searchResultsTmpl();
+	if ($this->roomsnum < 2) {
+		/**
+		 * By default, we load the classic template file when just one room-party was requested,
+		 * or when the classic template file was chosen from the configuration settings.
+		 * To always load the compact template file, just override this file default.php to call
+		 * echo $this->loadTemplate($search_tpl);
+		 * all the times, no matter of how many rooms were requested.
+		 */
+		echo $this->loadTemplate('classic');
+	} else {
+		echo $this->loadTemplate($search_tpl);
+	}
+	?>
+	</div>
 </div>
 
 <?php

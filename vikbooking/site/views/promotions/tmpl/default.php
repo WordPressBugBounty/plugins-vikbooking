@@ -141,22 +141,22 @@ if(count($promotions) > 0) {
 					<?php
 				} 
 				//
-				if($promo['type'] == 2) {
+				if ($promo['type'] == 2) {
 					?>
 					<div class="vbo-promotion-discount">
 						<div class="vbo-promotion-discount-details vbo-pref-bordertext">
 					<?php
-					if($promo['val_pcent'] == 2) {
-						//Percentage
+					if ($promo['val_pcent'] == 2) {
+						// percentage
 						$disc_amount = ($promo['diffcost'] - abs($promo['diffcost'])) > 0 ? $promo['diffcost'] : abs($promo['diffcost']);
 						?>
 							<span class="vbo-promotion-discount-percent-amount"><?php echo $disc_amount; ?>%</span>
 							<span class="vbo-promotion-discount-percent-txt"><?php echo JText::translate('VBOPROMOPERCENTDISCOUNT'); ?></span>
 						<?php
-					}else {
-						//Fixed
+					} else {
+						// fixed
 						?>
-							<span class="vbo-promotion-discount-percent-amount"><span class="vbo_currency"><?php echo $currencysymb; ?></span><span class="vbo_price"><?php echo VikBooking::numberFormat($promo['diffcost']); ?></span></span>
+							<span class="vbo-promotion-discount-percent-amount"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($promo['diffcost']), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></span>
 							<span class="vbo-promotion-discount-percent-txt"><?php echo JText::translate('VBOPROMOFIXEDDISCOUNT'); ?></span>
 						<?php
 					}

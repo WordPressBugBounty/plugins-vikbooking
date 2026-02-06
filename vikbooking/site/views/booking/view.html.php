@@ -202,7 +202,7 @@ class VikbookingViewBooking extends JViewVikBooking
 		// render the booking details
 
 		// set noindex instruction for robots
-		$document->setMetaData('robots', 'noindex,follow');
+		$document->setMetaData('robots', 'noindex, nofollow');
 
 		// load jQuery
 		if (VikBooking::loadJquery()) {

@@ -15,8 +15,9 @@ defined('ABSPATH') or die('No script kiddies please!');
  * Notification elements registry to store a record for the Notification Center.
  * 
  * @since 	1.16.8 (J) - 1.6.8 (WP)
+ * @since 	1.18.3 (J) - 1.8.3 (WP) refactoring makes the class no longer "final".
  */
-final class VBONotificationElements extends JObject
+class VBONotificationElements extends JObject
 {
 	/**
 	 * Valid notification group enumerations.
@@ -38,6 +39,8 @@ final class VBONotificationElements extends JObject
 		'reports',
 		// notifications from AI
 		'ai',
+		// notifications from Door Access Control
+		'dac',
 	];
 
 	/**
@@ -46,6 +49,33 @@ final class VBONotificationElements extends JObject
 	 * @var  string
 	 */
 	private $defaultType = 'info';
+
+	/**
+	 * Constructs the proper notification elements object according to the notification type.
+	 * 
+	 * @param 	array|object 	$notification 	The notification properties.
+	 * 
+	 * @return 	VBONotificationElements
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public static function getInstance($notification)
+	{
+		$notification = (array) $notification;
+
+		// access the notification type
+		$type = ucfirst(preg_replace('/[^a-z0-9]+/', '', strtolower((string) ($notification['type'] ?? 'null'))));
+
+		// build the expected notification class name
+		$ncn = __CLASS__ . $type;
+
+		if (class_exists($ncn)) {
+			return new $ncn($notification);
+		}
+
+		// construct a "generic" notification elements object
+		return new static($notification);
+	}
 
 	/**
 	 * Determines and returns the group to which the notification belongs.
@@ -300,17 +330,20 @@ final class VBONotificationElements extends JObject
 	 * Builds, sets and returns the notification signature.
 	 * 
 	 * @return 	string
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) signature also contains "idorderota".
 	 */
 	public function buildSignature()
 	{
 		// build notification signature elements
 		$elements = [
-			'id'      => $this->get('id', $this->get('notification_id', 0)),
-			'idorder' => $this->get('idorder', 0),
-			'sender'  => $this->get('sender', ''),
-			'type'    => $this->get('type', ''),
-			'title'   => $this->get('title', ''),
-			'summary' => $this->get('summary', ''),
+			'id'         => $this->get('id', $this->get('notification_id', 0)),
+			'idorder'    => $this->get('idorder', 0),
+			'idorderota' => $this->get('idorderota', 0),
+			'sender'     => $this->get('sender', ''),
+			'type'       => $this->get('type', ''),
+			'title'      => $this->get('title', ''),
+			'summary'    => $this->get('summary', ''),
 		];
 
 		// build notification signature string
@@ -320,6 +353,19 @@ final class VBONotificationElements extends JObject
 		$this->setSignature($signature);
 
 		return $signature;
+	}
+
+	/**
+	 * Method invoked after storing a notification for eventually executing actions.
+	 * Specific notification (class) types should implement their own actions.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public function postflight()
+	{
+		return;
 	}
 
 	/**

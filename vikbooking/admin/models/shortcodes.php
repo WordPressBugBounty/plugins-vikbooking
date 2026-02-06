@@ -107,6 +107,16 @@ class VikBookingModelShortcodes extends JModelForm
 		// get all shortcodes of any type
 		$shortcodes = $this->all();
 
+		/**
+		 * Premature filtering of shortcodes not assigned to any page.
+		 * 
+		 * @since 	1.8.6
+		 */
+		$shortcodes = array_values(array_filter($shortcodes, function($shortcode)
+		{
+			return !empty($shortcode->post_id);
+		}));
+
 		// current language
 		$lang = is_null($lang) ? JFactory::getLanguage()->getTag() : $lang;
 
@@ -126,12 +136,6 @@ class VikBookingModelShortcodes extends JModelForm
 			
 			foreach ($shortcodes as $k => $v)
 			{
-				// ignore shortcodes not linked to a valid page
-				if (empty($v->post_id))
-				{
-					continue;
-				}
-
 				// start the score counter
 				$count = 0;
 

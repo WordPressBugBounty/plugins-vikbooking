@@ -116,12 +116,19 @@ class VikBookingHelperGeocoding
 	 * @param 	mixed 	string or array values values to append to the URL.
 	 * 
 	 * @return 	self
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) loaded file gmaps-utils.js.
 	 */
 	public function loadAssets($params = null)
 	{
-		if (empty($this->gmaps_apikey)) {
+		static $loaded = null;
+
+		if (empty($this->gmaps_apikey) || $loaded) {
 			return $this;
 		}
+
+		// turn flag on
+		$loaded = true;
 
 		// values like &callback=initMap could be passed as argument
 		$qstring = '';
@@ -129,14 +136,18 @@ class VikBookingHelperGeocoding
 		if (!empty($params)) {
 			if (is_string($params)) {
 				$qstring = (substr($params, 0, 1) != '&' ? '&' : '') . $params;
-			}
-			if (is_array($params)) {
+			} elseif (!is_scalar($params)) {
 				$qstring = '&' . http_build_query($params);
 			}
 		}
 
+		$document = JFactory::getDocument();
+
+		// load the Google Maps Utils file within VikBooking
+		$document->addScript(VBO_SITE_URI . 'resources/gmaps-utils.js', ['version' => VIKBOOKING_SOFTWARE_VERSION]);
+
 		// load Google Maps API JS
-		JFactory::getDocument()->addScript('https://maps.googleapis.com/maps/api/js?key=' . $this->gmaps_apikey . $qstring);
+		$document->addScript('https://maps.googleapis.com/maps/api/js?key=' . $this->gmaps_apikey . $qstring);
 
 		return $this;
 	}

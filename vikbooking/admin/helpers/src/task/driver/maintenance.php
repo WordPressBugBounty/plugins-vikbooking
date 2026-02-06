@@ -18,6 +18,7 @@ defined('ABSPATH') or die('No script kiddies please!');
  */
 class VBOTaskDriverMaintenance extends VBOTaskDriveraware
 {
+    use VBOTaskDriverParamsAi;
     use VBOTaskDriverParamsFiltering;
     use VBOTaskDriverParamsDefault;
 
@@ -51,6 +52,7 @@ class VBOTaskDriverMaintenance extends VBOTaskDriveraware
     public function getParams()
     {
         return array_merge(
+            $this->useAiParams(),
             $this->useFilteringParams(),
             $this->useDefaultParams()
         );

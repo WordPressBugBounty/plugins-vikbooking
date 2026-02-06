@@ -37,6 +37,18 @@ $countries = $this->countries;
 $pkg = $this->pkg;
 $vbo_tn = $this->vbo_tn;
 
+/**
+ * Custom listing check-in and check-out times.
+ * 
+ * @since 	1.18.3 (J) - 1.8.3 (WP)
+ */
+$listing_custom_checkin = '';
+$listing_custom_checkout = '';
+if ($roomsnum == 1) {
+	$listing_custom_checkin = VikBooking::getRoomParam('checkin', ($rooms[(key($rooms))]['params'] ?? ''));
+	$listing_custom_checkout = VikBooking::getRoomParam('checkout', ($rooms[(key($rooms))]['params'] ?? ''));
+}
+
 // JS lang def
 JText::script('VBO_RM_COUPON_CONFIRM');
 
@@ -179,8 +191,15 @@ if (count($this->mod_booking)) {
 		<?php
 	} else {
 		$rq_split_stay = VikRequest::getVar('split_stay', array());
+		if ($this->roomsnum < 2 && (int) $session->get('vboSearchRoomId', 0) == (int) $this->rooms[1]['id']) {
+			// we started the search from the room details page, so the dates link should point there
+			$dateslink = JRoute::rewrite('index.php?option=com_vikbooking&view=roomdetails&roomid='.$this->rooms[1]['id'].'&checkin='.$first.'&checkout='.$second.(!empty($pitemid) ? '&Itemid='.$pitemid : ''));
+		} else {
+			// link to general search form
+			$dateslink = JRoute::rewrite('index.php?option=com_vikbooking&view=vikbooking&checkin='.$first.'&checkout='.$second.(!empty($pitemid) ? '&Itemid='.$pitemid : ''));
+		}
 		?>
-		<li class="vbo-step vbo-step-complete"><a href="<?php echo JRoute::rewrite('index.php?option=com_vikbooking&view=vikbooking&checkin='.$first.'&checkout='.$second.(!empty($pitemid) ? '&Itemid='.$pitemid : '')); ?>"><?php echo JText::translate('VBSTEPDATES'); ?></a></li>
+		<li class="vbo-step vbo-step-complete"><a href="<?php echo $dateslink; ?>"><?php echo JText::translate('VBSTEPDATES'); ?></a></li>
 		<li class="vbo-step vbo-step-complete"><a href="<?php echo JRoute::rewrite('index.php?option=com_vikbooking&task=search&checkindate='.urlencode($checkinforlink).'&checkoutdate='.urlencode($checkoutforlink).'&roomsnum='.$roomsnum.$peopleforlink.(!empty($pitemid) ? '&Itemid='.$pitemid : ''), false); ?>"><?php echo JText::translate('VBSTEPROOMSELECTION'); ?></a></li>
 		<li class="vbo-step vbo-step-complete"><a href="<?php echo JRoute::rewrite('index.php?option=com_vikbooking&task=showprc&checkin='.$first.'&checkout='.$second.'&roomsnum='.$roomsnum.'&days='.$days.$peopleforlink.$roomoptforlink.$roomindexlink.(!empty($this->split_stay) && !empty($rq_split_stay) ? '&' . http_build_query(['split_stay' => $rq_split_stay]) : '').(!empty($pitemid) ? '&Itemid='.$pitemid : ''), false); ?>"><?php echo JText::translate('VBSTEPOPTIONS'); ?></a></li>
 		<?php
@@ -223,14 +242,26 @@ if (count($this->mod_booking)) {
 			<?php VikBookingIcons::e('plane-arrival', 'vbo-pref-color-text'); ?>
 			<div class="vbo-results-head-det">
 				<span class="vbo-results-head-det-lbl"><?php echo JText::translate('VBPICKUP'); ?></span>
-				<span class="vbo-results-head-det-val"><?php echo $wdays_map[$in_info['wday']].', '.date(str_replace("/", $datesep, $df).' H:i', $first); ?></span>
+				<span class="vbo-results-head-det-val"><?php
+					if ($listing_custom_checkin) {
+						echo $wdays_map[$in_info['wday']] . ', ' . date(str_replace("/", $datesep, $df), $first) . ' ' . $listing_custom_checkin;
+					} else {
+						echo $wdays_map[$in_info['wday']] . ', ' . date(str_replace("/", $datesep, $df) . ' H:i', $first);
+					}
+				?></span>
 			</div>
 		</div>
 		<div class="vbo-summary-date">
 			<?php VikBookingIcons::e('plane-departure', 'vbo-pref-color-text'); ?>
 			<div class="vbo-results-head-det">
 				<span class="vbo-results-head-det-lbl"><?php echo JText::translate('VBRETURN'); ?></span>
-				<span class="vbo-results-head-det-val"><?php echo $wdays_map[$out_info['wday']].', '.date(str_replace("/", $datesep, $df).' H:i', $second); ?></span>
+				<span class="vbo-results-head-det-val"><?php
+					if ($listing_custom_checkout) {
+						echo $wdays_map[$out_info['wday']] . ', ' . date(str_replace("/", $datesep, $df), $second) . ' ' . $listing_custom_checkout;
+					} else {
+						echo $wdays_map[$out_info['wday']] . ', ' . date(str_replace("/", $datesep, $df) . ' H:i', $second);
+					}
+				?></span>
 			</div>
 		</div>
 	</div>
@@ -398,34 +429,19 @@ if (count($this->mod_booking)) {
 					<div class="vbo-oconfirm-summary-room-head-cell vbo-oconfirm-summary-room-head-cell-responsive">
 						<span><?php echo JText::translate('ORDNOTAX'); ?></span>
 					</div>
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($saywithout); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($saywithout), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tax<?php echo $hide_tax_class; ?>">
 					<div class="vbo-oconfirm-summary-room-head-cell vbo-oconfirm-summary-room-head-cell-responsive">
 						<span><?php echo JText::translate('ORDTAX'); ?></span>
 					</div>
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($saywith - $saywithout); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($saywith - $saywithout), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tot">
 					<div class="vbo-oconfirm-summary-room-head-cell vbo-oconfirm-summary-room-head-cell-responsive">
 						<span><?php echo JText::translate('ORDWITHTAX'); ?></span>
 					</div>
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($saywith); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($saywith), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 			</div>
 		<?php
@@ -478,34 +494,19 @@ if (count($this->mod_booking)) {
 					<div class="vbo-oconfirm-summary-room-head-cell vbo-oconfirm-summary-room-head-cell-responsive">
 						<span><?php echo JText::translate('ORDNOTAX'); ?></span>
 					</div>
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($optwithout); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($optwithout), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tax<?php echo $hide_tax_class; ?>">
 					<div class="vbo-oconfirm-summary-room-head-cell vbo-oconfirm-summary-room-head-cell-responsive">
 						<span><?php echo JText::translate('ORDTAX'); ?></span>
 					</div>
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($opttax); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($opttax), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tot">
 					<div class="vbo-oconfirm-summary-room-head-cell vbo-oconfirm-summary-room-head-cell-responsive">
 						<span><?php echo JText::translate('ORDWITHTAX'); ?></span>
 					</div>
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($optwith); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($optwith), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 			</div>
 			<?php
@@ -606,34 +607,19 @@ if (count($this->mod_booking)) {
 					<div class="vbo-oconfirm-summary-room-head-cell vbo-oconfirm-summary-room-cell-net">
 						<span><?php echo JText::translate('ORDNOTAX'); ?></span>
 					</div>
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($imp); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($imp), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tax<?php echo $hide_tax_class; ?>">
 					<div class="vbo-oconfirm-summary-room-head-cell vbo-oconfirm-summary-room-cell-tax">
 						<span><?php echo JText::translate('ORDTAX'); ?></span>
 					</div>
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat(($origtotdue - $imp)); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($origtotdue - $imp), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tot">
 					<div class="vbo-oconfirm-summary-room-head-cell vbo-oconfirm-summary-room-cell-tot">
 						<span><?php echo JText::translate('ORDWITHTAX'); ?></span>
 					</div>
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($origtotdue); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($origtotdue), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 			</div>
 
@@ -673,8 +659,7 @@ if (count($this->mod_booking)) {
 					<span></span>
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tot">
-					<span class="vbcurrency">- <span class="vbo_currency"><?php echo $currencysymb; ?></span></span> 
-					<span class="vbprice"><span class="vbo_price"><?php echo VikBooking::numberFormat($couponsave); ?></span></span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($couponsave), $currencysymb, ['<span class="vbcurrency">- <span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 			</div>
 
@@ -695,12 +680,7 @@ if (count($this->mod_booking)) {
 					<span></span>
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tot">
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($totdue); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($totdue), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 			</div>
 			<?php
@@ -728,12 +708,7 @@ if (count($this->mod_booking)) {
 					<span></span>
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tot">
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($this->mod_booking['total']); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($this->mod_booking['total']), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 			</div>
 
@@ -755,12 +730,7 @@ if (count($this->mod_booking)) {
 				</div>
 				<div class="vbo-oconfirm-summary-room-cell-tot">
 					<!-- <span class="vbo-modbook-diffop"><?php echo $modbook_diff_op; ?></span> -->
-					<span class="vbcurrency">
-						<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-					</span> 
-					<span class="vbprice">
-						<span class="vbo_price"><?php echo VikBooking::numberFormat($modbook_tot_diff); ?></span>
-					</span>
+					<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($modbook_tot_diff), $currencysymb, ['<span class="vbcurrency"><span class="vbo_currency">%s</span></span>', '<span class="vbprice"><span class="vbo_price">%s</span></span>']); ?>
 				</div>
 			</div>
 			<?php
@@ -1265,7 +1235,7 @@ if (!empty($payments) && !count($this->mod_booking)) {
 			continue;
 		}
 		$rcheck = $pk == 0 ? " checked=\"checked\"" : "";
-		$saypcharge = "";
+		$saypcharge = '';
 		if ($pay['charge'] > 0.00) {
 			$decimals = $pay['charge'] - (int)$pay['charge'];
 			if ($decimals > 0.00) {
@@ -1273,9 +1243,13 @@ if (!empty($payments) && !count($this->mod_booking)) {
 			} else {
 				$okchargedisc = number_format($pay['charge'], 0);
 			}
-			$saypcharge .= " (".($pay['ch_disc'] == 1 ? "+" : "-");
-			$saypcharge .= ($pay['val_pcent'] == 1 ? "<span class=\"vbcurrency\">".$currencysymb."</span> " : "")."<span class=\"vbprice\">" . $okchargedisc . "</span>" . ($pay['val_pcent'] == 1 ? "" : " <span class=\"vbcurrency\">%</span>");
-			$saypcharge .= ")";
+			$saypcharge .= ' (' . ($pay['ch_disc'] == 1 ? '+' : '-');
+			if ($pay['val_pcent'] == 1) {
+				$saypcharge .= VikBooking::formatCurrencyNumber($okchargedisc, $currencysymb, ['<span class="vbcurrency">%s</span>', '<span class="vbprice">%s</span>']);
+			} else {
+				$saypcharge .= "<span class=\"vbprice\">" . $okchargedisc . "</span> <span class=\"vbcurrency\">%</span>";
+			}
+			$saypcharge .= ')';
 		}
 		?>
 			<li class="vbo-oconfirm-paymethod-item<?php echo $pk == 0 ? ' vbo-oconfirm-paymethod-item-active' : ''; ?>">
@@ -1367,7 +1341,7 @@ if (!empty($payments) && !count($this->mod_booking)) {
 	$dep_nonrefund_allowed = VikBooking::allowDepositFromRates($tars);
 	if (!(count($this->mod_booking) > 0) && !VikBooking::payTotal() && VikBooking::depositAllowedDaysAdv($second) && VikBooking::depositCustomerChoice() && $dep_amount > 0 && $dep_nonrefund_allowed && ($dep_type == "fixed" || ($dep_type != "fixed" && $dep_amount < 100))) {
 		$dep_amount = ($dep_amount - abs($dep_amount)) > 0.00 ? VikBooking::numberFormat($dep_amount) : $dep_amount;
-		$dep_string = $dep_type == "fixed" ? $currencysymb.' '.$dep_amount : $dep_amount.'%';
+		$dep_string = $dep_type == "fixed" ? VikBooking::formatCurrencyNumber($dep_amount, $currencysymb) : $dep_amount . '%';
 		?>
 		<div class="vbo-oconfirm-choosedeposit">
 			<h4><?php echo JText::translate('VBCHOOSEDEPOSIT'); ?></h4>

@@ -132,7 +132,7 @@ jQuery(function() {
 						?>
 						<div class="vbpricedetstr<?php echo $rowk; ?>">
 							<div class="vbpricedetstable-leftcol"><?php echo VikBooking::sayWeekDay($checkwday['wday']).' '.$checkwday['mday']; ?></div>
-							<div class="vbpricedetstable-rightcol"><span class="vbo_currency"><?php echo $currencysymb; ?></span> <span class="vbo_price"><?php echo $tax_summary ? VikBooking::numberFormat($todaycost) : VikBooking::numberFormat(VikBooking::sayCostPlusIva($todaycost, $tar[0]['idprice'])); ?></span></div>
+							<div class="vbpricedetstable-rightcol"><?php echo VikBooking::formatCurrencyNumber(($tax_summary ? VikBooking::numberFormat($todaycost) : VikBooking::numberFormat(VikBooking::sayCostPlusIva($todaycost, $tar[0]['idprice']))), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></div>
 						</div>
 						<?php
 						$rowk = 1 - $rowk;
@@ -141,8 +141,11 @@ jQuery(function() {
 						if (!empty($tar[0]['diffusagecost'])) {
 							$operator = substr($tar[0]['diffusagecost'], 0, 1);
 							$valpcent = substr($tar[0]['diffusagecost'], -1);
-							$saydiffusage = $valpcent == "%" ? "" : '<span class="vbo_currency">'.$currencysymb."</span> ";
-							$saydiffusage .= $operator." ".($valpcent != "%" ? '<span class="vbo_price">' : '').VikBooking::numberFormat(substr($tar[0]['diffusagecost'], 1, (strlen($tar[0]['diffusagecost']) - 1))).($valpcent == "%" ? " %" : "</span>");
+							if ($valpcent != "%") {
+								$saydiffusage = $operator . ' ' . VikBooking::formatCurrencyNumber(VikBooking::numberFormat(substr($tar[0]['diffusagecost'], 1, (strlen($tar[0]['diffusagecost']) - 1))), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']);
+							} else {
+								$saydiffusage = $operator . ' ' . VikBooking::numberFormat(substr($tar[0]['diffusagecost'], 1, (strlen($tar[0]['diffusagecost']) - 1))) . ' %';
+							}
 							?>
 						<div class="vbpricedetstr<?php echo $rowk; ?>">
 							<div class="vbpricedetstable-leftcol">&nbsp;</div>
@@ -168,7 +171,7 @@ jQuery(function() {
 		<?php
 		if ($tar[0]['cost'] > 0) {
 			?>
-				<span class="room_cost"><span class="vbo_currency"><?php echo $currencysymb; ?></span> <span class="vbo_price"><?php echo $tax_summary ? VikBooking::numberFormat($tar[0]['cost']) : VikBooking::numberFormat(VikBooking::sayCostPlusIva($tar[0]['cost'], $tar[0]['idprice'])); ?></span></span>
+				<span class="room_cost"><?php echo VikBooking::formatCurrencyNumber(($tax_summary ? VikBooking::numberFormat($tar[0]['cost']) : VikBooking::numberFormat(VikBooking::sayCostPlusIva($tar[0]['cost'], $tar[0]['idprice']))), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></span>
 			<?php
 		}
 		?>

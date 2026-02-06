@@ -174,6 +174,53 @@ final class VBORoomHelper extends JObject
 	}
 
 	/**
+	 * Calculates the highest Max LOS from the Rates Table for the given room.
+	 * Useful to tell the highest max LOS allowed in a multi-rate plan environment.
+	 * 
+	 * @param 	int 	$idroom 			the ID of the room-type on the website.
+	 * @param 	bool 	$needs_multi_rate 	whether the rates table requires multiple rate plans.
+	 * 
+	 * @return 	int 						the effective Max LOS or 0.
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public static function calcHighestMaxLOS(int $idroom, bool $needs_multi_rate = false)
+	{
+		if (empty($idroom)) {
+			return 0;
+		}
+
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('MAX(' . $dbo->qn('days') . ')')
+				->from($dbo->qn('#__vikbooking_dispcost'))
+				->where($dbo->qn('idroom') . ' = ' . (int) $idroom)
+		, 0, 1);
+
+		$highest_max_los = (int) $dbo->loadResult();
+
+		if ($needs_multi_rate) {
+			$dbo->setQuery(
+				$dbo->getQuery(true)
+					->select('COUNT(DISTINCT ' . $dbo->qn('idprice') . ')')
+					->from($dbo->qn('#__vikbooking_dispcost'))
+					->where($dbo->qn('idroom') . ' = ' . (int) $idroom)
+			, 0, 1);
+
+			$total_room_rplans = (int) $dbo->loadResult();
+
+			if ($total_room_rplans < 2) {
+				// this room has got rates defined for a single rate plan
+				return 0;
+			}
+		}
+
+		return $highest_max_los;
+	}
+
+	/**
 	 * Gets the available room upgrade options, if any.
 	 * 
 	 * @param 	VikBookingTranslator 	$vbo_tn 	the translator object.

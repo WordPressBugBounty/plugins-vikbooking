@@ -14,23 +14,26 @@ jimport('joomla.application.component.view');
 
 class VikbookingViewOrderslist extends JViewVikBooking
 {
-	function display($tpl = null)
+	public function display($tpl = null)
 	{
 		VikBooking::prepareViewContent();
+
 		$app = JFactory::getApplication();
 		$dbo = JFactory::getDbo();
+
 		$islogged = VikBooking::userIsLogged();
-		$cpin = VikBooking::getCPinIstance();
+		$cpin = VikBooking::getCPinInstance();
+
 		$pconfirmnumber = VikRequest::getString('confirmnumber', '', 'request');
 		$pitemid = VikRequest::getInt('Itemid', 0, 'request');
+
 		if (!empty($pconfirmnumber)) {
 			$q = "SELECT `id`,`ts`,`sid`,`idorderota` FROM `#__vikbooking_orders` WHERE `confirmnumber`=" . $dbo->quote($pconfirmnumber) . " OR `idorderota`=" . $dbo->quote($pconfirmnumber) . ";";
 			$dbo->setQuery($q);
-			$dbo->execute();
-			if ($dbo->getNumRows() > 0) {
-				$odata = $dbo->loadAssocList();
+			$odata = $dbo->loadAssocList();
+			if ($odata) {
 				$app->redirect(JRoute::rewrite('index.php?option=com_vikbooking&view=booking&sid='.(!empty($odata[0]['sid']) ? $odata[0]['sid'] : $odata[0]['idorderota']).'&ts='.$odata[0]['ts'].(!empty($pitemid) ? '&Itemid='.$pitemid : ''), false));
-				exit;
+				$app->close();
 			}
 			if ($cpin->pinExists($pconfirmnumber)) {
 				$cpin->setNewPin($pconfirmnumber);
@@ -38,27 +41,29 @@ class VikbookingViewOrderslist extends JViewVikBooking
 				VikError::raiseWarning('', JText::translate('VBINVALIDCONFIRMNUMBER'));
 			}
 		}
+
 		$customer_details = $cpin->loadCustomerDetails();
 		$userorders = [];
 		$navig = '';
-		if ($islogged || count($customer_details) > 0) {
+		if ($islogged || $customer_details) {
 			$currentUser = JFactory::getUser();
 			$lim = 10;
 			$lim0 = VikRequest::getVar('limitstart', 0, '', 'int');
 			$q = "SELECT SQL_CALC_FOUND_ROWS `o`.*,`co`.`idcustomer` FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_customers_orders` `co` ON `co`.`idorder`=`o`.`id` WHERE ".($islogged ? "`o`.`ujid`='".$currentUser->id."'".(count($customer_details) > 0 ? " OR " : "") : "").(count($customer_details) > 0 ? "`co`.`idcustomer`=".(int)$customer_details['id'] : "")." ORDER BY `o`.`checkin` DESC";
 			$dbo->setQuery($q, $lim0, $lim);
-			$dbo->execute();
-			if ($dbo->getNumRows() > 0) {
-				$userorders = $dbo->loadAssocList();
+			$userorders = $dbo->loadAssocList();
+			if ($userorders) {
 				$dbo->setQuery('SELECT FOUND_ROWS();');
 				jimport('joomla.html.pagination');
 				$pageNav = new JPagination( $dbo->loadResult(), $lim0, $lim );
 				$navig = $pageNav->getPagesLinks();
 			}
 		}
+
 		$this->userorders = $userorders;
 		$this->customer_details = $customer_details;
 		$this->navig = $navig;
+
 		//theme
 		$theme = VikBooking::getTheme();
 		if ($theme != 'default') {

@@ -111,6 +111,7 @@ final class VBOCheckinPaxfieldsSpainseshospedajes extends VBOCheckinAdapter
 	 */
 	public function listPrecheckinFields(array $def_fields)
 	{
+		// use the same fields for the back-end guests registration
 		$labels = $this->getLabels();
 		$attributes = $this->getAttributes();
 
@@ -121,9 +122,19 @@ final class VBOCheckinPaxfieldsSpainseshospedajes extends VBOCheckinAdapter
 				continue;
 			}
 			if (!strcasecmp($field_type, 'file') && ($def_fields[0][$field_key] ?? null)) {
-				// append this pax field of type "file" for uploading IDs
-				$labels[$field_key] = $def_fields[0][$field_key];
-				$attributes[$field_key] = $field_type;
+				// append or prepend this pax field of type "file" for uploading IDs
+				if ($this->supportsMRZDetection()) {
+					// when MRZ detection is supported, prepend the pax field of type file
+					$labels = [$field_key => $def_fields[0][$field_key]] + $labels;
+					$attributes = [$field_key => $field_type] + $attributes;
+				} else {
+					// append pax field of type file when no MRZ support
+					$labels[$field_key] = $def_fields[0][$field_key];
+					$attributes[$field_key] = $field_type;
+				}
+
+				// break the loop once we've found the desired field type
+				break;
 			}
 		}
 

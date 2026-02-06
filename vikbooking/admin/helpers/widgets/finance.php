@@ -169,9 +169,8 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
 					</div>
 					<div class="vbo-widget-finance-stat-amount">
-						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['gross_revenue']); ?>">
-							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['gross_revenue']); ?></span>
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['gross_revenue']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['gross_revenue']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
 						</span>
 					</div>
 				</div>
@@ -184,9 +183,8 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
 					</div>
 					<div class="vbo-widget-finance-stat-amount">
-						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['taxes']); ?>">
-							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['taxes']); ?></span>
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['taxes']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['taxes']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
 						</span>
 					</div>
 				</div>
@@ -199,9 +197,8 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
 					</div>
 					<div class="vbo-widget-finance-stat-amount">
-						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['cmms']); ?>">
-							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['cmms']); ?></span>
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['cmms']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['cmms']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
 						</span>
 					</div>
 				</div>
@@ -214,9 +211,8 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
 					</div>
 					<div class="vbo-widget-finance-stat-amount">
-						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['revenue']); ?>">
-							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['revenue']); ?></span>
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['revenue']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['revenue']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
 						</span>
 					</div>
 				</div>
@@ -229,9 +225,8 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
 					</div>
 					<div class="vbo-widget-finance-stat-amount">
-						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['ibe_revenue']); ?>">
-							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['ibe_revenue']); ?></span>
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['ibe_revenue']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['ibe_revenue']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
 						</span>
 					</div>
 				</div>
@@ -244,15 +239,48 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
 					</div>
 					<div class="vbo-widget-finance-stat-amount">
-						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['ota_revenue']); ?>">
-							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['ota_revenue']); ?></span>
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['ota_revenue']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['ota_revenue']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
 						</span>
 					</div>
 				</div>
 			</div>
 
 		<?php
+		if ($stats['tot_vat'] > 0) {
+			?>
+			<div class="vbo-widget-finance-data-block" data-typestat="tot_vat">
+				<div class="vbo-widget-finance-stat">
+					<div class="vbo-widget-finance-stat-info">
+						<span class="vbo-widget-finance-stat-name"><?php echo JText::translate('VBO_INV_VATGST'); ?></span>
+						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
+					</div>
+					<div class="vbo-widget-finance-stat-amount">
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['tot_vat']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['tot_vat']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
+						</span>
+					</div>
+				</div>
+			</div>
+			<?php
+		}
+		if ($stats['city_taxes'] > 0) {
+			?>
+			<div class="vbo-widget-finance-data-block" data-typestat="city_taxes">
+				<div class="vbo-widget-finance-stat">
+					<div class="vbo-widget-finance-stat-info">
+						<span class="vbo-widget-finance-stat-name"><?php echo JText::translate('VBTOTALCITYTAX'); ?></span>
+						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
+					</div>
+					<div class="vbo-widget-finance-stat-amount">
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['city_taxes']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['city_taxes']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
+						</span>
+					</div>
+				</div>
+			</div>
+			<?php
+		}
 		if ($stats['cmm_savings'] > 0) {
 			?>
 			<div class="vbo-widget-finance-data-block" data-typestat="ota_avg_cmms">
@@ -276,9 +304,8 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
 					</div>
 					<div class="vbo-widget-finance-stat-amount">
-						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['cmm_savings']); ?>">
-							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['cmm_savings']); ?></span>
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['cmm_savings']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['cmm_savings']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
 						</span>
 					</div>
 				</div>
@@ -300,9 +327,8 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
 					</div>
 					<div class="vbo-widget-finance-stat-amount">
-						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['damage_deposits']); ?>">
-							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['damage_deposits']); ?></span>
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['damage_deposits']), $currencysymb); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['damage_deposits']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
 						</span>
 					</div>
 				</div>
@@ -388,9 +414,8 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 						<span class="vbo-widget-finance-stat-cmd"><?php VikBookingIcons::e('ellipsis-v'); ?></span>
 					</div>
 					<div class="vbo-widget-finance-stat-amount">
-						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($stats['cancellations_amt']) . ($stats['tot_cancellations'] ? ' (' . $stats['tot_cancellations'] . ')' : ''); ?>">
-							<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-							<span class="vbo-price"><?php echo $finance->numberFormatShort($stats['cancellations_amt']); ?></span>
+						<span class="vbo-widget-finance-stat-amount-value vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($stats['cancellations_amt']), $currencysymb) . ($stats['tot_cancellations'] ? ' (' . $stats['tot_cancellations'] . ')' : ''); ?>">
+							<?php echo VikBooking::formatCurrencyNumber($finance->numberFormatShort($stats['cancellations_amt']), $currencysymb, ['<span class="vbo-currency">%s</span>', '<span class="vbo-price">%s</span>']); ?>
 						</span>
 					</div>
 				</div>
@@ -426,8 +451,16 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 									<span><?php echo $country_rank['name']; ?></span>
 								</div>
 								<div class="vbo-widget-finance-stat-rank-amount">
-									<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-									<span class="vbo-price vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($country_rank['revenue']); ?>"><?php echo $finance->numberFormatShort($country_rank['revenue']); ?></span>
+									<?php
+									echo VikBooking::formatCurrencyNumber(
+										$finance->numberFormatShort($country_rank['revenue']),
+										$currencysymb,
+										[
+											'<span class="vbo-currency">%s</span>',
+											'<span class="vbo-price vbo-tooltip vbo-tooltip-top" data-tooltiptext="' . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($country_rank['revenue']), $currencysymb) . '">%s</span>',
+										]
+									);
+									?>
 								</div>
 								<div class="vbo-widget-finance-stat-rank-pcent">
 									<progress class="vbo-widget-finance-progress" value="<?php echo $country_rank['pcent']; ?>" max="100"><?php echo $country_rank['pcent']; ?>%</progress>
@@ -475,8 +508,16 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 									<span><?php echo $say_pos_name; ?></span>
 								</div>
 								<div class="vbo-widget-finance-stat-rank-amount">
-									<span class="vbo-currency"><?php echo $currencysymb; ?></span>
-									<span class="vbo-price vbo-tooltip vbo-tooltip-top" data-tooltiptext="<?php echo $currencysymb . ' ' . VikBooking::numberFormat($pos_revenue['revenue']); ?>"><?php echo $finance->numberFormatShort($pos_revenue['revenue']); ?></span>
+									<?php
+									echo VikBooking::formatCurrencyNumber(
+										$finance->numberFormatShort($pos_revenue['revenue']),
+										$currencysymb,
+										[
+											'<span class="vbo-currency">%s</span>',
+											'<span class="vbo-price vbo-tooltip vbo-tooltip-top" data-tooltiptext="' . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($pos_revenue['revenue']), $currencysymb) . '">%s</span>',
+										]
+									);
+									?>
 								</div>
 								<div class="vbo-widget-finance-stat-rank-pcent">
 									<progress class="vbo-widget-finance-progress" value="<?php echo $pos_revenue['pcent']; ?>" max="100"><?php echo $pos_revenue['pcent']; ?>%</progress>
@@ -651,6 +692,8 @@ class VikBookingAdminWidgetFinance extends VikBookingAdminWidget
 		$pcent_stats = [
 			'gross_revenue'   => [],
 			'taxes'           => [],
+			'tot_vat'         => [],
+			'city_taxes'      => [],
 			'cmms'            => [
 				'reverse' => 1,
 			],

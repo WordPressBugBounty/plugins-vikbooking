@@ -10,6 +10,21 @@
 
 defined('ABSPATH') or die('No script kiddies please!');
 
+/**
+ * Always check for customer records with a "short" PIN code to suggest normalization.
+ * 
+ * @since 	1.18.6 (J) - 1.8.6 (WP)
+ */
+if (VikBooking::getCPinInstance()->countShortPins()) {
+	// display alert message with button to normalize records
+	JFactory::getApplication()->enqueueMessage(sprintf(
+		'%s <a class="btn btn-warning" href="%s">%s</a>',
+		JText::translate('VBO_CUSTOMERS_SHORT_PIN_ALERT'),
+		VBOFactory::getPlatform()->getUri()->addCSRF('index.php?option=com_vikbooking&task=maintenance.normalize_short_pins', $xhtml = true),
+		JText::translate('VBADMINNOTESUPD')
+	), 'warning');
+}
+
 $vbo_app = VikBooking::getVboApplication();
 
 // get admin widgets helper
@@ -700,7 +715,7 @@ if ($vbo_auth_global) {
 		 */
 		jQuery(document).mouseup(function(e) {
 			if (!vbo_modal_widgets_on) {
-				return false;
+				return;
 			}
 			if (vbo_modal_widgets_on) {
 				var vbo_overlay_cont = jQuery(".vbo-modal-overlay-content-dashwidgets");

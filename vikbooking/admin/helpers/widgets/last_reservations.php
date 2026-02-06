@@ -75,7 +75,7 @@ class VikBookingAdminWidgetLastReservations extends VikBookingAdminWidget
 							$room_names[] = $rr['room_name'];
 						}
 						if ($next['roomsnum'] == 1) {
-							$roomstr = '<span class="vbo-smalltext">'.$room_names[0].'</span>';
+							$roomstr = '<span class="vbo-smalltext">' . ($room_names[0] ?? '') . '</span>';
 						} else {
 							$roomstr = '<span class="vbo-tooltip vbo-tooltip-top" data-tooltiptext="' . JHtml::fetch('esc_attr', implode(', ', $room_names)) . '">'.$next['roomsnum'].'</span>';
 						}
@@ -89,7 +89,7 @@ class VikBookingAdminWidgetLastReservations extends VikBookingAdminWidget
 						if (!empty($next['type']) && !strcasecmp($next['type'], 'overbooking')) {
 							$ord_status .= '<div class="vbo-orders-substatus"><span class="label label-error">' . JText::translate('VBO_BTYPE_OVERBOOKING') . '</span></div>';
 						}
-						$nominative = strlen($next['nominative']) > 1 ? $next['nominative'] : VikBooking::getFirstCustDataField($next['custdata']);
+						$nominative = strlen((string) $next['nominative']) > 1 ? $next['nominative'] : VikBooking::getFirstCustDataField($next['custdata']);
 						$country_flag = '';
 						if (is_file(VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'countries' . DIRECTORY_SEPARATOR . $next['country'] . '.png')) {
 							$country_flag = '<img src="'.VBO_ADMIN_URI.'resources/countries/'.$next['country'].'.png'.'" title="'.$next['country'].'" class="vbo-country-flag vbo-country-flag-left"/>';

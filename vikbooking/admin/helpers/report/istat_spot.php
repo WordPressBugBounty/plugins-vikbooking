@@ -403,6 +403,10 @@ class VikBookingReportIstatSpot extends VikBookingReport
 			//Export functions may set errors rather than exiting the process, and the View may continue the execution to attempt to render the report.
 			return false;
 		}
+
+		// get the possibly injected report options
+		$options = $this->getReportOptions();
+
 		//Input fields and other vars
 		$pfromdate = VikRequest::getString('fromdate', '', 'request');
 		$ptodate = VikRequest::getString('todate', '', 'request');
@@ -412,13 +416,13 @@ class VikBookingReportIstatSpot extends VikBookingReport
 		$pkrorder = empty($pkrorder) ? $this->defaultKeyOrder : $pkrorder;
 		$pkrorder = $pkrorder == 'DESC' ? 'DESC' : 'ASC';
 		$papertura = VikRequest::getString('apertura', '', 'request');
-		$records = array();
+		$plistings = ((array) VikRequest::getVar('listings', array())) ?: ((array) $options->get('listings', []));
+		$plistings = array_filter(array_map('intval', $plistings));
+
 		$q = "SELECT SUM(`units`) AS `sommaunita`, SUM(`totpeople`) AS `numeropersone`, COUNT(*) AS `numerocamere`  FROM `#__vikbooking_rooms` WHERE `avail`= '1';";
 		$this->dbo->setQuery($q);
-		$this->dbo->execute();
-		if ($this->dbo->getNumRows() > 0) {
-			$records = $this->dbo->loadAssocList();
-		}
+		$records = $this->dbo->loadAssocList();
+
 		$totalBeds = (int)($records[0]['sommaunita'] * ($records[0]['numeropersone'] / $records[0]['numerocamere'])); 
 		$pletti = VikRequest::getString('numletti', $totalBeds, 'request');
 		$currency_symb = VikBooking::getCurrencySymb();
@@ -440,54 +444,54 @@ class VikBookingReportIstatSpot extends VikBookingReport
 		}
 
 		// query to obtain the records (all reservations or stays within the dates filter)
-		$q = $dbo->getQuery(true)
+		$q = $this->dbo->getQuery(true)
 			->select([
-				$dbo->qn('o.id'),
-				$dbo->qn('o.custdata'),
-				$dbo->qn('o.ts'),
-				$dbo->qn('o.days'),
-				$dbo->qn('o.status'),
-				$dbo->qn('o.checkin'),
-				$dbo->qn('o.checkout'),
-				$dbo->qn('o.totpaid'),
-				$dbo->qn('o.roomsnum'),
-				$dbo->qn('o.total'),
-				$dbo->qn('o.idorderota'),
-				$dbo->qn('o.channel'),
-				$dbo->qn('o.country'),
-				$dbo->qn('or.idorder'),
-				$dbo->qn('or.idroom'),
-				$dbo->qn('or.adults'),
-				$dbo->qn('or.children'),
-				$dbo->qn('or.t_first_name'),
-				$dbo->qn('or.t_last_name'),
-				$dbo->qn('or.cust_cost'),
-				$dbo->qn('or.cust_idiva'),
-				$dbo->qn('or.extracosts'),
-				$dbo->qn('or.room_cost'),
-				$dbo->qn('co.idcustomer'),
-				$dbo->qn('co.pax_data'),
-				$dbo->qn('c.first_name'),
-				$dbo->qn('c.last_name'),
-				$dbo->qn('c.country', 'customer_country'),
-				$dbo->qn('c.address'),
-				$dbo->qn('c.city'),
-				$dbo->qn('c.state'),
-				$dbo->qn('c.doctype'),
-				$dbo->qn('c.docnum'),
-				$dbo->qn('c.gender'),
-				$dbo->qn('c.bdate'),
-				$dbo->qn('c.pbirth'),
+				$this->dbo->qn('o.id'),
+				$this->dbo->qn('o.custdata'),
+				$this->dbo->qn('o.ts'),
+				$this->dbo->qn('o.days'),
+				$this->dbo->qn('o.status'),
+				$this->dbo->qn('o.checkin'),
+				$this->dbo->qn('o.checkout'),
+				$this->dbo->qn('o.totpaid'),
+				$this->dbo->qn('o.roomsnum'),
+				$this->dbo->qn('o.total'),
+				$this->dbo->qn('o.idorderota'),
+				$this->dbo->qn('o.channel'),
+				$this->dbo->qn('o.country'),
+				$this->dbo->qn('or.idorder'),
+				$this->dbo->qn('or.idroom'),
+				$this->dbo->qn('or.adults'),
+				$this->dbo->qn('or.children'),
+				$this->dbo->qn('or.t_first_name'),
+				$this->dbo->qn('or.t_last_name'),
+				$this->dbo->qn('or.cust_cost'),
+				$this->dbo->qn('or.cust_idiva'),
+				$this->dbo->qn('or.extracosts'),
+				$this->dbo->qn('or.room_cost'),
+				$this->dbo->qn('co.idcustomer'),
+				$this->dbo->qn('co.pax_data'),
+				$this->dbo->qn('c.first_name'),
+				$this->dbo->qn('c.last_name'),
+				$this->dbo->qn('c.country', 'customer_country'),
+				$this->dbo->qn('c.address'),
+				$this->dbo->qn('c.city'),
+				$this->dbo->qn('c.state'),
+				$this->dbo->qn('c.doctype'),
+				$this->dbo->qn('c.docnum'),
+				$this->dbo->qn('c.gender'),
+				$this->dbo->qn('c.bdate'),
+				$this->dbo->qn('c.pbirth'),
 			])
-			->from($dbo->qn('#__vikbooking_orders', 'o'))
-			->leftJoin($dbo->qn('#__vikbooking_ordersrooms', 'or') . ' ON ' . $dbo->qn('or.idorder') . ' = ' . $dbo->qn('o.id'))
-			->leftJoin($dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $dbo->qn('co.idorder') . ' = ' . $dbo->qn('o.id'))
-			->leftJoin($dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $dbo->qn('c.id') . ' = ' . $dbo->qn('co.idcustomer'))
-			->where($dbo->qn('o.closure') . ' = 0')
-			->where($dbo->qn('o.status') . ' = ' . $dbo->q('confirmed'))
-			->order($dbo->qn('o.checkin') . ' ASC')
-			->order($dbo->qn('o.id') . ' ASC')
-			->order($dbo->qn('or.id') . ' ASC');
+			->from($this->dbo->qn('#__vikbooking_orders', 'o'))
+			->leftJoin($this->dbo->qn('#__vikbooking_ordersrooms', 'or') . ' ON ' . $this->dbo->qn('or.idorder') . ' = ' . $this->dbo->qn('o.id'))
+			->leftJoin($this->dbo->qn('#__vikbooking_customers_orders', 'co') . ' ON ' . $this->dbo->qn('co.idorder') . ' = ' . $this->dbo->qn('o.id'))
+			->leftJoin($this->dbo->qn('#__vikbooking_customers', 'c') . ' ON ' . $this->dbo->qn('c.id') . ' = ' . $this->dbo->qn('co.idcustomer'))
+			->where($this->dbo->qn('o.closure') . ' = 0')
+			->where($this->dbo->qn('o.status') . ' = ' . $this->dbo->q('confirmed'))
+			->order($this->dbo->qn('o.checkin') . ' ASC')
+			->order($this->dbo->qn('o.id') . ' ASC')
+			->order($this->dbo->qn('or.id') . ' ASC');
 
 		if ($plistings) {
 			$q->where($this->dbo->qn('or.idroom') . ' IN (' . implode(', ', $plistings) . ')');
@@ -495,9 +499,9 @@ class VikBookingReportIstatSpot extends VikBookingReport
 
 		// fetch all bookings with a stay date between the interval of dates requested
 		$q->andWhere([
-			'(' . $dbo->qn('o.checkin') . ' BETWEEN ' . $from_ts . ' AND ' . $to_ts . ')',
-			'(' . $dbo->qn('o.checkout') . ' BETWEEN ' . $from_ts . ' AND ' . $to_ts . ')',
-			'(' . $dbo->qn('o.checkin') . ' < ' . $from_ts . ' AND ' . $dbo->qn('o.checkout') . ' > ' . $to_ts . ')',
+			'(' . $this->dbo->qn('o.checkin') . ' BETWEEN ' . $from_ts . ' AND ' . $to_ts . ')',
+			'(' . $this->dbo->qn('o.checkout') . ' BETWEEN ' . $from_ts . ' AND ' . $to_ts . ')',
+			'(' . $this->dbo->qn('o.checkin') . ' < ' . $from_ts . ' AND ' . $this->dbo->qn('o.checkout') . ' > ' . $to_ts . ')',
 		], 'OR');
 
 		$this->dbo->setQuery($q);

@@ -16,9 +16,9 @@ class VikbookingViewSignature extends JViewVikBooking
 {
 	public function display($tpl = null)
 	{
-		//set noindex instruction for robots
+		// set noindex instruction for robots
 		$document = JFactory::getDocument();
-		$document->setMetaData('robots', 'noindex,follow');
+		$document->setMetaData('robots', 'noindex, nofollow');
 
 		$sid = VikRequest::getString('sid', '', 'request');
 		$ts = VikRequest::getString('ts', '', 'request');

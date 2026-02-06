@@ -186,7 +186,7 @@ if (!empty($order['channel'])) {
 				$usectag = '<span class="vbo-colortag-circle hasTooltip" style="background-color: '.$bcolortag['color'].';" title="'.htmlspecialchars($bcolortag['name']).'"></span> ';
 			}
 			?>
-				<?php echo $usectag.(strlen($otacurrency) > 0 ? '('.$otacurrency.') '.$currencysymb : $currencysymb); ?> <?php echo VikBooking::numberFormat($order['total']); ?>
+				<?php echo $usectag . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($order['total']), (strlen($otacurrency) > 0 ? '(' . $otacurrency . ') ' . $currencysymb : $currencysymb)); ?>
 			</div>
 		</div>
 		<div class="vbo-bookdet-wrap vbo-bookdet-wrap-special">
@@ -522,7 +522,7 @@ if (!empty($order['channel'])) {
 		/* Overlay for Customer Notes, Booking Notes, Checkin Comments - Start */
 		jQuery(document).mouseup(function(e) {
 			if (!vbo_overlay_on) {
-				return false;
+				return;
 			}
 			var vbo_overlay_cont = jQuery(".vbo-info-overlay-content");
 			if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {

@@ -14,7 +14,7 @@ jimport('joomla.application.component.view');
 
 class VikbookingViewSearchsuggestions extends JViewVikBooking
 {
-	function display($tpl = null)
+	public function display($tpl = null)
 	{
 		$dbo = JFactory::getDbo();
 		$vbo_tn = VikBooking::getTranslator();
@@ -22,8 +22,7 @@ class VikbookingViewSearchsuggestions extends JViewVikBooking
 		// invoke availability helper class and define settings
 		$av_helper = VikBooking::getAvailabilityInstance()
 			->setBackForthDays(14)
-			->setIsFrontBooking(true)
-			->setNightsTransfersRatio(true);
+			->setIsFrontBooking(true);
 
 		$code = VikRequest::getInt('code', 0, 'request');
 		$fromts = VikRequest::getInt('fromts', 0, 'request');
@@ -178,7 +177,7 @@ class VikbookingViewSearchsuggestions extends JViewVikBooking
 
 		// build the solutions array with keys=checkin, values=all rooms suited for the requested number of nights
 		$solutions = [];
-		if (count($suggestions)) {
+		if ($suggestions) {
 			//get all rooms available for the number of nights requested in the suggestions array of dates
 			foreach ($suggestions as $kday => $rooms) {
 				$day_ts_info = getdate(strtotime($kday));
@@ -206,8 +205,8 @@ class VikbookingViewSearchsuggestions extends JViewVikBooking
 			}
 		}
 
-		if (count($solutions)) {
-			//sort the solutions by the closest checkin date to the one requested
+		if ($solutions) {
+			// sort the solutions by the closest checkin date to the one requested
 			$sortmap = [];
 			foreach ($solutions as $kdayts => $solution) {
 				$sortmap[$kdayts] = $kdayts > $fromts ? ($kdayts - $fromts) : ($fromts - $kdayts);
@@ -249,10 +248,14 @@ class VikbookingViewSearchsuggestions extends JViewVikBooking
 					unset($solutions[$kdayts]);
 					continue;
 				}
-				// validate closing dates
-				if (VikBooking::validateClosingDates($sug_in[0], $sug_out[0])) {
+				// validate closing dates and the affected stay components
+				if ($closed_components = VikBooking::validateClosingDates($sug_in[0], $sug_out[0], 'Y-m-d', true)) {
 					// global closing dates apply over this stay
 					unset($solutions[$kdayts]);
+					if (($closed_components['checkin'] ?? false) || ($closed_components['stay'] ?? false)) {
+						// this day should not be a suggestion because the check-in date is fully closed
+						unset($suggestions[date('Y-m-d', $kdayts)]);
+					}
 					continue;
 				}
 				// validate restrictions at room level
@@ -282,11 +285,12 @@ class VikbookingViewSearchsuggestions extends JViewVikBooking
 		 * In case of error code 1, we try to check for some split stay solutions.
 		 * 
 		 * @since 	1.16.0 (J) - 1.6.0 (WP)
+		 * @since 	1.18.6 (J) - 1.8.6 (WP) calculate split stay solutions prior to error code parsing.
 		 */
-		$split_stay_solutions = [];
+		$split_stay_solutions = $code === 1 ? $av_helper->findSplitStays($fully_booked, $allbusy) : [];
 
 		// parse the solutions depending on the error code to give the right booking solutions
-		if (count($solutions)) {
+		if ($solutions) {
 			switch ($code) {
 				case 1:
 					// no availability for the dates requested (there are rates defined for this number of nights and rooms compatible with the party requested)
@@ -358,9 +362,6 @@ class VikbookingViewSearchsuggestions extends JViewVikBooking
 						}
 					}
 
-					// try to populate the split stays available according to settings
-					$split_stay_solutions = $av_helper->findSplitStays($fully_booked, $allbusy);
-
 					break;
 				case 2:
 				case 3:
@@ -374,12 +375,9 @@ class VikbookingViewSearchsuggestions extends JViewVikBooking
 						$rooms_with_rates = [];
 						$q = "SELECT `p`.`idroom` FROM `#__vikbooking_dispcost` AS `p` WHERE `p`.`idroom` IN (".implode(', ', array_keys($solution)).") AND `p`.`days`=".(int)$daysdiff." GROUP BY `p`.`idroom`;";
 						$dbo->setQuery($q);
-						$dbo->execute();
-						if ($dbo->getNumRows() > 0) {
-							$getrooms = $dbo->loadAssocList();
-							foreach ($getrooms as $r) {
-								array_push($rooms_with_rates, (int)$r['idroom']);
-							}
+						$getrooms = $dbo->loadAssocList();	
+						foreach ($getrooms as $r) {
+							array_push($rooms_with_rates, (int)$r['idroom']);
 						}
 						foreach ($solution as $rid => $roomsol) {
 							if (!in_array($rid, $rooms_with_rates)) {

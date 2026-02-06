@@ -67,25 +67,66 @@ class JDocument
 	 * @param   string  $attribute  Attribute to use in the meta HTML tag.
 	 *
 	 * @return  self 	This object to support chaining.
+	 * 
+	 * @since   10.1.66  Robots are now treated differently.
 	 *
 	 * @uses 	attachToHead()
 	 */
 	public function setMetaData($name, $content, $attribute = 'name')
 	{
-		$attribute = empty($attribute) || !is_string($attribute) ? 'name' : $attribute;
-
-		if (is_scalar($content))
+		if ($name === 'robots')
 		{
-			$content = array($content);
+			add_filter('wp_robots', function($robots) use ($content) {
+				if (!$content)
+				{
+					return $robots;
+				}
+
+				$robots = [];
+
+				// obtain all the directives from the content (separated by a comma)
+				$directives = preg_split("/\s*,\s*/", $content);
+
+				foreach ($directives as $directive)
+				{
+					// obtain key-val pairs (separated by a colon)
+					$directive = preg_split("/\s*:\s*/", $directive);
+
+					$key = strtolower(array_shift($directive));
+
+					if (count($directive) == 0)
+					{
+						// attribute only, use true as value
+						$val = true;
+					}
+					else
+					{
+						$val = implode(':', $directive);
+					}
+
+					$robots[$key] = $val;
+				}
+
+			    return $robots;
+			});
 		}
-
-		$this->attachToHead(function() use ($name, $content, $attribute)
+		else
 		{
-			foreach ($content as $cont)
+			$attribute = empty($attribute) || !is_string($attribute) ? 'name' : $attribute;
+
+			if (is_scalar($content))
 			{
-				echo "<meta {$attribute}=\"{$name}\" content=\"" . esc_attr($cont) . "\" />\n";
+				$content = array($content);
 			}
-		}, true);
+
+			$this->attachToHead(function() use ($name, $content, $attribute)
+			{
+				foreach ($content as $cont)
+				{
+					echo "<meta {$attribute}=\"{$name}\" content=\"" . esc_attr($cont) . "\" />\n";
+				}
+			}, true);
+		}
 
 		$this->data[$name] = $content;
 

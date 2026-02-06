@@ -15,43 +15,71 @@ defined('ABSPATH') or die('No script kiddies please!');
  */
 class VikBookingCustomersPin
 {
-	public $all_pins;
-	public $is_admin;
-	public $fieldflags;
-	public $error;
+	public $all_pins = [];
+	public $is_admin = false;
+	public $fieldflags = [];
+	public $error = '';
 	private $dbo;
-	private $new_pin;
-	private $new_customer_id;
+	private $new_pin = '';
+	private $new_customer_id = 0;
 
 	public function __construct()
 	{
-		$this->all_pins = false;
-		$this->is_admin = false;
-		$this->fieldflags = [];
-		$this->error = '';
 		$this->dbo = JFactory::getDbo();
-		$this->new_pin = '';
-		$this->new_customer_id = 0;
+	}
+
+	/**
+	 * Generates a serial code of a fixed length from a chars map.
+	 * 
+	 * @param 	int 	$length 	The length of the serial code to generate.
+	 * @param 	?array 	$map 		Optional map of allowed characters.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public function generateSerialCode(int $length = 8, ?array $map = null)
+	{
+		$code = '';
+
+		if (!$map) {
+			// use default tokens unless specified
+			$map = [
+				'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+				'0123456789',
+			];
+		}
+
+		// iterate until the specified length is reached
+		for ($i = strlen($code); $i < $length; $i++) {
+			// toss tokens block
+			$_row = rand(0, count($map) - 1);
+			// toss block character
+			$_col = rand(0, strlen($map[$_row]) - 1);
+
+			// append character to serial code
+			$code .= (string) $map[$_row][$_col];
+		}
+
+		return $code;
 	}
 
 	/**
 	 * Generates a unique PIN number for the customer.
 	 * 
-	 * @param 	boolean 	$notpush
+	 * @param 	bool 	$notpush 	True to avoid internal caching.
 	 * 
-	 * @return 	int 		8-digit pin
+	 * @return 	string 				The unique pin-code string.
 	 * 
-	 * @since 	1.15.0 (J) - 1.5.0 (WP) pin length changed from 5 to 8 digits.
+	 * @since 	1.15.0 (J) - 1.5.0 (WP) pin length changed from 5 to 8 digits (integers).
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) pin length changed to 8 alphanumeric characters.
 	 */
 	public function generateUniquePin($notpush = false)
 	{
-		// minimum 5 digits, maximum 8 digits
-		$rand_pin = rand(10000, 99999999);
-		if ($this->pinExists($rand_pin)) {
-			while ($this->pinExists($rand_pin)) {
-				$rand_pin += 1;
-			}
-		}
+		do {
+			// generate a random serial code
+			$rand_pin = $this->generateSerialCode(8);
+		} while ($this->pinExists($rand_pin));
 
 		if (!$notpush) {
 			$this->all_pins[] = $rand_pin;
@@ -66,18 +94,21 @@ class VikBookingCustomersPin
 	 * @param 	string 	$pin
 	 * @param 	string 	$ignorepin
 	 * 
-	 * @return 	boolean
+	 * @return 	bool
 	 */
 	public function pinExists($pin, $ignorepin = '')
 	{
-		$current_pins = $this->all_pins === false ? $this->getAllPins($ignorepin) : $this->all_pins;
+		$current_pins = $this->all_pins ?: $this->getAllPins($ignorepin);
+
 		return in_array($pin, $current_pins);
 	}
 
 	/**
 	 * Fetches and sets all the pins currently stored in the database.
 	 * 
-	 * @param 	string 	$ignorepin
+	 * @param 	string 	$ignorepin 	Optional pin to ignore.
+	 * 
+	 * @return 	array 				List of pin codes found.
 	 */
 	public function getAllPins($ignorepin = '')
 	{
@@ -86,10 +117,9 @@ class VikBookingCustomersPin
 		$q = "SELECT `pin` FROM `#__vikbooking_customers`".(!empty($ignorepin) ? " WHERE `pin`!=".$this->dbo->quote($ignorepin) : "").";";
 		$this->dbo->setQuery($q);
 		$pins = $this->dbo->loadAssocList();
-		if ($pins) {
-			foreach ($pins as $v) {
-				$current_pins[] = $v['pin'];
-			}
+
+		foreach ($pins as $v) {
+			$current_pins[] = $v['pin'];
 		}
 
 		$this->all_pins = $current_pins;
@@ -131,7 +161,7 @@ class VikBookingCustomersPin
 	private function getDetailsByPinCookie(&$customer_details)
 	{
 		$pin_cookie = $this->getPinCookie();
-		$pin_cookie = empty($pin_cookie) ? (int)$this->getNewPin() : $pin_cookie;
+		$pin_cookie = empty($pin_cookie) ? $this->getNewPin() : $pin_cookie;
 		if ($pin_cookie) {
 			$q = "SELECT * FROM `#__vikbooking_customers` WHERE `pin`=" . $this->dbo->quote($pin_cookie) . " ORDER BY `#__vikbooking_customers`.`id` DESC";
 			$this->dbo->setQuery($q, 0, 1);
@@ -148,35 +178,83 @@ class VikBookingCustomersPin
 	/**
 	 * Gets "decoded" PIN from Cookie.
 	 * 
-	 * @return 	int 	the pin cookie.
+	 * @return 	string 	The unmasked pin cookie value.
+	 * 
+	 * @since 	1.18.4 (J) - 1.8.4 (WP) added support to alphanumeric cookie values.
 	 */
 	private function getPinCookie()
 	{
-		$pin_cookie = 0;
 		$cookie = JFactory::getApplication()->input->cookie;
 		$cookie_val = $cookie->get('vboPinData', '', 'string');
-		if (!empty($cookie_val) && intval($cookie_val) > 0) {
-			$cookie_val = intval(strrev( (string)$cookie_val )) / 1987;
-			$pin_cookie = (int)$cookie_val > 0 ? $cookie_val : $pin_cookie;
-		}
-		return $pin_cookie;
+
+		return !empty($cookie_val) ? $this->unMaskPinValue($cookie_val) : '';
 	}
 
 	/**
 	 * Sets "encoded" PIN to Cookie with a lifetime of 365 days.
 	 * 
-	 * @param 	string 	$pin
+	 * @param 	string 	$pin 	The plain alphanumeric pin value to store as a cookie.
+	 * 
+	 * @return 	string 			The masked pin cookie value that was set.
+	 * 
+	 * @since 	1.18.4 (J) - 1.8.4 (WP) added support to alphanumeric cookie values.
 	 */
 	private function setPinCookie($pin)
 	{
-		$pin_cookie = 0;
+		$pin_cookie = '';
+
 		if (!empty($pin)) {
-			$pin_cookie = (int)$pin * 1987;
-			$pin_cookie = strrev( (string)$pin_cookie );
+			$pin_cookie = $this->maskPinValue($pin);
 			VikRequest::setCookie('vboPinData', $pin_cookie, (time() + (86400 * 365)), '/', '', false, true);
 		}
 		
 		return $pin_cookie;
+	}
+
+	/**
+	 * Masks a raw PIN alphanumeric value by using a XOR based mapping.
+	 * 
+	 * @param 	string 	$pin 	The plain alphanumeric pin value to mask.
+	 * @param 	?string $key 	Optional masking key.
+	 * 
+	 * @return 	string 			The masked PIN string.
+	 * 
+	 * @since 	1.18.4 (J) - 1.8.4 (WP)
+	 */
+	private function maskPinValue(string $pin, ?string $key = null)
+	{
+		$key = $key ?: VBOFactory::getConfig()->getString('cpin_mask_salt_key', 'vbo1987');
+
+		$masked = '';
+
+		for ($i = 0; $i < strlen($pin); $i++) {
+			$masked .= chr(ord($pin[$i]) ^ ord($key[$i % strlen($key)]));
+		}
+
+		return base64_encode($masked);
+	}
+
+	/**
+	 * Un-masks a PIN alphanumeric value by using a XOR based mapping.
+	 * 
+	 * @param 	string 	$pin 	The masked alphanumeric pin value to unmask.
+	 * @param 	?string $key 	Optional masking key.
+	 * 
+	 * @return 	string 			The un-masked PIN string.
+	 * 
+	 * @since 	1.18.4 (J) - 1.8.4 (WP)
+	 */
+	private function unMaskPinValue(string $pin, ?string $key = null)
+	{
+		$key = $key ?: VBOFactory::getConfig()->getString('cpin_mask_salt_key', 'vbo1987');
+
+		$unmasked = '';
+
+		for ($i = 0; $i < strlen($pin); $i++) {
+			$unmasked .= chr(ord($pin[$i]) ^ ord($key[$i % strlen($key)]));
+		}
+
+		return base64_decode($unmasked);
 	}
 
 	/**
@@ -189,6 +267,66 @@ class VikBookingCustomersPin
 		$cookie_val = $cookie->get('vboPinData', '', 'string');
 		
 		return $pin_cookie;
+	}
+
+	/**
+	 * Counts the number of "short" PIN codes generated by older versions.
+	 * 
+	 * @return 	int
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function countShortPins()
+	{
+		// count all records with PIN codes containing only numbers
+		$this->dbo->setQuery(
+			$this->dbo->getQuery(true)
+				->select('COUNT(*)')
+				->from($this->dbo->qn('#__vikbooking_customers'))
+				->where($this->dbo->qn('pin') . ' REGEXP ' . $this->dbo->q('^[0-9]{4,8}$'))
+		);
+
+		return (int) $this->dbo->loadResult();
+	}
+
+	/**
+	 * Normalizes the "short" PIN codes generated by older versions.
+	 * 
+	 * @return 	int 	Number of normalized records.
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function normalizeShortPins()
+	{
+		// match all records with PIN codes containing only numbers
+		$this->dbo->setQuery(
+			$this->dbo->getQuery(true)
+				->select($this->dbo->qn('id'))
+				->from($this->dbo->qn('#__vikbooking_customers'))
+				->where($this->dbo->qn('pin') . ' REGEXP ' . $this->dbo->q('^[0-9]{4,8}$'))
+		);
+
+		$records = $this->dbo->loadAssocList();
+
+		$normalized = 0;
+
+		foreach ($records as $record) {
+			// generate a unique PIN code
+			$longPin = $this->generateUniquePin();
+
+			// build customer record object
+			$customer_obj = new stdClass;
+			$customer_obj->id = $record['id'];
+			$customer_obj->pin = $longPin;
+
+			// update customer record
+			$this->dbo->updateObject('#__vikbooking_customers', $customer_obj, 'id');
+
+			// increase counter
+			$normalized++;
+		}
+
+		return $normalized;
 	}
 
 	/**
@@ -776,7 +914,7 @@ class VikBookingCustomersPin
 	 * 
 	 * @param 	int 	orderid 	the ID of the VBO order
 	 * 
-	 * @return 	boolean
+	 * @return 	bool
 	 */
 	public function saveCustomerBooking($orderid)
 	{
@@ -793,13 +931,45 @@ class VikBookingCustomersPin
 			return false;
 		}
 
+		/**
+		 * Fetch any existing pre-check-in (or similar) information and keep it during a booking modification event.
+		 * 
+		 * @since 	1.18.6 (J) - 1.8.6 (WP)
+		 */
+		$this->dbo->setQuery(
+			$this->dbo->getQuery(true)
+				->select('*')
+				->from($this->dbo->qn('#__vikbooking_customers_orders'))
+				->where($this->dbo->qn('idorder') . ' = ' . (int) $orderid)
+		);
+		$prevCustomerBookingData = (array) ($this->dbo->loadAssoc() ?: []);
+
+		// prepare customer-booking data record
+		$customerBookingData = [
+			'idcustomer' => (int) $customer_id,
+			'idorder' => (int) $orderid,
+		];
+		foreach ($prevCustomerBookingData as $col => $val) {
+			if ($col === 'id' || isset($customerBookingData[$col])) {
+				// skip field
+				continue;
+			}
+			if (!empty($val)) {
+				// preserve previous field
+				$customerBookingData[$col] = $val;
+			}
+		}
+
+		// cast customer-booking data record to object for insert
+		$customerBookingData = (object) $customerBookingData;
+
+		// safely delete any previous customer-booking relation
 		$q = "DELETE FROM `#__vikbooking_customers_orders` WHERE `idorder`=".$this->dbo->quote($orderid).";";
 		$this->dbo->setQuery($q);
 		$this->dbo->execute();
 
-		$q = "INSERT INTO `#__vikbooking_customers_orders` (`idcustomer`,`idorder`) VALUES(".$this->dbo->quote($customer_id).", ".$this->dbo->quote($orderid).");";
-		$this->dbo->setQuery($q);
-		$this->dbo->execute();
+		// (re-)insert customer-booking data
+		$this->dbo->insertObject('#__vikbooking_customers_orders', $customerBookingData, 'id');
 
 		// when assigning a booking to a customer, check that the traveler first and last name is not empty for the page Dashboard that reads it
 		if (empty($orders_rooms[0]['t_first_name']) && empty($orders_rooms[0]['t_last_name'])) {

@@ -124,26 +124,36 @@ final class VBOReportLoader
 				continue;
 			}
 
+			// instantiate the report object
+			$reportInstance = new $classname;
+
+			// ensure the report is compatible with the current environment
+			if ($reportInstance->preflight() === false) {
+				// exclude non-compatible report
+				unset($report_files[$k]);
+				continue;
+			}
+
 			if ($report_file == 'revenue' && $this->global_reports) {
 				// make the "revenue" the first element of the list
-				array_unshift($this->global_reports, new $classname);
+				array_unshift($this->global_reports, $reportInstance);
 			} elseif (strpos($report_file, 'istat') !== false || strpos($report_file, 'polizia') !== false) {
 				// this is a country (italy) specific report so we push it to a separate array
 				$country_key = 'IT';
 				if (!isset($this->country_reports[$country_key])) {
 					$this->country_reports[$country_key] = [];
 				}
-				$this->country_reports[$country_key][] = new $classname;
+				$this->country_reports[$country_key][] = $reportInstance;
 			}  elseif (substr($report_file, 2, 1) == '_') {
 				// this is probably a country specific report so we push it to a separate array (two-letter country code + underscore in file name)
 				$country_key = strtoupper(substr($report_file, 0, 2));
 				if (!isset($this->country_reports[$country_key])) {
 					$this->country_reports[$country_key] = [];
 				}
-				$this->country_reports[$country_key][] = new $classname;
+				$this->country_reports[$country_key][] = $reportInstance;
 			} else {
 				// push this object as a global report
-				$this->global_reports[] = new $classname;
+				$this->global_reports[] = $reportInstance;
 			}
 		}
 

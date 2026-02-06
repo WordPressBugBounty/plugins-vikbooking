@@ -204,12 +204,18 @@ $roomInfo = null;
                     <?php
                 }
 
+                $order = null;
+
                 if ($taskRegistry->getBookingId() && $bookingElement = $taskRegistry->buildBookingElement()) {
                     if (!empty($bookingElement['img'])) {
                         $img = '<img src="' . $bookingElement['img'] . '" class="vbo-booking-badge-avatar" decoding="async" loading="lazy" />';
                     } else {
                         $img = '<span class="vbo-booking-badge-avatar"><i class="' . VikBookingIcons::i($bookingElement['icon_class'] ?? 'hotel') . '"></i></span>';
                     }
+
+                    // fetch booking details
+                    $order = VikBooking::getBookingInfoFromID($taskRegistry->getBookingId());
+                    $order['rooms'] = VikBooking::loadOrdersRoomsData($taskRegistry->getBookingId());
 
                     $bookingText = $bookingElement['text'] . ' #' . $bookingElement['id'];
                     ?>
@@ -219,7 +225,7 @@ $roomInfo = null;
                         </div>
                         <div class="vbo-tm-task-summary-cont">
                             <?php echo $img; ?>
-                            <span class="guest-name"><?php echo $bookingText; ?></span>
+                            <a href="javascript:void(0)" class="guest-name open-reservation"><?php echo $bookingText; ?></span></a>
                         </div>
                     </div>
                     <?php
@@ -246,12 +252,86 @@ $roomInfo = null;
                 <?php endif; ?>
 
                 <?php if ($notes = $taskRegistry->getNotes()): ?>
-                    <div class="vbo-tm-task-notes"><?php echo $notes; ?></div>
+                    <div class="vbo-tm-task-notes vbo-hideable-pane"><?php echo $notes; ?></div>
                 <?php endif; ?>
 
-                <div class="vbo-tm-task-listing-map" style="display: none; width: 100%; height: 500px; margin-top: 10px;">
+                <div class="vbo-tm-task-listing-map vbo-hideable-pane" style="display: none;">
                     
                 </div>
+
+                <?php if ($order): ?>
+                    <div class="vbo-tm-task-reservation-details vbo-hideable-pane" style="display: none;">
+
+                        <div class="task-res-boxes">
+                            <div class="task-res-box checkin">
+                                <div class="box-icon"><?php VikBookingIcons::e('plane-arrival'); ?></div>
+                                <div class="box-label"><?php echo JText::translate('VBPICKUP'); ?></div>
+                                <div class="box-value"><?php echo JHtml::fetch('date', $order['checkin'], 'd F Y H:i', date_default_timezone_get()); ?></div>
+                            </div>
+
+                            <div class="task-res-box checkout">
+                                <div class="box-icon"><?php VikBookingIcons::e('plane-departure'); ?></div>
+                                <div class="box-label"><?php echo JText::translate('VBRETURN'); ?></div>
+                                <div class="box-value"><?php echo JHtml::fetch('date', $order['checkout'], 'd F Y H:i', date_default_timezone_get()); ?></div>
+                            </div>
+                        </div>
+                        
+                        <?php if ($order['rooms']):
+                            // take the details of the room matching the selected index
+                            $orderRoomInfo = array_filter($order['rooms'], fn($room) => $room['roomindex'] == $taskRegistry->get('room_index'));
+                            $orderRoomInfo = $orderRoomInfo ? reset($orderRoomInfo) : $order['rooms'][0];
+
+                            // obtain room index name
+                            $roomIndex = $roomInfo['params']->features->{$taskRegistry->get('room_index')} ?? null;
+                            ?>
+                            <div class="task-res-boxes">
+                                <div class="task-res-box adults">
+                                    <div class="box-icon"><?php VikBookingIcons::e('male'); ?><?php VikBookingIcons::e('female'); ?></div>
+                                    <div class="box-label"><?php echo JText::translate('VBFORMADULTS'); ?></div>
+                                    <div class="box-value"><?php echo $orderRoomInfo['adults']; ?></div>
+                                </div>
+
+                                <?php if (!empty($orderRoomInfo['children'])): ?>
+                                    <div class="task-res-box children">
+                                        <div class="box-icon"><?php VikBookingIcons::e('child'); ?></div>
+                                        <div class="box-label"><?php echo JText::translate('VBFORMCHILDREN'); ?></div>
+                                        <div class="box-value"><?php echo $orderRoomInfo['children']; ?></div>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($orderRoomInfo['pets'])): ?>
+                                    <div class="task-res-box pets">
+                                        <div class="box-icon"><?php VikBookingIcons::e('dog'); ?></div>
+                                        <div class="box-label"><?php echo JText::translate('VBO_PETS'); ?></div>
+                                        <div class="box-value"><?php echo $orderRoomInfo['pets']; ?></div>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php
+                                // display room number here only in case both the children and pets are empty
+                                if ($roomIndex && empty($orderRoomInfo['children']) && empty($orderRoomInfo['pets'])): ?>
+                                    <div class="task-res-box roomnr">
+                                        <div class="box-icon"><?php VikBookingIcons::e('hashtag'); ?></div>
+                                        <div class="box-label"><?php echo JText::translate(key($roomIndex)); ?></div>
+                                        <div class="box-value"><?php echo reset($roomIndex); ?></div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php
+                            // display room number on a new box only in case the children or the pets are not empty
+                            if ($roomIndex && (!empty($orderRoomInfo['children']) || !empty($orderRoomInfo['pets']))): ?>
+                                <div class="task-res-boxes">
+                                    <div class="task-res-box roomnr">
+                                        <div class="box-icon"><?php VikBookingIcons::e('hashtag'); ?></div>
+                                        <div class="box-label"><?php echo JText::translate(key($roomIndex)); ?></div>
+                                        <div class="box-value"><?php echo reset($roomIndex); ?></div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
 
             </div>
 
@@ -393,12 +473,15 @@ $roomInfo = null;
         <?php if (!empty($roomInfo)): ?>
             jQuery('.listing-name.open-map').on('click', () => {
                 const mapTarget = jQuery('.vbo-tm-task-listing-map');
+                const isVisible = mapTarget.is(':visible');
 
-                if (mapTarget.is(':visible')) {
-                    mapTarget.hide();
+                jQuery('.vbo-hideable-pane').hide();
+
+                if (isVisible) {
+                    // re-display task notes
                     jQuery('.vbo-tm-task-notes').show();
                 } else {
-                    jQuery('.vbo-tm-task-notes').hide();
+                    // display map
                     mapTarget.show();
                 }
 
@@ -448,6 +531,21 @@ $roomInfo = null;
                 });
             }
         <?php endif; ?>
+
+        jQuery('.guest-name.open-reservation').on('click', () => {
+            const resTarget = jQuery('.vbo-tm-task-reservation-details');
+            const isVisible = resTarget.is(':visible');
+
+            jQuery('.vbo-hideable-pane').hide();
+
+            if (isVisible) {
+                // re-display task notes
+                jQuery('.vbo-tm-task-notes').show();
+            } else {
+                // display reservation
+                resTarget.show();
+            }
+        });
 
         VBOCore.emitEvent('vbo-tm-contents-loaded', {
             element: document.querySelector('.vbo-tm-task-details'),

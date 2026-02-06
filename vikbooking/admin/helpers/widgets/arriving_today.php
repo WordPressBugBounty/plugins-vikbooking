@@ -354,7 +354,7 @@ class VikBookingAdminWidgetArrivingToday extends VikBookingAdminWidget
 			if ($intoday['roomsnum'] == 1) {
 				// parse distintive features
 				$unit_index = '';
-				if (strlen((string)$rooms[0]['roomindex']) && !empty($rooms[0]['params'])) {
+				if (strlen($rooms[0]['roomindex'] ?? '') && !empty($rooms[0]['params'])) {
 					$room_params = json_decode($rooms[0]['params'], true);
 					if (is_array($room_params) && array_key_exists('features', $room_params) && @count($room_params['features']) > 0) {
 						foreach ($room_params['features'] as $rind => $rfeatures) {
@@ -371,7 +371,7 @@ class VikBookingAdminWidgetArrivingToday extends VikBookingAdminWidget
 					}
 				}
 				//
-				$roomstr = '<span class="vbo-smalltext">'.$room_names[0].$unit_index.'</span>';
+				$roomstr = '<span class="vbo-smalltext">' . ($room_names[0] ?? '') . $unit_index . '</span>';
 			} else {
 				$roomstr = '<span class="hasTooltip vbo-tip-small" title="'.implode(', ', $room_names).'">'.$intoday['roomsnum'].'</span><span class="hidden-for-search">'.implode(', ', $room_names).'</span>';
 			}
@@ -402,7 +402,7 @@ class VikBookingAdminWidgetArrivingToday extends VikBookingAdminWidget
 			} else {
 				$ord_status = '<span class="label label-error vbo-status-label">'.JText::translate('VBCANCELLED').'</span>';
 			}
-			$nominative = strlen($intoday['nominative']) > 1 ? $intoday['nominative'] : VikBooking::getFirstCustDataField($intoday['custdata']);
+			$nominative = strlen((string) $intoday['nominative']) > 1 ? $intoday['nominative'] : VikBooking::getFirstCustDataField($intoday['custdata']);
 			$country_flag = '';
 			if (file_exists(VBO_ADMIN_PATH.DS.'resources'.DS.'countries'.DS.$intoday['country'].'.png')) {
 				$country_flag = '<img src="'.VBO_ADMIN_URI.'resources/countries/'.$intoday['country'].'.png'.'" title="'.$intoday['country'].'" class="vbo-country-flag vbo-country-flag-left"/>';

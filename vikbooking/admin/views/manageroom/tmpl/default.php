@@ -278,6 +278,13 @@ function vboToggleRoomUpgrade() {
 		jQuery('.vbo-roomupgrade-param').hide();
 	}
 }
+function vboToggleMinAdvNotice(is_checked) {
+	if (!is_checked) {
+		jQuery('.vbo-room-level-min_adv-notice').hide();
+	} else {
+		jQuery('.vbo-room-level-min_adv-notice').show();
+	}
+}
 function vboToggleMaxAdvNotice(is_checked) {
 	if (!is_checked) {
 		jQuery('.vbo-room-level-max_adv-notice').hide();
@@ -572,8 +579,25 @@ if (count($row)) {
 
 			<fieldset class="adminform">
 				<div class="vbo-params-wrap">
-					<legend class="adminlegend"><?php echo JText::translate('VBNEWROOMPARAMS'); ?></legend>
+					<legend class="adminlegend"><?php echo JText::translate('VBPAYMENTPARAMETERS'); ?></legend>
 					<div class="vbo-params-container">
+						<?php
+						/**
+						 * Room details page layout stile.
+						 * 
+						 * @since 	1.17.3 (J) - 1.7.3 (WP)
+						 */
+						$layout_style = $row ? VikBooking::getRoomParam('layout_style', $row['params'], 'classic') : 'listing';
+						?>
+						<div class="vbo-param-container">
+							<div class="vbo-param-label"><label for="layout_style"><?php echo JText::translate('COM_VIKBOOKING_LAYOUT_STYLE'); ?></label></div>
+							<div class="vbo-param-setting">
+								<select name="layout_style" id="layout_style">
+									<option value="classic"><?php echo JText::translate('VBOCONFIGSEARCHRESTPLCL'); ?></option>
+									<option value="listing"<?php echo $layout_style == 'listing' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_LISTING'); ?></option>
+								</select>
+							</div>
+						</div>
 						<?php
 						$multi_units = $row ? VikBooking::getRoomParam('multi_units', $row['params']) : 0;
 						?>
@@ -735,6 +759,36 @@ if (count($row)) {
 
 						<?php
 						/**
+						 * Minimum advance booking offset (hours) can be defined at room-level.
+						 * 
+						 * @since 	1.18.3 (J) - 1.8.3 (WP)
+						 */
+						if ($row) {
+							// only in edit mode, not when creating a new room
+							$room_level_min_adv_notice = VBOFactory::getConfig()->getInt("room_{$row['id']}_min_adv_notice", 0);
+							// build default or current value (always an integer expressed in hours)
+							$mindate_val = $room_level_min_adv_notice ?: 0;
+							?>
+						<div class="vbo-param-container">
+							<div class="vbo-param-label"><?php echo JText::translate('VBO_MIN_ADV_BOOK_NOTICE'); ?></div>
+							<div class="vbo-param-setting">
+								<div>
+									<?php
+									echo $vbo_app->printYesNoButtons('min_adv_notice_room', JText::translate('VBYES'), JText::translate('VBNO'), (empty($mindate_val) ? 0 : 1), 1, 0, 'vboToggleMinAdvNotice(this.checked);');
+									?>
+								</div>
+								<div class="vbo-room-level-min_adv-notice" style="<?php echo empty($mindate_val) ? 'display: none;' : ''; ?>">
+									<input type="number" name="mindate" value="<?php echo $mindate_val; ?>" min="0"/>
+									<select name="mindateinterval">
+										<option value="h"><?php echo ucfirst(JText::translate('VBCONFIGONETENEIGHT')); ?></option>
+									</select>
+								</div>
+							</div>
+						</div>
+							<?php
+						}
+
+						/**
 						 * Maximum advance booking offset can be defined at room-level.
 						 * 
 						 * @since 	1.16.3 (J) - 1.6.3 (WP)
@@ -773,20 +827,58 @@ if (count($row)) {
 						</div>
 							<?php
 						}
+
 						/**
-						 * Room details page layout stile.
+						 * Custom check-in and check-out times defined at listing-level.
 						 * 
-						 * @since 	1.17.3 (J) - 1.7.3 (WP)
+						 * @since 	1.18.3 (J) - 1.8.3 (WP)
 						 */
-						$layout_style = $row ? VikBooking::getRoomParam('layout_style', $row['params'], 'classic') : 'listing';
+						$listing_checkin = $row ? VikBooking::getRoomParam('checkin', $row['params']) : '';
+						$listing_checkout = $row ? VikBooking::getRoomParam('checkout', $row['params']) : '';
 						?>
 						<div class="vbo-param-container">
-							<div class="vbo-param-label"><label for="layout_style"><?php echo JText::translate('COM_VIKBOOKING_LAYOUT_STYLE'); ?></label></div>
+							<div class="vbo-param-label"><label for="listing_checkin"><?php echo JText::translate('VBCONFIGONESEVEN'); ?></label></div>
 							<div class="vbo-param-setting">
-								<select name="layout_style" id="layout_style">
-									<option value="classic"><?php echo JText::translate('VBOCONFIGSEARCHRESTPLCL'); ?></option>
-									<option value="listing"<?php echo $layout_style == 'listing' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_LISTING'); ?></option>
+								<select name="listing_checkin" id="listing_checkin">
+									<option value=""><?php echo JText::translate('VBO_USE_DEFAULT'); ?></option>
+									<optgroup label="<?php echo JText::translate('VBO_CUSTOM'); ?>">
+								<?php
+								for ($h = 0; $h < 24; $h++) {
+									for ($m = 0; $m < 60; $m += 15) {
+										$display_h = ($h < 10 ? '0' : '') . $h;
+										$display_m = ($m < 10 ? '0' : '') . $m;
+										$display_time = $display_h . ':' . $display_m;
+										?>
+										<option value="<?php echo $display_time; ?>"<?php echo $display_time == $listing_checkin ? ' selected="selected"' : ''; ?>><?php echo $display_time; ?></option>
+										<?php
+									}
+								}
+								?>
+									</optgroup>
 								</select>
+							</div>
+						</div>
+						<div class="vbo-param-container">
+							<div class="vbo-param-label"><label for="listing_checkout"><?php echo JText::translate('VBCONFIGONETHREE'); ?></label></div>
+							<div class="vbo-param-setting">
+								<select name="listing_checkout" id="listing_checkout">
+									<option value=""><?php echo JText::translate('VBO_USE_DEFAULT'); ?></option>
+									<optgroup label="<?php echo JText::translate('VBO_CUSTOM'); ?>">
+								<?php
+								for ($h = 0; $h < 24; $h++) {
+									for ($m = 0; $m < 60; $m += 15) {
+										$display_h = ($h < 10 ? '0' : '') . $h;
+										$display_m = ($m < 10 ? '0' : '') . $m;
+										$display_time = $display_h . ':' . $display_m;
+										?>
+										<option value="<?php echo $display_time; ?>"<?php echo $display_time == $listing_checkout ? ' selected="selected"' : ''; ?>><?php echo $display_time; ?></option>
+										<?php
+									}
+								}
+								?>
+									</optgroup>
+								</select>
+								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_TURNOVER_TIME_WARNING'); ?></span>
 							</div>
 						</div>
 					</div>
@@ -1210,7 +1302,7 @@ jQuery(function() {
 
 	jQuery(document).mouseup(function(e) {
 		if (!vbo_overlay_on) {
-			return false;
+			return;
 		}
 		var vbo_overlay_cont = jQuery(".vbo-info-overlay-content");
 		if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {

@@ -124,7 +124,7 @@ if (!empty($this->ord['channel'])) {
 				<span><?php echo JText::translate('VBTOTAL'); ?></span>
 			</div>
 			<div class="vbo-sign-bookdet-foot">
-				<?php echo (strlen($otacurrency) > 0 ? '('.$otacurrency.') '.$currencysymb : $currencysymb); ?> <?php echo VikBooking::numberFormat($this->ord['total']); ?>
+				<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($this->ord['total']), (!empty($otacurrency) ? '(' . $otacurrency . ') ' . $currencysymb : $currencysymb)); ?>
 			</div>
 		</div>
 	</div>
@@ -320,7 +320,7 @@ if ($ptmpl == 'component') {
 		/* Overlay for Terms and Conds - Start */
 		jQuery(document).mouseup(function(e) {
 			if (!vbo_overlay_on) {
-				return false;
+				return;
 			}
 			var vbo_overlay_cont = jQuery(".vbo-info-overlay-content");
 			if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {

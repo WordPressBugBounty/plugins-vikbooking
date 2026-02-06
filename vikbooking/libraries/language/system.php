@@ -445,6 +445,162 @@ class VikBookingLanguageSystem implements JLanguageHandler
 				break;
 
 			/**
+			 * Months and Week Days
+			 */
+
+			case 'JANUARY':
+				$result = __('January');
+				break;
+
+			case 'FEBRUARY':
+				$result = __('February');
+				break;
+
+			case 'MARCH':
+				$result = __('March');
+				break;
+
+			case 'APRIL':
+				$result = __('April');
+				break;
+
+			case 'MAY':
+				$result = __('May');
+				break;
+
+			case 'JUNE':
+				$result = __('June');
+				break;
+
+			case 'JULY':
+				$result = __('July');
+				break;
+
+			case 'AUGUST':
+				$result = __('August');
+				break;
+
+			case 'SEPTEMBER':
+				$result = __('September');
+				break;
+
+			case 'OCTOBER':
+				$result = __('October');
+				break;
+
+			case 'NOVEMBER':
+				$result = __('November');
+				break;
+
+			case 'DECEMBER':
+				$result = __('December');
+				break;
+
+			case 'JANUARY_SHORT':
+				$result = _x('Jan', 'January abbreviation');
+				break;
+
+			case 'FEBRUARY_SHORT':
+				$result = _x('Feb', 'February abbreviation');
+				break;
+
+			case 'MARCH_SHORT':
+				$result = _x('Mar', 'March abbreviation');
+				break;
+
+			case 'APRIL_SHORT':
+				$result = _x('Apr', 'April abbreviation');
+				break;
+
+			case 'MAY_SHORT':
+				$result = _x('May', 'May abbreviation');
+				break;
+
+			case 'JUNE_SHORT':
+				$result = _x('Jun', 'June abbreviation');
+				break;
+
+			case 'JULY_SHORT':
+				$result = _x('Jul', 'July abbreviation');
+				break;
+
+			case 'AUGUST_SHORT':
+				$result = _x('Aug', 'August abbreviation');
+				break;
+
+			case 'SEPTEMBER_SHORT':
+				$result = _x('Sep', 'September abbreviation');
+				break;
+
+			case 'OCTOBER_SHORT':
+				$result = _x('Oct', 'October abbreviation');
+				break;
+
+			case 'NOVEMBER_SHORT':
+				$result = _x('Nov', 'November abbreviation');
+				break;
+
+			case 'DECEMBER_SHORT':
+				$result = _x('Dec', 'December abbreviation');
+				break;
+
+			case 'MONDAY':
+				$result = __('Monday');
+				break;
+
+			case 'TUESDAY':
+				$result = __('Tuesday');
+				break;
+
+			case 'WEDNESDAY':
+				$result = __('Wednesday');
+				break;
+
+			case 'THURSDAY':
+				$result = __('Thursday');
+				break;
+
+			case 'FRIDAY':
+				$result = __('Friday');
+				break;
+
+			case 'SATURDAY':
+				$result = __('Saturday');
+				break;
+
+			case 'SUNDAY':
+				$result = __('Sunday');
+				break;
+
+			case 'MON':
+				$result = __('Mon');
+				break;
+
+			case 'TUE':
+				$result = __('Tue');
+				break;
+
+			case 'WED':
+				$result = __('Wed');
+				break;
+
+			case 'THU':
+				$result = __('Thu');
+				break;
+
+			case 'FRI':
+				$result = __('Fri');
+				break;
+
+			case 'SAT':
+				$result = __('Sat');
+				break;
+
+			case 'SUN':
+				$result = __('Sun');
+				break;
+
+			/**
 			 * FSE / Blocks
 			 */
 

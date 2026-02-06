@@ -37,7 +37,12 @@
 	--vbo-light-color-btn: #e9f3fa;
 	--vbo-middle-color-btn: #999;
 	--vbo-grey-blue-bg: #E4EAF4;
+	--vbo-white-blue-bg: #f9fafc;
 	--vbo-table-light-grey: #f0f0f1;
+	--vbo-select2-bg: #b6d8ee;
+	--vbo-select2-border: #b8d1e1;
+	--vbo-select2-txt: #2d5593;
+
 
 	/* Config bg and text color */
 	--vbo-config-bg-color: #fff;
@@ -163,6 +168,9 @@ legend.adminlegend {
 	color: var(--vbo-config-title-color);
 	border-bottom: 1px solid var(--vbo-config-border-color);
 }
+input[pattern]:invalid {
+    border-color: var(--vbo-red-color) !important;
+}
 
 /*
 * Classes .label and .badge
@@ -216,6 +224,9 @@ a.label, a.badge, a.label:hover, a.badge:hover {
 .btn.btn-green:hover {
 	background-color: var(--vbo-green-color-hover);
 	border: 1px solid var(--vbo-green-color-hover);
+}
+.badge-ai, .label-ai {
+	background: var(--vbo-ai-color);
 }
 .vbo-label-nested {
 	padding: 1px 4px !important;
@@ -374,6 +385,12 @@ a:focus, a:hover {
 	padding: 10px 10px;
 	border-color: var(--vbo-config-border-color);
 }
+.btn.vbo-btn-square {
+	padding: 0;
+	width: 26px;
+	height: 26px;
+	font-size: 12px;
+}
 .vbo-btn-wide, .btn-group .vbo-btn-wide, .btn-wrapper .vbo-btn-wide, .vbo-param-setting .vbo-btn-wide {
 	padding: 10px 30px !important;
 }
@@ -486,16 +503,20 @@ body #content .btn-warning:hover, body #wpcontent .btn-warning:hover, .vbo-modal
 	background-color: var(--vbo-orange-color-hover);
 	border: 1px solid var(--vbo-orange-color-hover);
 }
-.vbo-context-menu-btn-group .btn.btn-primary:first-child {
+.vbo-context-menu-btn-group .btn.btn-primary:first-child, .vbo-context-menu-btn-group .btn.btn-success:first-child {
 	border-top-right-radius: 0;
 	border-bottom-right-radius: 0;
 }
-.vbo-context-menu-btn-group .btn.btn-primary:last-child {
+.vbo-context-menu-btn-group .btn.btn-primary:last-child, .vbo-context-menu-btn-group .btn.btn-success:last-child {
 	border-top-left-radius: 0;
 	border-bottom-left-radius: 0;
 }
-.vbo-context-menu-btn-group .btn.btn-primary:last-child i {
+.vbo-context-menu-btn-group .btn.btn-primary:last-child i, .vbo-context-menu-btn-group .btn.btn-success:last-child i {
 	margin-right: 0;
+}
+.vbo-btn-transparent {
+	background: transparent;
+	border: 0;
 }
 
 .select2-container--open .select2-dropdown--below {
@@ -1662,6 +1683,8 @@ p.vbpfiltconfnumb {
 	box-sizing: border-box;
 	line-height: 1.1em;
 	cursor: pointer;
+	height: 42px;
+	overflow: hidden;
 }
 .vbo-overv-sticky-scroll-month-wrap > div:hover {
 	background: #0a7bb5;
@@ -2569,6 +2592,7 @@ p.vbroomparamp span {
 .vbo-submenu-wrap li > div a {
 	padding: 8px 0;
 	display: flex;
+	gap: 4px;
 }
 .vbo-submenu-wrap li > div a i {
 	margin-top: 2px;
@@ -2589,7 +2613,7 @@ p.vbroomparamp span {
 }
 .vbo-submenu-wrap li .vbo-submenu-item {
 	line-height: 1.4em;
-	margin-left: 6px;
+	margin-left: 2px;
 }
 .vbo-submenu-wrap li .vbo-submenu-item .vbo-submenu-item-txt {
 	display: block;
@@ -2837,16 +2861,15 @@ form[name="invoicesform"] .btn-toolbar {
 .vbo-btn-toolbar #filter-bar {
 	margin-top: 0;
 }
-.vbo-btn-toolbar .btn[type="submit"],
-.vbo-btn-toolbar .btn[type="button"] {
+.vbo-btn-toolbar .btn[type="submit"], .vbo-btn-toolbar .btn[type="button"], .vbo-reports-filters-wrap .btn[type="submit"], .vbo-reports-filters-wrap .btn[type="button"] {
 	padding: 8px 15px;
 	box-shadow: none; 
 	border-color: var(--vbo-config-border-color);
 }
-.vbo-btn-toolbar .btn[type="submit"] *:not(i), .vbo-btn-toolbar .btn[type="button"] *:not(i) {
+.vbo-btn-toolbar .btn[type="submit"] *:not(i), .vbo-btn-toolbar .btn[type="button"] *:not(i), .vbo-reports-filters-wrap .btn[type="submit"] *:not(i), .vbo-reports-filters-wrap .btn[type="button"] *:not(i) {
 	font-weight: bold;
 }
-.vbo-btn-toolbar .btn-group .btn .icon-calendar {
+.vbo-btn-toolbar .btn-group .btn .icon-calendar, .vbo-reports-filters-wrap .btn-group .btn .icon-calendar {
 	font-weight: normal;
 }
 .vbo-btn-toolbar .field-calendar .input-append,
@@ -2905,7 +2928,7 @@ form[name="invoicesform"] .btn-toolbar {
 	border-right: 4px solid transparent;
 	border-left: 4px solid transparent;
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple {
+.vbo-btn-toolbar .select2-container--default .select2-selection--multiple, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple {
 	font-weight: normal;
 	font-size: 14px !important;
 	border: 1px solid var(--vbo-config-border-color) !important;
@@ -2914,11 +2937,11 @@ form[name="invoicesform"] .btn-toolbar {
 	padding-right: 0;
 	padding-bottom: 0;
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__rendered, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__rendered, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__rendered, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__rendered {
 	padding: 4px 5px;
 	display: inherit;
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear {
+.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear {
 	display: inline-block;
 	margin-left: 3px;
 	margin-right: 0;
@@ -2931,23 +2954,23 @@ form[name="invoicesform"] .btn-toolbar {
 	color: var(--vbo-config-titles-color-light);
 	float: right;
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear:hover, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear:hover {
+.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear:hover, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear:hover, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear:hover {
 	background: var(--vbo-config-border-color);
 	color: var(--vbo-config-titles-color-light);
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__arrow, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__arrow {
+.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__arrow, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__arrow, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__arrow {
 	height: 36px;
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__choice, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__choice {
-	background-color: #b6d8ee !important;
-	border: 1px solid #b8d1e1 !important;
+.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__choice, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__choice, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice {
+	background-color: var(--vbo-select2-bg) !important;
+	border: 1px solid var(--vbo-select2-border) !important;
 	border-radius: 30px !important;
 	padding: 5px 10px !important;
 	color: var(--vbo-base-color);
 	font-weight: bold;
 	font-size: 12px;
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove {
+.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove {
 	display: inline-block;
 	margin-left: 3px;
 	margin-right: 0;
@@ -2964,11 +2987,11 @@ form[name="invoicesform"] .btn-toolbar {
 	z-index: 9;
 	position: relative;
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove:hover, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove:hover {
+.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove:hover, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove:hover, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice span.select2-selection__choice__remove:hover {
 	background: var(--vbo-base-color-hover);
 	color: #fff;
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-search__field, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-search__field {
+.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-search__field, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-search__field, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-search__field {
 	margin-top: 5px;
 	margin-bottom: 5px !important;
 	padding: 0;
@@ -3007,6 +3030,7 @@ form[name="invoicesform"] .btn-toolbar {
 
 .vbo-list-form-filters {
 	padding: 10px 20px;
+	border-radius: 6px;
 }
 .vbo-list-form-filters form {
 	margin-bottom: 0;
@@ -3351,7 +3375,7 @@ span.vbo-label-small, .vbo-label-small {
 .vbo-reportwidget-ratesoverv .vbo-reportwidget-chart-meta-val-main {
 	font-size: 22px;
 }
-.vbo-reportwidget-ratesoverv #vbo-report-chart-canvas {
+.vbo-reportwidget-ratesoverv .vbo-report-chart-canvas {
 	width: 57% !important;
 	height: auto !important;
 }
@@ -3389,11 +3413,11 @@ span.vbo-label-small, .vbo-label-small {
     padding: 0;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice {
-    background-color: #b6d8ee;
-	border: 1px solid #b8d1e1;
+    background-color: var(--vbo-select2-bg);
+	border: 1px solid var(--vbo-select2-border);
 	border-radius: 30px;
 	padding: 5px 10px;
-	color: #2d5593;
+	color: var(--vbo-select2-txt);
     font-weight: bold;
 	max-width: 190px;
   	overflow: hidden;
@@ -4017,11 +4041,11 @@ tr.vbo-seasons-calendar-seasonrow td:nth-child(n+2) {
 .vbo-roverw-setnewrate .vbo-roverw-flexnew > div {
 	flex: 1;
 	text-align: center;
-	padding: 12px;
 	background: var(--vbo-config-bg-color);
 	border: 1px solid var(--vbo-basic-btn);
 	border-bottom: 3px solid var(--vbo-basic-btn);
 	border-radius: 16px;
+	overflow: hidden;
 }
 .vbo-roverw-setnewrate .vbo-roverw-flexnew input {
 	background: var(--vbo-config-bg-color);
@@ -4034,6 +4058,14 @@ label.vbo-roverw-setnewrate-currency, label.vbo-roverw-setnewrestr-lbl {
 }
 .vbo-roverw-setnewrate .vbo-roverw-flexnew > div input[type="number"] {
 	width: 100px !important;
+	height: 40px;
+}
+.vbo-roverw-newrcont, .vbo-roverw-newrestrcont-inner {
+	display: flex;
+	justify-content: center;
+	gap: 5px;
+	padding: 10px 10px 20px;
+	align-items: center;
 }
 .vbo-roverw-closeopenrp {
 	margin: 12px auto 20px;
@@ -4046,16 +4078,46 @@ label.vbo-roverw-setnewrate-currency, label.vbo-roverw-setnewrestr-lbl {
 .vbo-roverw-closeopenrp:hover {
 	border-color: var(--vbo-base-color);
 }
-.vbo-roverw-newrwrap h4, .vbo-roverw-newrestrcont h4 {
-	padding: 4px 0;
-	text-align: center;
-	margin: 0 0 7px;
-	font-size: 16px;
+.vbo-roverw-newrestrcont h4 {
+	padding: 10px 20px;
 }
-.vbo-roverw-newrwrap h4 i, .vbo-roverw-newrestrcont h4 i {
+.vbo-roverw-newrwrap h4, .vbo-roverw-newrestrcont h4 {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 5px;
+	margin: 0 0 7px;
+	border-bottom: 1px solid var(--vbo-basic-btn);
+	font-size: 14px;
+	color: var(--vbo-body-text-color);
+}
+.vbo-roverw-newrwrap h4 button {
+	display: flex;
+	justify-content: center;
+	cursor: pointer;
+	padding: 10px 20px;
+	text-align: center;
+	font-size: 14px;
+	color: var(--vbo-body-text-color);
+}
+.vbo-roverw-newrwrap h4 button i:last-child {
+	font-size: 11px;
+	color: var(--vbo-config-titles-color-light);
+	margin-left: 4px;
+}
+.vbo-roverw-newrwrap .vbo-context-menu-rate-type {
+	width: 100%;
+}
+.vbo-roverw-newrwrap .vbo-context-menu-rate-type:hover {
+	background: var(--vbo-light-blue);
+}
+.vbo-roverw-newrwrap .vbo-context-menu-rate-type:hover i {
+	color: var(--vbo-base-color);
+}
+.vbo-roverw-newrwrap h4 i:first-child, .vbo-roverw-newrestrcont h4 i:first-child {
 	color: var(--vbo-config-titles-color-light);
 	font-size: 14px;
-	margin-right: 5px;
+	margin-right: 2px;
 }
 
 .vbo-roverw-closeopenrp h4 {
@@ -4321,6 +4383,9 @@ td.vbo-roverw-daybusy:hover {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, 240px);
   	justify-content: center;
+}
+.vbo-roverw-setnewrate-vcm-otas:has(> :only-child) {
+	grid-template-columns: minmax(240px, max-content);
 }
 .vbo-roverw-setnewrate-vcm-ota-relation {
 	border-radius: 10px;
@@ -4643,6 +4708,14 @@ input.new_depovr_nights, input.new_depovr_amounts, select.new_depovr_more {
 }
 .vbo-ratesoverview-bottom-container {
 	background: var(--vbo-config-bg-color);
+}
+.vbo-ratesoverview-bottom-container .vbo-roverv-actions-content .vbo-context-menu-roverv-actions {
+	margin-left: auto;
+}
+.vbo-ratesoverview-bottom-container .vbo-roverv-actions-wrapper {
+	border-bottom: 1px solid var(--vbo-config-border-color);
+	padding-bottom: 10px;
+	margin-bottom: 5px;	
 }
 label.vbo-timeline-label {
 	font-size: 1.2em;
@@ -5182,7 +5255,7 @@ label.vbo-timeline-label {
 .vbo-reportwidget-chart .err {
 	margin: 20px;
 }
-#vbo-report-chart-canvas {
+.vbo-report-chart-canvas {
 	max-width: 100%;
 	margin: 0 auto;
 }
@@ -5449,9 +5522,6 @@ label.vbo-timeline-label {
 .vbo-widget-finance-stat-rank-amount {
 	margin-left: auto;
 	font-weight: bold;
-}
-.vbo-widget-finance-skeleton-block {
-
 }
 
 /* Tooltip - Start **/
@@ -7632,6 +7702,7 @@ span.label {
 	height: 36px;
 }
 .select2-dropdown {
+	background: var(--vbo-config-bg-color);
 	border: 1px solid var(--vbo-config-border-color) !important; 
 }
 .vbo-quickres-head .vbo-quickres-head-right .select2-container--default .select2-selection--single .select2-selection__rendered,
@@ -9401,6 +9472,12 @@ table.vboverviewtable th, table.vboverviewtable td {
 	background-color: var(--vbo-warning-bg);
 	padding-bottom: 8px;
 }
+.bluedays.vbo-overv-cell-newmonth {
+	background: var(--vbo-info-txt);	
+}
+table.vboverviewtable th:has(+ th.vbo-overv-cell-newmonth), table.vboverviewtable td:has(+ .vbo-overv-cell-newmonth) {
+	border-right-color: var(--vbo-config-bg-dark);
+}
 .vbo-roverview-table .vbo-overview-room-info .vbo-overview-alert {
 	display: inline-block;
 	margin-left: 10px;
@@ -9443,7 +9520,7 @@ table.vboverviewtable td:last-child {
 	background: repeating-linear-gradient( -45deg, var(--vbo-body-bg-color), var(--vbo-body-bg-color) 10px, var(--vbo-basic-btn) 10px, var(--vbo-basic-btn) 20px) !important;
 	cursor: not-allowed;
 }
-.vbo-overv-row-snake td {
+.vbo-overv-row-snake td:not(.busy-closure) {
 	padding-bottom: 16px;
 	vertical-align: bottom;
 }
@@ -10472,6 +10549,7 @@ table.vboverviewtable td.vbo-cell-selected-middle-row-up {
 .vbo-bookingdet-detcont .vbo-bookingdet-detcont-label .label .badge {
 	margin-left: auto;
 	padding: 4px 10px;
+	cursor: pointer;
 }
 .vbo-bookingdet-detcont .vbo-bookingdet-detcont-label .label-info  {
 	background-color: transparent !important;
@@ -10587,6 +10665,10 @@ table.vboverviewtable td.vbo-cell-selected-middle-row-up {
 }
 .vbo-bookingdet-summary-total .vbo-bookingdet-summary-lbl, .vbo-bookingdet-summary-total .vbo-bookingdet-summary-cost {
 	font-size: 1.2em;
+}
+.vbo-bookingdet-summary-total .vbo-bookingdet-exp-payout {
+	font-weight: normal;
+	opacity: .8;
 }
 .vbo-bookingdet-innercontainer > .vbo-bookingdet-noteslogs {
 	-webkit-flex: 1;
@@ -11542,7 +11624,7 @@ div.modal.in .modal-header + div.modal-body-wrapper {
 .vbo-ratesoverview-bottom-container {
 	border: 1px solid var(--vbo-config-border-color);
 	margin-top: 20px;
-	padding: 20px;
+	padding: 12px 20px 20px;
 	border-radius: 9px;
 }
 .vbo-ratesoverview-bottom-head {
@@ -11559,16 +11641,6 @@ div.modal.in .modal-header + div.modal-body-wrapper {
 	text-align: center;
 	display: inline-block;
 	margin-top: 10px;
-}
-.vbo-ratesoverview-obp-toggle-inner {
-	float: right;
-	margin-left: 20px;
-}
-.vbo-ratesoverview-obp-toggle-txt {
-	display: inline-block;
-	vertical-align: top;
-	margin: 5px 0 0 5px;
-	cursor: pointer;
 }
 .vbo-ratesoverview-caltab-wrapper {
 	display: flex;
@@ -11656,6 +11728,26 @@ div.modal.in .modal-header + div.modal-body-wrapper {
 }
 .vbratesoverviewtable tr td:first-child {
 	border-top: 0;
+}
+.vbo-roverviewtablerow-otarates td {
+	padding: 6px 10px;
+	background: var(--vbo-light-color-btn);
+	height: 33px;
+	font-size: 12px;
+}
+.vbo-roverviewtablerow-otarates td:first-child {
+	font-size: 13px;
+}
+.vbo-roverviewtablerow-otarates td .vbo-roverv-ota-wrap {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.vbo-roverviewtablerow-otarates td .vbo-roverv-ota-logo {
+	width: 20px;
+	height: 20px;
+	object-fit: cover;
+	border-radius: 50%;	
 }
 .vbo-ratesoverview-period-inner {
 	padding: 15px;
@@ -13057,7 +13149,11 @@ select.vbo-select-small {
 	font-size: 14px !important;
 }
 .vbo-uploaded-files .file-elem {
-	width: calc(100% / 7) !important;
+	margin-bottom: 20px;
+	width: calc(100% / 7);
+}
+.vbo-param-file-upload-wrap .vbo-uploaded-files .file-elem {
+	width: calc(100% / 2);
 }
 .vbo-bookingdet-btncont .vbo-config-btn {
 	margin-top: 5px;
@@ -13117,11 +13213,11 @@ select.vbo-select-small {
 	background: var(--vbo-config-bg-color);
 }
 .vbo-param-container .vbo-param-setting .select2-container--default .select2-selection--multiple .select2-selection__choice, .vbo-admin-widget-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice {
-	background-color: #b6d8ee;
-	border: 1px solid #b8d1e1;
+	background-color: var(--vbo-select2-bg);
+	border: 1px solid var(--vbo-select2-border);
 	border-radius: 30px;
 	padding: 5px 10px;
-	color: #2d5593;
+	color: var(--vbo-select2-txt);
 	font-weight: bold;
 }
 .vbo-admin-widget-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice {
@@ -14283,6 +14379,22 @@ a.disabled .vbo-ctxmenu-entry-icn .vbo-tm-colortag-edit {
 	border-right: 1px solid var(--vbo-basic-btn);
 	border-bottom: 1px solid var(--vbo-basic-btn);
 }
+.vbo-tm-calendar-month-day.drag-over {
+	position: relative;
+}
+.vbo-tm-calendar-month-day.drag-over:after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 98%;
+	height: 98%;
+	background: var(--vbo-input-style-deactive);
+	border: 2px dashed var(--vbo-config-border-color);
+	border-radius: 8px;
+	box-sizing: border-box;
+}
 .vbo-tm-calendar-month-row:not(.vbo-tm-calendar-month-weekdays) .vbo-tm-calendar-month-day:not(.vbo-tm-calendar-month-day-empty):hover {
 	cursor: pointer;
 	background: var(--vbo-light-blue);
@@ -14341,6 +14453,10 @@ a.disabled .vbo-ctxmenu-entry-icn .vbo-tm-colortag-edit {
 	gap: 5px;
 	font-weight: 450;
 	cursor: pointer;
+	z-index: 2;
+}
+.vbo-tm-calendar-month-day .vbo-tm-calendar-month-day-task.updating {
+	opacity: .6;
 }
 .vbo-tm-calendar-month-day .vbo-tm-calendar-month-day-task:hover {
 	opacity: .8;
@@ -14675,19 +14791,26 @@ table.adminform div.input-append {
 
 /* Reports - Start */
 .vbo-reports-container {
-	background: var(--vbo-basic-btn);
 	padding: 0 0 10px;
 }
-.vbo-reports-filters-outer {
+.vbo-reports-filters-wrap {
+	background: var(--vbo-config-bg-color);
+	border-radius: 14px;
+	padding: 10px;
+	box-sizing: border-box;	
+}
+.vbo-reports-filters-outer.vbo-btn-toolbar {
 	margin-top: 0;
 	height: auto;
-	background: var(--vbo-basic-btn-hover);
-	padding: 10px;
-	box-sizing: border-box;
+	padding: 0;
+	background: transparent;
 }
 .vbo-reports-filters-outer > div {
 	display: inline-block;
-	margin: 2px 0;
+	margin: 2px 6px 2px 0;
+}
+.vbo-reports-filters-outer > div:last-child {
+	margin-right: 0;
 }
 .vbo-reports-filters-outer > .vbo-reports-filters-launch .btn {
 	background: var(--vbo-config-titles-color-light);
@@ -14710,12 +14833,50 @@ table.adminform div.input-append {
 }
 .vbo-reports-filters-report .vbo-report-filter-wrap {
 	display: inline-block;
+	margin-right: 6px;
+}
+.vbo-reports-filters-report .vbo-report-filter-wrap:last-child {
+	margin-right: 0;
+}
+.vbo-reports-subfilters-wrap {
+	display: flex;
+	align-items: center;
+	margin-top: 10px;	
+}
+.vbo-reports-subfilters-cont {
+	padding: 6px;
+	border-top: 1px solid var(--vbo-basic-btn);
+	background: var(--vbo-config-child-bg-color);
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+	flex: 1;
+}
+.vbo-reports-subfilters-wrap .vbo-report-layout-type {
+	width: 200px;
+	margin-top: 0;
 }
 .vbo-report-filter-val input, .vbo-report-filter-val select {
 	margin: 0 !important;
 }
+.vbo-report-filter-val {
+	position: relative;
+}
+.vbo-report-filter-val input.vbo-report-datepicker {
+	max-width: 120px;
+	padding-right: 26px;
+}
+.vbo-report-filter-val:has(.vbo-report-datepicker):after {
+	content: "\f073";
+	font-family: "Font Awesome 5 Free", FontAwesome !important;
+	font-weight: 900;
+	position: absolute;
+	right: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--vbo-config-titles-color-light);
+}
 .vbo-reports-output {
-	margin: 10px;
+	margin: 20px 0 10px;
 }
 .vbo-report-layout-type {
 	text-align: right;
@@ -14725,17 +14886,20 @@ table.adminform div.input-append {
 .vbo-report-layout-type .vbo-report-layout-type-inner {
 	background: var(--vbo-config-bg-color);
 	margin-left: 10px;
+	margin-right: 10px;
 	border: 1px solid var(--vbo-config-border-color);
 	display: flex;
 	width: 170px;
 	float: right;
-	margin-right: 10px;
+	border-radius: var(--vbo-field-radius);
+	overflow: hidden;
+	display: flex;
+	align-items: center;
 }
 .vbo-report-layout-type .vbo-report-layout-type-inner > * {
 	display: inline-block;
 }
 .vbo-report-layout-type .vbo-report-layout-type-inner label {
-	border-right: 1px solid var(--vbo-config-border-color);
 	margin-bottom: 0;
 	padding: 9px 7px;
 	flex-basis: 25px;
@@ -14752,6 +14916,11 @@ table.adminform div.input-append {
 	padding: 8px 10px;
 	height: inherit;
 	flex: 1;
+	outline: none;
+}
+.vbo-report-layout-type .vbo-report-layout-type-inner select:focus {
+	outline: none;
+	box-shadow: none;
 }
 .vbo-report-chart-wrap > h4 {
 	margin-top: 30px;
@@ -14802,6 +14971,8 @@ table.adminform div.input-append {
 .vbo-report-chart-main .vbo-report-chart-metas {
 	display: flex;
 	flex-wrap: wrap;
+	margin-top: 0;
+	margin-bottom: 20px;
 }
 .vbo-report-chart-main .vbo-report-chart-meta {
 	flex-basis: 25%;
@@ -14813,8 +14984,31 @@ table.adminform div.input-append {
 	background: var(--vbo-config-bg-color);
 	padding: 30px;
 	border-radius: 16px;
-	margin: 20px 5px;
+	margin: 0px 5px 10px;
 	box-shadow: 0 3px 10px rgba(0,0,0,.05);
+}
+/* Only Chart */
+.vbo-report-chartonly .vbo-report-chart-main {
+	max-height: 600px;
+	max-width: 80%;
+	margin: 0 auto;
+	display: flex;
+}
+.vbo-report-chartonly .vbo-report-chart-main .vbo-report-chart-content {
+	flex-basis: 70%;
+	margin: 0 auto;
+}
+.vbo-report-chartonly .vbo-report-chart-metas .vbo-report-chart-meta-inner {
+	height: auto;
+} 
+.vbo-report-chartonly .vbo-report-chart-metas {
+	align-self: baseline;
+	margin-top: 0;
+	flex: 1;
+}
+.vbo-report-chartonly .vbo-report-chart-meta {
+	flex-basis: 100%;
+	margin-bottom: 10px;
 }
 .vbo-report-chart-right {
 	flex-basis: 20%;
@@ -14870,7 +15064,7 @@ table.adminform div.input-append {
 	display: flex;
 }
 .vbo-report-sheetnchart .vbo-report-sheet {
-	flex-basis: 60%;
+	width: 60%;
 	margin-right: 10px;
 }
 .vbo-report-sheetnchart .vbo-report-chart-wrap {
@@ -14894,10 +15088,9 @@ table.adminform div.input-append {
 	margin: 0 5px;
 }
 .vbo-reports-output .table-responsive {
-	border-radius: 8px;
+	border-radius: 16px;
 	box-shadow: 0 0px 20px rgba(0,0,0,.1);
-	margin: 0 5px 18px;
-	background: var(--vbo-config-bg-color);
+	margin: 0 0px 18px;
 }
 .vbo-reports-output table {
 	margin-bottom: 0;
@@ -14928,8 +15121,11 @@ table.adminform div.input-append {
 .vbo-report-sheetnchart .vbo-report-sheet .vbo-report-col-hideable:nth-last-of-type(4) {
 	display: none;
 }
-.vbo-reports-output table tbody td, .vbo-reports-output table tfoot td {
+.vbo-reports-output table tbody td {
 	padding: 15px 15px;
+}
+.vbo-reports-output table tfoot td {
+	padding: 0 15px;
 }
 .vbo-reports-output table tbody tr:nth-child(2n) {
 	background: var(--vbo-config-child-bg-color);
@@ -14937,7 +15133,7 @@ table.adminform div.input-append {
 .vbo-reports-output table tbody tr td:first-child span {
 	font-weight: bold;
 }
-.vbo-reports-output table tfoot {
+.vbo-reports-output table tfoot, .vbo-reports-output table tfoot td {
 	background: var(--vbo-config-child-bg-color);
 }
 .vbo-reports-output table tfoot td h3 {
@@ -14959,6 +15155,304 @@ table.adminform div.input-append {
 .vbo-reports-output table tfoot td .vbo-report-footer-inlinedata:last-child {
 	margin: 0;
 }
+/* RMS Report */
+select[multiple][data-will-mutate="1"] {
+	max-height: 40px !important;
+}
+.vbo-report-subfilters-rms .vbo-report-subfilter-months {
+	display: flex;
+	gap: 5px;
+}
+.vbo-report-subfilters-rms .vbo-report-subfilter-month {
+	padding: 8px 10px;
+	display: inline-block;
+	cursor: pointer;
+	flex: 1;
+	text-align: center;
+	font-weight: 500;
+	border: 1px solid transparent;
+}
+.vbo-report-subfilters-rms .vbo-report-subfilter-month-active {
+	background: var(--vbo-blue-color);
+	border-color: var(--vbo-blue-color);
+	color: var(--vbo-contrast-text-color);
+	border-radius: var(--vbo-field-radius);	
+}
+.vbo-report-subfilters-rms .vbo-report-subfilter-month:not(.vbo-report-subfilter-month-active):hover {
+	border-radius: var(--vbo-field-radius);
+	background-color: var(--vbo-config-bg-color);
+	border-color: var(--vbo-base-color);
+	color: var(--vbo-base-color);
+}
+.vbo-reports-output.vbo-report-output-rms_occupancy_pace .vbo-report-row-comparison {
+	color: var(--vbo-config-titles-color-light);
+}
+.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody td:first-child {
+	position: relative;
+}
+.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody td:first-child:after {
+	width: 2px;
+	height: 100%;
+	position: absolute;
+	content: "";
+	background: transparent;
+	left: 0;
+	top: 0;
+}
+.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody tr.vbo-report-row-comparison td:first-child:after {
+	background: var(--vbo-info-border);
+}
+.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody tr.vbo-report-row-comparison td {
+	border-top: 1px solid var(--vbo-basic-btn);
+}
+.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody .vbo-report-row-group-1 td {
+	background: var(--vbo-input-style-deactive);
+}
+.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody .vbo-report-row-comparison td i {
+	margin-right: 6px;
+}
+.vbo-reports-output table tfoot .vbo-report-footer-rms-occupancy-pace td {
+	padding: 0 10px;
+	box-shadow: inset 0 0px 10px rgba(0,0,0,.1);
+	background: var(--vbo-config-bg-color);
+}
+
+.vbo-report-cell-texts {
+	max-width: 200px;
+	white-space: break-spaces;
+	font-size: 12px;	
+}
+.vbo-report-cell-metrics {
+	display: flex;
+	justify-content: space-between;
+	max-width: 80%;
+	margin: 0 auto;
+}
+.vbo-rms-rate-history-record-variation .vbo-rms-rate-history-record-value {
+	display: flex;
+	gap: 5px;
+}
+.vbo-report-cell-metric[data-type="vrplus"] .label, .vbo-report-cell-metric[data-type="vrminus"] .label, .vbo-rms-rate-history-record-variation .vbo-rms-rate-history-record-value .label {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	cursor: pointer;
+}
+.vbo-modal-overlay-block .vbo-rms-rate-history-record-variation .vbo-rms-rate-history-record-value .label {
+	cursor: initial;
+}
+.vbo-report-cell-metric[data-type="vrplus"] .label:hover {
+	background: var(--vbo-success-txt);
+	color: var(--vbo-white-blue-bg);
+}
+.vbo-report-cell-metric[data-type="vrminus"] .label:hover {
+	background: var(--vbo-red-color) !important;
+	color: var(--vbo-white-blue-bg) !important;
+}
+.vbo-report-cell-metric[data-type="vrplus"] i, .vbo-report-cell-metric[data-type="vrminus"] i, .vbo-rms-rate-history-record-variation .vbo-rms-rate-history-record-value .label i {
+	font-size: 8px;
+	margin-right: 1px;
+}
+.vbo-report-cell-metric[data-type="nightly-rate"] .label-info:hover {
+	background: var(--vbo-info-txt) !important;
+	color: var(--vbo-white-blue-bg);
+	cursor: pointer;
+}
+.vbo-report-cell-comparison[data-type="abrn"] .label, .vbo-report-cell-metric[data-type="abrn"] .label {
+	cursor: pointer;
+}
+.vbo-report-cell-comparison[data-type="abrn"] .label:hover, .vbo-report-cell-metric[data-type="abrn"] .label:hover {
+	background: var(--vbo-tag-black-txt) !important;
+	color: var(--vbo-white-blue-bg) !important;
+}
+.vbo-report-cell-comparison[data-type="abrn"] .label.label-success:hover, .vbo-report-cell-metric[data-type="abrn"] .label.label-success:hover {
+	background: var(--vbo-success-txt) !important;
+	color: var(--vbo-white-blue-bg) !important;
+}
+.vbo-report-cell-comparison[data-type="abrn"] .label.label-error:hover, .vbo-report-cell-metric[data-type="abrn"] .label.label-error:hover {
+	background: var(--vbo-red-color) !important;
+	color: var(--vbo-white-blue-bg) !important;
+}
+.vbo-report-cell-comparison[data-type="abrn"] .label.label-success:hover, .vbo-report-cell-metric[data-type="abrn"] .label.label-success:hover {
+	background: var(--vbo-success-txt) !important;
+	color: var(--vbo-white-blue-bg) !important;
+}
+.vbo-report-cell-comparison .vbo-report-cell-compare-result {
+	margin-left: 4px;
+}
+.vbo-report-cell-comparison .vbo-report-cell-compare-result.up {
+	color: var(--vbo-green-color);
+}
+.vbo-report-cell-comparison .vbo-report-cell-compare-result.down {
+	color: var(--vbo-error-border);
+}
+/* By adding the "vbo-table-sticky-components" class together with the .table-responsive, we set the TH and TFOOT as sticky */
+.vbo-table-sticky-components {
+	overflow: auto !important;	
+}
+.vbo-table-sticky-components table thead {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+}
+.vbo-table-sticky-components table tfoot {
+	position: sticky;
+	bottom: 0;
+	z-index: 10;
+}
+.vbo-table-sticky-components table tbody td:first-child {
+	position: sticky !important;
+	left: 0;
+	z-index: 5;
+	width: 150px;
+}
+
+.vbo-report-footer-rms-list {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 10px;
+	max-width: 1600px;
+	margin: 0 auto;
+}
+.vbo-report-footer-rms-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: column;
+	border-right: 1px solid var(--vbo-config-border-color);
+	padding: 14px;
+	text-align: left;
+}
+.vbo-report-footer-rms-wrap:last-child {
+	border-right: 0;
+}
+.vbo-report-footer-rms-title {
+	text-transform: uppercase;
+	font-size: 10px;
+	font-weight: 500;
+	margin-bottom: 2px;
+	color: var(--vbo-info-txt);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.vbo-report-footer-rms-metrics {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	align-items: center;	
+}
+.vbo-report-footer-rms-metric {
+	display: flex;
+	margin-bottom: 5px;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+}
+.vbo-report-footer-rms-growth {
+	display: flex;
+	gap: 5px;
+	align-items: center;
+	justify-content: center;
+}
+.vbo-report-footer-rms-growth i {
+	font-size: 10px;
+}
+.vbo-report-footer-rms-growth.up {
+	color: var(--vbo-success-txt);
+}
+.vbo-report-footer-rms-growth.down {
+	color: var(--vbo-error-txt);
+}
+.vbo-reports-output table tr.vbo-report-footer-rms-occupancy-pace td:not(:first-child) span {
+	font-weight: normal;
+}
+.vbo-report-footer-rms-metric:last-child {
+	margin: 0;
+}
+.vbo-report-footer-rms-metric .vbo-report-footer-rms-metric-year {
+	display: inline-block;
+}
+.vbo-report-footer-rms-metric-target .vbo-report-footer-rms-metric-value {
+	font-weight: bold;
+}
+.vbo-rms-rate-history-details {
+	padding: 12px;
+	display: flex;
+	align-items: center;
+	align-content: space-between;
+	background: var(--vbo-light-blue);
+	border: 1px solid var(--vbo-info-bg);
+	border-radius: 12px;
+	margin-bottom: 16px;
+}
+.vbo-rms-rate-history-listing {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 16px;
+	font-weight: bold;
+}
+.vbo-rms-rate-history-listing i {
+	background-color: var(--vbo-body-bg-color);
+	color: var(--vbo-base-color);
+	height: 32px;
+	width: 32px;
+	line-height: 32px;
+	text-align: center;
+	border-radius: 10px;
+	font-size: 16px;	
+}
+.vbo-rms-rate-history-target {
+	margin-left: auto;
+	text-align: right;
+}
+.vbo-rms-rate-history-target .vbo-rms-rate-history-target-title {
+	display: block;
+	opacity: .8;
+}
+.vbo-rms-rate-history-target .vbo-rms-rate-history-target-value {
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--vbo-config-title-color);
+}
+.vbo-rms-rate-history-list .vbo-rms-rate-history-record {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+	padding: 14px;
+	border: 1px solid var(--vbo-config-border-color);
+	border-radius: 10px;
+	margin-bottom: 12px;
+}
+.vbo-rms-rate-history-list .vbo-rms-rate-history-record:last-child {
+	margin-bottom: 0;
+}
+.vbo-rms-rate-history-list .vbo-rms-rate-history-record-title {
+	text-transform: uppercase;
+	display: block;
+	font-size: 12px;
+	font-weight: 500;
+	opacity: .8;
+	margin-bottom: 4px;
+}
+.vbo-rms-rate-history-list .vbo-rms-rate-history-record .vbo-rms-rate-history-record-value {
+	font-weight: 600;
+}
+.vbo-rms-rate-history-list .vbo-rms-rate-history-record .vbo-rms-rate-history-record-dt i {
+	color: var(--vbo-base-color);
+}
+.vbo-rms-rate-history-list .vbo-rms-rate-history-record .vbo-rms-rate-history-record-dt .vbo-rms-rate-history-record-value {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.vbo-rms-rate-history-list .vbo-rms-rate-history-record-rate {
+	text-align: right;
+}
+.vbo-rms-rate-history-record-rate .vbo-rms-rate-history-record-value {
+	color: var(--vbo-base-color);
+}
+
 .vbo-info-overlay-content.vbo-info-overlay-report {
 	text-align: center;
 }
@@ -15370,6 +15864,19 @@ table.adminform div.input-append {
 }
 #filter-bar .btn-group {
 	margin-left:5px;
+}
+#filter-bar .pull-right-group {
+	float: right;
+}
+#filter-bar .pull-left-group {
+	float: left;
+}
+/* Usable for elements inside the filter bar that need to be inline.
+ * The parent element should have the class 'pull-left-group' or 'pull-right-group'."
+ */
+.btn-group.pull-inline {
+	display: inline-block;
+	vertical-align: top;
 }
 .table-responsive {
   overflow-x: auto;
@@ -15869,6 +16376,12 @@ table.adminform div.input-append {
 .vbo-drivers-container {
 	background: var(--vbo-main-bg-color);
 }
+.vbo-drivers-filters-outer .vbo-drivers-wrap-middlebar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 20px;
+}
 .vbo-drivers-filters-driver {
 	margin: 0 15px 0 0;
 }
@@ -15878,7 +16391,8 @@ table.adminform div.input-append {
     margin-right: 5px;
 }
 .vbo-drivers-custom-actions {
-	float: right;
+	margin-left: auto;
+	align-self: end;
 }
 .vbo-drivers-custom-actions > div {
 	display: inline-block;
@@ -15897,6 +16411,16 @@ table.adminform div.input-append {
 }
 .vbo-drivers-filters-driver .vbo-drivers-filters-launch {
 	margin-top: 22px;
+}
+.vbo-drivers-filters-driver .vbo-drivers-filters-launch .btn {
+	background: var(--vbo-blue-color);
+	border: 1px solid var(--vbo-blue-color);
+	color: #fff;
+}
+.vbo-drivers-filters-driver .vbo-drivers-filters-launch .btn:hover {
+	background: var(--vbo-config-bg-color);
+	border-color: var(--vbo-blue-color)6;
+	color: var(--vbo-blue-color);	
 }
 .vbo-drivers-output {
     padding-bottom: 17px;
@@ -16268,6 +16792,12 @@ table.adminform div.input-append {
 	flex-wrap: wrap;
 	gap: 4px;
 }
+.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-nopadding .vbo-modal-overlay-content-body {
+	padding: 5px 0px 10px;
+}
+.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-nopadding .vbo-admin-widget-head-inline > div:not(.vbo-dashboard-search-input) {
+	padding-right: 15px;
+}
 .vbo-modal-overlay-block .vbo-info-overlay-content-large, .vbo-modal-overlay-content.vbo-modal-overlay-content-large {
 	width: 65%;
 	height: 85%;
@@ -16289,6 +16819,18 @@ table.adminform div.input-append {
 	width: 400px;
 	max-width: 70%;
 	height: auto;
+}
+/* Modal windows that require a bottom padding */
+.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-footerpad {
+	padding-bottom: 30px;
+}
+/* 
+ * Modal Prompt: The modal is configured to accept only a few parameters. See an example on the "Save" > "Repeat" button in the Task Manager's Past Task view.
+ */
+.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-overlay-content-tooltip, .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-prompt {
+	width: 400px;
+	max-width: 70%;
+	height: 270px;
 }
 .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-fullscreen {
 	width: 98%;
@@ -16428,83 +16970,69 @@ table.adminform div.input-append {
 	height: calc(100% - 100px);
 }
 
-/* Visible just on large screen to avoid blurred effect with lowest heights */
-@media screen and (min-height: 560px) 
-{ 
-	.vbo-modal-overlay-content {
-		-webkit-animation-name: VikfadeInUp;
-		animation-name: VikfadeInUp;
-	
-		-webkit-animation-duration: .5s;
-		animation-duration: .5s;
-		-webkit-animation-fill-mode: both;
-		animation-fill-mode: both;
-	}
+.vbo-modal-overlay-content {
+	-webkit-animation-name: VikCenterScale;
+	animation-name: VikCenterScale;
 
-	.vbo-modal-overlay-content.vbo-minimizing {
-		-webkit-animation-name: VikfadeOutDown;
-		animation-name: VikfadeOutDown;
-	
-		-webkit-animation-duration: .4s;
-		animation-duration: .4s;
-		-webkit-animation-fill-mode: both;
-		animation-fill-mode: both;
-	}
+	-webkit-animation-duration: .5s;
+	animation-duration: .5s;
+	-webkit-animation-fill-mode: both;
+	animation-fill-mode: both;
 }
 
-@-webkit-keyframes VikfadeInUp {
+.vbo-modal-overlay-content.vbo-restoring {
+	-webkit-animation-name: VikfadeInUp;
+	animation-name: VikfadeInUp;
+
+	-webkit-animation-duration: .5s;
+	animation-duration: .5s;
+	-webkit-animation-fill-mode: both;
+	animation-fill-mode: both;
+}
+
+.vbo-modal-overlay-content.vbo-minimizing {
+	-webkit-animation-name: VikfadeOutDown;
+	animation-name: VikfadeOutDown;
+
+	-webkit-animation-duration: .5s;
+	animation-duration: .5s;
+	-webkit-animation-fill-mode: both;
+	animation-fill-mode: both;
+}
+
+@keyframes VikCenterScale {
 	from {
 		opacity: 0;
-		-webkit-transform: translate3d(-50%, -20%, 0);
-		transform: translate3d(-50%, -20%, 0);
+		transform: translate(-50%, -50%) scale(.1);
 	}
 
 	to {
 		opacity: 1;
-		-webkit-transform: translate3d(-50%, -50%, 0);
-		transform: translate3d(-50%, -50%, 0);
+		transform: translate(-50%, -50%) scale(1);
 	}
 }
 
 @keyframes VikfadeInUp {
 	from {
 		opacity: 0;
-		-webkit-transform: translate3d(-50%, -20%, 0);
-		transform: translate3d(-50%, -20%, 0);
+		transform: translate(-50%, 20%) scale(.1);
 	}
 
 	to {
 		opacity: 1;
-		-webkit-transform: translate3d(-50%, -50%, 0);
-		transform: translate3d(-50%, -50%, 0);
-	}
-}
-
-@-webkit-keyframes VikfadeOutDown {
-	from {
-		opacity: 1;
-		-webkit-transform: translate3d(-50%, -50%, 0);
-		transform: translate3d(-50%, -50%, 0);
-	}
-
-	to {
-		opacity: 0.3;
-		-webkit-transform: translate3d(-50%, -20%, 0);
-		transform: translate3d(-50%, -20%, 0);
+		transform: translate(-50%, -50%) scale(1);
 	}
 }
 
 @keyframes VikfadeOutDown {
 	from {
 		opacity: 1;
-		-webkit-transform: translate3d(-50%, -50%, 0);
-		transform: translate3d(-50%, -50%, 0);
+		transform: translate(-50%, -50%) scale(1);
 	}
 
 	to {
 		opacity: 0.3;
-		-webkit-transform: translate3d(-50%, -20%, 0);
-		transform: translate3d(-50%, -20%, 0);
+		transform: translate(-50%, 20%) scale(.1);
 	}
 }
 
@@ -16619,6 +17147,355 @@ table.adminform div.input-append {
 }
 .vbo-modal-overlay-content-body .vbo-modal-guestmisconduct-addnew-save, .vbo-modal-overlay-content-body .vbo-modal-bcomdmgdeposit-addnew-save {
 	margin-top: 15px;
+}
+
+/* Access Door Widget + Modal Tab layout */
+.vbo-widget-door-access-control-wrap .vbo-widget-door-access-control-tabs, .vbo-panel-tabs-tabs {
+	padding: 0 10px;
+	display: flex;
+	gap: 10px;
+	background-color: var(--vbo-config-child-bg-color);
+	border-bottom: 1px solid var(--vbo-config-border-color);
+}
+.vbo-modal-overlay-content:not(.vbo-modal-nopadding) .vbo-panel-tabs-tabs {
+	border-radius: 6px;
+}
+.vbo-widget-door-access-control-wrap .vbo-widget-door-access-control-tabs .vbo-widget-door-access-control-tab, .vbo-panel-tabs-tab {
+	padding: 12px 10px;
+	border-bottom: 2px solid var(--vbo-config-child-bg-color);
+	cursor: pointer;
+	font-weight: 500;
+}
+.vbo-widget-door-access-control-wrap .vbo-widget-door-access-control-tabs .vbo-widget-door-access-control-tab:hover, .vbo-panel-tabs-tab:hover {
+	border-color: var(--vbo-blue-color-hover);
+}
+.vbo-widget-door-access-control-wrap .vbo-widget-door-access-control-tabs .vbo-widget-door-access-control-tab.vbo-widget-tab-active, .vbo-panel-tabs-tab.active {
+	border-color: var(--vbo-base-color);
+	font-weight: bold;
+	color: var(--vbo-base-color);
+}
+.vbo-panel-tabs-right {
+	margin-left: auto;
+	display: flex;
+	align-self: center;
+	gap: 5px;
+}
+.vbo-panel-tabs-right .vbo-panel-tabs-cmd span {
+	border-radius: 20px;
+	padding: 4px 10px;
+	border: 1px solid var(--vbo-basic-btn);
+	background: var(--vbo-body-bg-color);
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	cursor: pointer;
+}
+.vbo-panel-tabs-right .vbo-panel-tabs-cmd span:hover {
+	border-color: var(--vbo-base-color);
+}
+.vbo-panel-tabs-right .vbo-panel-tabs-cmd[data-newrate] span {
+	background: var(--vbo-base-color);
+	color: var(--vbo-contrast-text-color);
+	border-color: var(--vbo-blue-color);
+}
+.vbo-panel-tabs-right .vbo-panel-tabs-cmd[data-newrate] span:hover {
+	background: var(--vbo-body-bg-color);
+	border-color: var(--vbo-blue-color);
+	color: var(--vbo-body-text-color);
+}
+.vbo-modal-overlay-content:not(.vbo-modal-nopadding) .vbo-panel-tabs-panels {
+	margin-top: 10px;
+}
+.vbo-widget-door-access-control-wrap .vbo-widget-door-access-control-panel {
+	padding: 20px;
+	background: var(--vbo-white-blue-bg);
+}
+.vbo-dac-integration-body .vbo-dac-devices-info .vbo-params-block, .vbo-widget-door-access-control-panels .vbo-params-block {
+	background: var(--vbo-config-bg-color);
+}
+.vbo-dac-integration-body .vbo-dac-devices-info .vbo-param-setting {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.vbo-dac-integration-head {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: bold;
+	font-size: 16px;
+	margin-bottom: 10px;
+}
+.vbo-dac-integration-head .vbo-dac-integration-icon img {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-wrap {
+	background: var(--vbo-config-bg-color);
+	border: 1px solid var(--vbo-config-border-color);
+	border-radius: 8px;
+	padding: 20px;
+	margin-bottom: 15px;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-info .vbo-dac-device-data {
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-info .vbo-dac-device-name {
+	font-weight: bold;
+	font-size: 18px;
+	margin-bottom: 4px;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-subinfo span {
+	font-size: 13px;
+	color: var(--vbo-config-titles-color-light);
+	position: relative;
+	margin-right: 14px;
+} 
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-subinfo span:last-child {
+	margin-right: 0;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-subinfo span:not(:last-child):after {
+	content: '';
+	width: 4px;
+	height: 4px;
+	background-color: var(--vbo-config-titles-color-light);
+	border-radius: 50%;
+	display: inline-block;
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	right: -10px;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-subinfo .vbo-dac-device-id {
+	font-weight: 500;
+	color: var(--vbo-base-color);	
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-icn i {
+	background-color: var(--vbo-light-blue);
+	color: var(--vbo-base-color);
+	height: 32px;
+	width: 32px;
+	line-height: 32px;
+	text-align: center;
+	border-radius: 50%;
+	font-size: 18px;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-icn img {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-battery i {
+	margin-right: 4px;
+	opacity: 0.9;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-battery *:not(i) {
+	font-weight: 500;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-battery .vbo-dac-level-success i {
+	color: var(--vbo-green-color);
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-battery .vbo-dac-level-warning i {
+	color: var(--vbo-warning-txt)
+}
+.vbo-dac-devices-wrap .vbo-dac-device-head .vbo-dac-device-battery .vbo-dac-level-error i {
+	color: var(--vbo-red-color);
+}
+.vbo-dac-devices-wrap .vbo-dac-device-content {
+	margin-top: 15px;
+	display: flex;
+	justify-content: space-between;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-listings .vbo-dac-device-listings-count {
+	font-weight: bold;
+	font-size: 14px;
+	opacity: .8;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-listings .vbo-dac-device-listings-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 10px;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-listings .vbo-widget-dac-device-cn-listing {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	background-color: var(--vbo-tag-blue-bg);
+	border: 2px solid var(--vbo-tag-blue-bg);
+	color: var(--vbo-tag-blue-txt);
+	border-radius: 30px;
+	padding: 6px 14px;
+	font-size: 13px;
+	cursor: pointer;
+}
+.vbo-dac-devices-wrap .vbo-dac-device-listings .vbo-widget-dac-device-cn-listing:hover {
+	background: transparent;
+}
+.vbo-dac-devices-wrap .vbo-widget-dac-device-add-listing {
+	padding: 7px 12px;
+	font-weight: 500;
+}
+.vbo-dac-device-capabilities {
+	margin-top: 10px;
+	background: var(--vbo-input-style);
+	border: 1px solid var(--vbo-input-style-nested-deactive);
+	box-shadow: 0 1.5px 2px rgba(0,0,0,.05);
+	padding: 20px;
+	border-radius: 8px;
+	position: relative;
+	overflow: hidden;
+}
+.vbo-dac-device-capability-sections {
+	display: flex;
+	gap: 20px;
+	transition: transform 0.6s ease-in-out;
+	width: 200%;
+}
+.vbo-dac-device-capability-sections.vbo-dac-cap-section-active-result {
+	transform: translateX(calc(-50% - 20px));
+}
+.vbo-dac-device-capability-sections > div {
+	flex: 1 0 50%;
+	box-sizing: border-box;
+	min-width: 0px;
+}
+.vbo-dac-capabilities-list  {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 10px;
+	justify-content: center;
+}
+.vbo-admin-widgets-container-small .vbo-dac-capabilities-list {
+	grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability {
+	border: 1px solid var(--vbo-config-border-color);
+	text-align: center;
+	padding: 20px;
+	border-radius: 8px;
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: column;	
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-head {
+	display: flex;
+	gap: 10px;
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-head i {
+	background-color: var(--vbo-grey-blue-bg);
+	color: var(--vbo-info-txt);
+	height: 42px;
+	width: 42px;
+	line-height: 42px;
+	text-align: center;
+	border-radius: 8px;
+	font-size: 18px;
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-info {
+	text-align: left;
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-info .vbo-dac-device-capability-name {
+	font-weight: bold;
+	margin-bottom: 6px;
+	font-size: 16px;
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-info .vbo-dac-device-capability-descr {
+	font-weight: 500;
+	opacity: .8;
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-action .btn {
+	width: 100%;
+	margin-top: 20px;
+	font-weight: 600;
+	opacity: .8;
+	display: flex;
+	justify-content: center;
+	gap: 5px;
+	align-items: center;
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-action .btn:hover {
+	opacity: 1;
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-action button[data-callback] {
+	background-color: var(--vbo-blue-color);
+	border-color: var(--vbo-blue-color);
+	color: var(--vbo-contrast-text-color);
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-action button[data-callback*="delete"] {
+	background-color: var(--vbo-error-border);
+	border-color: var(--vbo-error-border);
+	color: var(--vbo-contrast-text-color);
+}
+.vbo-dac-device-capabilities .vbo-dac-device-capability-action button[data-callback*="create"] {
+	background-color: var(--vbo-green-color);
+	border-color: var(--vbo-green-color);
+	color: var(--vbo-contrast-text-color);
+}
+.vbo-dac-capability-result-head .vbo-dac-capability-result-back {
+	padding: 8px 10px;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	border-radius: var(--vbo-field-radius);
+	font-weight: bold;
+	margin-right: 8px;
+	cursor: pointer;
+}
+.vbo-dac-capability-result-head .vbo-dac-capability-result-back:hover {
+	background: var(--vbo-light-blue);
+}
+.vbo-dac-capability-result-head .vbo-dac-capability-result-name {
+	font-size: 18px;
+	font-weight: bold;
+}
+.vbo-dac-table-wrap {
+	margin-top: 15px;
+	border: 1px solid var(--vbo-config-border-color);
+	border-radius: 8px;
+	overflow-y: hidden;
+	overflow-x: auto;
+	min-height: 0.01%;
+}
+.vbo-dac-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.vbo-dac-table tr td {
+	border-top: 1px solid var(--vbo-config-border-color);
+	padding: 10px 12px;
+	line-height: 18px;
+	text-align: left;
+}
+.vbo-dac-table thead {
+	font-weight: bold;
+}
+.vbo-dac-table thead td {
+	border-top: 0;
+	background-color: var(--vbo-grey-blue-bg);
+}
+.vbo-dac-table .vbo-dac-table-passcode-name {
+	font-weight: 600;
+}
+.vbo-dac-table .vbo-dac-table-passcode-code {
+	display: inline-block;
+	background: var(--vbo-select2-bg);
+	color: var(--vbo-select2-txt);
+	padding: 3px 10px;
+	border-radius: 20px;
+	font-weight: 500;
 }
 
 /* Admin Dock */
@@ -17032,6 +17909,7 @@ table.adminform div.input-append {
     z-index: 1;
 	color: var(--vbo-body-text-color);
 	font-size: 13px;
+	cursor: pointer;
 }
 .vik-multiswitch-radiobtn .vik-multiswitch-txt i {
 	font-size: 16px;
@@ -17082,6 +17960,29 @@ table.adminform div.input-append {
 	height: 40px;
 }
 
+/* For two status multiswitch */
+.vik-multiswitch-wrap.vbo-multiswitch-double .vik-multiswitch-radiobtn.vik-multiswitch-radiobtn-on input:checked + .vik-multiswitch-trigger {
+	width: 50%;
+}
+.vik-multiswitch-wrap.vbo-multiswitch-double .vik-multiswitch-radiobtn.vik-multiswitch-radiobtn-def .vik-multiswitch-trigger {
+	left: 50%;
+	width: 50%;
+}
+.vik-multiswitch-wrap.vbo-multiswitch-double .vik-multiswitch-radiobtn .vik-multiswitch-trigger {
+	width: 50%;
+}
+.vik-multiswitch-wrap.vbo-multiswitch-double .vik-multiswitch-radiobtn input:checked + .vik-multiswitch-trigger {
+	background-color: #b1e0e2;
+}
+.vik-multiswitch-wrap.vbo-multiswitch-double .vik-multiswitch-radiobtn.vik-multiswitch-radiobtn-def input:checked + .vik-multiswitch-trigger {
+ 	-moz-animation-duration: 0.4s;
+    -moz-animation-name: slideLast;
+    -webkit-animation-duration: 0.4s;
+    -webkit-animation-name: slideLast;
+    animation-duration: 0.4s;
+    animation-name: slideLast;
+}
+
 @keyframes slideFirst {
 	from {
 		transform: translate(100%, 0);
@@ -17100,6 +18001,7 @@ table.adminform div.input-append {
 		transform: translate( 0px, 0px);
 	}
 }
+
 
 /* Multi toogle/switch button - end */
 
@@ -18476,7 +19378,7 @@ table.adminform div.input-append {
 	margin-left: 0;
 }
 .vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar, .vbo-widget-element-body {
-	padding: 10px 15px;
+	padding: 6px 15px 10px;
 }
 .vbo-widget-booskcal-newbook-cont {
 	position: relative;
@@ -18494,10 +19396,20 @@ table.adminform div.input-append {
 	vertical-align: middle;
 }
 .vbo-widget-booskcal-wrap .vbo-widget-booskcal-mday-wrap, .vbo-widget-booskcal-newbook-wrap {
-	margin-top: 5px;
+	margin-top: 0;
 }
-.vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar .vbo-widget-booskcal-mday-head, .vbo-widget-booskcal-newbook-wrap .vbo-widget-booskcal-newbook-head {
+.vbo-widget-booskcal-newbook-wrap .vbo-widget-booskcal-newbook-head {
 	padding-bottom: 5px;
+}
+.vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar .vbo-widget-booskcal-mday-head {
+	background: var(--vbo-light-blue);
+	border: 1px solid var(--vbo-info-bg);
+	border-radius: 8px;
+	padding: 5px 10px;
+	margin-bottom: 5px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 }
 .vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar .vbo-widget-booskcal-mday-head .vbo-widget-booskcal-mday-back i,
 .vbo-widget-booskcal-newbook-wrap .vbo-widget-booskcal-newbook-head .vbo-widget-booskcal-newbook-back i {
@@ -18511,12 +19423,16 @@ table.adminform div.input-append {
 	display: inline-block;
 	margin-left: 10px;
 }
+.vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar .vbo-widget-booskcal-mday-head .vbo-widget-booskcal-mday-name {
+	text-transform: initial;
+}
 .vbo-widget-booskcal-wrap .vbo-widget-booskcal-calendar .vbo-dashboard-guest-activity-content-info-date .label-info {
 	display: inline-block;
 	margin-bottom: 2px;
 }
 .vbo-widget-booskcal-mday-pricing {
-	margin-top: 20px;
+	margin-top: 10px;
+	margin-bottom: 14px;
 }
 .vbo-widget-booskcal-mday-pricing .vbo-widget-booskcal-mday-pricing-title {
 	font-size: 16px;
@@ -18571,6 +19487,9 @@ table.adminform div.input-append {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, 240px);
 	justify-content: center;
+}
+.vbo-widget-booskcal-mday-otapricing-wrap:has(> :only-child) {
+	grid-template-columns: minmax(240px, max-content);
 }
 .vbo-widget-booskcal-mday-otapricing-wrap .vbo-roverw-setnewrate-vcm-ota-relation {
 	font-size: 13px;
@@ -20269,6 +21188,62 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
     margin-bottom: 0;
 }
 
+/* Dual Range Slider */
+.vbo-dual-slider-container {
+	width: 300px;
+	max-width: 100%;
+	position: relative;
+	/*margin-bottom: 20px;*/
+}
+.vbo-dual-slider-wrap {
+	position: relative;
+	height: 6px;
+	background: #ddd;
+	border-radius: 3px;
+}
+.vbo-dual-slider-wrap input[type="range"] {
+	position: absolute;
+	width: 100%;
+	height: 6px;
+	top: 0;
+	left: 0;
+	pointer-events: none;
+	appearance: none;
+	background: none;
+}
+/* allow thumb interaction */
+.vbo-dual-slider-wrap input[type="range"]::-webkit-slider-thumb {
+	pointer-events: all;
+	appearance: none;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #0077ff;
+	cursor: pointer;
+	border: 2px solid white;
+	box-shadow: 0 0 2px rgba(0,0,0,0.3);
+}
+.vbo-dual-slider-wrap input[type="range"]::-moz-range-thumb {
+	pointer-events: all;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #0077ff;
+	cursor: pointer;
+	border: 2px solid white;
+}
+/* filled track between thumbs */
+.vbo-dual-slider-wrap .vbo-dual-slider-track {
+	position: absolute;
+	height: 6px;
+	background: #0077ff;
+	border-radius: 3px;
+	top: 0;
+}
+.vbo-dual-slider-range-current {
+	margin-top: 10px;
+}
+
 /* @end styles */
 
 /* @start media queries */
@@ -20401,7 +21376,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 		text-align: center;
 	}
 	.vbo-is-printing .vbo-report-sheetnchart .vbo-report-sheet {
-		flex-basis: 100%;
+		width: 100%;
 	}
 	.vbo-is-printing .vbo-report-chart-wrap {
 		display: none;
@@ -20457,6 +21432,11 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 
 	}
 }
+@media screen and (max-height: 600px) {
+	.vbo-modal-wguestmessages-chat-wrap .chat-border-layout {
+		max-height: initial;
+	}
+}
 @media screen and (max-width: 1860px) {
 	.vbo-admin-container .vbo-param-container-full {
 		flex-wrap: wrap;
@@ -20488,7 +21468,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 		width: 40%;
 	}
 	.vbo-report-sheetnchart .vbo-report-sheet {
-		flex-basis: 50%;
+		width: 50%;
 	}
 	.vbo-report-sheetnchart .vbo-report-sheet .vbo-report-col-hideable {
     	display: none;
@@ -20506,7 +21486,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-reportwidget-ratesoverv .vbo-reportwidget-chart-metas {
 		margin: 0 0 15px;
 	}
-	.vbo-reportwidget-ratesoverv #vbo-report-chart-canvas {
+	.vbo-reportwidget-ratesoverv .vbo-report-chart-canvas {
 		width: 52% !important;
 	}
 	.vbo-reportwidget-ratesoverv .vbo-reportwidget-chart-metas {
@@ -20642,7 +21622,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 		width: 50%;
 		float: left;
 	}
-	.vbo-reportwidget-ratesoverv #vbo-report-chart-canvas {
+	.vbo-reportwidget-ratesoverv .vbo-report-chart-canvas {
 		width: 100% !important;
 	}
 	.vbo-modal-overlay-block .vbo-modal-overlay-content {
@@ -20795,7 +21775,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-reportwidget-ratesoverv .vbo-reportwidget-chart-meta {
 		width: 50%;
 	}
-	#vbo-report-chart-canvas {
+	.vbo-report-chart-canvas {
 		width: 82%;
 	}
 	.vbo-ratesoverview-roomsel-entry-forecast {
@@ -20989,7 +21969,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 		flex-wrap: wrap;
 	}
 	.vbo-report-sheetnchart .vbo-report-sheet {
-		flex-basis: 100%;
+		width: 100%;
 		margin-right: 0;
 	}
 	.vbo-reports-filters-outer .vbo-reports-filters-export {
@@ -21151,6 +22131,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-tm-toolbar .vbo-tm-toolbar-filters {
 		flex-wrap: wrap;
 	}
+	.vbo-dac-capabilities-list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 @media screen and (max-width: 1080px) {
 	.vbo-ratesoverview-caltab-cont .vbo-table-responsive {
@@ -21244,6 +22227,10 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
         flex: 1;
         padding: 8px;
     }
+	.vbo-report-chartonly .vbo-report-chart-main {
+		width: 100%;
+		max-width: 100%;
+	}
 }
 @media screen and (max-width: 1024px) {
 	.vbo-graph-top-left, .vbo-graph-bottom-left {
@@ -21448,6 +22435,18 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-notifications-center-wrap {
 		width: 60vw;
 	}
+	.vbo-drivers-custom-actions {
+		margin-left: 0;
+	}
+	.vbo-reports-subfilters-wrap {
+		flex-wrap: wrap;
+	}
+	.vbo-reports-subfilters-wrap .vbo-reports-subfilters-cont {
+		flex-basis: 100%;
+	}
+	.vbo-reports-subfilters-wrap .vbo-report-layout-type {
+		width: auto;
+	}
 }
 @media screen and (max-width: 860px) {
 	.vbo-checkin-main-block .vbo-roomsdet-container .vbo-roomdet-wrap {
@@ -21497,6 +22496,18 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-tm-list-task-cell[data-type="id_order"], .vbo-tm-list-task-cell[data-type="assignees"], .vbo-tm-list-task-cell[data-type="id_area"],
 	.vbo-tm-list-tasks-column[data-type="id_order"], .vbo-tm-list-tasks-column[data-type="assignees"], .vbo-tm-list-tasks-column[data-type="id_area"] {
 		display: none;
+	}
+	.vbo-report-chartonly .vbo-report-chart-main {
+		flex-wrap: wrap;
+	}
+	.vbo-report-chartonly .vbo-report-chart-main .vbo-report-chart-content {
+		flex-basis: 100%;
+	}
+	.vbo-report-chart-main .vbo-report-chart-metas {
+		margin-top: 10px;
+	}
+	.vbo-report-chartonly .vbo-report-chart-meta {
+		flex-basis: 25%;
 	}
 }
 @media screen and (max-width: 780px) {
@@ -21619,6 +22630,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 		left: 50%;
 		transform: translate(-50%, -50%);
 		margin-left: 0 !important;
+	}
+	.vbo-dac-capabilities-list {
+		grid-template-columns: repeat(1, minmax(0, 1fr));
 	}
 }
 @media screen and (max-width : 740px) {
@@ -22023,6 +23037,15 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-tm-board-areas-list {
 		grid-template-columns: repeat(1, minmax(0, 1fr));
 	}
+	.vbo-overview-roomunits {
+		display: none;
+	}
+	.vbo-reports-subfilters-cont {
+		width: 100%;
+		overflow-x: auto;
+		overflow-y: hidden;
+		min-height: 0.01%;
+	}
 }
 @media screen and (max-width : 640px) {
 	.vbo-reportwidget-dashboard .vbo-reportwidget-chart-meta {
@@ -22125,6 +23148,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.vbo-tm-list-task-cell[data-type="tags"], .vbo-tm-list-tasks-column[data-type="tags"] {
 		display: none;
+	}
+	.vbo-report-chartonly .vbo-report-chart-meta {
+		flex-basis: 50%;
 	}
 }
 @media screen and (max-width : 580px) {
@@ -22454,6 +23480,15 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	#ui-datepicker-div.ui-widget-content, .ui-datepicker-inline.ui-widget-content {
 		left: 0 !important;
 	}
+	.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head:first-child:not(.vbo-modal-overlay-cmds) > .vbo-modal-overlay-content-head-title > span {
+		display: flex;
+	}
+	#filter-bar .pull-right-group {
+		margin-left: 0;
+	}
+	.btn-group.pull-inline {
+		margin-bottom: 3px;
+	}
 }
 @media screen and (max-width : 550px) {
 	.vbo-editbooking-room-services .vbo-editbooking-room-service, .vbo-editbooking-room-pricetypes .vbo-editbooking-room-pricetype {
@@ -22510,6 +23545,20 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.vbo-eorder-paymentlog-buttons .vbo-eorder-emptyccdata .btn {
 		text-align: center;
+	}
+	.vbo-dac-devices-wrap .vbo-dac-device-content {
+		flex-wrap: wrap;
+	}
+	.vbo-dac-devices-wrap .vbo-dac-device-content .vbo-dac-device-actions {
+		flex-basis: 100%;
+		margin-top: 10px;
+	}
+	.vbo-dac-devices-wrap .vbo-widget-dac-device-add-listing {
+		width: 100%;
+		padding: 10px 12px;
+	}
+	.vbo-report-chartonly .vbo-report-chart-meta {
+		flex-basis: 100%;
 	}
 }
 @media screen and (max-width : 500px) {
@@ -22568,6 +23617,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-tm-list-task-cell[data-type="status"], .vbo-tm-list-tasks-column[data-type="status"] {
 		display: none;
 	}
+	.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-nopadding .vbo-admin-widget-head-inline > div:not(.vbo-dashboard-search-input) {
+		margin-bottom: 10px;
+	}
 }
 
 /* form fieldset */
@@ -22613,6 +23665,10 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 .vbo-dropfiles-target.drag-enter {
 	border-color: var(--vbo-config-border-color);
 }
+.vbo-dropfiles-target.drag-over {
+	border-color: var(--vbo-blue-color);
+	background: var(--vbo-light-blue);
+}
 .vbo-dropfiles-target .lead {
 	font-size: 16px;
 	font-weight: bold;
@@ -22627,10 +23683,6 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 }
 .vbo-uploaded-files i.fa-file {
 	font-size: 128px;
-}
-.vbo-uploaded-files .file-elem {
-	width: calc(100% / 5);
-	margin-bottom: 20px;
 }
 .vbo-uploaded-files .file-elem-inner {
 	width: auto;
@@ -22904,6 +23956,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 }
 .vbo-chat-interface.compact .vbo-chat-threads {
     width: 100%;
+}
+.vbo-admin-widgets-section .vbo-chat-interface.compact .vbo-chat-threads {
+    max-height: 500px;
 }
 .vbo-chat-interface.compact .vbo-chat-target {
     position: absolute;

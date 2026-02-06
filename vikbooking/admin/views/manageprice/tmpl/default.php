@@ -146,6 +146,35 @@ $derived_data = is_array($derived_data) ? $derived_data : [];
 								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_FOLLOW_RESTRICTIONS_HELP'); ?></span>
 							</div>
 						</div>
+					<?php
+					if (!$row) {
+						// allow to choose to populate the base rates for all rooms assigned to parent rates
+						?>
+						<div class="vbo-param-container vbo-param-nested" data-type="derived-info" style="display: none;">
+							<div class="vbo-param-label"><?php echo JText::translate('VBINSERTFEE'); ?></div>
+							<div class="vbo-param-setting">
+								<?php echo $vbo_app->printYesNoButtons('set_derived_rates', JText::translate('VBYES'), JText::translate('VBNO'), 1, 1, 0, 'vboNewPriceToggleDerivedMaxNights(this.checked);'); ?>
+							</div>
+						</div>
+						<div class="vbo-param-container vbo-param-nested vbo-newprice-derived-setmaxnights" data-type="derived-info" style="display: none;">
+							<div class="vbo-param-label"><?php echo JText::translate('VBORESTRMAXLOS'); ?></div>
+							<div class="vbo-param-setting">
+								<input type="number" name="set_max_nights" value="30" />
+							</div>
+						</div>
+						<script type="text/javascript">
+							function vboNewPriceToggleDerivedMaxNights(enabled) {
+								const elem = document.querySelector('.vbo-newprice-derived-setmaxnights');
+								if (enabled) {
+									elem.style.display = '';
+								} else {
+									elem.style.display = 'none';
+								}
+							}
+						</script>
+						<?php
+					}
+					?>
 					</div>
 				</div>
 			</fieldset>

@@ -242,6 +242,12 @@ if (empty($rows)) {
 				<?php
 				$ch_counter = 0;
 				foreach ($roomchannels as $source => $churi) {
+					if (in_array(preg_replace("/api$/", '', $source), $onboardable_otas)) {
+						// the room is mapped with the current channel, but we have a pending onboarding
+						$ch_counter++;
+						continue;
+					}
+
 					$is_img = (strpos($churi, 'http') !== false);
 					// build readable channel name
 					$raw_ch_name  = $source;

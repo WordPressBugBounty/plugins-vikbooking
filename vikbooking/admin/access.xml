@@ -14,5 +14,7 @@
 		<action name="core.vbo.availability" title="VBOACTION_AVAILABILITY" description="VBOACTION_AVAILABILITY_DESC" />
 		<action name="core.vbo.management" title="VBOACTION_MANAGEMENT" description="VBOACTION_MANAGEMENT_DESC" />
 		<action name="core.vbo.pms" title="VBOACTION_PMS" description="VBOACTION_PMS_DESC" />
+		<action name="core.vbo.pmsreports" title="VBMENUPMSREPORTS" description="VBMENUPMSREPORTS" />
+		<action name="core.vbo.tm" title="VBO_TASK_MANAGER" description="VBO_TASK_MANAGER" />
 	</section>
 </access>

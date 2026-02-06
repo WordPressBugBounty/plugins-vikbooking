@@ -190,22 +190,36 @@ class JRssReader
 			throw new Exception('Missing RSS authorization', 403);
 		}
 
-		// read feed channels
-		$feed = fetch_feed($this->channels);
+		$feeds = [];
 
-		if ($feed instanceof WP_Error)
+		/**
+		 * Since WP 6.9 and SimplePie 1.9, multiple channels are no longer accepted.
+		 * We should rather instantiate a single object per feed and then merge them
+		 * together through SimplePie::merge_items().
+		 * 
+		 * @since 10.1.67
+		 */
+		foreach ($this->channels as $channel)
 		{
-			// get SimplePie error
-			$error = $feed->get_error_message();
+			// read feed channels
+			$feed = fetch_feed($channel);
 
-			// extract first element as long as error is an array
-			while (is_array($error))
+			if ($feed instanceof WP_Error)
 			{
-				$error = array_shift($error);
+				// get SimplePie error
+				$error = $feed->get_error_message();
+
+				// extract first element as long as error is an array
+				while (is_array($error))
+				{
+					$error = array_shift($error);
+				}
+
+				// something went wrong, propagate error
+				throw new Exception($error, (int) $feed->get_error_code());
 			}
 
-			// something went wrong, propagate error
-			throw new Exception($error, (int) $feed->get_error_code());
+			$feeds[] = $feed;
 		}
 
 		$list = array();
@@ -223,7 +237,8 @@ class JRssReader
 		{
 			// take all the items without limits because
 			// we need to check whether the feeds are visible
-			$items = $feed->get_items();
+			// $items = $feed->get_items();
+			$items = \SimplePie\SimplePie::merge_items($feeds);
 
 			if ($ordering == 'asc')
 			{
@@ -234,7 +249,8 @@ class JRssReader
 		else
 		{
 			// take the feeds according to the specified limits
-			$items = $feed->get_items($start, $limit);
+			// $items = $feed->get_items($start, $limit);
+			$items = \SimplePie\SimplePie::merge_items($feeds, $start, $limit);
 		}
 
 		// iterate multi-feed property to scan all the supported feeds

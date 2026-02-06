@@ -186,39 +186,38 @@ class VikBookingController extends JControllerVikBooking
 	 * 
 	 * @since 	1.2.0
 	 */
-	public function add_fest() {
-		$dt 	= VikRequest::getString('dt', '', 'request');
-		$type 	= VikRequest::getString('type', '', 'request');
-		$type 	= empty($type) ? 'custom' : $type;
-		$name 	= VikRequest::getString('name', '', 'request');
-		$descr 	= VikRequest::getString('descr', '', 'request');
+	public function add_fest()
+	{
+		$dt    = VikRequest::getString('dt', '', 'request');
+		$type  = VikRequest::getString('type', '', 'request');
+		$type  = empty($type) ? 'custom' : $type;
+		$name  = VikRequest::getString('name', '', 'request');
+		$descr = VikRequest::getString('descr', '', 'request');
+
 		if (empty($name) || empty($dt) || !strtotime($dt)) {
-			echo 'e4j.error.1';
-			exit;
+			VBOHttpDocument::getInstance()->close(400, 'Missing mandatory festivity details');
 		}
+
 		// build fest array
-		$new_fest = array(
-			'trans_name' => $name
-		);
+		$new_fest = [
+			'trans_name' => $name,
+		];
 
 		$fests  = VikBooking::getFestivitiesInstance();
 		$result = $fests->storeFestivity($dt, $new_fest, $type, $descr);
 		if (!$result) {
-			echo 'e4j.error.2';
-			exit;
+			VBOHttpDocument::getInstance()->close(400, 'Could not store festivity details');
 		}
 
 		// reload all festivities for this day for the AJAX response
 		$all_fests = $fests->loadFestDates($dt, $dt);
 		foreach ($all_fests as $k => $v) {
 			// we expect just one record to be returned due to the from/to date limit passed to loadFestDates()
-			echo json_encode($v);
-			exit;
+			VBOHttpDocument::getInstance()->json($v);
 		}
 
 		// no fests found even after storing it
-		echo 'e4j.error.3';
-		exit;
+		VBOHttpDocument::getInstance()->close(404, 'Festivity record not found after saving');
 	}
 
 	/**
@@ -267,6 +266,10 @@ class VikBookingController extends JControllerVikBooking
 	}
 
 	public function pmsreports() {
+		if (!JFactory::getUser()->authorise('core.vbo.pms', 'com_vikbooking') && !JFactory::getUser()->authorise('core.vbo.pmsreports', 'com_vikbooking')) {
+			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
+		}
+
 		VikBookingHelper::printHeader("pmsreports");
 
 		VikRequest::setVar('view', VikRequest::getCmd('view', 'pmsreports'));
@@ -1027,6 +1030,8 @@ class VikBookingController extends JControllerVikBooking
 			'metakeywords' 	   => $pmetakeywords,
 			'metadescription'  => $pmetadescription,
 			'layout_style' 	   => VikRequest::getString('layout_style', 'default', 'request'),
+			'checkin'          => VikRequest::getString('listing_checkin', '', 'request'),
+			'checkout'         => VikRequest::getString('listing_checkout', '', 'request'),
 		];
 		//distinctive features
 		$roomparams['features'] = array();
@@ -1394,6 +1399,8 @@ class VikBookingController extends JControllerVikBooking
 			'metakeywords' 	   => $pmetakeywords,
 			'metadescription'  => $pmetadescription,
 			'layout_style' 	   => VikRequest::getString('layout_style', 'default', 'request'),
+			'checkin'          => VikRequest::getString('listing_checkin', '', 'request'),
+			'checkout'         => VikRequest::getString('listing_checkout', '', 'request'),
 		];
 		//distinctive features
 		$roomparams['features'] = array();
@@ -1769,6 +1776,21 @@ class VikBookingController extends JControllerVikBooking
 				];
 			}
 			$config->set('room_upgrade_options_' . $pwhereup, json_encode($room_upgrade_options));
+
+			/**
+			 * Minimum advance booking offset can be defined at room-level (always in hours).
+			 * 
+			 * @since 	1.18.3 (J) - 1.8.3 (WP)
+			 */
+			$pmin_adv_notice_room = VikRequest::getInt('min_adv_notice_room', 0, 'request');
+			$pmindate = VikRequest::getInt('mindate', 0, 'request');
+			if ($pmin_adv_notice_room && $pmindate > 0) {
+				// set value
+				$config->set("room_{$pwhereup}_min_adv_notice", $pmindate);
+			} else {
+				// unset value
+				$config->set("room_{$pwhereup}_min_adv_notice", null);
+			}
 
 			/**
 			 * Maximum advance booking offset can be defined at room-level.
@@ -2760,9 +2782,9 @@ class VikBookingController extends JControllerVikBooking
 						// option params
 						$opt_params = !empty($opt['oparams']) ? json_decode($opt['oparams'], true) : [];
 						$opt_params = is_array($opt_params) ? $opt_params : [];
-						if (!empty($opt['ageintervals']) && ($or['children'] > 0 || (array_key_exists($num, $arrpeople) && array_key_exists('children', $arrpeople[$num]))) ) {
+						if (!empty($opt['ageintervals']) && ($or['children'] > 0 || isset($arrpeople[$num]['children']))) {
 							$tmpvar = VikRequest::getInt('optid'.$num.$opt['id'], []);
-							if (is_array($tmpvar) && $tmpvar) {
+							if (is_array($tmpvar) && $tmpvar && ($arrpeople[$num]['children'] ?? 0)) {
 								$opt['quan'] = 1;
 								$optagenames = VikBooking::getOptionIntervalsAges($opt['ageintervals']);
 								$optagepcent = VikBooking::getOptionIntervalsPercentage($opt['ageintervals']);
@@ -4443,6 +4465,16 @@ class VikBookingController extends JControllerVikBooking
 			$app->enqueueMessage(JText::translate('VBO_NOPROMO_UPD_CHANNELS'), 'warning');
 		}
 
+		if ($promo_handlers && $proundmode) {
+			/**
+			 * Always disallow rounding when channels supporting promotions are available.
+			 * 
+			 * @since 	1.18.3 (J) - 1.8.3 (WP)
+			 */
+			$proundmode = '';
+			$app->enqueueMessage(sprintf('%s: %s.', JText::translate('VBNEWSEASONROUNDCOST'), JText::translate('VBPARAMPRICECALENDARDISABLED')), 'warning');
+		}
+
 		// update record
 		$upd_record = new stdClass;
 		$upd_record->id 			 = $prev_record['id'];
@@ -4779,6 +4811,16 @@ class VikBookingController extends JControllerVikBooking
 			VikError::raiseWarning('', JText::translate('ERRINVDATEROOMSLOCSEASON').(count($double_records) ? ' ('.implode(', ', array_unique($double_records)).')' : ''));
 			$app->redirect("index.php?option=com_vikbooking&task=newseason");
 			exit;
+		}
+
+		if ($pchannels && $proundmode) {
+			/**
+			 * Always disallow rounding when channels supporting promotions are available.
+			 * 
+			 * @since 	1.18.3 (J) - 1.8.3 (WP)
+			 */
+			$proundmode = '';
+			$app->enqueueMessage(sprintf('%s: %s.', JText::translate('VBNEWSEASONROUNDCOST'), JText::translate('VBPARAMPRICECALENDARDISABLED')), 'warning');
 		}
 
 		// insert new record
@@ -6149,6 +6191,121 @@ class VikBookingController extends JControllerVikBooking
 			$q = "INSERT INTO `#__vikbooking_prices` (`name`,`attr`,`idiva`,`breakfast_included`,`free_cancellation`,`canc_deadline`,`canc_policy`,`minlos`,`minhadv`,`meal_plans`,`derived_id`,`derived_data`) VALUES(" . $dbo->q($pprice) . ", " . $dbo->q($pattr) . ", " . $dbo->q($ppraliq) . ", " . $pbreakfast_included . ", " . $pfree_cancellation . ", " . $pcanc_deadline . ", " . $dbo->q($pcanc_policy) . ", " . $pminlos . ", " . $pminhadv . ", " . $dbo->q(json_encode($pmeal_plans)) . ", {$parent_id}, " . ($derived_info ? $dbo->q(json_encode($derived_info)) : 'NULL') . ");";
 			$dbo->setQuery($q);
 			$dbo->execute();
+
+			$new_rplan_id = $dbo->insertid();
+
+			/**
+			 * Allow to populate base rates for newly created rate plan for all room types using the parent rate.
+			 * 
+			 * @since 	1.18.6 (J) - 1.8.6 (WP)
+			 */
+			if ($app->input->getBool('set_derived_rates', false) && $is_derived && $derived_id && $derived_info) {
+				// find all rooms with base rates defined for the parent rate plan
+				$dbo->setQuery(
+					$dbo->getQuery(true)
+						->select($dbo->qn('idroom'))
+						->from($dbo->qn('#__vikbooking_dispcost'))
+						->where($dbo->qn('idprice') . ' = ' . $derived_id)
+						->group($dbo->qn('idroom'))
+						->order($dbo->qn('idroom') . ' ASC')
+				);
+				$populateRoomIds = array_map('intval', $dbo->loadColumn());
+
+				// determine rates table range of nights of stays
+				$fromNights = $pminlos ?: 1;
+				$maxNights = $app->input->getUInt('set_max_nights') ?: $pminlos ?: 1;
+				$maxNights = $maxNights < $fromNights ? $fromNights : $maxNights;
+
+				// fetch base rates for all the involved room types
+				$dbo->setQuery(
+					$dbo->getQuery(true)
+						->select([
+							$dbo->qn('idroom'),
+							$dbo->qn('days'),
+							$dbo->qn('cost'),
+						])
+						->from($dbo->qn('#__vikbooking_dispcost'))
+						->where($dbo->qn('idroom') . ' IN (' . implode(', ', $populateRoomIds) . ')')
+						->where($dbo->qn('idprice') . ' = ' . $derived_id)
+						->order($dbo->qn('idroom') . ' ASC')
+						->order($dbo->qn('days') . ' ASC')
+				);
+				$roomBaseRates = $dbo->loadAssocList();
+
+				// iterate all rooms involved
+				foreach ($populateRoomIds as $roomId) {
+					// loop through the interval of nights of stay
+					for ($n = $fromNights; $n <= $maxNights; $n++) {
+						// fetch current room rate in parent rate plan
+						$roomParentNightlyRate = 0;
+						$roomParentExactRate = 0;
+						foreach ($roomBaseRates as $roomBaseRate) {
+							if ($roomBaseRate['idroom'] != $roomId) {
+								// ignore room
+								continue;
+							}
+							if (!$roomParentNightlyRate) {
+								// set rate for the lowest number of nights of stay
+								$roomParentNightlyRate = $roomBaseRate['cost'] / ($roomBaseRate['days'] ?: 1);
+							}
+							if ($roomBaseRate['days'] == $n) {
+								// set room exact rate for this number of nights of stay
+								$roomParentExactRate = $roomBaseRate['cost'];
+								// do not proceed
+								break;
+							}
+						}
+
+						if (!$roomParentNightlyRate) {
+							// missing pricing information from parent rate plan
+							continue;
+						}
+
+						// determine the cost to apply for the newly created derived rate plan
+						$nightlyDerivedRate = $roomParentExactRate ?: $roomParentNightlyRate;
+
+						// check how the new rate was derived
+						if ($derived_info['mode'] == 'charge') {
+							// increase rate
+							if ($derived_info['type'] == 'absolute') {
+								// fixed increase
+								$nightlyDerivedRate += $derived_info['value'];
+							} else {
+								// percent increase
+								$nightlyDerivedRate *= (100 + $derived_info['value']) / 100;
+							}
+						} else {
+							// discount rate
+							if ($derived_info['type'] == 'absolute') {
+								// fixed discount
+								$nightlyDerivedRate -= $derived_info['value'];
+							} else {
+								// percent discount
+								$nightlyDerivedRate *= (100 - $derived_info['value']) / 100;
+							}
+						}
+
+						if (!$roomParentExactRate) {
+							// multiply rate by number of nights of stay if started from the parent lowest number of nights
+							$nightlyDerivedRate *= $n;
+						}
+
+						// build new room base rate record
+						$rateRecord = [
+							'idroom' => $roomId,
+							'days' => $n,
+							'idprice' => $new_rplan_id,
+							'cost' => round($nightlyDerivedRate, 2),
+						];
+
+						// cast to object
+						$rateRecord = (object) $rateRecord;
+
+						// insert record
+						$dbo->insertObject('#__vikbooking_dispcost', $rateRecord, 'id');
+					}
+				}
+			}
 		}
 
 		$app->redirect("index.php?option=com_vikbooking&task=" . ($new ? 'newprice' : 'prices'));
@@ -7891,6 +8048,7 @@ class VikBookingController extends JControllerVikBooking
 		$pprecheckinenabled = $pprecheckinenabled > 0 ? 1 : 0;
 
 		$config->set('precheckinenabled', $pprecheckinenabled);
+		// this may be a negative integer, it should not be unsigned
 		$config->set('precheckinminoffset', VikRequest::getInt('precheckinminoffset', 0, 'request'));
 
 		$pupsellingenabled = VikRequest::getInt('upsellingenabled', 0, 'request');
@@ -7979,6 +8137,7 @@ class VikBookingController extends JControllerVikBooking
 
 		$interactive_map = VikRequest::getInt('interactive_map', 0, 'request');
 		$config->set('interactive_map', $interactive_map);
+		$config->set('search_filters', VikRequest::getInt('search_filters', 0, 'request'));
 
 		$noemptydecimals = VikRequest::getInt('noemptydecimals', 0, 'request');
 		$config->set('noemptydecimals', $noemptydecimals);
@@ -8141,7 +8300,8 @@ class VikBookingController extends JControllerVikBooking
 		$config->set('bootstrap', $ploadbootstrap);
 		$config->set('usefa', $pusefa);
 		$config->set('loadjquery', $ploadjquery);
-		$config->set('calendar', $pcalendar);
+		$config->set('calendar', $pcalendar ?: 'jqueryui');
+		$config->set('dboptimizetime', $app->input->getString('dboptimizetime', ''));
 		$config->set('enablecoupons', $penablecoupons);
 		$config->set('enablepin', $penablepin);
 		$config->set('mindaysadvance', $pmindaysadvance);
@@ -8246,6 +8406,7 @@ class VikBookingController extends JControllerVikBooking
 
 		$config->set('currencyname', $pcurrencyname);
 		$config->set('currencysymb', $pcurrencysymb);
+		$config->set('currencypos', $app->input->getAlnum('currencypos', 'before'));
 		$config->set('currencycodepp', $pcurrencycodepp);
 		$config->set('numberformat', $numberformatstr);
 		// bookings color tags
@@ -9253,7 +9414,16 @@ class VikBookingController extends JControllerVikBooking
 			// merge previous params with the new ones to get the new values
 			$oparams = array_merge($cur_oparams, $oparams);
 		}
-		//
+
+		/**
+		 * Ensure options of type city tax never get a tax rate.
+		 * 
+		 * @since 	1.18.3 (J) - 1.8.3 (WP)
+		 */
+		if ($pis_citytax) {
+			$poptaliq = 0;
+		}
+
 		if (!empty($poptname)) {
 			if (intval($_FILES['optimg']['error']) == 0 && VikBooking::caniWrite(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR) && trim($_FILES['optimg']['name'])!="") {
 				jimport('joomla.filesystem.file');
@@ -9412,8 +9582,11 @@ class VikBookingController extends JControllerVikBooking
 		$this->do_createoptionals(true);
 	}
 
-	private function do_createoptionals($stay = false) {
+	private function do_createoptionals($stay = false)
+	{
+		$app = JFactory::getApplication();
 		$dbo = JFactory::getDbo();
+
 		$poptname = VikRequest::getString('optname', '', 'request');
 		$poptdescr = VikRequest::getString('optdescr', '', 'request', VIKREQUEST_ALLOWHTML);
 		$poptcost = VikRequest::getFloat('optcost', '', 'request');
@@ -9504,6 +9677,16 @@ class VikBookingController extends JControllerVikBooking
 			'set_checkin' 		 => $set_checkin,
 			'set_checkout' 		 => $set_checkout,
 		];
+
+		/**
+		 * Ensure options of type city tax never get a tax rate.
+		 * 
+		 * @since 	1.18.3 (J) - 1.8.3 (WP)
+		 */
+		if ($pis_citytax) {
+			$poptaliq = 0;
+		}
+
 		if (!empty($poptname)) {
 			if (intval($_FILES['optimg']['error']) == 0 && VikBooking::caniWrite(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR) && trim($_FILES['optimg']['name'])!="") {
 				jimport('joomla.filesystem.file');
@@ -11319,11 +11502,11 @@ jQuery(".' . $selector . '").hover(function() {
 		$dbo = JFactory::getDbo();
 		$app = JFactory::getApplication();
 
-		$ptmpl = VikRequest::getString('tmpl', '', 'request');
-		$pnewtotpaid = VikRequest::getFloat('newtotpaid', 0, 'request');
-		$pguests = VikRequest::getVar('guests', array());
-		$pcomments = VikRequest::getString('comments', '', 'request', VIKREQUEST_ALLOWHTML);
-		$pcheckin_action = VikRequest::getInt('checkin_action', '', 'request');
+		$ptmpl = $app->input->getString('tmpl', '');
+		$pnewtotpaid = $app->input->getFloat('newtotpaid', 0);
+		$pguests = $app->input->get('guests', [], 'array');
+		$pcomments = JComponentHelper::filterText($app->input->get('comments', '', 'raw'));
+		$pcheckin_action = $app->input->getInt('checkin_action', 0);
 		$valid_actions = array(-1, 0, 1, 2);
 		if (!in_array($pcheckin_action, $valid_actions)) {
 			$app->redirect('index.php');
@@ -12210,8 +12393,8 @@ jQuery(".' . $selector . '").hover(function() {
 			}
 		}
 
-		// set CSV columns
-		$report_obj->setReportCols([
+		// build columns
+		$columns = [
 			[
 				'label' => JText::translate('VBDASHBOOKINGID'),
 			],
@@ -12261,6 +12444,9 @@ jQuery(".' . $selector . '").hover(function() {
 				'label' => JText::translate('VBCSVORDIDCONFNUMB'),
 			],
 			[
+				'label' => JText::translate('VBOCHANNEL'),
+			],
+			[
 				'label' => JText::translate('VBCSVEXPFILTBSTATUS'),
 			],
 			[
@@ -12272,7 +12458,54 @@ jQuery(".' . $selector . '").hover(function() {
 			[
 				'label' => JText::translate('VBCSVTOTTAXES'),
 			],
-		]);
+		];
+
+		// booking cancellation details
+		$cancellation_timestamps = [];
+
+		if (empty($filterstatus) || $filterstatus === 'cancelled') {
+			// insert column for cancellation date at index 2
+			array_splice($columns, 2, 0, [['label' => JText::translate('VBO_CANC_DATE')]]);
+			// gather all cancelled bookings, if any
+			$cancellation_ids = [];
+			foreach ($orders as $order) {
+				if ($order['status'] === 'cancelled' && !in_array($order['id'], $cancellation_ids)) {
+					$cancellation_ids[] = $order['id'];
+				}
+			}
+			if ($cancellation_ids && $cancHistoryEvents = VikBooking::getBookingHistoryInstance(0)->getBookingEventsType('cancelled')) {
+				// list of booking IDs with cancellation events processed
+                $cancBidsProcessed = [];
+
+				// query the database to fetch the needed history records
+                $dbo->setQuery(
+                    $dbo->getQuery(true)
+                        ->select([
+                            $dbo->qn('idorder'),
+                            $dbo->qn('dt'),
+                        ])
+                        ->from($dbo->qn('#__vikbooking_orderhistory'))
+                        ->where($dbo->qn('idorder') . ' IN (' . implode(', ', array_map('intval', $cancellation_ids)) . ')')
+                        ->where($dbo->qn('type') . ' IN (' . implode(', ', array_map([$dbo, 'q'], $cancHistoryEvents)) . ')')
+                        ->order($dbo->qn('idorder') . ' ASC')
+                        ->order($dbo->qn('dt') . ' ASC')
+                );
+
+                // scan all booking cancellation records
+                foreach ($dbo->loadAssocList() as $cancRecord) {
+                    if (!($cancBidsProcessed[$cancRecord['idorder']] ?? 0)) {
+                        // turn flag on to process this booking only once and get the earliest (first) cancellation
+                        $cancBidsProcessed[$cancRecord['idorder']] = 1;
+
+                        // convert the cancellation date from UTC to local timezone and set booking cancellation timestamp
+                        $cancellation_timestamps[$cancRecord['idorder']] = JHtml::fetch('date', $cancRecord['dt'], 'U');
+                    }
+                }
+			}
+		}
+
+		// set CSV columns
+		$report_obj->setReportCols($columns);
 
 		// prepare the container for the CSV rows
 		$orderscsv = [];
@@ -12347,7 +12580,12 @@ jQuery(".' . $selector . '").hover(function() {
 				$payparts = explode('=', $ord['idpayment']);
 				$paystr = $payparts[1];
 			}
-			$ordnumbstr = $ord['id'].' - '.$ord['confirmnumber'].(!empty($ord['idorderota']) ? ' ('.ucwords($ord['channel']).')' : ''); 
+			$ordnumbstr = $ord['id'] . ' - ' . $ord['confirmnumber'] . (!empty($ord['idorderota']) ? ' (' . $ord['idorderota'] . ')' : '');
+			$bookingSource = JText::translate('VBORDFROMSITE');
+			if (!empty($ord['channel']) && !empty($ord['idorderota'])) {
+				$chparts = explode('_', $ord['channel']);
+				$bookingSource = ($chparts[1] ?? '') ?: $chparts[0];
+			}
 			$statusstr = '';
 			if ($ord['status'] == 'confirmed') {
 				$statusstr = JText::translate('VBCSVSTATUSCONFIRMED');
@@ -12468,8 +12706,8 @@ jQuery(".' . $selector . '").hover(function() {
 				$created_by = $ord['t_first_name'].' '.$ord['t_last_name'];
 			}
 
-			// push line for export
-			$orderscsv[] = [
+			// build CSV line data
+			$line_data = [
 				[
 					'value' => $ord['id'],
 				],
@@ -12519,6 +12757,9 @@ jQuery(".' . $selector . '").hover(function() {
 					'value' => $ordnumbstr,
 				],
 				[
+					'value' => $bookingSource,
+				],
+				[
 					'value' => $statusstr,
 				],
 				[
@@ -12531,6 +12772,19 @@ jQuery(".' . $selector . '").hover(function() {
 					'value' => $taxes_str,
 				],
 			];
+
+			if (empty($filterstatus) || $filterstatus === 'cancelled') {
+				// obtain cancellation date for this booking
+				$booking_canc_date = $cancellation_timestamps[$ord['id']] ?? '';
+				if ($booking_canc_date) {
+					$booking_canc_date = date(str_replace("/", $datesep, $df), $booking_canc_date);
+				}
+				// insert column for cancellation date at index 2
+				array_splice($line_data, 2, 0, [['value' => $booking_canc_date]]);
+			}
+
+			// push line for export
+			$orderscsv[] = $line_data;
 		}
 
 		// set CSV rows
@@ -12597,16 +12851,28 @@ jQuery(".' . $selector . '").hover(function() {
 			GROUP BY `c`.`id`,`c`.`first_name`,`c`.`last_name`,`c`.`email`,`c`.`phone`,`c`.`country`,`c`.`cfields`,`c`.`pin`,`c`.`ujid`,`c`.`address`,`c`.`city`,`c`.`zip`,`c`.`doctype`,`c`.`docnum`,`c`.`docimg`,`c`.`notes`,`c`.`ischannel`,`c`.`chdata`,`c`.`company`,`c`.`vat`,`c`.`gender`,`c`.`bdate`,`c`.`pbirth`,`cy`.`country_3_code`,`cy`.`country_name` ".
 			"ORDER BY `c`.`last_name` ASC;";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if (!($dbo->getNumRows() > 0)) {
+		$customers = $dbo->loadAssocList();
+		if (!$customers) {
 			VikError::raiseWarning('', JText::translate('VBONORECORDSCSVCUSTOMERS'));
 			$mainframe = JFactory::getApplication();
 			$mainframe->redirect("index.php?option=com_vikbooking&task=customers");
 			exit;
 		}
-		$customers = $dbo->loadAssocList();
-		$csvlines = array();
-		$csvheadline = array('ID', JText::translate('VBCUSTOMERLASTNAME'), JText::translate('VBCUSTOMERFIRSTNAME'), JText::translate('VBCUSTOMEREMAIL'), JText::translate('VBCUSTOMERPHONE'), JText::translate('VBCUSTOMERADDRESS'), JText::translate('VBCUSTOMERCITY'), JText::translate('VBCUSTOMERZIP'), JText::translate('VBCUSTOMERCOUNTRY'), JText::translate('VBCUSTOMERTOTBOOKINGS'));
+		$csvlines = [];
+		$csvheadline = [
+			'ID',
+			JText::translate('VBCUSTOMERLASTNAME'),
+			JText::translate('VBCUSTOMERFIRSTNAME'),
+			JText::translate('VBCUSTOMEREMAIL'),
+			JText::translate('VBCUSTOMERPHONE'),
+			JText::translate('VBCUSTOMERADDRESS'),
+			JText::translate('VBCUSTOMERCITY'),
+			JText::translate('VBCUSTOMERZIP'),
+			JText::translate('VBCUSTOMERCOUNTRY'),
+			JText::translate('VBCUSTOMERGENDER'),
+			JText::translate('ORDER_DBIRTH'),
+			JText::translate('VBCUSTOMERTOTBOOKINGS'),
+		];
 		if ($ppin > 0) {
 			$csvheadline[] = JText::translate('VBCUSTOMERPIN');
 		}
@@ -12620,7 +12886,20 @@ jQuery(".' . $selector . '").hover(function() {
 		}
 		$csvlines[] = $csvheadline;
 		foreach ($customers as $customer) {
-			$csvcustomerline = array($customer['id'], $customer['last_name'], $customer['first_name'], $customer['email'], $customer['phone'], $customer['address'], $customer['city'], $customer['zip'], $customer['country_name'], $customer['tot_bookings']);
+			$csvcustomerline = [
+				$customer['id'],
+				$customer['last_name'],
+				$customer['first_name'],
+				$customer['email'],
+				$customer['phone'],
+				$customer['address'],
+				$customer['city'],
+				$customer['zip'],
+				$customer['country_name'],
+				$customer['gender'],
+				$customer['bdate'],
+				$customer['tot_bookings'],
+			];
 			if ($ppin > 0) {
 				$csvcustomerline[] = $customer['pin'];
 			}
@@ -13865,7 +14144,7 @@ jQuery(".' . $selector . '").hover(function() {
 			$error = strlen($report->getError()) ? $report->getError() : JText::translate('VBNOTRACKINGS');
 		} else {
 			// get doughnut Chart for the requested key
-			$report_chart = $report->getChart($chart_datatype);
+			$report_chart = $report->getChart((array) $chart_datatype);
 
 			// get Chart meta data
 			$all_chart_metas = $report->getChartMetaData(null, $chart_meta_data);
@@ -14188,6 +14467,10 @@ jQuery(".' . $selector . '").hover(function() {
 	 */
 	public function clean_duplicate_records()
 	{
+		if (!JFactory::getUser()->authorise('core.admin', 'com_vikbooking')) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
+		}
+
 		$dbo = JFactory::getDbo();
 
 		$tables_with_duplicates = [
@@ -14305,6 +14588,10 @@ jQuery(".' . $selector . '").hover(function() {
 	 */
 	public function fix_autoincrement_tables()
 	{
+		if (!JFactory::getUser()->authorise('core.admin', 'com_vikbooking')) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
+		}
+
 		$dbo = JFactory::getDbo();
 
 		// load all the installed database tables
@@ -14364,6 +14651,10 @@ jQuery(".' . $selector . '").hover(function() {
 		$app = JFactory::getApplication();
 		$dbo = JFactory::getDbo();
 
+		if (!JFactory::getUser()->authorise('core.admin', 'com_vikbooking')) {
+			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
+		}
+
 		$from_version = $app->input->getString('from_version');
 
 		if (empty($from_version)) {
@@ -14391,11 +14682,15 @@ jQuery(".' . $selector . '").hover(function() {
 			return version_compare($file_version, $from_version, '>=');
 		});
 
+		// sort files by version ascending
+		usort($sql_update_files, function($a, $b) {
+			return version_compare(basename($a, '.sql'), basename($b, '.sql'));
+		});
+
 		if (!$sql_update_files) {
 			VBOHttpDocument::getInstance()->close(500, sprintf('Could not find any suitable SQL update file from version %s.', $from_version));
 		}
 
-		$sql_update_files = array_values($sql_update_files);
 		$success_queries = 0;
 
 		foreach ($sql_update_files as $file) {
@@ -15000,6 +15295,13 @@ jQuery(".' . $selector . '").hover(function() {
 		// push the transaction currency information
 		$row['transaction_currency'] = VikBooking::getCurrencyCodePp();
 
+		/**
+         * Trigger event to allow third-party plugins to manipulate the transaction data.
+         * 
+         * @since 	1.18.5 (J) - 1.8.5 (WP)
+         */
+        VBOFactory::getPlatform()->getDispatcher()->trigger('onInitRefundTransaction', [&$row, &$payment['params']]);
+
 		if (VBOPlatformDetection::isWordPress()) {
 			/**
 			 * @wponly 	The payment gateway is loaded 
@@ -15135,49 +15437,59 @@ jQuery(".' . $selector . '").hover(function() {
 	 * AJAX endpoint to invoke a report object's method.
 	 *
 	 * @return 	void
-	 *
-	 * @throws 	Exception
 	 * 
 	 * @since 	1.15.0 (J) - 1.5.0 (WP)
+	 * @since 	1.18.6 (J) - 1.8.6 (WP) added support for "call_args".
 	 */
 	public function invoke_report()
 	{
-		$report_name = VikRequest::getString('report', '', 'request');
-		$report_call = VikRequest::getString('call', '', 'request');
-		$params = VikRequest::getVar('params', array(), 'request', 'array');
+		$app = JFactory::getApplication();
+
+		$report_name = $app->input->getString('report', '');
+		$report_call = $app->input->getString('call', '');
+		$call_args = $app->input->get('call_args', [], 'array');
+		$params = $app->input->get('params', [], 'array');
 
 		if (empty($report_name)) {
-			VBOHttpDocument::getInstance()->close(400, 'Missing report name');
+			VBOHttpDocument::getInstance($app)->close(400, 'Missing report name');
 		}
 
 		if (empty($report_call)) {
-			VBOHttpDocument::getInstance()->close(400, 'Missing report call');
+			VBOHttpDocument::getInstance($app)->close(400, 'Missing report call');
 		}
 
 		// get requested report instance
 		$report = VikBooking::getReportInstance($report_name);
 		if (!$report) {
-			VBOHttpDocument::getInstance()->close(404, 'Report not found');
+			VBOHttpDocument::getInstance($app)->close(404, 'Report not found');
 		}
 
 		if (!method_exists($report, $report_call) || !is_callable(array($report, $report_call))) {
-			VBOHttpDocument::getInstance()->close(403, sprintf('Cannot call [%s] on report', $report_call));
+			VBOHttpDocument::getInstance($app)->close(403, sprintf('Cannot call [%s] on report', $report_call));
 		}
 
-		// call on report's method
-		$result = $report->{$report_call}($params);
+		try {
+			// call on report's method
+			if ($call_args) {
+				$result = call_user_func_array([$report, $report_call], $call_args);
+			} else {
+				$result = $report->{$report_call}($params);
+			}
+		} catch (Exception $e) {
+			VBOHttpDocument::getInstance($app)->close($e->getCode() ?: 500, $e->getMessage());
+		}
 
 		if (is_null($result)) {
-			VBOHttpDocument::getInstance()->close(400, 'Null response');
+			VBOHttpDocument::getInstance($app)->close(400, 'Null response');
 		}
 
 		if (is_scalar($result)) {
 			// wrap result within an array for a JSON encoded response
-			VBOHttpDocument::getInstance()->json([$result]);
+			VBOHttpDocument::getInstance($app)->json([$result]);
 		}
 
 		// output the JSON encoded array/object returned
-		VBOHttpDocument::getInstance()->json($result);
+		VBOHttpDocument::getInstance($app)->json($result);
 	}
 
 	/**

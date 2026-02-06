@@ -47,6 +47,42 @@ $formatparts = explode(':', $formatvals);
 					<div class="vbo-param-label"><?php echo JText::translate('VBCONFIGNUMTHOSEPARATOR'); ?></div>
 					<div class="vbo-param-setting"><input type="text" name="thoseparator" value="<?php echo JHtml::fetch('esc_attr', $formatparts[2]); ?>" size="2"/></div>
 				</div>
+				<div class="vbo-param-container">
+					<div class="vbo-param-label"><?php echo JText::translate('VBO_POSITION'); ?></div>
+					<div class="vbo-param-setting">
+					<?php
+					echo $vbo_app->multiStateToggleSwitchField(
+						'currencypos',
+						VikBooking::getCurrencyPosition(),
+						[
+							'before',
+							'after',
+						],
+						[
+							[
+								'value' => VikBooking::getCurrencySymb() . ' 100',
+								'title' => JText::translate('VBO_CURRENCY_POS_BEFORE'),
+							],
+							[
+								'value' => '100 ' . VikBooking::getCurrencySymb(),
+								'title' => JText::translate('VBO_CURRENCY_POS_AFTER'),
+							],
+						],
+						[
+							[
+								'label_class' => 'vik-multiswitch-radiobtn-light',
+							],
+							[
+								'label_class' => 'vik-multiswitch-radiobtn-auto',
+							],
+						],
+						[
+							'class' => 'vbo-multiswitch-double',
+						]
+					);
+					?>
+					</div>
+				</div>
 			</div>
 		</div>
 	</fieldset>
@@ -147,7 +183,7 @@ jQuery(function() {
 	vboPopulateDepositOverrides();
 	jQuery(document).mouseup(function(e) {
 		if (!vbo_overlay_on) {
-			return false;
+			return;
 		}
 		var vbo_overlay_cont = jQuery(".vbo-info-overlay-content");
 		if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {

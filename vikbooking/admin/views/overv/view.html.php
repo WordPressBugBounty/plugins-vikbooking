@@ -33,8 +33,8 @@ class VikBookingViewOverv extends JViewVikBooking
 		}
 		$session = JFactory::getSession();
 		$cookie = JFactory::getApplication()->input->cookie;
-		$pmonth = VikRequest::getString('month', '', 'request');
-		$pmnum = VikRequest::getInt('mnum', '', 'request');
+		$pmonth = VikRequest::getInt('month', 0, 'request');
+		$pmnum = VikRequest::getInt('mnum', 0, 'request');
 		$cmnum = $cookie->get('vbOvwMnum', '', 'string');
 		$punits_show_type = VikRequest::getString('units_show_type', '', 'request');
 

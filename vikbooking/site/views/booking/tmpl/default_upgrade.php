@@ -80,8 +80,7 @@ if ($upgrade_options) {
 							$room_cost = $this->orderrooms[$upgk]['cust_cost'] > 0 ? (float)$this->orderrooms[$upgk]['cust_cost'] : (float)$this->orderrooms[$upgk]['room_cost'];
 							?>
 							<div class="vbo-roomupgrade-current-pricing-det vbo-roomupgrade-current-pricing-cost">
-								<span class="vbo_currency vbo_keepcost"><?php echo $currencysymb; ?></span> 
-								<span class="vbo_price vbo_keepcost"><?php echo VikBooking::numberFormat($room_cost); ?></span>
+								<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($room_cost), $currencysymb, ['<span class="vbo_currency vbo_keepcost">%s</span>', '<span class="vbo_price vbo_keepcost">%s</span>']); ?>
 							</div>
 						</div>
 					</div>
@@ -121,15 +120,13 @@ if ($upgrade_options) {
 							?>
 							<div class="vbo-roomupgrade-solution-pricing">
 								<div class="vbo-roomupgrade-solution-upgrade-cost">
-									<span class="vbo_currency vbo_keepcost"><?php echo $currencysymb; ?></span> 
-									<span class="vbo_price vbo_keepcost"><?php echo VikBooking::numberFormat($upgrade_sol['upgrade_cost']); ?></span>
+									<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($upgrade_sol['upgrade_cost']), $currencysymb, ['<span class="vbo_currency vbo_keepcost">%s</span>', '<span class="vbo_price vbo_keepcost">%s</span>']); ?>
 								</div>
 							<?php
 							if (isset($upg_data['discount']) && $upg_data['discount'] > 0) {
 								?>
 								<div class="vbo-roomupgrade-solution-upgrade-saveamount">
-									<span class="vbo_currency vbo_keepcost"><?php echo $currencysymb; ?></span> 
-									<del class="vbo_price vbo_keepcost"><?php echo VikBooking::numberFormat($upgrade_sol['cost']); ?></del>
+									<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($upgrade_sol['cost']), $currencysymb, ['<span class="vbo_currency vbo_keepcost">%s</span>', '<del class="vbo_price vbo_keepcost">%s</del>']); ?>
 								</div>
 								<div class="vbo-roomupgrade-solution-upgrade-savepcent">
 									<span><?php echo JText::sprintf('VBO_YOU_SAVE_PCENT', $upg_data['discount'] . '%'); ?></span>

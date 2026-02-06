@@ -26,6 +26,17 @@ class JSessionHandler
 	 */
 	public static function start()
 	{
+		/**
+		 * Prevent the handler from starting a new session in case the process was launched
+		 * from wp-cron.php, which manually sends some headers at the beginning of the file.
+		 * 
+		 * @since 10.1.65
+		 */
+		if (defined('DOING_CRON') && DOING_CRON)
+		{
+		    return;
+		}
+
 		if (!self::isStarted())
 		{
 			session_start();

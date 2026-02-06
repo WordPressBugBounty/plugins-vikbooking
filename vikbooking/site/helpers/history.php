@@ -117,13 +117,20 @@ class VboBookingHistory
 	];
 
 	/**
-	 * List of Task Manager events for a new booking.
+	 * @var 	bool
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	protected $silentNotificationCenter = false;
+
+	/**
+	 * List of booking events for a new record.
 	 * 
 	 * @var 	array
 	 * 
 	 * @since 	1.18.0 (J) - 1.8.0 (WP)
 	 */
-	protected $taskManagerEventsNewBooking = [
+	protected $bookingEventsRecordNew = [
 		// New booking with status Confirmed
 		'NC',
 		// New booking from back-end
@@ -141,13 +148,13 @@ class VboBookingHistory
 	];
 
 	/**
-	 * List of Task Manager events for a modified booking.
+	 * List of booking events for a modified record.
 	 * 
 	 * @var 	array
 	 * 
 	 * @since 	1.18.0 (J) - 1.8.0 (WP)
 	 */
-	protected $taskManagerEventsModifiedBooking = [
+	protected $bookingEventsRecordModified = [
 		// Booking modified from website
 		'MW',
 		// Booking modified from back-end
@@ -159,13 +166,13 @@ class VboBookingHistory
 	];
 
 	/**
-	 * List of Task Manager events for a cancelled booking.
+	 * List of booking events for a cancelled record.
 	 * 
 	 * @var 	array
 	 * 
 	 * @since 	1.18.0 (J) - 1.8.0 (WP)
 	 */
-	protected $taskManagerEventsCancelledBooking = [
+	protected $bookingEventsRecordCancelled = [
 		// Booking cancelled via front-end website
 		'CW',
 		// Booking cancelled via back-end by admin
@@ -174,6 +181,18 @@ class VboBookingHistory
 		'CC',
 		// Booking removed via App
 		'AR',
+	];
+
+	/**
+	 * List of booking pre-checkin events.
+	 * 
+	 * @var 	array
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	protected $bookingPrecheckinEvents = [
+		// Pre-checkin updated via front-end
+		'PC',
 	];
 
 	/**
@@ -296,6 +315,14 @@ class VboBookingHistory
 			'MT' => JText::translate('VBOBOOKHISTORYTMT'),
 			// Task Manager - Cancelled tasks
 			'CT' => JText::translate('VBOBOOKHISTORYTCT'),
+			// Door Access Control - New booking device passcode
+			'ND' => JText::translate('VBOBOOKHISTORYTND'),
+			// Door Access Control - Modified booking device passcode
+			'MD' => JText::translate('VBOBOOKHISTORYTMD'),
+			// Door Access Control - Cancelled booking device passcode
+			'CD' => JText::translate('VBOBOOKHISTORYTCD'),
+			// Door Access Control - First access through device passcode
+			'FA' => JText::translate('VBOBOOKHISTORYTFA'),
 		];
 	}
 
@@ -502,6 +529,53 @@ class VboBookingHistory
 	}
 
 	/**
+	 * Sets the current flag for silencing the notification center population.
+	 * 
+	 * @param 	bool 	$set 		Whether to silence the notification center once.
+	 *
+	 * @return 	VboBookingHistory
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public function setSilentNotificationCenter(bool $set)
+	{
+		$this->silentNotificationCenter = $set;
+
+		return $this;
+	}
+
+	/**
+	 * Returns a list of history event types whenenver a specific booking event occurs.
+	 * 
+	 * @param 	string 	$type 	The booking event type identifier ("new", "modified",
+	 * 							"cancelled", "precheckin").
+	 *
+	 * @return 	array
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function getBookingEventsType(string $type)
+	{
+		if (!strcasecmp($type, 'new')) {
+			return $this->bookingEventsRecordNew;
+		}
+
+		if (!strcasecmp($type, 'modified')) {
+			return $this->bookingEventsRecordModified;
+		}
+
+		if (!strcasecmp($type, 'cancelled')) {
+			return $this->bookingEventsRecordCancelled;
+		}
+
+		if (!strcasecmp($type, 'precheckin')) {
+			return $this->bookingPrecheckinEvents;
+		}
+
+		return [];
+	}
+
+	/**
 	 * Fetches the current booking record.
 	 *
 	 * @return 	?array
@@ -623,25 +697,41 @@ class VboBookingHistory
 		 */
 		$results = $dispatcher->filter('onBeforeSaveHistoryNotificationsCenter', [$history_record, $this->notificationsCenterTypes]);
 		if (in_array($type, $this->notificationsCenterTypes) || in_array(true, $results, true)) {
-			$this->addToNotificationsCenter($history_record, $booking_info);
+			if ($this->silentNotificationCenter === false) {
+				// add the event to the NC
+				$this->addToNotificationsCenter($history_record, $booking_info);
+			}
+			// always reset silence flag for NC
+			$this->setSilentNotificationCenter(false);
 		}
 
 		/**
-		 * Check if the Task Manager framework should run for the current event type.
+		 * Check if booking-related framework should run for the current event type.
 		 * 
 		 * @since 	1.18.0 (J) - 1.8.0 (WP)
+		 * @since 	1.18.4 (J) - 1.8.4 (WP) added support for Door Access Control framework.
+		 * @since 	1.18.6 (J) - 1.8.6 (WP) added support for booking pre-checkin events.
 		 */
 		if (!in_array($storingSignature, static::$signaturesList)) {
-			// we can safely invoke the Task Manager framework for a unique event
-			if (in_array($type, $this->taskManagerEventsNewBooking)) {
+			// we can safely invoke any booking-related framework for a unique event
+			if (in_array($type, $this->bookingEventsRecordNew)) {
 				// process the new booking confirmation tasks
 				VBOFactory::getTaskManager()->processBookingConfirmation($this->bookingInfo, $this->bookingRooms);
-			} elseif (in_array($type, $this->taskManagerEventsCancelledBooking)) {
+				// process the new booking confirmation event
+				VBOFactory::getDoorAccessControl()->processBookingConfirmation($this->bookingInfo, $this->bookingRooms);
+			} elseif (in_array($type, $this->bookingEventsRecordCancelled)) {
 				// process the booking cancellation tasks
 				VBOFactory::getTaskManager()->processBookingCancellation($this->bookingInfo, $this->bookingRooms);
-			} elseif (in_array($type, $this->taskManagerEventsModifiedBooking)) {
+				// process the booking cancellation event
+				VBOFactory::getDoorAccessControl()->processBookingCancellation($this->bookingInfo, $this->bookingRooms);
+			} elseif (in_array($type, $this->bookingEventsRecordModified)) {
 				// process the booking modification tasks
 				VBOFactory::getTaskManager()->processBookingModification($this->bookingInfo, $this->bookingRooms, (array) $this->prevBooking);
+				// process the booking modification event
+				VBOFactory::getDoorAccessControl()->processBookingModification($this->bookingInfo, $this->bookingRooms, (array) $this->prevBooking);
+			} elseif (in_array($type, $this->bookingPrecheckinEvents)) {
+				// process the booking pre-checkin event
+				VBOFactory::getDoorAccessControl()->processPrecheckinCompleted($this->bookingInfo, $this->bookingRooms);
 			}
 		}
 
@@ -725,11 +815,11 @@ class VboBookingHistory
 	 * Returns a list of records with data defined for the given event type.
 	 * Useful to get a list of transactions data for the refund operations.
 	 * 
-	 * @param 	mixed 		$type 		string or array event type(s).
-	 * @param 	callable 	$callvalid 	callback for the data validation.
-	 * @param 	bool 		$onlydata 	whether to get just the event data.
+	 * @param 	mixed 		$type 		String or array event type(s).
+	 * @param 	?callable 	$callvalid 	Optional callback for the data validation.
+	 * @param 	bool 		$onlydata 	Whether to get just the event data.
 	 *
-	 * @return 	mixed 					false or array with data records.
+	 * @return 	mixed 					False or array with data records.
 	 * 
 	 * @since 	1.14.0 (J) - 1.4.0 (WP)
 	 */
@@ -753,6 +843,7 @@ class VboBookingHistory
 			->from($dbo->qn('#__vikbooking_orderhistory'))
 			->where($dbo->qn('idorder') . ' = ' . (int) $this->bid)
 			->where($dbo->qn('type') . ' IN (' . implode(', ', $types) . ')')
+			// always keep the ordering ascending
 			->order($dbo->qn('dt') . ' ASC');
 
 		$dbo->setQuery($q);
@@ -761,7 +852,7 @@ class VboBookingHistory
 		if ($events) {
 			$datas  = [];
 			foreach ($events as $k => $e) {
-				$data = json_decode($e['data']);
+				$data = $e['data'] ? json_decode($e['data']) : null;
 				if (!empty($data)) {
 					$events[$k]['data'] = $data;
 				}

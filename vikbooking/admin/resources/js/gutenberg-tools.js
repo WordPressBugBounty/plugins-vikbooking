@@ -161,7 +161,9 @@
 						attrs[this.name] = value;
 
 						props.setAttributes(attrs);
-					}
+					},
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
 				}
 			);
 		}
@@ -186,7 +188,9 @@
 						attrs[this.name] = value;
 
 						props.setAttributes(attrs);
-					}
+					},
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
 				}
 			);
 		}
@@ -214,7 +218,9 @@
 						attrs[this.name] = value;
 
 						props.setAttributes(attrs);
-					}
+					},
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
 				}
 			);
 		}
@@ -247,6 +253,8 @@
 							}
 						}
 					),
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
 				}
 			);
 		}
@@ -271,7 +279,9 @@
 						attrs[this.name] = value ? 1 : 0;
 
 						props.setAttributes(attrs);
-					}
+					},
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
 				}
 			);
 		}
@@ -298,7 +308,9 @@
 						attrs[this.name] = value;
 
 						props.setAttributes(attrs);
-					}
+					},
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
 				}
 			);
 		}
@@ -361,7 +373,9 @@
 						attrs[this.name] = value;
 
 						props.setAttributes(attrs);
-					}
+					},
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
 				}
 			);
 		}
@@ -444,6 +458,8 @@
 							}
 						}
 					),
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
 				}
 			);
 		}
@@ -460,6 +476,8 @@
 					label: this.label,
 					help: this.description,
 					children: this.createTree(this.layout),
+					__nextHasNoMarginBottom: true,
+					__next40pxDefaultSize: true,
 				}
 			);
 		}

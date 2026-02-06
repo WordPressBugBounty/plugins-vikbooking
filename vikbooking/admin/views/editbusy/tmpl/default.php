@@ -327,7 +327,7 @@ jQuery(function() {
 
 	jQuery(document).mouseup(function(e) {
 		if (!vbo_overlay_on) {
-			return false;
+			return;
 		}
 		var vbo_overlay_cont = jQuery(".vbo-info-overlay-content");
 		if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {
@@ -1098,6 +1098,7 @@ function vboSearchExtraCost(elem) {
 								$room_now_checkout = $room_stay_records[$kor]['checkout'];
 								$room_now_nights   = $av_helper->countNightsOfStay($room_now_checkin, $room_now_checkout);
 							}
+							$room_mod_dates_state = (int) ($ord['checkin'] != $room_now_checkin || $ord['checkout'] != $room_now_checkout);
 							?>
 							<div class="vbo-editbooking-room-nights-info">
 								<div class="vbo-editbooking-room-nights-info-top">
@@ -1106,7 +1107,7 @@ function vboSearchExtraCost(elem) {
 									</h4>
 									<div class="vbo-editbooking-room-nights-modify">
 										<label for="room_modify_dates<?php echo $kor; ?>-on"><?php echo JText::translate('VBO_MODIFY_DATES'); ?></label>
-										<span><?php echo $vbo_app->printYesNoButtons('room_modify_dates' . $kor, JText::translate('VBYES'), JText::translate('VBNO'), 0, 1, 0, 'vboEditbusyModifyRoomDates(this.checked, ' . $kor . ')'); ?></span>
+										<span><?php echo $vbo_app->printYesNoButtons('room_modify_dates' . $kor, JText::translate('VBYES'), JText::translate('VBNO'), $room_mod_dates_state, 1, 0, 'vboEditbusyModifyRoomDates(this.checked, ' . $kor . ')'); ?></span>
 									</div>
 								</div>
 								<div class="vbo-editbooking-room-traveler-guestsinfo vbo-editbooking-room-nights-modify-details" data-roomind="<?php echo $kor; ?>" style="display: none;">
@@ -1148,6 +1149,15 @@ function vboSearchExtraCost(elem) {
 								</div>
 							</div>
 							<?php
+							if ($room_mod_dates_state) {
+								?>
+							<script type="text/javascript">
+								VBOCore.DOMLoaded(() => {
+									vboEditbusyModifyRoomDates(true, <?php echo $kor; ?>);
+								});
+							</script>
+								<?php
+							}
 						}
 
 						$from_a = $or['fromadult'];
@@ -1210,7 +1220,7 @@ function vboSearchExtraCost(elem) {
 										<div class="vbo-editbooking-room-pricetype-inner">
 											<label for="pid<?php echo $num.$or['id']; ?>"><?php echo $pkg_name; ?></label>
 											<div class="vbo-editbooking-room-pricetype-cost">
-												<?php echo $currencysymb." ".VikBooking::numberFormat($or['cust_cost']); ?>
+												<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($or['cust_cost']), $currencysymb); ?>
 											</div>
 										</div>
 										<div class="vbo-editbooking-room-pricetype-check">
@@ -1246,7 +1256,7 @@ function vboSearchExtraCost(elem) {
 										<div class="vbo-editbooking-room-pricetype-inner">
 											<label for="pid<?php echo $num.$t['idprice']; ?>"><?php echo VikBooking::getPriceName($t['idprice']).(strlen((string)$t['attrdata']) ? " - ".VikBooking::getPriceAttr($t['idprice']).": ".$t['attrdata'] : ""); ?></label>
 											<div class="vbo-editbooking-room-pricetype-cost">
-												<?php echo $currencysymb." ".VikBooking::numberFormat($t['cost']); ?>
+												<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($t['cost']), $currencysymb); ?>
 											</div>
 										</div>
 										<div class="vbo-editbooking-room-pricetype-check">
@@ -1269,7 +1279,7 @@ function vboSearchExtraCost(elem) {
 										<div class="vbo-editbooking-room-pricetype-inner">
 											<label for="pid<?php echo $num.$t['idprice']; ?>"><?php echo VikBooking::getPriceName($t['idprice']).(strlen((string)$t['attrdata']) ? " - ".VikBooking::getPriceAttr($t['idprice']).": ".$t['attrdata'] : ""); ?></label>
 											<div class="vbo-editbooking-room-pricetype-cost">
-												<?php echo $currencysymb." ".$format_cost; ?>
+												<?php echo VikBooking::formatCurrencyNumber($format_cost, $currencysymb); ?>
 											</div>
 										</div>
 										<div class="vbo-editbooking-room-pricetype-check">
@@ -1288,7 +1298,7 @@ function vboSearchExtraCost(elem) {
 											<div class="vbo-editbooking-room-pricetype-older-inner">
 												<label for="olderpid<?php echo $num.$t['idprice']; ?>"><?php echo JText::translate('VBOBOOKEDATPRICE') . ' ' . $vbo_app->createPopover(array('title' => JText::translate('VBOBOOKEDATPRICE'), 'content' => JText::translate('VBOBOOKEDATPRICEHELP'))); ?></label>
 												<div class="vbo-editbooking-room-pricetype-cost">
-													<?php echo $currencysymb." ".VikBooking::numberFormat($or['room_cost']); ?>
+													<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($or['room_cost']), $currencysymb); ?>
 												</div>
 											</div>
 											<div class="vbo-editbooking-room-pricetype-check-older">
@@ -1501,7 +1511,13 @@ function vboSearchExtraCost(elem) {
 										<div class="vbo-editbooking-room-service-inner vbo-editbooking-room-option-inner">
 											<label for="optid<?php echo $num.$o['id']; ?>"><?php echo $o['name']; ?></label>
 											<div class="vbo-editbooking-room-service-price vbo-editbooking-room-option-price">
-												<?php echo (int)$o['pcentroom'] ? '' : $currencysymb.' '; ?><?php echo VikBooking::numberFormat($thisoptcost); ?><?php echo (int)$o['pcentroom'] ? '%' : ''; ?>
+											<?php
+											if (!((int) $o['pcentroom'])) {
+												echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($thisoptcost), $currencysymb);
+											} else {
+												echo VikBooking::numberFormat($thisoptcost) . '%';
+											}
+											?>
 											</div>
 										</div>
 										<div class="vbo-editbooking-room-service-check vbo-editbooking-room-option-check">
@@ -1691,7 +1707,7 @@ function vboSearchExtraCost(elem) {
 										<div class="vbo-editbooking-room-pricetype-inner">
 											<label for="pid<?php echo $num.$t['idprice']; ?>"><?php echo VikBooking::getPriceName($t['idprice']).(strlen((string)$t['attrdata']) ? " - ".VikBooking::getPriceAttr($t['idprice']).": ".$t['attrdata'] : ""); ?></label>
 											<div class="vbo-editbooking-room-pricetype-cost">
-												<?php echo $currencysymb." ".VikBooking::numberFormat($t['cost']); ?>
+												<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($t['cost']), $currencysymb); ?>
 											</div>
 										</div>
 										<div class="vbo-editbooking-room-pricetype-check">

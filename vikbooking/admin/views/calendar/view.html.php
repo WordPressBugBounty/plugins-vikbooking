@@ -61,6 +61,7 @@ class VikBookingViewCalendar extends JViewVikBooking
 		$dbo->setQuery($q, 0, 1);
 		$room = $dbo->loadAssoc();
 		if (!$room) {
+			$session->set('vbCalRid', '');
 			VikError::raiseWarning('', 'No Rooms.');
 			$app->redirect("index.php?option=com_vikbooking&task=rooms");
 			$app->close();

@@ -295,12 +295,7 @@ class VBOModelReservation extends JObject
 		static $times_loaded = null;
 
 		if ($times_loaded) {
-			return [
-				$this->get('checkin_h'),
-				$this->get('checkin_m'),
-				$this->get('checkout_h'),
-				$this->get('checkout_m'),
-			];
+			return $times_loaded;
 		}
 
 		$timeopst = VikBooking::getTimeOpenStore();
@@ -323,14 +318,14 @@ class VBOModelReservation extends JObject
 		$this->set('checkout_h', $hcheckout);
 		$this->set('checkout_m', $mcheckout);
 
-		$times_loaded = 1;
-
-		return [
+		$times_loaded = [
 			$hcheckin,
 			$mcheckin,
 			$hcheckout,
 			$mcheckout,
 		];
+
+		return $times_loaded;
 	}
 
 	/**
@@ -461,6 +456,7 @@ class VBOModelReservation extends JObject
 	 * @return 	array
 	 * 
 	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 * @since 	1.18.3 (J) - 1.8.3 (WP) added support for "ota_id" and "channel" filters.
 	 */
 	public function search()
 	{
@@ -491,6 +487,15 @@ class VBOModelReservation extends JObject
 				$dbo->qn('o.id') . ' = ' . $dbo->q($filters['booking_id']),
 				$dbo->qn('o.idorderota') . ' = ' . $dbo->q($filters['booking_id']),
 			], $glue = 'OR');
+		}
+
+		if (($filters['ota_id'] ?? null)) {
+			$q->where($dbo->qn('o.idorderota') . ' = ' . $dbo->q($filters['ota_id']));
+			if (($filters['channel'] ?? null)) {
+				$q->where($dbo->qn('o.channel') . ' LIKE ' . (strpos($filters['channel'], '%') !== false ? $dbo->q($filters['channel']) : $dbo->q('%' . $filters['channel'] . '%')));
+			} else {
+				$q->where($dbo->qn('o.channel') . ' IS NOT NULL');
+			}
 		}
 
 		if (($filters['status'] ?? null)) {
@@ -654,6 +659,132 @@ class VBOModelReservation extends JObject
 	public function getTotBookingsFound()
 	{
 		return $this->totalBookings;
+	}
+
+	/**
+	 * Updates the total amount paid and the amount of (OTA) compensation. To be used for
+	 * OTA reservations only, previously validated. Runs often after an OTA notification.
+	 * 
+	 * @param 	array 	$options 	Associative list of booking values to update.
+	 * @param 	array 	$booking 	Optional associative booking record to update.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public function updatePayoutCompensation(array $options, array $booking = [])
+	{
+		$dbo = JFactory::getDbo();
+
+		if ($booking) {
+			// update the internal reference
+			$this->setBooking($booking);
+		} else {
+			// get the internal booking record
+			$booking = $this->getBooking();
+		}
+
+		if (empty($booking['id'])) {
+			// no booking information available
+			return false;
+		}
+
+		// build booking record values to update
+		$booking_record = new stdClass;
+		$booking_record->id = $booking['id'];
+
+		// access the booking history object
+		$history_obj = VikBooking::getBookingHistoryInstance($booking['id']);
+
+		// flag/counter that indicates if any booking record value was updated
+		$booking_values_counter = 0;
+
+		// check if a payout should be set
+		if ($options['payout'] ?? null) {
+			// update the booking total amount paid and register a payout received event
+			$booking_record->totpaid = (float) $options['payout'];
+
+			// update cached booking information for history
+			$booking['totpaid'] = (float) $options['payout'];
+			$history_obj->setBookingInfo($booking);
+
+			// the payout received event type
+			$ev_type = 'PO';
+
+			// load current history
+			$history_rows = array_reverse($history_obj->loadHistory());
+
+			// check if there is a valid event with an amount paid greater than zero
+			$prev_paid = 0;
+			foreach ($history_rows as $hevent) {
+				if ($hevent['totpaid'] < 1 || $hevent['totpaid'] == $options['payout'] || $hevent['type'] == $ev_type) {
+					// skip history records with no amount paid, amount paid equal to payout, or payout events
+					continue;
+				}
+				// amount paid found before payout notification
+				$prev_paid = $hevent['totpaid'];
+				break;
+			}
+
+			// sum any previously paid amount
+			$booking_record->totpaid += $prev_paid;
+
+			// update booking record in VBO
+			if ($dbo->updateObject('#__vikbooking_orders', $booking_record, 'id')) {
+				// increase counter
+				$booking_values_counter++;
+			}
+
+			// build event description
+			$ev_descr = preg_replace('/^[^_]*_/', '', (string) ($booking['channel'] ?? '')) . ': ' . $options['payout'];
+
+			// set event extra data
+			$history_obj->setExtraData([
+				// this is the total amount paid up until now
+				'payout_total' => (float) $options['payout'],
+			]);
+
+			// silence the notification center
+			$history_obj->setSilentNotificationCenter(true);
+
+			// store event history log
+			$history_obj->store($ev_type, $ev_descr);
+		}
+
+		// check if the commission (compensation) amount should be set
+		if ($options['compensation'] ?? null) {
+			// update the total commissions amount
+			$booking_record->cmms = (float) $options['compensation'];
+
+			// update cached booking information for history
+			$booking['cmms'] = (float) $options['compensation'];
+			$history_obj->setBookingInfo($booking);
+
+			// update booking record in VBO
+			if ($dbo->updateObject('#__vikbooking_orders', $booking_record, 'id')) {
+				// increase counter
+				$booking_values_counter++;
+			}
+
+			// set a generic CM event type
+			$ev_type = 'CM';
+
+			// build event description
+			$ev_descr = 'OTA Commissions: ' . $options['compensation'];
+
+			// set event extra data
+			$history_obj->setExtraData([
+				'cmms' => (float) $options['compensation'],
+			]);
+
+			// silence the notification center
+			$history_obj->setSilentNotificationCenter(true);
+
+			// store event history log
+			$history_obj->store($ev_type, $ev_descr);
+		}
+
+		return (bool) $booking_values_counter;
 	}
 
 	/**
@@ -1514,9 +1645,6 @@ class VBOModelReservation extends JObject
 				// set error message
 				$vcm_err = $vcm_obj->getError();
 				$this->setError(JText::translate('VBCHANNELMANAGERRESULTKO') . (!empty($vcm_err) ? ' - ' . $vcm_err : ''));
-
-				// return true because the booking was actually confirmed
-				return true;
 			}
 		} elseif (is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'synch.vikbooking.php')) {
 			// set the necessary action to invoke VCM
@@ -1775,6 +1903,13 @@ class VBOModelReservation extends JObject
 			'guest_phone'    => $customer['phone'] ?? null,
 			'guest_country'  => $customer['country'] ?? null,
 		];
+
+		/**
+         * Trigger event to allow third-party plugins to manipulate the transaction data.
+         * 
+         * @since 	1.18.5 (J) - 1.8.5 (WP)
+         */
+        VBOFactory::getPlatform()->getDispatcher()->trigger('onInitPaymentTransaction', [&$booking, &$payment['params'], $customer]);
 
 		if (VBOPlatformDetection::isWordPress()) {
 			/**
@@ -2316,6 +2451,7 @@ class VBOModelReservation extends JObject
 		$email 		  = !empty($inj_customer['email']) ? $inj_customer['email'] : '';
 		$country 	  = !empty($inj_customer['country']) ? $inj_customer['country'] : '';
 		$phone 		  = !empty($inj_customer['phone']) ? $inj_customer['phone'] : '';
+		$gender		  = !empty($inj_customer['gender']) ? $inj_customer['gender'] : '';
 
 		// custom fields
 		$q = "SELECT * FROM `#__vikbooking_custfields` ORDER BY `ordering` ASC;";
@@ -2346,6 +2482,11 @@ class VBOModelReservation extends JObject
 					break;
 				}
 			}
+		}
+
+		if (!empty($gender) && in_array(strtoupper((string) $gender), ['M', 'F'])) {
+			// inject the customer gender value
+			$customer_extrainfo['gender'] = strtoupper($gender);
 		}
 
 		$cpin = VikBooking::getCPinInstance();
@@ -2547,8 +2688,19 @@ class VBOModelReservation extends JObject
 		$set_total 		= (float) $this->get('_total', 0);
 		$set_taxes 		= (float) $this->get('_total_tax', 0);
 
+		// booking creation date
+		$now_ts = time();
+		if ($created_on = $this->get('created_on')) {
+			if (is_int($created_on)) {
+				// timestamp expected
+				$now_ts = $created_on;
+			} elseif (preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}/', (string) $created_on)) {
+				// date in military format expected, with or without the time
+				$now_ts = strtotime($created_on);
+			}
+		}
+
 		// stay dates
-		$now_ts 	 = time();
 		$checkin_ts  = $this->get('checkin');
 		$checkout_ts = $this->get('checkout');
 		$realback_ts = $this->get('checkout_real', $checkout_ts);
@@ -2560,6 +2712,7 @@ class VBOModelReservation extends JObject
 		$id_price  = !empty($inj_room['id_price']) ? (int) $inj_room['id_price'] : 0;
 		$id_tax    = !empty($inj_room['id_tax']) ? (int) $inj_room['id_tax'] : 0;
 		$id_tariff = $this->get('id_tariff', 0);
+		$cust_indexes = !empty($inj_room['cust_indexes']) ? (array) $inj_room['cust_indexes'] : [];
 
 		// custom rate modifier per night
 		$totalpnight = !empty($inj_room['total_or_pnight']) ? $inj_room['total_or_pnight'] : 'total';
@@ -2580,7 +2733,15 @@ class VBOModelReservation extends JObject
 		$phone_number 	= !empty($inj_customer['phone']) ? $inj_customer['phone'] : '';
 
 		if ($set_closed) {
+			// get the possibly custom "customer notes"
+			$customer_notes = $customer_data;
+			// overwrite "customer notes" to "Room Closed"
 			$customer_data = JText::translate('VBDBTEXTROOMCLOSED');
+			if ($customer_notes != $customer_data) {
+				// append the custom "custom notes" to the administrator notes instead
+				$custom_admin_notes = trim($this->get('admin_notes', '') . "\n" . $customer_notes);
+				$this->set('admin_notes', $custom_admin_notes);
+			}
 		}
 
 		// check for default customer raw data
@@ -2600,6 +2761,17 @@ class VBOModelReservation extends JObject
 				$customer_data .= "Phone: {$phone_number}\n";
 			}
 			$customer_data = rtrim($customer_data, "\n");
+		}
+
+		// ensure the country code is in the right format
+		if (!empty($country_code)) {
+			$country_code = $cpin->get3CharCountry($country_code);
+		}
+
+		// ensure we have a valid country ISO code
+		if (strlen((string) $country_code) > 3) {
+			// this looks like an unknown country name
+			$country_code = '';
 		}
 
 		// generate booking SID
@@ -2813,6 +2985,15 @@ class VBOModelReservation extends JObject
 						$room_children_age = json_encode(['age' => $children_age_pool]);
 					}
 
+					// determine room index to use, if any
+					$roomindex = null;
+					if ($cust_indexes[$use_ind_key] ?? null) {
+						// use a custom room index
+						$roomindex = (int) $cust_indexes[$use_ind_key];
+					} elseif ($room_indexes) {
+						$roomindex = (int) $room_indexes[$use_ind_key];
+					}
+
 					// store room record
 					$room_record = new stdClass;
 					$room_record->idorder 	   = (int) $newoid;
@@ -2823,7 +3004,7 @@ class VBOModelReservation extends JObject
 					$room_record->childrenage  = $room_children_age;
 					$room_record->t_first_name = $t_first_name;
 					$room_record->t_last_name  = $t_last_name;
-					$room_record->roomindex    = count($room_indexes) ? (int) $room_indexes[$use_ind_key] : null;
+					$room_record->roomindex    = $roomindex;
 					$room_record->cust_cost    = $cust_cost > 0.00 ? $or_cust_cost : null;
 					$room_record->cust_idiva   = $cust_cost > 0.00 && !empty($id_tax) ? $id_tax : null;
 					$room_record->room_cost    = $room_cost > 0.00 ? $or_room_cost : null;

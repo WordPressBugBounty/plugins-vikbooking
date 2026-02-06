@@ -18,10 +18,10 @@ $tax_summary = (!$vat_included && VikBooking::showTaxOnSummaryOnly());
 
 $geo_info_complete = true;
 $global_geo_params = null;
-$rooms_geo_params = array();
-$rooms_features = array();
-$rooms_galleries = array();
-$rooms_units_booked = array();
+$rooms_geo_params = [];
+$rooms_features = [];
+$rooms_galleries = [];
+$rooms_units_booked = [];
 $rooms_units_pos = new stdClass;
 $markers_parties = new stdClass;
 
@@ -35,11 +35,11 @@ JText::script('VBSELECTR');
 JText::script('VBO_CANCEL_SELECTION');
 
 // we build a fake booking array to count the units booked for the various rooms
-$booking_data = array(
-	'id' 		=> 0,
-	'checkin' 	=> $this->checkin,
-	'checkout' 	=> $this->checkout,
-);
+$booking_data = [
+	'id'       => 0,
+	'checkin'  => $this->checkin,
+	'checkout' => $this->checkout,
+];
 
 foreach ($this->res as $party_num => $party_rooms) {
 	foreach ($party_rooms as $party_room) {
@@ -63,11 +63,11 @@ foreach ($this->res as $party_num => $party_rooms) {
 				// push room geo params
 				$rooms_geo_params[$room_rplan['idroom']] = $geo_params;
 				// check if distinctive features are available
-				$rooms_features[$room_rplan['idroom']] = array();
+				$rooms_features[$room_rplan['idroom']] = [];
 				$room_features = VikBooking::getRoomParam('features', $room_rplan['params']);
-				$room_features = !is_array($room_features) ? array() : $room_features;
+				$room_features = !is_array($room_features) ? [] : $room_features;
 				foreach ($room_features as $rindex => $rfeatures) {
-					if (!is_array($rfeatures) || !count($rfeatures)) {
+					if (!is_array($rfeatures) || !$rfeatures) {
 						continue;
 					}
 					foreach ($rfeatures as $featname => $featval) {
@@ -93,7 +93,7 @@ foreach ($this->res as $party_num => $party_rooms) {
 					}
 				}
 				// build rooms gallery
-				$rooms_galleries[$room_rplan['idroom']] = array();
+				$rooms_galleries[$room_rplan['idroom']] = [];
 				if (!empty($room_rplan['moreimgs'])) {
 					$moreimages = explode(';;', $room_rplan['moreimgs']);
 					foreach ($moreimages as $mimg) {
@@ -129,7 +129,11 @@ foreach ($rooms_geo_params as $idroom => $geo_params) {
 
 if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_params) && count(get_object_vars($rooms_units_pos))) {
 	// load assets
-	$geo->loadAssets();
+	$geo->loadAssets([
+		'callback'  => 'vbo_gm_ready',
+		'libraries' => 'marker',
+		'loading'   => 'async',
+	]);
 	
 	// check if ground overlay is implemented by the first room that returns the global geo params
 	$current_goverlay = null;
@@ -217,7 +221,7 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 			<?php
 		}
 		?>
-			<div id="vbo-results-geo-map" style="width: 100%; height: <?php echo $geo->getRoomGeoParams($global_geo_params, 'height', 300); ?>px;"></div>
+			<div id="vbo-results-geo-map" data-height="<?php echo $geo->getRoomGeoParams($global_geo_params, 'height', 300); ?>"></div>
 		</div>
 	</div>
 </div>
@@ -228,6 +232,7 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 	 */
 	var vbo_geomap = null,
 		vbo_geo_currency = '<?php echo $currencysymb; ?>';
+		vbo_geo_currency_pos = '<?php echo VikBooking::getCurrencyPosition(); ?>';
 		vbo_geo_showchildren = <?php echo (int)$this->showchildren; ?>,
 		vbo_geo_rooms_galleries = <?php echo json_encode($rooms_galleries); ?>,
 		vbo_geo_guestparties = <?php echo json_encode($this->arrpeople); ?>,
@@ -283,9 +288,9 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 		infowin_cont += '	</div>';
 		infowin_cont += '	<div class="vbo-geomarker-priceinfo">';
 		if (rprevcost != null) {
-			infowin_cont += '	<span class="vbo-geomarker-priceinfo-cost-beforedisc"><span class="vbo_currency">' + vbo_geo_currency + '</span> <span class="vbo_price">' + rprevcost + '</span></span>';
+			infowin_cont += '	<span class="vbo-geomarker-priceinfo-cost-beforedisc">' + (vbo_geo_currency_pos === 'after' ? '<span class="vbo_price">' + rprevcost + '</span> <span class="vbo_currency">' + vbo_geo_currency + '</span>' : '<span class="vbo_currency">' + vbo_geo_currency + '</span> <span class="vbo_price">' + rprevcost + '</span>') + '</span>';
 		}
-		infowin_cont += '		<span class="vbo-geomarker-priceinfo-cost"><span class="vbo_currency">' + vbo_geo_currency + '</span> <span class="vbo_price">' + rcost + '</span></span>';
+		infowin_cont += '		<span class="vbo-geomarker-priceinfo-cost">' + (vbo_geo_currency_pos === 'after' ? '<span class="vbo_price">' + rcost + '</span> <span class="vbo_currency">' + vbo_geo_currency + '</span>' : '<span class="vbo_currency">' + vbo_geo_currency + '</span> <span class="vbo_price">' + rcost + '</span>') + '</span>';
 		infowin_cont += '	</div>';
 		infowin_cont += '	<div class="vbo-geomarker-bookroom">';
 		infowin_cont += '		<button type="button" class="btn vbo-pref-color-btn" onclick="vboInteractiveGeoMapSelectRoom(' + idroom + ', ' + index + ');">' + Joomla.JText._('VBSELECTR') + '</button>';
@@ -346,7 +351,7 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 				minicart_row += '	</div>';
 				minicart_row += '	<div class="vbo-geomap-minicart-room">';
 				minicart_row += '		<span class="vbo-geomap-minicart-room-name">' + room_title + '</span>';
-				minicart_row += '		<span class="vbo-geomap-minicart-room-price"><span class="vbo_currency">' + vbo_geo_currency + '</span> <span class="vbo_price">' + rcost + '</span></span>';
+				minicart_row += '		<span class="vbo-geomap-minicart-room-price">' + (vbo_geo_currency_pos === 'after' ? '<span class="vbo_price">' + rcost + '</span> <span class="vbo_currency">' + vbo_geo_currency + '</span>' : '<span class="vbo_currency">' + vbo_geo_currency + '</span> <span class="vbo_price">' + rcost + '</span>') + '</span>';
 				minicart_row += '		<span class="vbo-geomap-minicart-room-trash" onclick="vboInteractiveGeoMapDeselectRoom(' + current_step + ', ' + idroom + ');"><?php VikBookingIcons::e('trash'); ?></span>';
 				minicart_row += '	</div>';
 				minicart_row += '</div>';
@@ -555,6 +560,7 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 					// this room has no more units available or this multi-marker was selected already, so skip the marker
 					continue;
 				}
+
 				// prepare marker object for the current room unit
 				var marker_title = rname + ' #' + (m + '');
 				if (tot_markers === 1) {
@@ -562,34 +568,92 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 				} else if (vbo_info_markers_helper.hasOwnProperty(idroom) && vbo_info_markers_helper[idroom].hasOwnProperty(m)) {
 					marker_title = rname + ' - ' + vbo_info_markers_helper[idroom][m];
 				}
+
+				// build map marker options (no "content" by default, hence the classic Google Maps red marker)
 				var marker_options = {
-					draggable: false,
 					map: vbo_geomap,
 					position: {
 						lat: parseFloat(vbo_geomarker_units_pos[idroom][m]['lat']),
 						lng: parseFloat(vbo_geomarker_units_pos[idroom][m]['lng'])
 					},
-					title: marker_title
+					title: marker_title,
 				};
+
+				if (rcost) {
+					// define the marker "content" with a span node showing the listing cost
+					let marker_cost_el = document.createElement('span');
+					marker_cost_el.classList.add('vbo-map-listing-cost');
+					marker_cost_el.setAttribute('data-room-id', idroom);
+					if (vbo_geo_currency_pos === 'after') {
+						marker_cost_el.innerHTML = '<span class="vbo_price">' + rcost + '</span> <span class="vbo_currency">' + vbo_geo_currency + '</span>';
+					} else {
+						marker_cost_el.innerHTML = '<span class="vbo_currency">' + vbo_geo_currency + '</span> <span class="vbo_price">' + rcost + '</span>';
+					}
+					// set marker content
+					marker_options['content'] = marker_cost_el;
+				}
+
 				// check if we know a custom icon for this marker
 				if (vbo_geomarker_units_pos[idroom][m].hasOwnProperty('icon')) {
-					marker_options['icon'] = vbo_geomarker_units_pos[idroom][m]['icon'];
+					// custom icon defined, identify the type to build a node
+					if (vbo_geomarker_units_pos[idroom][m]['icon']?.url) {
+						// we've got an image
+						let marker_img = document.createElement('img');
+						marker_img.src = vbo_geomarker_units_pos[idroom][m]['icon'].url;
+						if (vbo_geomarker_units_pos[idroom][m]['icon']?.scaledSize?.width) {
+							marker_img.style.width = vbo_geomarker_units_pos[idroom][m]['icon'].scaledSize.width + 'px';
+						}
+						if (vbo_geomarker_units_pos[idroom][m]['icon']?.scaledSize?.height) {
+							marker_img.style.height = vbo_geomarker_units_pos[idroom][m]['icon'].scaledSize.height + 'px';
+						}
+						// center the image
+						marker_img.style.transform = 'translate(0, 50%)';
+						// set marker content
+						marker_options['content'] = marker_img;
+					} else if (vbo_geomarker_units_pos[idroom][m]['icon']?.path) {
+						// we've got an SVG path symbol
+						let svgns = 'http://www.w3.org/2000/svg';
+						let svg = document.createElementNS(svgns, 'svg');
+						svg.setAttribute('xmlns', svgns);
+						svg.setAttribute('viewBox', '0 0 90 90');
+						svg.setAttribute('width', 90);
+						svg.setAttribute('height', 90);
+						let path = document.createElementNS(svgns, 'path');
+						path.setAttribute('d', vbo_geomarker_units_pos[idroom][m]['icon'].path);
+						path.setAttribute('fill', vbo_geomarker_units_pos[idroom][m]['icon']?.fillColor || '#eeeeee');
+						path.setAttribute('fill-opacity', vbo_geomarker_units_pos[idroom][m]['icon']?.fillOpacity || 0.9);
+						path.setAttribute('stroke-width', vbo_geomarker_units_pos[idroom][m]['icon']?.strokeWeight || 0);
+						if (vbo_geomarker_units_pos[idroom][m]['icon']?.scale && vbo_geomarker_units_pos[idroom][m]['icon']?.anchor?.x && vbo_geomarker_units_pos[idroom][m]['icon']?.anchor?.y) {
+							path.setAttribute(
+								'transform',
+								'translate(' + vbo_geomarker_units_pos[idroom][m]['icon'].anchor.x + ', ' + vbo_geomarker_units_pos[idroom][m]['icon'].anchor.y + ') scale(' + vbo_geomarker_units_pos[idroom][m]['icon'].scale + ')'
+							);
+						}
+						svg.appendChild(path);
+						// set marker content
+						marker_options['content'] = svg;
+					}
 				}
+
 				// set custom properties
-				marker_options['room_id'] = idroom;
-				marker_options['room_name'] = rname;
-				marker_options['room_units'] = runits;
-				marker_options['room_cost'] = rcost;
-				marker_options['room_prev_cost'] = rprevcost;
-				marker_options['room_index'] = m;
-				marker_options['room_gallery'] = (vbo_geo_rooms_galleries.hasOwnProperty(idroom) && vbo_geo_rooms_galleries[idroom].length ? 1 : 0);
+				let marker_room_data = {};
+				marker_room_data['room_id'] = idroom;
+				marker_room_data['room_name'] = rname;
+				marker_room_data['room_units'] = runits;
+				marker_room_data['room_cost'] = rcost;
+				marker_room_data['room_prev_cost'] = rprevcost;
+				marker_room_data['room_index'] = m;
+				marker_room_data['room_gallery'] = (vbo_geo_rooms_galleries.hasOwnProperty(idroom) && vbo_geo_rooms_galleries[idroom].length ? 1 : 0);
+
 				// create marker infowindow
 				var vbo_info_marker_cont = vboGeoInfoMarkerContent(idroom, m, marker_title, rcost, rprevcost);
 				var vbo_info_marker = new google.maps.InfoWindow({
 					content: vbo_info_marker_cont,
 				});
+
 				// add unit marker to map
-				var vbo_geomarker_runit = new google.maps.Marker(marker_options);
+				var vbo_geomarker_runit = new google.maps.marker.AdvancedMarkerElement(marker_options);
+
 				// add listener to marker's click event
 				vbo_geomarker_runit.addListener('click', function() {
 					// close any other open infowindow first
@@ -600,18 +664,18 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 						vbo_info_markers[infom].close();
 					}
 					// display its infowindow only
-					if (this['room_id'] && this['room_index']) {
-						var identifier = this['room_id'] + '_' + this['room_index'];
+					if (marker_room_data['room_id'] && marker_room_data['room_index']) {
+						var identifier = marker_room_data['room_id'] + '_' + marker_room_data['room_index'];
 						if (vbo_info_markers.hasOwnProperty(identifier)) {
 							vbo_info_markers[identifier].open(vbo_geomap, this);
-							if (this['room_gallery'] > 0) {
+							if (marker_room_data['room_gallery'] > 0) {
 								var gallery_params = {
-									images: vbo_geo_rooms_galleries[this['room_id']],
+									images: vbo_geo_rooms_galleries[marker_room_data['room_id']],
 									navButPrevContent: '<?php VikBookingIcons::e('chevron-left'); ?>',
 									navButNextContent: '<?php VikBookingIcons::e('chevron-right'); ?>',
 									containerHeight: '195px',
 								};
-								var gallery_selector = '.vbo-geomarker-infowin-room-gallery[data-idroom="' + this['room_id'] + '"]';
+								var gallery_selector = '.vbo-geomarker-infowin-room-gallery[data-idroom="' + marker_room_data['room_id'] + '"]';
 								if (jQuery(gallery_selector).length) {
 									// render gallery immediately
 									vboGeoMapRenderInfowinGallery(gallery_selector, gallery_params);
@@ -652,6 +716,7 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 		var def_map_options = {
 			center: new google.maps.LatLng(<?php echo $global_geo_params->latitude; ?>, <?php echo $global_geo_params->longitude; ?>),
 			zoom: <?php echo (int)$global_geo_params->zoom; ?>,
+			mapId: 'vbo_map',
 			mapTypeId: '<?php echo $global_geo_params->mtype; ?>',
 			mapTypeControl: false
 		};
@@ -687,9 +752,6 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 
 	jQuery(function() {
 
-		// init interactive geo map with markers
-		vboInitInteractiveGeoMap();
-
 		// register hovering events for minicart body
 		if (jQuery('.vbo-geomap-minicart').length) {
 			jQuery('.vbo-geomap-minicart').hover(function() {
@@ -701,8 +763,35 @@ if ($geo->isSupported() && $geo_info_complete === true && count($rooms_geo_param
 
 		// preload image gallery
 		jQuery(vbo_geo_rooms_galleries).vikDotsSlider('preloadImages');
+
+		// register class in search results container to tell the geomap is enabled
+		document.querySelectorAll('.vbo-results-content').forEach((el) => {
+			el.classList.add('vbo-results-with-geomap');
+		});
+
+		/**
+		 * Register promise for Google Maps async loading completion.
+		 */
+		VBOCore.onInstanceReady(() => {
+			// constantly check when Google Maps async loading is completed
+			return VBOGMapsUtils.isReady;
+		}).then(() => {
+			// init interactive geo map with markers
+			vboInitInteractiveGeoMap();
+		});
 	});
 
 </script>
 	<?php
+} else {
+	// register class in search results container to tell the geomap is disabled
+	JFactory::getDocument()->addScriptDeclaration(
+<<<JAVASCRIPT
+		VBOCore.DOMLoaded(() => {
+			document.querySelectorAll('.vbo-results-content').forEach((el) => {
+				el.classList.add('vbo-results-without-geomap');
+			});
+		});
+JAVASCRIPT
+	);
 }

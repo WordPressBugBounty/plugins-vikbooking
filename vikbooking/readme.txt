@@ -2,13 +2,13 @@
 Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
-Tested up to: 6.8
-Stable tag: 1.8.2
-Requires PHP: 7.1.0
+Tested up to: 6.9
+Stable tag: 1.8.6
+Requires PHP: 7.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Famous Booking Engine, PMS and Hotel Reservations plugin for single properties. The best solution for accommodations to drive more direct bookings.
+Famous Booking Engine, PMS and Hotel Reservations plugin for property managers. The best solution for accommodations to drive more direct bookings.
 
 == Description ==
 
@@ -129,6 +129,69 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 
 == Changelog ==
 
+= 1.8.6 =
+*Release date - 22 January 2026*
+
+* Availability Overview new "inline-scroll" layout.
+* Increase/Decrease Rates in Rates Overview and Multi-Calendar.
+* Rates Overview new option to display OTA rates (E4jConnect channel manager required).
+* Newly created derived rate plans can populate the base rates for all listings.
+* Identity document AI-powered details extraction through MRZ (E4jConnect channel manager required).
+* Various pre-check-in improvements, including MRZ detection support.
+* Introducing Revenue Manager (RMS) framework and libraries.
+* New RMS Reports: Occupancy Pace and Booking Pace (E4jConnect channel manager required).
+* New Door Access Control integration for Nuki - Smart Locks (E4jConnect channel manager required).
+* Door Access Control passcode generation failures support re-try actions through the Notifications Center.
+* OAuth2 support for custom third-party applications and Door Access Control framework.
+* Webhook endpoint support for custom third-party applications and Door Access Control framework.
+* Booking.com Virtual Card Update notifications (E4jConnect channel manager required).
+* Automatic payment scheduling and collection for Virtual Credit Cards.
+* Various improvements to OTA payout notifications (E4jConnect channel manager required).
+* Various improvements to the electronic invoicing framework.
+* Batch update for "unsafe" customer PIN codes detected.
+* New admin-widget AI Training Drafts (E4jConnect channel manager required).
+* Guest messaging: AI self-training functionalities for approval or rejection (E4jConnect channel manager required).
+* Guest messaging: added support to suspicious messages (phishing) delivered by OTA notifications.
+* Guest messaging: manually generated AI replies can rely on the model's pre-trained knowledge.
+* New backup export type "Reservations - Pricing" to include only time-sensitive operational data.
+
+= 1.8.5 =
+*Release date - 26 November 2025*
+
+* OTA onboarding improvements for new listings (E4jConnect channel manager required).
+* OTA guest messages indexing and faster processing (E4jConnect channel manager required).
+* Split stay bookings calculation improvements.
+* New payment transaction hooks for custom metadata.
+* Database optimization scheduling.
+* Additional caching support to rates calculation.
+* Minor framework improvements.
+
+= 1.8.4 =
+*Release date - 13 November 2025*
+
+* Introducing the new Door Access Control framework (E4jConnect channel manager required).
+* Native support for TTLock - Smart Locks added to Door Access Control framework.
+* Task Manager: AI maintenance tasks from guest requests.
+* OTA bookings expected payout amounts.
+* Airbnb Hosting Quality metrics and dashboard (E4jConnect channel manager required).
+* Minor framework improvements.
+
+= 1.8.3 =
+*Release date - 13 October 2025*
+
+* Search results filtering options (categories, amenities, price range).
+* Search results new interactive map with grid layout and advanced map markers.
+* Custom check-in/out times can be defined and overwritten at listing-level.
+* Minimum advance booking notice can be defined and overwritten at listing-level.
+* Custom currency position (before or after price).
+* Silent notifications within the Notification Center.
+* Added support to new OTA payout notifications (E4jConnect channel manager required).
+* Several new hooks added for the creation and modification of bookings.
+* Various performance improvements with large data-sets.
+* New PMS report "Guest Registration Data".
+* Different format for customers PIN code (8 alphanumeric random characters).
+* Various improvements to the Electronic Invoicing framework and interface.
+
 = 1.8.2 =
 *Release date - 28 July 2025*
 
@@ -146,76 +209,6 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 * Improved query execution timing for rooms with hotel-inventory.
 * New PMS reports (Trentino, Italy).
 * Minor fixes.
-
-= 1.8.1 =
-*Release date - 18 June 2025*
-
-* Minor fixes.
-* Minor CSS improvements.
-* Improved support for third-party page builder plugins with Operators Login shortcode.
-
-= 1.8.0 =
-*Release date - 10 June 2025*
-
-* Major framework update.
-* Various improvements to PMS reports.
-* PMS report auto-export functions with support for multiple account profiles.
-* Operators work days, exceptions and days off.
-* New operators tool for managing the work days.
-* Task Manager framework introduced.
-* Housekeeping and Maintenance automated tasks scheduling.
-* Task Manager projects for sprint board.
-* Private tasks for administrators.
-* New operator permissions for tasks management.
-* New admin widget "Operators Chat".
-* Various task manager layouts: board, list, calendar and bookings overview.
-* iCal calendar subscription for operator tasks with multiple formats.
-* Various history framework improvements.
-* New notifications center category for Operators.
-* New WebPush Notifications for operator activities.
-* Multi-calendar functionalities in availability overview for managing rates and restrictions.
-* Matrix selection of multiple dates and listings to handle multiple rate update queues.
-* Added support for off-session transactions through the Virtual Terminal (Stripe required).
-* New Channel Manager capabilities for Virtual Credit Cards received from OTA reservations.
-* Guest message reactions for OTA messaging (Channel Manager required).
-* Generative AI improvements (Channel Manager required).
-* Major improvements to electronic invoicing framework for an easier customization.
-* Various improvements to pre-check-in framework.
-* JS core major refactoring.
-* Improved support up to PHP 8.4
-* New back-end and front-end styling.
-
-= 1.7.8 =
-*Release date - 12 March 2025*
-
-* Fixed empty new line at the beginning of the file /wp-content/plugins/vikbooking/libraries/language/site.php.
-
-= 1.7.7 =
-*Release date - 11 March 2025*
-
-* Various admin widgets improvements.
-* Responsiveness improvements on admin section.
-* Dates range picker improvements.
-* Damage deposit separate payment improvements.
-* PMS Reports framework updates with new profile settings support.
-* Various improvements to the PMS Reports framework.
-* Pre-checkin guests data collection drivers can validate the information before submission.
-* Introducing PMS report for Catalonia (Spain) Mossos d'Esquadra.
-* Cron jobs email and pre-checkin reminder new listings filter.
-* Orphan dates collection and opening now available for the AI Assistant widget.
-
-= 1.7.6 =
-*Release date - 19 February 2025*
-
-* Admin-widgets rendered in modal windows can be minimized or enlarged.
-* Introducing the admin-dock bar for the minimized admin-widgets.
-* New inbox-style layout for the admin-widget "Guest Messages" with infinite scroll loading.
-* Options of type damage deposit allow to configure a payment window and payment method.
-* Various improvements to the rates overview page and pricing update features.
-* Various improvements to the operator tools framework.
-* Introducing the new operator tool "Guest Messaging" (E4jConnect CM required).
-* Various improvements to the listing-style layout of the front-end page "Room Details".
-* Visual editor improvements for Cron Jobs to preview the message for a specific booking ID.
 
 = Earlier versions =
 

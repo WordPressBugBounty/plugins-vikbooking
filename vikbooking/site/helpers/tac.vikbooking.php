@@ -221,11 +221,15 @@ class TACVBO
 			// set error code
 			self::$errorCode = 3;
 
+			// build error data
+			$errorData = ['e4j.error' => 'No valid rooms were found for the requested number of guests'];
+
 			if (self::$getArray) {
-				return array('e4j.error' => 'No valid rooms were found for the requested number of guests');
+				return $errorData;
 			}
-			echo json_encode(array('e4j.error' => 'No valid rooms were found for the requested number of guests'));
-			exit;
+
+			// send JSON (erroneous) response to output
+			VBOHttpDocument::getInstance()->json($errorData);
 		}
 
 		// arr[0] = (sec) checkin, arr[1] = (sec) checkout
@@ -250,11 +254,15 @@ class TACVBO
 			// set error code
 			self::$errorCode = 4;
 
+			// build error data
+			$errorData = ['e4j.error' => 'Unable to proceed because of booking Restrictions in these dates (' . $x_restr . ')'];
+
 			if (self::$getArray) {
-				return array('e4j.error' => 'Unable to proceed because of booking Restrictions in these dates (' . $x_restr . ')');
+				return $errorData;
 			}
-			echo json_encode(array('e4j.error' => 'Unable to proceed because of booking Restrictions in these dates (' . $x_restr . ')'));
-			exit;
+
+			// send JSON (erroneous) response to output
+			VBOHttpDocument::getInstance()->json($errorData);
 		}
 
 		$nowdf = VikBooking::getDateFormat();
@@ -271,11 +279,15 @@ class TACVBO
 			// set error code
 			self::$errorCode = 5;
 
+			// build error data
+			$errorData = ['e4j.error' => JText::sprintf('VBERRDATESCLOSED', $err_closingdates)];
+
 			if (self::$getArray) {
-				return array('e4j.error' => JText::sprintf('VBERRDATESCLOSED', $err_closingdates));
+				return $errorData;
 			}
-			echo json_encode(array('e4j.error' => JText::sprintf('VBERRDATESCLOSED', $err_closingdates)));
-			exit;
+
+			// send JSON (erroneous) response to output
+			VBOHttpDocument::getInstance()->json($errorData);
 		}
 
 		// hours to arrival may affect rate plan restrictions
@@ -294,24 +306,32 @@ class TACVBO
 			// set error code
 			self::$errorCode = 6;
 
+			// build error data
+			$errorData = ['e4j.error' => 'The Query for fetching the rates returned an empty result'];
+
 			if (self::$getArray) {
-				return array('e4j.error' => 'The Query for fetching the rates returned an empty result');
+				return $errorData;
 			}
-			echo json_encode(array('e4j.error' => 'The Query for fetching the rates returned an empty result'));
-			exit;
+
+			// send JSON (erroneous) response to output
+			VBOHttpDocument::getInstance()->json($errorData);
 		}
 		$vbo_tn->translateContents($rates, '#__vikbooking_rooms', array('id' => 'r_reference_id', 'r_short_desc' => 'name'));
 		$vbo_tn->translateContents($rates, '#__vikbooking_prices', array('id' => 'price_reference_id', 'pricename' => 'name'));
+		
+		// build list of eligible room rates
 		$arr_rates = [];
+
 		/**
-		 * If all results are excluded because of restrictions at rate plan level, we use this flag
+		 * If all results are excluded because of restrictions at rate plan level, we turn on this flag
 		 * to know that the rate plans have a Min LOS or a Min Hours in Advance (Advance Booking Offset).
-		 * This is to avoid users to say "why do I get no availability?"
-		 * 
-		 * @since 	1.12.1
 		 */
 		$err_rplan_restr = false;
-		//
+
+		// extract all the involved room IDs with base rates defined before restrictions validation
+		$involved_listing_ids = array_values(array_unique(array_column($rates, 'idroom')));
+
+		// scan and assign the eligible room rates
 		foreach ($rates as $rate) {
 			// rate plans with a minlos, or with a min hours in advance
 			if ((!empty($rate['minlos']) && $rate['minlos'] > $args['nights']) || $hoursdiff < $rate['minhadv']) {
@@ -323,10 +343,38 @@ class TACVBO
 				unset($rate['minlos']);
 				unset($rate['minhadv']);
 			}
+			// push eligible room rate
 			if (!isset($arr_rates[$rate['idroom']])) {
 				$arr_rates[$rate['idroom']] = [];
 			}
 			$arr_rates[$rate['idroom']][] = $rate;
+		}
+
+		/**
+		 * If restrictions are set to be ignored, maybe because we need to focus on availability,
+		 * we perform a check to see if some listings suffered availability due to rate-plan
+		 * level restrictions. In case we find some, we re-do the process by including at least
+		 * one rate plan to those listings that would be otherwise missing rates and availability.
+		 * 
+		 * @since 	1.18.6 (J) - 1.8.6 (WP)
+		 */
+		$listings_norates = array_diff($involved_listing_ids, array_keys($arr_rates));
+		if (self::$ignoreRestrictions && !self::$ignoreAvailability && $listings_norates) {
+			// push back room rates to listings with no rates as we are focusing on availability
+			foreach ($listings_norates as $recover_listing_id) {
+				foreach ($rates as $rate) {
+					if ($rate['idroom'] != $recover_listing_id) {
+						// not the listing we look for
+						continue;
+					}
+					if ($arr_rates[$rate['idroom']] ?? []) {
+						// one room rate is sufficient
+						continue;
+					}
+					// restore availability for this listing by pushing the first rate plan
+					$arr_rates[$rate['idroom']] = [$rate];
+				}
+			}
 		}
 
 		// flags to understand exactly what's making some rooms unavailable
@@ -341,7 +389,7 @@ class TACVBO
 		foreach ($arr_rates as $k => $datarate) {
 			$room = $room_ids[$k];
 			$consider_units = $room['units'] - $minus_units;
-			if (!self::$ignoreAvailability && (!VikBooking::roomBookable($room['id'], $consider_units, $args['start_ts'], $args['end_ts']) || $consider_units <= 0)) {
+			if (!self::$ignoreAvailability && ($consider_units <= 0 || !VikBooking::roomBookable($room['id'], $consider_units, $args['start_ts'], $args['end_ts']))) {
 				// unset room from results
 				unset($arr_rates[$k]);
 				// push room as fully booked
@@ -370,13 +418,10 @@ class TACVBO
 			// build error response
 			$err_mess = JText::translate('VBNOROOMSINDATE');
 			$err_mess = $err_mess == 'VBNOROOMSINDATE' ? JText::translate('VBO_AV_ECODE_7') : $err_mess;
-			$res = array('e4j.error' => $err_mess);
+
+			$res = ['e4j.error' => $err_mess];
 			if ($only_rates && $fullybooked) {
 				$res['fullybooked'] = $fullybooked;
-			}
-
-			if (self::$getArray) {
-				return $res;
 			}
 
 			// concatenate rate plan restriction errors, if any
@@ -384,8 +429,12 @@ class TACVBO
 				$res['e4j.error'] .= ' (Rate Plan Restrictions)';
 			}
 
-			echo json_encode($res);
-			exit;
+			if (self::$getArray) {
+				return $res;
+			}
+
+			// send JSON (erroneous) response to output
+			VBOHttpDocument::getInstance()->json($res);
 		}
 
 		// apply special prices
@@ -642,8 +691,8 @@ class TACVBO
 			$arr_rates['fullybooked'] = $fullybooked;
 		}
 
-		echo json_encode($arr_rates);
-		exit;
+		// send JSON response to output
+		VBOHttpDocument::getInstance()->json($arr_rates);
 	}
 
 	/**

@@ -16,10 +16,10 @@ class VikbookingViewTableaux extends JViewVikBooking
 {
 	public function display($tpl = null)
 	{
-		//set noindex instruction for robots
+		// set noindex instruction for robots
 		$document = JFactory::getDocument();
-		$document->setMetaData('robots', 'noindex,follow');
-		//
+		$document->setMetaData('robots', 'noindex, nofollow');
+
 		$app 	= JFactory::getApplication();
 		$dbo 	= JFactory::getDbo();
 		$opobj  = VikBooking::getOperatorInstance();

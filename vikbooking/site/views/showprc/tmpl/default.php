@@ -497,8 +497,7 @@ if (count($this->mod_booking)) {
 								</div>
 								<div class="vbo-showprc-price-entry-cost vbo-pref-color-text">
 									<span class="room_cost">
-										<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-										<span class="vbo_price"><?php echo VikBooking::numberFormat($rplan_cost); ?></span>
+										<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($rplan_cost), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?>
 									</span>
 							<?php
 							if (isset($t['promotion']) && isset($t['promotion']['discount'])) {
@@ -515,8 +514,7 @@ if (count($this->mod_booking)) {
 									?>
 									<div class="vbo-room-result-price-before-discount">
 										<span class="room_cost">
-											<span class="vbo_currency"><?php echo $currencysymb; ?></span> 
-											<span class="vbo_price"><?php echo VikBooking::numberFormat($prev_amount); ?></span>
+											<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($prev_amount), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?>
 										</span>
 									</div>
 									<?php
@@ -556,8 +554,7 @@ if (count($this->mod_booking)) {
 									<label for="pid<?php echo $num.$this->pkg['id']; ?>"><?php echo $this->pkg['name']; ?></label>
 								</div>
 								<div class="vbo-showprc-price-entry-cost vbo-pref-color-text">
-									<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-									<span class="vbo_price"><?php echo ($tax_summary ? VikBooking::numberFormat($pkg_cost) : VikBooking::numberFormat(VikBooking::sayPackagePlusIva($pkg_cost, $this->pkg['idiva']))); ?></span>
+									<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat(($tax_summary ? $pkg_cost : VikBooking::sayPackagePlusIva($pkg_cost, $this->pkg['idiva']))), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?>
 								</div>
 							</div>
 				<?php
@@ -804,8 +801,7 @@ if (count($this->mod_booking)) {
 							?>
 							</div>
 							<div class="vbo-showprc-option-entry-cost">
-								<span class="vbo_currency"><?php echo $currencysymb; ?></span>
-								<span class="vbo_price"><?php echo $tax_summary ? VikBooking::numberFormat($optcost) : VikBooking::numberFormat(VikBooking::sayOptionalsPlusIva($optcost, $o['idiva'])); ?></span>
+								<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat(($tax_summary ? $optcost : VikBooking::sayPackagePlusIva($optcost, $o['idiva']))), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?>
 							</div>
 							<div class="vbo-showprc-option-entry-input">
 								<?php echo $optquaninp; ?>

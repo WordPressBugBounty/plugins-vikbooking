@@ -67,12 +67,12 @@ trait VBOHelpWizardTraitReportConfigurable
      */
     public function isProcessable(?string &$btnText = null)
     {
-        if (!$this->hasSettingsConfigured()) {
-            $btnText = JText::translate('VBCONFIGURETASK');
-        }
-
         if ($this->isAutoExportSupported && !$this->hasAutoExport()) {
             $btnText = JText::translate('VBO_SCHEDULE_CRONJOB');
+        }
+        
+        if (!$this->hasSettingsConfigured()) {
+            $btnText = JText::translate('VBCONFIGURETASK');
         }
 
         return true;

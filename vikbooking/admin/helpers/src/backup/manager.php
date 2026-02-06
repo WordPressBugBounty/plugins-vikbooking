@@ -27,7 +27,7 @@ class VBOBackupManager
 	 * 
 	 * @see This should MATCH the E4jConnect constants for the Trial.
 	 */
-	const MINIMUM_REQUIRED_VERSION_JOOMLA = '1.17.0';
+	const MINIMUM_REQUIRED_VERSION_JOOMLA = '1.18.6';
 
 	/**
 	 * Indicates the minimum required version while creating a
@@ -38,7 +38,7 @@ class VBOBackupManager
 	 * 
 	 * @see This should MATCH the E4jConnect constants for the Trial.
 	 */
-	const MINIMUM_REQUIRED_VERSION_WORDPRESS = '1.7.0';
+	const MINIMUM_REQUIRED_VERSION_WORDPRESS = '1.8.6';
 
 	/**
 	 * An associative array containing the supported export types, where the

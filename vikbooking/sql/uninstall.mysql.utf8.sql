@@ -52,4 +52,5 @@ DROP TABLE IF EXISTS `#__vikbooking_record_history`;
 DROP TABLE IF EXISTS `#__vikbooking_record_history_event`;
 DROP TABLE IF EXISTS `#__vikbooking_chat_messages`;
 DROP TABLE IF EXISTS `#__vikbooking_chat_messages_unread`;
+DROP TABLE IF EXISTS `#__vikbooking_door_access_integrations`;
 DROP TABLE IF EXISTS `#__vikbooking_wpshortcodes`;

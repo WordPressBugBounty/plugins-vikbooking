@@ -102,7 +102,7 @@ function vboHideRequestInfo() {
 jQuery(function() {
 	jQuery(document).mouseup(function(e) {
 		if (!vbdialog_on) {
-			return false;
+			return;
 		}
 		var vbdialog_cont = jQuery(".vbdialog-inner");
 		if (!vbdialog_cont.is(e.target) && vbdialog_cont.has(e.target).length === 0) {

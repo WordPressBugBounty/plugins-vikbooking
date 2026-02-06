@@ -68,7 +68,7 @@ if ($this->seasons_cal) {
 							}
 							?>
 							<span class="vbo-seasons-calendar-pricecost">
-								<span class="vbo_currency"><?php echo $currencysymb; ?></span><span class="vbo_price"><?php echo VikBooking::numberFormat($tar['cost']); ?></span>
+								<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tar['cost']), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>', 'spacing' => '']); ?>
 							</span>
 						</div>
 							<?php
@@ -198,7 +198,7 @@ if ($this->seasons_cal) {
 						}
 						?>
 							<span class="vbo-seasons-calendar-pricecost">
-								<span class="vbo_currency"><?php echo $currencysymb; ?></span><span class="vbo_price"><?php echo VikBooking::numberFormat($tar['cost']); ?></span>
+								<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tar['cost']), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>', 'spacing' => '']); ?>
 							</span>
 						</div>
 						<?php

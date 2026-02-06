@@ -85,7 +85,7 @@ class JFile
 	 */
 	public static function write($file, $buffer)
 	{
-		@set_time_limit(ini_get('max_execution_time'));
+		@set_time_limit((int) ini_get('max_execution_time'));
 
 		$file = JPath::clean($file);
 

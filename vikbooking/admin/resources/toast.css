@@ -43,7 +43,8 @@
 /* toast hidden positions */
 .vbo-toast-wrapper.top-left,
 .vbo-toast-wrapper.top-center,
-.vbo-toast-wrapper.top-right {
+.vbo-toast-wrapper.top-right,
+.vbo-toast-wrapper.center-center {
 	/*
 	Use a higher margin to avoid seeing the toast on
 	browsers (like Safari) that lets the user to scroll
@@ -61,7 +62,8 @@
 .vbo-toast-wrapper.bottom-right {
 	right: 10px;
 }
-.vbo-toast-wrapper.top-center {
+.vbo-toast-wrapper.top-center,
+.vbo-toast-wrapper.center-center {
 	left: 50%;
 	transform: translate(-50%, -100%);
 }
@@ -75,6 +77,10 @@
 .vbo-toast-wrapper.bottom-center {
 	left: 50%;
 	transform: translate(-50%, 100%);
+}
+
+.vbo-toast-wrapper.center-center {
+	opacity: 0;
 }
 
 /* toast slide-in positions */
@@ -95,6 +101,12 @@
 .vbo-toast-wrapper.top-center.toast-slide-in,
 .vbo-toast-wrapper.bottom-center.toast-slide-in {
 	transform: translate(-50%, 0%);
+}
+
+.vbo-toast-wrapper.center-center.toast-slide-in {
+	top: 50%;
+	transform: translate(-50%, -50%);
+	opacity: 1;
 }
 
 /* shake effect */

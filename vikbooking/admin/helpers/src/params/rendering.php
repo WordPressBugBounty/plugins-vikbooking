@@ -133,7 +133,6 @@ final class VBOParamsRendering
                  * "test_mode!:1" means that the value should be different than 1.
                  * 
                  * @since   1.18.2 (J) - 1.8.2 (WP)
-                 * @todo
                  */
                 $check_cond_field = $param_config['conditional'];
                 $check_cond_oper  = null;
@@ -171,9 +170,11 @@ final class VBOParamsRendering
                 if (!is_null($check_cond_value)) {
                     // the field is dependant on another through a syntax, memorize the condition for JS
                     $js_conditional_fields[$check_cond_field][] = [
-                        'field' => $param_name,
-                        'oper'  => $check_cond_oper,
-                        'value' => $check_cond_value,
+                        'field'    => $param_name,
+                        'oper'     => $check_cond_oper,
+                        'value'    => $check_cond_value,
+                        'multiple' => !empty($param_config['multiple']),
+                        'custom'   => $param_config['type'] === 'custom',
                     ];
                 }
             }
@@ -182,7 +183,7 @@ final class VBOParamsRendering
             if (strlen($label) && (!isset($param_config['hidden']) || $param_config['hidden'] != true)) {
                 $html .= '<div class="vbo-param-label">' . $label . '</div>';
             }
-            $html .= '<div class="vbo-param-setting">';
+            $html .= '<div class="vbo-param-setting"' . ($param_config['type'] === 'custom' ? ' data-custom="' . $this->inputName . '[' . $param_name . ']' . '"' : '') . '>';
 
             // render field
             $html .= $this->getField($param_name, $param_config);
@@ -246,8 +247,18 @@ final class VBOParamsRendering
 
                 // scan all dependant fields
                 js_conditional_fields[field_name].forEach((condition) => {
-                    let cond_fields = Array.from(document.querySelectorAll('[name="' + base_input_name + '[' + condition.field + ']"]')).filter((input_field) => {
-                        // get only valid input fields
+                    let field_selector = condition?.multiple ? '[name="' + base_input_name + '[' + condition.field + '][]"]' : '[name="' + base_input_name + '[' + condition.field + ']"]';
+                    if (condition.custom === true) {
+                        field_selector = '[data-custom="' + base_input_name + '[' + condition.field + ']"]';
+                    }
+                    let cond_fields = Array.from(document.querySelectorAll(field_selector)).filter((input_field) => {
+                        // get only valid input fields or custom containers
+                        if (input_field.matches('input[type="hidden"][data-type="file_upload"]')) {
+                            return true;
+                        }
+                        if (condition.custom === true && input_field.matches('.vbo-param-setting[data-custom]')) {
+                            return true;
+                        }
                         return (input_field.matches('input') || input_field.matches('select') || input_field.matches('textarea')) && !input_field.matches('input[type="hidden"]');
                     });
 
@@ -589,10 +600,11 @@ JAVASCRIPT;
                 // build attributes list
                 $element_id = 'vik-dtp-' . static::$instance_counter . '-' . preg_replace("/[^A-Z0-9]+/i", '', $param_name);
                 $elements_attr = [
-                    'name' => $this->inputName . '[' . $param_name . ']',
+                    'name'  => $this->inputName . '[' . $param_name . ']',
+                    'value' => $this->settings[$param_name] ?? $default_paramv ?: '',
                 ];
                 $custom_attr = (array) ($param_config['attributes'] ?? []);
-                unset($custom_attr['id'], $custom_attr['name']);
+                unset($custom_attr['id'], $custom_attr['name'], $custom_attr['value']);
                 $elements_attr = array_merge($elements_attr, $custom_attr);
 
                 // obtain the necessary HTML code for rendering
@@ -601,9 +613,26 @@ JAVASCRIPT;
                     'attributes' => $elements_attr,
                 ]);
                 break;
+            case 'time':
+                // build attributes list
+                $element_id = 'vik-tp-' . static::$instance_counter . '-' . preg_replace("/[^A-Z0-9]+/i", '', $param_name);
+                $elements_attr = [
+                    'name'  => $this->inputName . '[' . $param_name . ']',
+                    'value' => $this->settings[$param_name] ?? $default_paramv ?: '',
+                ];
+                $custom_attr = (array) ($param_config['attributes'] ?? []);
+                unset($custom_attr['id'], $custom_attr['name'], $custom_attr['value']);
+                $elements_attr = array_merge($elements_attr, $custom_attr);
+
+                // obtain the necessary HTML code for rendering
+                $html .= VikBooking::getVboApplication()->renderTimePicker([
+                    'id'         => $element_id,
+                    'attributes' => $elements_attr,
+                ]);
+                break;
             case 'password':
                 $html .= '<div class="btn-wrapper input-append">';
-                $html .= '<input type="password" name="' . $this->inputName . '[' . $param_name . ']" value="'.(isset($this->settings[$param_name]) ? JHtml::fetch('esc_attr', $this->settings[$param_name]) : JHtml::fetch('esc_attr', $default_paramv)).'" size="20"' . $inp_attr . '/>';
+                $html .= '<input type="password" name="' . $this->inputName . '[' . $param_name . ']" value="'.(isset($this->settings[$param_name]) ? JHtml::fetch('esc_attr', $this->settings[$param_name]) : JHtml::fetch('esc_attr', $default_paramv)).'" autocomplete="new-password" size="20"' . $inp_attr . '/>';
                 $html .= '<button type="button" class="btn btn-primary" onclick="vboParamTogglePwd(this);"><i class="' . VikBookingIcons::i('eye') . '"></i></button>';
                 $html .= '</div>';
                 // set flag for JS helper
@@ -674,6 +703,265 @@ JAVASCRIPT;
                 $e_options = isset($param_config['options']) && is_array($param_config['options']) ? $param_config['options'] : [];
                 $e_id = isset($e_options['id']) ? $e_options['id'] : $this->inputName . '_' . $param_name;
                 $html .= VikBooking::getVboApplication()->getCalendar($this->settings[$param_name] ?? $default_paramv, $this->inputName . '['.$param_name.']', $e_id, $e_options['df'] ?? null, $e_options['attributes'] ?? []);
+                break;
+            case 'file_upload':
+                /**
+                 * File upload (AJAX) field, for single or multiple files uploading.
+                 * 
+                 * @since   1.18.3 (J) - 1.8.3 (WP)
+                 */
+                $element_id = 'vik-fileupload-' . static::$instance_counter . '-' . preg_replace("/[^A-Z0-9]+/i", '', $param_name);
+                $element_nm = $this->inputName . '[' . $param_name . ']';
+                $multiple   = '';
+                if ($param_config['multiple'] ?? null) {
+                    $multiple = 'multiple';
+                    $element_nm .= '[]';
+                }
+
+                // site root URI
+                $site_uri = JUri::root();
+
+                // CSRF token for safe AJAX requests
+                $csrf = addslashes(JSession::getFormToken());
+
+                // default file icon class
+                $file_icon_class = VikBookingIcons::i('file');
+
+                // JSON upload options
+                $upload_options = [
+                    'element_id' => $element_id,
+                    'csrf_token' => $csrf,
+                    'field_name' => 'vbo_files',
+                    'param_name' => $element_nm,
+                    'upload_url' => VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=service.upload'),
+                    'allowed_types'  => (string) ($param_config['allowed_types'] ?? ''),
+                    'safe_file_name' => (int) ($param_config['safe_file_name'] ?? 0),
+                    'return_type'    => (string) ($param_config['return_type'] ?? 'path'),
+                    'file_icon_class' => $file_icon_class,
+                    'loading_icon_class' => VikBookingIcons::i('circle-notch', 'fa-spin fa-fw'),
+                ];
+                $json_upload_options = json_encode($upload_options);
+
+                // upload or drag & drop text
+                $help_text = sprintf('<a href="JavaScript: void(0);">%s</a> %s', JText::translate('VBOMANUALUPLOAD'), JText::translate('VBODROPFILES'));
+
+                // uploaded files
+                $uploaded_files = array_values(array_filter((array) ($this->settings[$param_name] ?? null)));
+                $uploaded_html = '';
+                foreach ($uploaded_files as $uploaded_file) {
+                    if (strpos($uploaded_file, VBO_ADMIN_PATH) !== false && !is_file($uploaded_file)) {
+                        // file value is an internal path, but it no longer exists
+                        continue;
+                    }
+                    $uploaded_file_val  = htmlspecialchars((string) $uploaded_file, ENT_QUOTES, 'UTF-8');
+                    $uploaded_file_name = basename((string) $uploaded_file);
+                    $uploaded_file_cont = $uploaded_file_name;
+                    if (strpos($uploaded_file, $site_uri) !== false) {
+                        // make it a link
+                        $uploaded_file_cont = '<a href="' . $uploaded_file . '" target="_blank">' . $uploaded_file_name . '</a>';
+                    }
+                    // render current file
+                    $uploaded_html .= <<<HTML
+<div class="file-elem">
+    <div class="file-elem-inner">
+        <div class="file-summary">
+            <i class="{$file_icon_class}"></i>
+            <div class="filename">{$uploaded_file_cont}</div>
+            <input type="hidden" name="{$element_nm}" value="{$uploaded_file_val}" data-type="file_upload" />
+        </div>
+    </div>
+</div>
+HTML;
+                }
+
+                if (!$uploaded_files) {
+                    // display an empty input hidden element to let any conditional rule work
+                    $uploaded_html = <<<HTML
+<input type="hidden" name="{$element_nm}" value="" data-type="file_upload" data-empty="1" />
+HTML;
+                }
+
+                // visible element
+                $html .= <<<HTML
+<div class="vbo-param-file-upload-wrap vbo-dropfiles-target">
+    <div class="vbo-uploaded-files">{$uploaded_html}</div>
+    <div class="vbo-param-file-upload-loading"></div>
+    <div class="lead">{$help_text}</div>
+    <input type="file" id="{$element_id}" data-upload="{$multiple}" hidden {$multiple}/>
+</div>
+<script>
+    function vboParamFieldRenderUploads(result, options) {
+        if (!options?.inputElement) {
+            throw new Error('Missing target');
+        }
+
+        if (!result?.processed) {
+            throw new Error('No files were processed');
+        }
+
+        if (!result?.paths || !result.paths.length) {
+            alert('No valid files were uploaded');
+            return;
+        }
+
+        // define the default file-uploaded icon element class list
+        let fileIconClassList = [];
+        if (options?.file_icon_class) {
+            fileIconClassList = options.file_icon_class.split(' ');
+        }
+
+        // target the current list of files uploaded and make it empty
+        const filesPool = options.inputElement.closest('.vbo-param-file-upload-wrap').querySelector('.vbo-uploaded-files');
+        filesPool.innerHTML = '';
+
+        // iterate over each file uploaded
+        result.fileNames.forEach((name, index) => {
+            // build uploaded file nodes
+            let fileNode = document.createElement('div');
+            fileNode.classList.add('file-elem');
+            let fileInner = document.createElement('div');
+            fileInner.classList.add('file-elem-inner');
+            let fileSummary = document.createElement('div');
+            fileSummary.classList.add('file-summary');
+            let fileIcon = document.createElement('i');
+            if (fileIconClassList.length) {
+                fileIcon.classList.add(...fileIconClassList);
+            }
+            let fileName = document.createElement('div');
+            fileName.classList.add('filename');
+            fileName.innerText = name;
+            let fileInput = document.createElement('input');
+            fileInput.setAttribute('type', 'hidden');
+            fileInput.setAttribute('name', options?.param_name);
+            if (options?.return_type == 'url') {
+                fileInput.value = result.urls[index] || name;
+                // make the file name element a link
+                fileName.innerText = '';
+                let fileLink = document.createElement('a');
+                fileLink.setAttribute('href', fileInput.value);
+                fileLink.setAttribute('target', '_blank');
+                fileLink.innerText = name;
+                fileName.append(fileLink);
+            } else if (options?.return_type == 'name') {
+                fileInput.value = name;
+            } else {
+                fileInput.value = result.paths[index] || name;
+            }
+
+            // append nodes to files pool
+            fileSummary.append(fileIcon, fileName, fileInput);
+            fileInner.append(fileSummary);
+            fileNode.append(fileInner);
+            filesPool.append(fileNode);
+        });
+    }
+
+    async function vboParamFieldUploadFiles(files, options) {
+        const fieldBaseName = options?.field_name;
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append(fieldBaseName + '[]', files[i]);
+        }
+
+        if (options?.allowed_types) {
+            // comma separated string of allowed file extension types
+            formData.append('allowed_types', options.allowed_types);
+        }
+
+        if (options?.safe_file_name) {
+            // whether to keep the original file name or randomize it
+            formData.append('safe_file_name', options.safe_file_name);
+        }
+
+        // define the default upload-loading icon element class list
+        let loadingIconClassList = [];
+        let loadingElement = null;
+        if (options?.loading_icon_class) {
+            loadingIconClassList = options.loading_icon_class.split(' ');
+        }
+
+        if (loadingIconClassList.length && options?.inputElement) {
+            // build loading icon element
+            loadingElement = document.createElement('i');
+            loadingElement.classList.add(...loadingIconClassList);
+            // append loading element
+            options
+                .inputElement
+                .closest('.vbo-param-file-upload-wrap')
+                .querySelector('.vbo-param-file-upload-loading')
+                .append(loadingElement);
+        }
+
+        try {
+            const response = await fetch(options?.upload_url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': options?.csrf_token,
+                },
+                body: formData,
+            });
+
+            const result = await response.json().catch(() => null);
+
+            if (response.ok) {
+                // render files uploaded
+                vboParamFieldRenderUploads(result, options);
+            } else {
+                alert('Upload failed: ' + response.statusText);
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('An error occurred during upload.');
+        }
+
+        if (options?.inputElement) {
+            // reset file input element value to allow additional uploads
+            options.inputElement.value = '';
+        }
+
+        if (loadingElement) {
+            // remove loading animation
+            loadingElement.remove();
+        }
+    }
+
+    function vboParamFieldUploadSetup(options) {
+        // target elements
+        const fileInput = document.getElementById(options?.element_id);
+        const dropTarget = fileInput.closest('.vbo-param-file-upload-wrap');
+
+        // open file dialog by simulating the click on hidden file input
+        dropTarget.addEventListener('click', () => fileInput.click());
+
+        // drop target drag and drop events
+        dropTarget.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropTarget.classList.add('drag-over', 'drag-enter');
+        });
+        dropTarget.addEventListener('dragleave', () => {
+            dropTarget.classList.remove('drag-over', 'drag-enter');
+        });
+        dropTarget.addEventListener('drop', async e => {
+            e.preventDefault();
+            dropTarget.classList.remove('drag-over', 'drag-enter');
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                await vboParamFieldUploadFiles(files, Object.assign({}, options, {inputElement: fileInput}));
+            }
+        });
+
+        // input file element change event
+        fileInput.addEventListener('change', async e => {
+            if (e.target.files.length) {
+                await vboParamFieldUploadFiles(e.target.files, Object.assign({}, options, {inputElement: fileInput}));
+            }
+        });
+    }
+
+    // configure field
+    vboParamFieldUploadSetup({$json_upload_options});
+</script>
+HTML;
                 break;
             default:
                 $html .= '<input type="text" name="' . $this->inputName . '[' . $param_name . ']" value="'.(isset($this->settings[$param_name]) ? JHtml::fetch('esc_attr', $this->settings[$param_name]) : JHtml::fetch('esc_attr', $default_paramv)).'" size="20"' . $inp_attr . '/>';

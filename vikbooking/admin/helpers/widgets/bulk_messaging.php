@@ -1009,21 +1009,16 @@ class VikBookingAdminWidgetBulkMessaging extends VikBookingAdminWidget
 		// load all conditional text special tags
 		$condtext_tags = array_keys(VikBooking::getConditionalRulesInstance()->getSpecialTags());
 
-		// join special tags with conditional texts to construct a list of editor buttons,
+		/**
+		 * Load Door Access Control special tags from the configured integration providers.
+		 * 
+		 * @since 	1.18.4 (J) - 1.8.4 (WP)
+		 */
+		$dac_tags = VBOFactory::getDoorAccessControl()->getInstalledSpecialTags();
+
+		// join special tags with conditional texts and DAC to construct a list of editor buttons,
 		// displayed within the toolbar of Quill editor
-		$editor_btns = array_merge($special_tags_base, $condtext_tags);
-
-		// convert special tags into HTML buttons, displayed under the text editor
-		$special_tags_base = array_map(function($tag)
-		{
-			return '<button type="button" class="btn" onclick="setCronTplTag(\'tpl_text\', \'' . $tag . '\');">' . $tag . '</button>';
-		}, $special_tags_base);
-
-		// convert conditional texts into HTML buttons, displayed under the text editor
-		$condtext_tags = array_map(function($tag)
-		{
-			return '<button type="button" class="btn vbo-condtext-specialtag-btn" onclick="setCronTplTag(\'tpl_text\', \'' . $tag . '\');">' . $tag . '</button>';
-		}, $condtext_tags);
+		$editor_btns = array_merge($special_tags_base, $condtext_tags, $dac_tags);
 
 		// build the default message value
 		$def_message = !empty($this->widgetSettings->last_message) ? $this->widgetSettings->last_message : $this->getDefaultMessage();
@@ -1175,6 +1170,14 @@ HTML
 		VikBooking::getConditionalRulesInstance()
 			->set(array('booking', 'rooms'), array($booking, $booking_rooms))
 			->parseTokens($tpl);
+
+		/**
+		 * Parse all Door Access Control tags.
+		 * 
+		 * @since 	1.18.4 (J) - 1.8.4 (WP)
+		 */
+		VBOFactory::getDoorAccessControl()
+			->parseTokens((new VBOBookingRegistry($booking, $booking_rooms)), $tpl);
 
 		// normalize customer details
 		if (empty($booking['customer_name']) && !empty($booking['customer'])) {

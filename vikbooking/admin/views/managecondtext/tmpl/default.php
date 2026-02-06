@@ -401,7 +401,7 @@ if (count($this->condtext)) {
 		 */
 		jQuery(document).mouseup(function(e) {
 			if (!vbo_modal_condtext_on) {
-				return false;
+				return;
 			}
 			if (vbo_modal_condtext_on) {
 				var vbo_overlay_cont = jQuery(".vbo-modal-overlay-content-condtext");

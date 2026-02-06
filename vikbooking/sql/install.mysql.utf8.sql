@@ -68,6 +68,18 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_critical_dates` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `#__vikbooking_door_access_integrations` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `provider_alias` varchar(64) NOT NULL DEFAULT '',
+  `name` varchar(64) NOT NULL DEFAULT '',
+  `gentype` varchar(16) DEFAULT NULL,
+  `genperiod` varchar(16) DEFAULT NULL,
+  `settings` varchar(2048) DEFAULT NULL,
+  `devices` mediumblob DEFAULT NULL,
+  `data` mediumtext DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
 CREATE TABLE IF NOT EXISTS `#__vikbooking_rooms` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
@@ -163,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_customers` (
   `phone` varchar(64) DEFAULT NULL,
   `country` varchar(32) DEFAULT NULL,
   `cfields` text DEFAULT NULL,
-  `pin` int(10) NOT NULL DEFAULT 0,
+  `pin` varchar(16) NOT NULL DEFAULT '0',
   `ujid` int(5) NOT NULL DEFAULT 0,
   `address` varchar(256) DEFAULT NULL,
   `city` varchar(64) DEFAULT NULL,
@@ -186,7 +198,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_customers` (
   `recipcode` varchar(64) DEFAULT NULL,
   `pic` varchar(256) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `#__vikbooking_customers_orders` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -324,7 +336,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_notifications` (
   `title` varchar(64) NOT NULL,
   `summary` varchar(256) DEFAULT NULL,
   `avatar` varchar(256) DEFAULT NULL,
-  `cta_data` varchar(256) DEFAULT NULL,
+  `cta_data` varchar(1024) DEFAULT NULL,
   `idorder` int(10) unsigned DEFAULT NULL,
   `idorderota` varchar(128) DEFAULT NULL,
   `channel` varchar(64) DEFAULT NULL,
@@ -484,7 +496,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_packages` (
   `showoptions` tinyint(1) NOT NULL DEFAULT 1,
   `startpublishd` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `#__vikbooking_packages_rooms` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -587,6 +599,8 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_seasons` (
   `occupancy_ovr` text DEFAULT NULL,
   `promolastmin` int(10) NOT NULL DEFAULT 0,
   `promofinalprice` tinyint(1) NOT NULL DEFAULT 0,
+  `createdon` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modifiedon` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
@@ -699,6 +713,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_tm_tasks` (
   `archived` tinyint(1) DEFAULT 0 COMMENT 'do not display in list when archived',
   `workstartedon` datetime DEFAULT NULL,
   `realduration` int(10) DEFAULT 0,
+  `ai` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   FULLTEXT KEY `ft_title_notes` (`title`, `notes`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci AUTO_INCREMENT=1 ;

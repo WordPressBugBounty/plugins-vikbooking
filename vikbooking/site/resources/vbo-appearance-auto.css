@@ -11,6 +11,7 @@
         /* Backgrounds */
         --vbo-white-bg-color: #282b33;
         --vbo-grey-bg-color: #0f1216;
+        --vbo-light-verydark-grey-bg-color: #ffffff;
         --vbo-light-grey-bg-color: #383c47;
         
         /* Borders */
@@ -111,5 +112,13 @@
     }
     #ui-datepicker-div .ui-datepicker-group-first {
         border-right: 1px solid #3c414d;
+    }
+
+    /* Task Manager */
+    .vbo-tm-operator-block[data-type="ical"] a, input[type="time"].task-time-picker, .vbo-chat-wrapper .chat-input-footer .textarea-input .chat-action-btn {
+        color: #fff;
+    }
+    .vbo-tagcolors-elems-wrap .vbo-tm-task-status-badge, .vbo-tm-color, .vbo-colortag-circle {
+        color: #000;
     }
 }

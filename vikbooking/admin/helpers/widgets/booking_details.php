@@ -640,7 +640,7 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBEDITORDERNINE'); ?></div>
 							<div class="vbo-param-setting">
-								<strong><?php echo ($otacurrency ? "({$otacurrency}) " : '') . $currencysymb . ' ' . VikBooking::numberFormat($details['total']); ?></strong>
+								<strong><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($details['total']), ($otacurrency ? "({$otacurrency}) " : '') . $currencysymb); ?></strong>
 							</div>
 						</div>
 					<?php
@@ -649,7 +649,7 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBPEDITBUSYTOTPAID'); ?></div>
 							<div class="vbo-param-setting">
-								<span><?php echo $currencysymb . ' ' . VikBooking::numberFormat($details['totpaid']); ?></span>
+								<span><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($details['totpaid']), $currencysymb); ?></span>
 							</div>
 						</div>
 						<?php
@@ -913,8 +913,8 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 							}
 
 							$tip_info = [
-								JText::translate('VBOBOOKHISTORYLBLTOT') . ': ' . $currencysymb . ' ' . VikBooking::numberFormat($hist['total']),
-								JText::translate('VBOBOOKHISTORYLBLTPAID') . ': ' . $currencysymb . ' ' . VikBooking::numberFormat($hist['totpaid']),
+								JText::translate('VBOBOOKHISTORYLBLTOT') . ': ' . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($hist['total']), $currencysymb),
+								JText::translate('VBOBOOKHISTORYLBLTPAID') . ': ' . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($hist['totpaid']), $currencysymb),
 							];
 							?>
 							<div class="vbo-param-container vbo-widget-bookdets-history-record" style="<?php echo $hind >= $max_display_records ? 'display: none;' : ''; ?>">

@@ -71,7 +71,7 @@ $map_long_wday = array(
 	JText::translate('VBWEEKDAYSIX')
 );
 
-if ($this->code == 1 && count($this->suggestions) && count($this->solutions) && count($this->split_stay_solutions)) {
+if ($this->code == 1 && $this->split_stay_solutions) {
 	// parse split stay solutions first
 	?>
 <div id="vbo-splitstay-suggestions-container-<?php echo $this->code; ?>" class="vbo-search-suggestions-container vbo-splitstay-suggestions-container">
@@ -173,7 +173,7 @@ if ($this->code == 1 && count($this->suggestions) && count($this->solutions) && 
 	<?php
 }
 
-if (count($this->suggestions)) {
+if ($this->suggestions) {
 	$sug_from_ts_info = getdate($this->sug_from_ts);
 	$begin_month = $sug_from_ts_info['mon'];
 	$sug_calendars = array();
@@ -262,7 +262,7 @@ if (count($this->suggestions)) {
 		</table>
 	</div>
 	<?php
-	if ($this->code == 1 && count($this->solutions)) {
+	if ($this->code == 1 && $this->solutions) {
 		// (error code 1) closest bookings solutions with availability
 		?>
 	<div class="vbo-search-solutions-container">
@@ -308,9 +308,9 @@ if (count($this->suggestions)) {
 		</div>
 	</div>
 		<?php
-	} elseif ($this->code == 1 && !count($this->solutions)) {
-		//if error code = 1 and count(solutions) = 0, it probably means that the party requested cannot be satisfied in the suggested dates.
-		//we display a message like: "...try to select a different number of rooms and guests"
+	} elseif ($this->code == 1 && !$this->solutions) {
+		// if error code = 1 and count(solutions) = 0, it probably means that the party requested cannot be satisfied in the suggested dates.
+		// we display a message like: "...try to select a different number of rooms and guests"
 		?>
 	<div class="vbo-search-solutions-container">
 		<p class="vbo-search-no-solutions"><?php echo JText::translate('VBOSEARCHNOSOLUTIONS'); ?></p>
@@ -318,7 +318,7 @@ if (count($this->suggestions)) {
 		<?php
 	}
 
-	if (($this->code == 2 || $this->code == 3) && count($this->booking_solutions)) {
+	if (($this->code == 2 || $this->code == 3) && $this->booking_solutions) {
 		//(error codes 2/3) other combinations of party for booking
 		$guests_strarr = array();
 		if ($this->party_guests['adults'] > 0) {
@@ -394,8 +394,8 @@ if (count($this->suggestions)) {
 		</div>
 	</div>
 		<?php
-	} elseif (($this->code == 2 || $this->code == 3) && !count($this->booking_solutions)) {
-		//if error code = 2/3 and count(booking_solutions) = 0, it probably means that there are no rates, or no rooms to fit this number of nights and guests
+	} elseif (($this->code == 2 || $this->code == 3) && !$this->booking_solutions) {
+		// if error code = 2/3 and count(booking_solutions) = 0, it probably means that there are no rates, or no rooms to fit this number of nights and guests
 		?>
 	<div class="vbo-booking-solutions-container">
 		<p class="vbo-search-no-solutions"><?php echo JText::translate('VBOSEARCHNOBOOKSOLUTIONS'); ?></p>

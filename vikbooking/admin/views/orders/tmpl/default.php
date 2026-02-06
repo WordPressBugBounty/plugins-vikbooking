@@ -717,21 +717,18 @@ $filters_set = false;
 			<td class="center">
 				<div class="vbo-bookingslist-total-wrap">
 					<div class="vbo-bookingslist-total-amount">
-						<span><?php echo strlen($otacurrency) > 0 ? $otacurrency : $currencysymb; ?></span>
-						<span><?php echo VikBooking::numberFormat($isdue); ?></span>
+						<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($isdue), ($otacurrency ?: $currencysymb), ['<span>%s</span>', '<span>%s</span>']); ?>
 					</div>
 				<?php
 				if (!is_null($row['totpaid'])) {
 					?>
 					<div class="vbo-bookingslist-total-totpaid">
-						<span><?php echo $currencysymb; ?></span>
-						<span><?php echo VikBooking::numberFormat($row['totpaid']); ?></span>
+						<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($row['totpaid']), $currencysymb, ['<span>%s</span>', '<span>%s</span>']); ?>
 					<?php
 					if ($row['refund'] > 0) {
 						?>
 						<span class="vbo-bookingslist-total-refunded">
-							<span><?php echo $currencysymb; ?></span>
-							<span><?php echo VikBooking::numberFormat($row['refund']); ?></span>
+							<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($row['refund']), $currencysymb, ['<span>%s</span>', '<span>%s</span>']); ?>
 						</span>
 						<?php
 					}
@@ -742,8 +739,7 @@ $filters_set = false;
 					?>
 					<div class="vbo-bookingslist-total-totpaid">
 						<span class="vbo-bookingslist-total-refunded">
-							<span><?php echo $currencysymb; ?></span>
-							<span><?php echo VikBooking::numberFormat($row['refund']); ?></span>
+							<?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($row['refund']), $currencysymb, ['<span>%s</span>', '<span>%s</span>']); ?>
 						</span>
 					</div>
 					<?php
@@ -1005,14 +1001,14 @@ jQuery(function() {
 
 	jQuery(document).mouseup(function(e) {
 		if (!bctags_tip_on) {
-			return false;
+			return;
 		}
 		if (jQuery(".vbo-blist-tip-bctag-subtip").length) {
 			var vbo_overlay_subtip_cont = jQuery(".vbo-blist-tip-bctag-subtip-inner");
 			if (!vbo_overlay_subtip_cont.is(e.target) && vbo_overlay_subtip_cont.has(e.target).length === 0) {
 				jQuery(".vbo-blist-tip-bctag-subtip").remove();
 				bctags_tip_on = false;
-				return true;
+				return;
 			}
 		}
 	});

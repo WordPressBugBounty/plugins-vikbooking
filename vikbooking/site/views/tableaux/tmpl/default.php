@@ -974,7 +974,7 @@ jQuery(function() {
 
 	jQuery(document).mouseup(function(e) {
 		if (!vbdialog_on && !vbodialogfests_on && !vbodialogrdaynotes_on) {
-			return false;
+			return;
 		}
 		if (vbdialog_on) {
 			var vbdialog_cont = jQuery(".vbdialog-inner");

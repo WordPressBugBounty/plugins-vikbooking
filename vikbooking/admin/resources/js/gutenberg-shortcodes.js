@@ -241,6 +241,8 @@
 										label: __('Shortcode:', 'vikbooking'),
 										value: data.shortcode,
 										readonly: true,
+										__nextHasNoMarginBottom: true,
+										__next40pxDefaultSize: true,
 									}
 								)
 							),
@@ -301,7 +303,9 @@
 							help: togglerChecked ? __('Display all the existing shortcodes.', 'vikbooking') : __('Toggle to display also the shortcodes that are already assigned to a post.', 'vikbooking'),
 							onChange: (toggler) => {
 								props.setAttributes({ toggler: toggler });
-							}
+							},
+							__nextHasNoMarginBottom: true,
+							__next40pxDefaultSize: true,
 						}
 					)
 				)
@@ -347,6 +351,8 @@
 								newShortcodeRegistry.replaceAttributes({type: value, lang: newShortcodeRegistry.attributes.lang});
 								newShortcodeRegistry.setAttributes({});
 							},
+							__nextHasNoMarginBottom: true,
+							__next40pxDefaultSize: true,
 						}
 					)
 				);
@@ -373,6 +379,8 @@
 							onChange: (value) => {
 								newShortcodeRegistry.setAttributes({lang: value});
 							},
+							__nextHasNoMarginBottom: true,
+							__next40pxDefaultSize: true,
 						}
 					)
 				);
@@ -562,6 +570,8 @@
 								},
 								options: options,
 								className: 'wp-block-shortcode',
+								__nextHasNoMarginBottom: true,
+								__next40pxDefaultSize: true,
 							}
 						),
 						renderer,

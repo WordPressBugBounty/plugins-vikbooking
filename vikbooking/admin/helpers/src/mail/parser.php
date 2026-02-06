@@ -98,7 +98,21 @@ final class VBOMailParser
 			// calculate the outstanding balance
 			$remaining_bal = $booking['total'] - $booking['totpaid'];
 			$damage_deposit_payment = VBORoomHelper::getInstance()->getDamageDepositSplitPayment($booking, $booking_rooms);
-			if ($damage_deposit_payment && !empty($booking['tot_damage_dep'])) {
+			$prev_dd_payments = [];
+			if ($damage_deposit_payment['damagedep_gross'] ?? 0) {
+				$prev_dd_payments = VikBooking::getBookingHistoryInstance($booking['id'])
+					->getEventsWithData('PN', function($data) {
+						return (is_object($data) && !empty($data->damage_deposit));
+					});
+				if (!$prev_dd_payments) {
+					// check also the first payment event in case of OTA bookings
+					$prev_dd_payments = VikBooking::getBookingHistoryInstance($booking['id'])
+						->getEventsWithData('P0', function($data) {
+							return (is_object($data) && !empty($data->damage_deposit));
+						});
+				}
+			}
+			if ($prev_dd_payments && !empty($booking['tot_damage_dep'])) {
 				$remaining_bal -= $booking['tot_damage_dep'];
 			}
 			$content = str_replace('{remaining_balance}', VikBooking::numberFormat($remaining_bal), $content);
@@ -153,6 +167,14 @@ final class VBOMailParser
 				$content = str_replace("{roomfeature " . $reqf . "}", $rpval, $content);
 			}
 		}
+
+		/**
+		 * Parse all Door Access Control tags.
+		 * 
+		 * @since 	1.18.4 (J) - 1.8.4 (WP)
+		 */
+		VBOFactory::getDoorAccessControl()
+			->parseTokens((new VBOBookingRegistry($booking, $booking_rooms)), $content);
 
 		return $content;
 	}

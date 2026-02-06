@@ -906,6 +906,43 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			jQuery("#choose-dbirth").val("");
 			jQuery(".vbo-report-alloggiati-manualsave").show();
 		}
+		function vboAlloggiatiExcludeGuestLine(elem) {
+			if (!elem.matches("input[type=\"checkbox\"]")) {
+				return;
+			}
+			reportActiveCell = elem;
+			const isExcluded = elem.checked ? 1 : 0;
+			const activeRow = jQuery(reportActiveCell).closest("tr");
+			const nowindex = jQuery(".vbo-reports-output table tbody tr").index(activeRow);
+			if (isNaN(nowindex) || parseInt(nowindex) < 0) {
+				throw new Error("Error, could not find the guest line to exclude.");
+			}
+			const rep_guest_bid = activeRow.find("a[data-bid]").attr("data-bid");
+			if (!reportObj.hasOwnProperty(nowindex)) {
+				reportObj[nowindex] = {
+					bid: rep_guest_bid,
+					bid_index: jQuery(".vbo-reports-output table tbody tr").index(jQuery("a[data-bid=\"" + rep_guest_bid + "\"]").first().closest("tr"))
+				};
+			}
+			reportObj[nowindex]["_excluded"] = isExcluded;
+			jQuery(".vbo-report-alloggiati-manualsave").show();
+			jQuery(".vbo-report-alloggiati-manualsave").trigger("click");
+
+			// make the first 5 cells "striked" (or not "striked")
+			let counter = 0;
+			(activeRow[0] || activeRow).querySelectorAll("td").forEach((cell) => {
+				if (counter >= 5) {
+					return;
+				}
+				if (isExcluded) {
+					cell.innerHTML = "<s>" + cell.innerHTML + "</s>";
+				} else {
+					let currentText = cell.textContent || cell.innerText || "";
+					cell.innerHTML = "<span>" + currentText + "</span>";
+				}
+				counter++;
+			});
+		}
 		//download function
 		function vboDownloadSchedaPolizia(type) {
 			if (!confirm("Sei sicuro di aver compilato tutti i dati delle schedine alloggiati?")) {
@@ -1268,6 +1305,14 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				),
 				'label' => 'ID / #'
 			),
+			// line excluded
+			array(
+				'key' => 'excluded',
+				'attr' => array(
+					'class="center"'
+				),
+				'label' => 'Escluso',
+			),
 		);
 
 		/**
@@ -1278,22 +1323,28 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 		 */
 		$settings = $this->loadSettings();
 		if (!empty($settings['apartments']) && !empty($settings['apartments_list'])) {
-			// get and unset last column
-			$last_col = $this->cols[count($this->cols) - 1];
-			unset($this->cols[count($this->cols) - 1]);
+			// place the column for the apartment ID after the "docplace" column
+			$new_cols = [];
 
-			// push the "ID Appartamento" column
-			$this->cols[] = [
-				'key' => 'idapp',
-				'attr' => array(
-					'class="center"'
-				),
-				'label' => 'ID App',
-				'tip' => 'Necessario per la categoria Gestione Appartamenti. Assicurati di scaricare la lista appartamenti dalle apposite funzioni per salvare gli ID.',
-			];
+			foreach ($this->cols as $col) {
+				// re-push current column
+				$new_cols[] = $col;
 
-			// restore the last column by repushing it
-			$this->cols[] = $last_col;
+				if ($col['key'] === 'docplace') {
+					// push the "ID Appartamento" column
+					$new_cols[] = [
+						'key' => 'idapp',
+						'attr' => array(
+							'class="center"'
+						),
+						'label' => 'ID App',
+						'tip' => 'Necessario per la categoria Gestione Appartamenti. Assicurati di scaricare la lista appartamenti dalle apposite funzioni per salvare gli ID.',
+					];
+				}
+			}
+
+			// overwrite the manipulated report columns
+			$this->cols = $new_cols;
 		}
 
 		// line number (to facilitate identifying a specific guest in case of errors with the file submission)
@@ -1342,6 +1393,9 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				// find the actual guest-room-index
 				$guest_room_ind = $this->calcGuestRoomIndex($room_guests, $guest_ind);
 
+				// tell whether this line was excluded
+				$is_line_excluded = (int) $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, '_excluded');
+
 				// determine the type of guest, either automatically or from the check-in pax data
 				$use_tipo = $ind > 0 && $tipo == 17 ? 19 : $tipo;
 				$pax_guest_type = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'guest_type');
@@ -1363,23 +1417,34 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				// Tipo Alloggiato
 				array_push($insert_row, array(
 					'key' => 'tipo',
-					'callback' => function($val) {
+					'callback' => function($val) use ($is_line_excluded) {
 						switch ($val) {
 							case 16:
-								return 'Ospite Singolo';
+								$gtype = 'Ospite Singolo';
+								break;
 							case 17:
-								return 'Capofamiglia';
+								$gtype = 'Capofamiglia';
+								break;
 							case 18:
-								return 'Capogruppo';
+								$gtype = 'Capogruppo';
+								break;
 							case 19:
-								return 'Familiare';
+								$gtype = 'Familiare';
+								break;
 							case 20:
-								return 'Membro Gruppo';
+								$gtype = 'Membro Gruppo';
+								break;
+							default:
+								$gtype = '?';
+								break;
 						}
-						return '?';
+						if ($is_line_excluded) {
+							return '<s>' . $gtype . '</s>';
+						}
+						return $gtype;
 					},
 					'no_export_callback' => 1,
-					'value' => $use_tipo
+					'value' => $use_tipo,
 				));
 
 				// Data Arrivo
@@ -1388,10 +1453,16 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'attr' => array(
 						'class="center"'
 					),
-					'callback' => function($val) {
+					'callback_export' => function($val) {
 						return date('d/m/Y', $val);
 					},
-					'value' => $guests['checkin']
+					'callback' => function($val) use ($is_line_excluded) {
+						if ($is_line_excluded) {
+							return '<s>' . date('d/m/Y', $val) . '</s>';
+						}
+						return date('d/m/Y', $val);
+					},
+					'value' => $guests['checkin'],
 				));
 
 				// Notti di Permanenza
@@ -1400,7 +1471,14 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'attr' => array(
 						'class="center"'
 					),
-					'value' => $guests['days']
+					'callback' => function($val) use ($is_line_excluded) {
+						if ($is_line_excluded) {
+							return '<s>' . $val . '</s>';
+						}
+						return $val;
+					},
+					'no_export_callback' => 1,
+					'value' => $guests['days'],
 				));
 
 				// Cognome
@@ -1410,8 +1488,15 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				array_push($insert_row, array(
 					'key' => 'last_name',
 					'callback_export' => function($val) {
-						$val = str_replace(['-', '.', ',', '?', '!'], ' ', (string) $val);
+						$val = str_replace(['-', '_', '\\', '.', ',', '?', '!', '"'], ' ', (string) $val);
+						$val = preg_replace('/[0-9]+/', '', $val);
 						return $this->transliterateToAscii(trim($val));
+					},
+					'callback' => function($val) use ($is_line_excluded) {
+						if ($is_line_excluded) {
+							return '<s>' . $val . '</s>';
+						}
+						return $val;
 					},
 					'value' => $cognome,
 				));
@@ -1423,8 +1508,15 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 				array_push($insert_row, array(
 					'key' => 'first_name',
 					'callback_export' => function($val) {
-						$val = str_replace(['-', '.', ',', '?', '!'], ' ', (string) $val);
+						$val = str_replace(['-', '_', '\\', '.', ',', '?', '!', '"'], ' ', (string) $val);
+						$val = preg_replace('/[0-9]+/', '', $val);
 						return $this->transliterateToAscii(trim($val));
+					},
+					'callback' => function($val) use ($is_line_excluded) {
+						if ($is_line_excluded) {
+							return '<s>' . $val . '</s>';
+						}
+						return $val;
 					},
 					'value' => $nome,
 				));
@@ -1822,6 +1914,10 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'attr' => array(
 						'class="center' . $docnum_elem_class . '"'
 					),
+					'callback_export' => function($val) {
+						// prevent errors for non-allowed characters (alphanumeric only)
+						return preg_replace('/[^A-Z0-9]+/i', '', (string) $val);
+					},
 					'callback' => function($val) use ($guest_room_ind) {
 						if ($guest_room_ind > 1 && empty($val)) {
 							return '---';
@@ -1917,6 +2013,21 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'value' => $guests['id']
 				));
 
+				// excluded
+				$booking_id = $guests['id'];
+				array_push($insert_row, array(
+					'key' => 'excluded',
+					'attr' => array(
+						'class="center"'
+					),
+					'callback' => function($val) use ($booking_id, $line_number) {
+						$booking_guest_signature = sprintf('excluded-%d-%d', $booking_id, $line_number);
+						return '<span class="vbo-toggle-small">' . VikBooking::getVboApplication()->printYesNoButtons($booking_guest_signature, JText::translate('VBYES'), JText::translate('VBNO'), $val , 1, 0, 'vboAlloggiatiExcludeGuestLine(this);', ['red']) . '</span>';
+					},
+					'ignore_export' => 1,
+					'value' => $is_line_excluded,
+				));
+
 				// push fields in the rows array as a new row
 				array_push($this->rows, $insert_row);
 
@@ -2007,7 +2118,17 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 
 		// push the lines of the Text file
 		foreach ($this->rows as $ind => $row) {
+			// build line content
 			$line_cont = '';
+
+			// parse all row fields into an associative list
+			$parsedRowFields = $this->getAssocRowFields($row);
+			if (boolval($parsedRowFields['excluded'] ?? 0)) {
+				// the whole row was set to be excluded
+				continue;
+			}
+
+			// iterate all row fields
 			foreach ($row as $field) {
 				if ($field['key'] == 'idbooking' && !in_array($field['value'], $this->export_booking_ids)) {
 					array_push($this->export_booking_ids, $field['value']);
@@ -2038,14 +2159,23 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					$field['callback'] = $field['callback_export'];
 				}
 				$value = !isset($field['no_export_callback']) && isset($field['callback']) && is_callable($field['callback']) ? $field['callback']($field['value']) : $field['value'];
-				// 0 or '---' should be changed to an empty string (case of "-- Estero --" or field to be filled with Blank)
-				$value = empty($value) || $value == '---' ? '' : $value;
+
+				if ($value == '0' && $field['key'] === 'idapp') {
+					// safe to keep 0 as value
+					$value = '0';
+				} else {
+					// 0 or '---' should be changed to an empty string (case of "-- Estero --" or field to be filled with Blank)
+					$value = empty($value) || $value == '---' ? '' : $value;
+				}
+
 				// concatenate the field to the current line
 				$line_cont .= $this->valueFiller($value, $keys_length_map[$field['key']]);
 			}
 
-			// push the line in the array of lines
-			array_push($lines, $line_cont);
+			if ($line_cont) {
+				// push the line in the array of lines
+				array_push($lines, $line_cont);
+			}
 		}
 
 		return $lines;

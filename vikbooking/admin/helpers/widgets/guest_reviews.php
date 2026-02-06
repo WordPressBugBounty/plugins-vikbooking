@@ -618,6 +618,7 @@ class VikBookingAdminWidgetGuestReviews extends VikBookingAdminWidget
 													customer: customer,
 													review: content.join("\n"),
 													language: review_lang,
+													id_order: review_bid,
 												},
 												(response) => {
 													resolve(response);

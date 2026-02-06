@@ -314,8 +314,12 @@ class VBOTaxonomyFinance
 			'revpar'          => 0,
 			// average booking window
 			'abw'             => 0,
-			// amount of taxes
+			// amount of all taxes
 			'taxes'           => 0,
+			// amount of VAT
+			'tot_vat'         => 0,
+			// amount of city taxes
+			'city_taxes'      => 0,
 			// amount of damage deposits
 			'damage_deposits' => 0,
 			// commissions (amount)
@@ -645,6 +649,8 @@ class VBOTaxonomyFinance
 				$pos_pool[$pos_name] += $tot_revenue;
 
 				$stats['taxes'] += (float) $room_tot_taxes + (float) $room_tot_city_taxes + (float) $room_tot_fees;
+				$stats['tot_vat'] += (float) $room_tot_taxes;
+				$stats['city_taxes'] += (float) $room_tot_city_taxes;
 				$stats['damage_deposits'] += (float) $room_tot_damage_dep;
 				$stats['cmms'] += (float) $room_cmms;
 				$stats['tot_refunds'] += $room_refund;

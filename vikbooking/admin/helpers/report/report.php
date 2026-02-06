@@ -119,6 +119,13 @@ abstract class VikBookingReport
 	protected $scope = null;
 
 	/**
+	 * @var 	array
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	protected $reportRowClasses = [];
+
+	/**
 	 * Class constructor should define the name of
 	 * the report and the filters to be displayed.
 	 */
@@ -150,6 +157,56 @@ abstract class VikBookingReport
 	 * to generate the report data (cols and rows).
 	 */
 	abstract public function getReportData();
+
+	/**
+	 * Allows the report to perform a preflight compatibility check with the environment.
+	 * 
+	 * @return 	?bool 	False if the report is not compatible with the current environment.
+	 * 
+	 * @since 	1.18.5 (J) - 1.8.5 (WP)
+	 */
+	public function preflight()
+	{
+		return true;
+	}
+
+	/**
+	 * Allows the report to define the sub-filters template.
+	 * 
+	 * @return 	?string
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function getSubFiltersTpl()
+	{
+		return null;
+	}
+
+	/**
+	 * Allows reports to define the default layout type to display.
+	 * 
+	 * @param 	bool 	$hasChart 	True if the report has defined a chart.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function getDefaultLayoutType(bool $hasChart = false)
+	{
+		return $hasChart ? 'sheetnchart' : 'sheet';
+	}
+
+	/**
+	 * Returns the AJAX endpoint URL for the current report.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function getAjaxUrl()
+	{
+		return VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=invoke_report&report=' . $this->reportFile);
+	}
 
 	/**
 	 * Main method to generate the report columns and rows. Stores on the current
@@ -305,10 +362,13 @@ abstract class VikBookingReport
 				// build value for export
 				$export_value = $field['value'];
 				if (!isset($field['no_export_callback']) && !isset($field['no_csv_callback'])) {
-					if (isset($field['export_callback']) && is_callable($field['export_callback'])) {
+					if (is_callable($field['export_callback'] ?? null)) {
 						// trigger closure callback to prepare the value for export
 						$export_value = $field['export_callback']($field['value']);
-					} elseif (isset($field['callback']) && is_callable($field['callback'])) {
+					} elseif (is_callable($field['callback_export'] ?? null)) {
+						// trigger closure callback to prepare the value for export
+						$export_value = $field['callback_export']($field['value']);
+					} elseif (is_callable($field['callback'] ?? null)) {
 						// trigger closure callback to prepare the value for export
 						$export_value = $field['callback']($field['value']);
 					}
@@ -539,12 +599,22 @@ abstract class VikBookingReport
 		// load report
 		require_once $report_path;
 
-		if (class_exists($classname)) {
-			// return the instance of the report object found
-			return new $classname;
+		if (!class_exists($classname)) {
+			// report class does not exist
+			return false;
 		}
 
-		return false;
+		// instantiate the report object
+		$reportInstance = new $classname;
+
+		// ensure the report is compatible with the current environment
+		if ($reportInstance->preflight() === false) {
+			// the report is not compatible
+			return false;
+		}
+
+		// return the instance of the report object found
+		return $reportInstance;
 	}
 
 	/**
@@ -610,6 +680,62 @@ abstract class VikBookingReport
 		$vbo_app->loadDatePicker();
 
 		return $this;
+	}
+
+	/**
+	 * Parses a report row into an associative list of key-value pairs.
+	 * 
+	 * @param   array   $row    	The report row to parse.
+	 * @param 	bool 	$format 	True to format values with callbacks.
+	 * 
+	 * @return  array           	Associative list of row keys and values.
+	 * 
+	 * @since 	1.18.4 (J) - 1.8.4 (WP)
+	 */
+	protected function getAssocRowFields(array $row, bool $format = false)
+	{
+		$row_data = [];
+
+		foreach ($row as $field) {
+			$field_val = $field['value'];
+			if (!isset($field['callback_export']) && isset($field['callback'])) {
+				$field['callback_export'] = $field['callback'];
+			}
+			if ($format === true && !($field['no_export_callback'] ?? 0) && is_callable($field['callback_export'] ?? null)) {
+				$field_val = $field['callback_export']($field_val);
+			}
+			$row_data[$field['key']] = $field_val;
+		}
+
+		return $row_data;
+	}
+
+	/**
+	 * Gets the CSS classes for each report row.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function getReportRowClasses()
+	{
+		return $this->reportRowClasses;
+	}
+
+	/**
+	 * Sets the CSS classes for each report row.
+	 * 
+	 * @param 	array 	$rowClasses 	List of row class values.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	protected function setReportRowClasses(array $rowClasses)
+	{
+		$this->reportRowClasses = $rowClasses;
+
+		return;
 	}
 
 	/**
@@ -1137,11 +1263,11 @@ abstract class VikBookingReport
 	 * Data can be passed as a mixed value through the argument.
 	 * This is the first method to be called when working with the Chart.
 	 * 
-	 * @param 	mixed 	$data 	any necessary value to render the Chart.
+	 * @param 	?array 	$data 	any necessary value to render the Chart.
 	 *
 	 * @return 	string 	the HTML of the canvas element.
 	 */
-	public function getChart($data = null)
+	public function getChart(?array $data = null)
 	{
 		return '';
 	}
@@ -1613,6 +1739,20 @@ abstract class VikBookingReport
 	public function getWarning()
 	{
 		return rtrim($this->warning, "\n");
+	}
+
+	/**
+	 * Resets any errors previously set.
+	 *
+	 * @return 	self
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	protected function resetErrors()
+	{
+		$this->error = '';
+
+		return $this;
 	}
 
 	/**

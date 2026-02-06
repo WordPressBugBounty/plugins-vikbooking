@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  com_vikbooking
  * @author      Alessio Gaggii - E4J srl
- * @copyright   Copyright (C) 2025 e4j - E4J srl. All rights reserved.
+ * @copyright   Copyright (C) 2025 E4J srl. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  * @link        https://vikwp.com
  */
@@ -17,10 +17,19 @@ defined('ABSPATH') or die('No script kiddies please!');
 // JSON-decode room parameters
 $rparams = json_decode($this->room['params'], true);
 
+/**
+ * Include the VBOCore JS class.
+ */
+VikBooking::getVboApplication()->loadCoreJS();
+
 $geo = VikBooking::getGeocodingInstance();
 if ($geo->isSupported()) {
 	// load assets
-	$geo->loadAssets();
+	$geo->loadAssets([
+		'callback'  => 'vbo_gm_ready',
+		'libraries' => 'marker',
+		'loading'   => 'async',
+	]);
 	// get all geo params
 	$geo_params = $geo->getRoomGeoParams($rparams);
 	if (is_object($geo_params) && isset($geo_params->enabled) && $geo_params->enabled) {
@@ -150,26 +159,62 @@ if ($geo->isSupported()) {
 			var marker_options = null;
 			var marker_title = Joomla.JText._('VBODISTFEATURERUNIT') + (i + '');
 			if (tot_markers === 1) {
-				marker_title = '<?php echo addslashes($this->room['name']); ?>';
+				marker_title = <?php echo json_encode($this->room['name']); ?>;
 			} else if (vbo_info_markers_helper.hasOwnProperty(i)) {
 				marker_title = vbo_info_markers_helper[i];
 			}
 			if (vbo_geomarker_units_pos.hasOwnProperty(i)) {
 				// marker index saved
 				marker_options = {
-					draggable: false,
 					map: vbo_geomap,
 					position: {
 						lat: parseFloat(vbo_geomarker_units_pos[i].lat),
-						lng: parseFloat(vbo_geomarker_units_pos[i].lng)
+						lng: parseFloat(vbo_geomarker_units_pos[i].lng),
 					},
-					title: marker_title
+					title: marker_title,
 				};
-				// set custom unit property
-				marker_options['vbo_unit'] = i;
+				// register custom unit property
+				let marker_vbo_unit = i;
 				// check if we know a custom icon for this marker
 				if (vbo_geomarker_units_pos[i].hasOwnProperty('icon')) {
-					marker_options['icon'] = vbo_geomarker_units_pos[i]['icon'];
+					// custom icon defined, identify the type to build a node
+					if (vbo_geomarker_units_pos[i]['icon']?.url) {
+						// we've got an image
+						let marker_img = document.createElement('img');
+						marker_img.src = vbo_geomarker_units_pos[i]['icon'].url;
+						if (vbo_geomarker_units_pos[i]['icon']?.scaledSize?.width) {
+							marker_img.style.width = vbo_geomarker_units_pos[i]['icon'].scaledSize.width + 'px';
+						}
+						if (vbo_geomarker_units_pos[i]['icon']?.scaledSize?.height) {
+							marker_img.style.height = vbo_geomarker_units_pos[i]['icon'].scaledSize.height + 'px';
+						}
+						// center the image
+						marker_img.style.transform = 'translate(0, 50%)';
+						// set marker content
+						marker_options['content'] = marker_img;
+					} else if (vbo_geomarker_units_pos[i]['icon']?.path) {
+						// we've got an SVG path symbol
+						let svgns = 'http://www.w3.org/2000/svg';
+						let svg = document.createElementNS(svgns, 'svg');
+						svg.setAttribute('xmlns', svgns);
+						svg.setAttribute('viewBox', '0 0 90 90');
+						svg.setAttribute('width', 90);
+						svg.setAttribute('height', 90);
+						let path = document.createElementNS(svgns, 'path');
+						path.setAttribute('d', vbo_geomarker_units_pos[i]['icon'].path);
+						path.setAttribute('fill', vbo_geomarker_units_pos[i]['icon']?.fillColor || '#eeeeee');
+						path.setAttribute('fill-opacity', vbo_geomarker_units_pos[i]['icon']?.fillOpacity || 0.9);
+						path.setAttribute('stroke-width', vbo_geomarker_units_pos[i]['icon']?.strokeWeight || 0);
+						if (vbo_geomarker_units_pos[i]['icon']?.scale && vbo_geomarker_units_pos[i]['icon']?.anchor?.x && vbo_geomarker_units_pos[i]['icon']?.anchor?.y) {
+							path.setAttribute(
+								'transform',
+								'translate(' + vbo_geomarker_units_pos[i]['icon'].anchor.x + ', ' + vbo_geomarker_units_pos[i]['icon'].anchor.y + ') scale(' + vbo_geomarker_units_pos[i]['icon'].scale + ')'
+							);
+						}
+						svg.appendChild(path);
+						// set marker content
+						marker_options['content'] = svg;
+					}
 				}
 				// create marker infowindow
 				var vbo_info_marker_cont = vboGenerateInfoMarkerContent(i, marker_title);
@@ -177,13 +222,13 @@ if ($geo->isSupported()) {
 					content: vbo_info_marker_cont,
 				});
 				// add unit marker to map
-				var vbo_geomarker_runit = new google.maps.Marker(marker_options);
+				var vbo_geomarker_runit = new google.maps.marker.AdvancedMarkerElement(marker_options);
 				// add listener to marker
 				vbo_geomarker_runit.addListener('click', function() {
-					if (this['vbo_unit'] && vbo_info_markers.hasOwnProperty(this['vbo_unit'])) {
+					if (marker_vbo_unit && vbo_info_markers.hasOwnProperty(marker_vbo_unit)) {
 						// close any other open infowindow first
 						for (var m in vbo_info_markers) {
-							if (!vbo_info_markers.hasOwnProperty(m) || m == this['vbo_unit']) {
+							if (!vbo_info_markers.hasOwnProperty(m) || m == marker_vbo_unit) {
 								continue;
 							}
 							vbo_info_markers[m].close();
@@ -192,7 +237,7 @@ if ($geo->isSupported()) {
 							// close address marker infowindow
 							vbo_info_marker_room.close();
 						}
-						vbo_info_markers[this['vbo_unit']].open(vbo_geomap, this);
+						vbo_info_markers[marker_vbo_unit].open(vbo_geomap, this);
 					} else {
 						console.error('info marker not found', this);
 					}
@@ -213,8 +258,9 @@ if ($geo->isSupported()) {
 		var def_map_options = {
 			center: new google.maps.LatLng(<?php echo $geo_params->latitude; ?>, <?php echo $geo_params->longitude; ?>),
 			zoom: <?php echo (int)$geo_params->zoom; ?>,
+			mapId: 'vbo_map',
 			mapTypeId: '<?php echo $geo_params->mtype; ?>',
-			mapTypeControl: false
+			mapTypeControl: false,
 		};
 		// initialize Map
 		vbo_geomap = new google.maps.Map(document.getElementById('vbo-geo-map'), def_map_options);
@@ -225,14 +271,13 @@ if ($geo->isSupported()) {
 				content: vboGenerateMainInfoMarkerContent(),
 			});
 			// add map marker for base room-type
-			vbo_geomarker_room = new google.maps.Marker({
-				draggable: false,
+			vbo_geomarker_room = new google.maps.marker.AdvancedMarkerElement({
 				map: vbo_geomap,
 				position: {
 					lat: parseFloat(vbo_geomarker_room_pos.lat),
-					lng: parseFloat(vbo_geomarker_room_pos.lng)
+					lng: parseFloat(vbo_geomarker_room_pos.lng),
 				},
-				title: '<?php echo addslashes($this->room['name']); ?>'
+				title: <?php echo json_encode($this->room['name']); ?>,
 			});
 			// add listener to marker
 			vbo_geomarker_room.addListener('click', function() {
@@ -262,12 +307,18 @@ if ($geo->isSupported()) {
 		}
 	}
 
-	jQuery(function() {
-
-		// init geo map with current markers, if any
-		vboInitGeoMap();
-
-	});
+	VBOCore.DOMLoaded(() => {
+        /**
+		 * Register promise for Google Maps async loading completion.
+		 */
+		VBOCore.onInstanceReady(() => {
+			// constantly check when Google Maps async loading is completed
+			return VBOGMapsUtils.isReady;
+		}).then(() => {
+			// init geo map with current markers, if any
+			vboInitGeoMap();
+		});
+    });
 </script>
 		<?php
 	}

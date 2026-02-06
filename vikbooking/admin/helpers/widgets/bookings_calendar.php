@@ -188,7 +188,6 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				<a class="vbo-widget-booskcal-mday-back" href="JavaScript: void(0);" onclick="vboWidgetBooksCalMonth('<?php echo $wrapper; ?>');"><?php VikBookingIcons::e('chevron-left'); ?> <?php echo $period_date; ?></a>
 				<span class="vbo-widget-booskcal-mday-name"></span>
 			</div>
-			<div class="vbo-dashboard-guests-latest vbo-widget-booskcal-mday-list" data-ymd="" data-offset="0" data-length="<?php echo $this->bookings_per_page; ?>"></div>
 			<div class="vbo-widget-booskcal-mday-pricing" style="display: none;">
 				<div class="vbo-widget-booskcal-mday-pricing-title">
 					<span><?php echo JText::translate('VBO_RATES_AND_RESTR'); ?></span>
@@ -214,6 +213,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 					</div>
 				</div>
 			</div>
+			<div class="vbo-dashboard-guests-latest vbo-widget-booskcal-mday-list" data-ymd="" data-offset="0" data-length="<?php echo $this->bookings_per_page; ?>"></div>
 		</div>
 
 		<div class="vbo-widget-booskcal-newbook-wrap" data-ymd="" data-roomid="" style="display: none;">
@@ -444,8 +444,11 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 						$rdnotes_key = $cell_ymd . '_' . $room_id . '_0';
 						$has_rdnotes = isset($rday_notes[$rdnotes_key]);
 
+						// check if a specific room rate plan ID was requested
+						$rate_plan_id = (int) $this->getOption('id_price', 0);
+
 						?>
-						<td class="vbo-widget-booskcal-cell-mday <?php echo implode(' ', array_unique($cell_classes)); ?>" onclick="vboWidgetBooksCalMday('<?php echo $wrapper; ?>', this);" data-bids="<?php echo implode(',', array_unique($cell_bids)); ?>" data-ymd="<?php echo $cell_ymd; ?>" data-wday="<?php echo $info_arr['wday']; ?>" data-dayread="<?php echo htmlspecialchars($cell_day_read); ?>" data-cta="0" data-ctd="0">
+						<td class="vbo-widget-booskcal-cell-mday <?php echo implode(' ', array_unique($cell_classes)); ?>" onclick="vboWidgetBooksCalMday('<?php echo $wrapper; ?>', this, <?php echo $rate_plan_id; ?>);" data-bids="<?php echo implode(',', array_unique($cell_bids)); ?>" data-ymd="<?php echo $cell_ymd; ?>" data-wday="<?php echo $info_arr['wday']; ?>" data-dayread="<?php echo htmlspecialchars($cell_day_read); ?>" data-cta="0" data-ctd="0">
 							<span class="vbo-widget-booskcal-mday-val"><?php echo $info_arr['mday']; ?></span>
 						<?php
 						if ($has_fests || $has_rdnotes) {
@@ -492,7 +495,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				checkout: jQuery('#<?php echo $wrapper; ?>').find('.vbo-widget-bookscal-checkoutdt'),
 				showOn: "focus",
 				minDate: "-1m",
-				maxDate: "+3y",
+				maxDate: "+2y",
 				yearRange: "<?php echo date('Y'); ?>:<?php echo (date('Y') + 3); ?>",
 				changeMonth: true,
 				changeYear: true,
@@ -566,13 +569,26 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		<?php
 		// check if a specific day was requested through the widget options
 		$force_day = $this->getOption('day', '');
+		$room_rates_loading = $this->getOption('roomrates', 0);
 		if ($force_day && preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $force_day)) {
-			// trigger the click event over the requested day
-			?>
+			if ($room_rates_loading) {
+				// navigation to requested day should wait for room rates to have loaded
+				?>
+			document.addEventListener('vbo-widget-booskcal-rates-loaded', function vbo_wbookscal_handle_mng_dayrate(e) {
+				// make sure the same event won't propagate again
+				e.target.removeEventListener(e.type, vbo_wbookscal_handle_mng_dayrate);
+				// trigger click event on the requested day once rates have been loaded
+				document.querySelector('.vbo-widget-booskcal-cell-mday[data-ymd="<?php echo $force_day; ?>"]').dispatchEvent(new Event('click'));
+			});
+				<?php
+			} else {
+				// trigger the click event over the requested day element when it's about bookings/availability
+				?>
 			setTimeout(() => {
 				jQuery('.vbo-widget-booskcal-cell-mday[data-ymd="<?php echo $force_day; ?>"]').trigger('click');
 			}, 100);
-			<?php
+				<?php
+			}
 		}
 
 		// check if a new booking was forced to be created
@@ -858,6 +874,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 			}
 
 			// append navigation
+			if ($page_offset > 0 || $has_next_page) {
 			?>
 				<div class="vbo-widget-commands vbo-widget-commands-right">
 					<div class="vbo-widget-commands-main">
@@ -882,6 +899,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 					</div>
 				</div>
 			<?php
+			}
 
 			// append JS code
 			?>
@@ -1484,11 +1502,11 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 		}
 
 		// check multitask data
-		$page_bid 		 = 0;
-		$load_room 		 = 0;
+		$page_bid        = 0;
+		$load_room       = 0;
 		$load_room_rates = 0;
 		$modal_load_bid  = '';
-		$js_modal_id 	 = '';
+		$js_modal_id     = '';
 		if ($data) {
 			// access Multitask data
 			$page_bid = $data->getBookingID() ?: $this->options()->fetchBookingId();
@@ -1679,6 +1697,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 			 */
 			var vboWidgetBooksCalRoomOtaRels = {};
 			var vbo_currency_symbol = "<?php echo $currencysymb; ?>";
+			var vbo_currency_position = "<?php echo VikBooking::getCurrencyPosition(); ?>";
 			var vbo_currency_digits = "<?php echo $currency_digits; ?>";
 			var vbo_currency_decimals = "<?php echo $currency_decimals; ?>";
 			var vbo_currency_thousands = "<?php echo $currency_thousands; ?>";
@@ -1900,6 +1919,11 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 								// append day-rates-restrictions element
 								day_elem.append(rrestr_html);
 							}
+
+							// trigger event when room rates have been loaded
+							VBOCore.emitEvent('vbo-widget-booskcal-rates-loaded', {
+								wrapper: wrapper,
+							});
 						} catch(err) {
 							console.error('could not parse JSON response', err, response);
 						}
@@ -2059,7 +2083,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 			/**
 			 * Enter the month-day view mode from monthly view.
 			 */
-			function vboWidgetBooksCalMday(wrapper, element) {
+			function vboWidgetBooksCalMday(wrapper, element, price_id) {
 				var widget_instance = jQuery('#' + wrapper);
 				if (!widget_instance.length) {
 					return false;
@@ -2192,7 +2216,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 									day_rplan_html += '<span class="vbo-widget-booskcal-mday-pricing-cost">' + tariff['formatted_cost'] + '</span> ';
 									day_rplan_html += '<a class="vbo-widget-booskcal-mday-pricing-edit" href="JavaScript: void(0);" onclick="vboWidgetBooksCalToggleEditSetRate(this, \'' + wrapper + '\');">' + Joomla.JText._('VBMAINPAYMENTSEDIT') + '</a>';
 									// edit container
-									day_rplan_html += '<div class="vbo-widget-booskcal-mday-pricing-edit-wrap" style="display: none;">';
+									day_rplan_html += '<div class="vbo-widget-booskcal-mday-pricing-edit-wrap" style="' + (!price_id || price_id != tariff['idprice'] ? 'display: none;' : '') + '">';
 									day_rplan_html += '	<div class="vbo-widget-booskcal-mday-pricing-edit-block vbo-widget-booskcal-mday-pricing-edit-cost">';
 									day_rplan_html += '		<label>' + Joomla.JText._('VBRATESOVWSETNEWRATE') + '</label>';
 									day_rplan_html += '		<div class="vbo-widget-booskcal-mday-pricing-edit-input vbo-input-currency-wrap">';
@@ -2602,6 +2626,7 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				// access the currency object
 				let currencyObj = VBOCore.getCurrency({
 					symbol:     vbo_currency_symbol,
+					position:   vbo_currency_position,
 					digits:     vbo_currency_digits,
 					decimals:   vbo_currency_decimals,
 					thousands:  vbo_currency_thousands,
@@ -2703,7 +2728,8 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 				// the rate plan block
 				let rplan_block = btn.closest('.vbo-widget-booskcal-mday-pricing-data-cost');
 
-				// gather the rate plan ID
+				// gather room and rate plan IDs
+				let room_id = widget_instance.find('.vbo-booskcal-roomid').val();
 				let rplan_id = rplan_block.attr('data-rplan-id');
 
 				// disable button to prevent duplicate triggers
@@ -2749,6 +2775,11 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 					ota_pricing = null;
 				}
 
+				// gather values to set
+				let ymd = rplan_block.attr('data-ymd');
+				let setRate = rplan_block.find('.vbo-widget-booskcal-mday-pricing-edit-newcost').val();
+				let setMinLos = rplan_block.find('.vbo-widget-booskcal-mday-pricing-edit-newminlos').val();
+
 				// the widget method to call
 				var call_method = 'setRoomDayRateRestiction';
 
@@ -2759,11 +2790,11 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 						widget_id: "<?php echo $this->getIdentifier(); ?>",
 						call: call_method,
 						return: 1,
-						ymd: rplan_block.attr('data-ymd'),
+						ymd: ymd,
 						rplan_id: rplan_id,
-						room_id: widget_instance.find('.vbo-booskcal-roomid').val(),
-						rate: rplan_block.find('.vbo-widget-booskcal-mday-pricing-edit-newcost').val(),
-						minlos: rplan_block.find('.vbo-widget-booskcal-mday-pricing-edit-newminlos').val(),
+						room_id: room_id,
+						rate: setRate,
+						minlos: setMinLos,
 						updotas: updotas,
 						ota_pricing: ota_pricing,
 						wrapper: wrapper,
@@ -2796,6 +2827,15 @@ class VikBookingAdminWidgetBookingsCalendar extends VikBookingAdminWidget
 								// render results
 								vboWidgetBooksCalRenderChannelManagerResult(obj_res[call_method]['new_rates']['vcm']);
 							}
+
+							// trigger global event when new rates have been applied
+							VBOCore.emitEvent('vbo-room-rates-updated', {
+								ymd: ymd,
+								room_id: room_id,
+								rplan_id: rplan_id,
+								rate: setRate,
+								min_los: setMinLos,
+							});
 
 							// finalize the operation by going back to the monthly view with a little timeout
 							setTimeout(() => {

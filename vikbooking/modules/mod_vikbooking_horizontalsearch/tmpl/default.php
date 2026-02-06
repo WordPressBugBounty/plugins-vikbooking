@@ -95,6 +95,71 @@ if (method_exists($now_lang, 'isRtl')) {
 	$is_rtl_str = $now_lang->isRtl() ? 'true' : $is_rtl_str;
 }
 
+// months names list "full"
+$month_names_full_list = [
+	JText::translate('JANUARY'),
+	JText::translate('FEBRUARY'),
+	JText::translate('MARCH'),
+	JText::translate('APRIL'),
+	JText::translate('MAY'),
+	JText::translate('JUNE'),
+	JText::translate('JULY'),
+	JText::translate('AUGUST'),
+	JText::translate('SEPTEMBER'),
+	JText::translate('OCTOBER'),
+	JText::translate('NOVEMBER'),
+	JText::translate('DECEMBER'),
+];
+
+// month names list "short"
+$month_names_short_list = [
+	JText::translate('JANUARY_SHORT'),
+	JText::translate('FEBRUARY_SHORT'),
+	JText::translate('MARCH_SHORT'),
+	JText::translate('APRIL_SHORT'),
+	JText::translate('MAY_SHORT'),
+	JText::translate('JUNE_SHORT'),
+	JText::translate('JULY_SHORT'),
+	JText::translate('AUGUST_SHORT'),
+	JText::translate('SEPTEMBER_SHORT'),
+	JText::translate('OCTOBER_SHORT'),
+	JText::translate('NOVEMBER_SHORT'),
+	JText::translate('DECEMBER_SHORT'),
+];
+
+// week day names list "full"
+$day_names_full_list = [
+	JText::translate('SUNDAY'),
+	JText::translate('MONDAY'),
+	JText::translate('TUESDAY'),
+	JText::translate('WEDNESDAY'),
+	JText::translate('THURSDAY'),
+	JText::translate('FRIDAY'),
+	JText::translate('SATURDAY'),
+];
+
+// list of week day names for "short" and "min" versions
+$day_names_short_list = [
+	JText::translate('SUN'),
+	JText::translate('MON'),
+	JText::translate('TUE'),
+	JText::translate('WED'),
+	JText::translate('THU'),
+	JText::translate('FRI'),
+	JText::translate('SAT'),
+];
+$day_names_min_list = [];
+foreach ($day_names_short_list as $wdn) {
+	$day_names_min_list[] = mb_substr($wdn, 0, 2, 'UTF-8');
+}
+
+// ensure this language does not produce conflicting week-days "min"
+$day_names_min_list = array_unique($day_names_min_list);
+if (count($day_names_min_list) != count($day_names_short_list)) {
+	// fallback onto the "short" week-days list to avoid conflicts with this language
+	$day_names_min_list = $day_names_short_list;
+}
+
 $ldecl = '
 jQuery.noConflict();
 jQuery(function($) {'."\n".'
@@ -103,11 +168,11 @@ jQuery(function($) {'."\n".'
 		prevText: "'.JText::translate('VBJQCALPREV').'",'."\n".'
 		nextText: "'.JText::translate('VBJQCALNEXT').'",'."\n".'
 		currentText: "'.JText::translate('VBJQCALTODAY').'",'."\n".'
-		monthNames: ["'.JText::translate('VBMONTHONE').'","'.JText::translate('VBMONTHTWO').'","'.JText::translate('VBMONTHTHREE').'","'.JText::translate('VBMONTHFOUR').'","'.JText::translate('VBMONTHFIVE').'","'.JText::translate('VBMONTHSIX').'","'.JText::translate('VBMONTHSEVEN').'","'.JText::translate('VBMONTHEIGHT').'","'.JText::translate('VBMONTHNINE').'","'.JText::translate('VBMONTHTEN').'","'.JText::translate('VBMONTHELEVEN').'","'.JText::translate('VBMONTHTWELVE').'"],'."\n".'
-		monthNamesShort: ["'.mb_substr(JText::translate('VBMONTHONE'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHTWO'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHTHREE'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHFOUR'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHFIVE'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHSIX'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHSEVEN'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHEIGHT'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHNINE'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHTEN'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHELEVEN'), 0, 3, 'UTF-8').'","'.mb_substr(JText::translate('VBMONTHTWELVE'), 0, 3, 'UTF-8').'"],'."\n".'
-		dayNames: ["'.JText::translate('VBJQCALSUN').'", "'.JText::translate('VBJQCALMON').'", "'.JText::translate('VBJQCALTUE').'", "'.JText::translate('VBJQCALWED').'", "'.JText::translate('VBJQCALTHU').'", "'.JText::translate('VBJQCALFRI').'", "'.JText::translate('VBJQCALSAT').'"],'."\n".'
-		dayNamesShort: ["'.mb_substr(JText::translate('VBJQCALSUN'), 0, 3, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALMON'), 0, 3, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALTUE'), 0, 3, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALWED'), 0, 3, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALTHU'), 0, 3, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALFRI'), 0, 3, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALSAT'), 0, 3, 'UTF-8').'"],'."\n".'
-		dayNamesMin: ["'.mb_substr(JText::translate('VBJQCALSUN'), 0, 2, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALMON'), 0, 2, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALTUE'), 0, 2, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALWED'), 0, 2, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALTHU'), 0, 2, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALFRI'), 0, 2, 'UTF-8').'", "'.mb_substr(JText::translate('VBJQCALSAT'), 0, 2, 'UTF-8').'"],'."\n".'
+		monthNames: ' . json_encode($month_names_full_list) . ','."\n".'
+		monthNamesShort: ' . json_encode($month_names_short_list) . ','."\n".'
+		dayNames: ' . json_encode($day_names_full_list) . ','."\n".'
+		dayNamesShort: ' . json_encode($day_names_short_list) . ','."\n".'
+		dayNamesMin: ' . json_encode($day_names_min_list) . ','."\n".'
 		weekHeader: "'.JText::translate('VBJQCALWKHEADER').'",'."\n".'
 		dateFormat: "'.$juidf.'",'."\n".'
 		firstDay: '.VikBooking::getFirstWeekDay().','."\n".'
@@ -622,7 +687,7 @@ jQuery(function() {
 	});
 	jQuery(document).mouseup(function(e) {
 		if (!vboCalVisible{$randid} && !vboGuestsVisible{$randid}) {
-			return false;
+			return;
 		}
 		if (vboCalVisible{$randid}) {
 			var vbo_overlay_cont = jQuery('.vbo-horizsearch-dpicker-cont');

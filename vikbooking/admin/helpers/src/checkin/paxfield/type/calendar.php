@@ -59,7 +59,7 @@ final class VBOCheckinPaxfieldTypeCalendar extends VBOCheckinPaxfieldType
 
 		// compose HTML content for the field
 		$field_html = <<<HTML
-<input id="$field_id" type="text" autocomplete="off" data-gind="$guest_number" class="$pax_field_class" name="$name" value="$value" />
+<input id="$field_id" type="text" autocomplete="off" data-gind="$guest_number" class="$pax_field_class" name="$name" value="$value" readonly />
 <i class="$cal_icon"></i>
 HTML;
 

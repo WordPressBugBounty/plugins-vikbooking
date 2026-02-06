@@ -392,12 +392,19 @@ final class VBONotificationCenter
 		];
 
 		foreach ($notifications as $notification) {
-			// wrap the notification array/object into a registry
-			$notif_registry = new VBONotificationElements($notification);
+			// wrap the notification array/object into a proper type-registry
+			$notif_registry = VBONotificationElements::getInstance($notification);
 
 			if ($this->storeNotification($notif_registry)) {
 				// record was stored successfully
 				$result['new_notifications']++;
+
+				/**
+				 * Trigger a postflight action for this type of notification.
+				 * 
+				 * @since 	1.18.3 (J) - 1.8.3 (WP)
+				 */
+				$notif_registry->postflight();
 
 				// parse the next one
 				continue;
@@ -540,11 +547,41 @@ final class VBONotificationCenter
 
 		// check if automatic notifications should be generated.
 		if (!empty($last_download)) {
+			// past month notification
 			$last_info   = getdate(strtotime($last_download));
 			$prev_m_info = getdate(strtotime('-1 month'));
 			if ($last_info['mon'] == $prev_m_info['mon'] && $last_info['year'] == $prev_m_info['year']) {
 				// we are on a new month, generate a finance notification for the past month
 				$this->generatePastMonthNotification($last_info);
+			}
+
+			/**
+			 * Check if there are some pending AI training drafts to review.
+			 * 
+			 * @since 	1.18.6 (J) - 1.8.6 (WP)
+			 */
+			try {
+				if (!class_exists('VCMAiModelTraining')) {
+					// do not proceed
+					throw new Exception('E4jConnect Channel Manager unavailable or unsupported.', 500);
+				}
+				// load the draft training sets
+	            $response = (new VCMAiModelTraining)->getItems([
+	                // needs review
+	                'status' => 2,
+	            ], [
+	                'ordering' => 'created',
+	                'direction' => 'asc',
+	                'offset' => 0,
+	                'limit' => 1,
+	            ]);
+
+	            if ($response->pagination->total ?? 0) {
+	            	// there are some pending drafts to review, generate a notification
+	            	$this->generatePendingAiDraftsNotification((int) $response->pagination->total);
+	            }
+			} catch (Exception $e) {
+				// do nothing
 			}
 		}
 
@@ -626,6 +663,36 @@ final class VBONotificationCenter
 				'fromdate' => date('Y-m-01', $month[0]),
 				'todate'   => date('Y-m-t', $month[0]),
 				'type'     => 'month',
+			],
+		];
+
+		try {
+			// store the notification(s)
+			$this->store([$notification]);
+		} catch (Throwable $e) {
+			// silently catch the error
+		}
+	}
+
+	/**
+	 * Generates a notification for the pending AI training drafts to review.
+	 * 
+	 * @param 	int 	$count 	The number of pending AI drafts to review.
+	 * 
+	 * @return 	void
+	 */
+	private function generatePendingAiDraftsNotification(int $count)
+	{
+		// build past month finance notification payload
+		$notification = [
+			'sender'         => 'ai',
+			'type'           => 'training.drafts',
+			'title'          => JText::translate('VBO_W_AITRAININGDRAFTS_TITLE'),
+			'summary'        => JText::plural('VBO_AITRAININGDRAFTS_SUMMARY_COUNT', $count),
+			'widget'         => 'ai_training_drafts',
+			'widget_options' => [
+				'trigger' => 'nc',
+				'dt' => date('Y-m-d'),
 			],
 		];
 

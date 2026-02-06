@@ -33,6 +33,7 @@
 		--vbo-middle-color-btn: #262f39;
 		--vbo-grey-blue-bg: #424954;
 		--vbo-light-blue: #313f4d;
+		--vbo-white-blue-bg: #282e39;
 	
 		/* Config bg and text color */
 		--vbo-config-bg-color: #282b33;
@@ -156,7 +157,12 @@
 	.label, .badge {
 		background-color: #666;
 	}
-	table.table th, table.table td {
+	table.table th {
+		background: var(--vbo-config-child-bg-color);
+		border-top: 1px solid var(--vbo-config-border-color);
+		border-bottom: 0;
+	}
+	table.table td {
 		background: var(--vbo-config-bg-color);
 		border-top: 1px solid var(--vbo-config-border-color);
 		border-bottom: 0;
@@ -183,12 +189,12 @@
 	.vbo-admin-dock-wrapper {
 		background: #30588bc4;
 	}
-	
+
 	/* Config tabs */
 		.vbo-config-tabs-wrap dl.tabs {
 			border-bottom: 1px solid var(--vbo-light-color-btn);
 	}
-	
+
 	/* Color action buttons */
 	.jtoolbar .page-title-action {
 		background: transparent;
@@ -385,13 +391,19 @@
 	.bluedays.vbo-tablewday-wend {
 		background: var(--vbo-middle-color-btn) !important;
 	}
+	.bluedays.vbo-overv-cell-newmonth {
+    	background-color: #202c57 !important;
+	}
+	.vbo-roverview-table .vboverviewtablerow-subunit-unassigned td:first-child, .vbo-roverview-table .vboverviewtablerow-subunit-unassigned td.vbo-overv-avcell {
+    	color: #222;
+	}
 	.block-picked-start, .block-picked-middle, .block-picked-end {
 		background: rgba(255, 196, 153, 0.5);
 	}
 	.ui-widget-content a {
 		color: inherit;
 	}
-	
+
 	.popover {
 		background: var(--vbo-light-color-btn) !important;
 	}
@@ -414,7 +426,7 @@
 	code, kbd {
 		background: var(--vbo-config-bg-color);
 	}
-	
+
 	/* vbo */
 	.vbo-admin-widget-sticky-notes-wrap .vbo-admin-widget-sticky-notes-list > li {
 		background: #a9d4ee;
@@ -673,10 +685,10 @@
 		background-color: var(--vbo-light-color-btn);
 	}
 	/* Content Builder */
-	.ql-toolbar.ql-snow + .ql-container.ql-snow  {
-		background: var(--vbo-middle-color-btn);
+	.ql-toolbar.ql-snow + .ql-container.ql-snow, .vbo-tm-panel-editor {
+		background: var(--vbo-middle-color-btn) !important;
 	}
-	
+
 	/* @Joomla */
 	body.admin #status {
 		background: var(--vbo-config-bg-color);
@@ -944,17 +956,17 @@
 		background-color: #373737;
 		color: #717171
 	}
-	
+
 	/* Main Menu */
 	.vbo-submenu-wrap li > div .vbo-submenu-item-helper-link .vbo-submenu-item-helper-avatar img {
 		border: 1px solid var(--vbo-body-bg-color);
 	}
-	
+
 	/* Dropdown Context Menu */
 	.vik-context-menu.vbo-dropdown-cxmenu {
 		background: var(--vbo-config-bg-color);
 	}
-	
+
 	/* Joomla4 */
 	body.admin.layout-default #jmodal-vbo-notification-details button.btn-close {
 		position: relative;
@@ -1187,7 +1199,7 @@
 	.vbo-loading-dnd-response {
 		background: rgba(58, 58, 58, 0.87);
 	}
-	
+
 	#contextual-help-back {
 		background-color: var(--vbo-light-blue);
 		border-color: var(--vbo-config-border-color);
@@ -1199,7 +1211,7 @@
 	#screen-meta-links .show-settings {
 		border-color: var(--vbo-basic-btn-focus);
 	}
-	
+
 	/* Widgets customizations */
 	.vbo-widget-notifscenter-wrap .vbo-widget-notifscenter-group span:not([data-badge-count=""])::after {
 		background: var(--vbo-grey-blue-bg);
@@ -1217,106 +1229,62 @@
 	.vbo-w-guestmessages-message-new .vbo-w-guestmessages-message-gtitle .message-new {
 		color: #78afdd;
 	}
-	
+
 	/* AI channel */
 	.aitools-message-addon .vbo-ai-source-badge-details {
 		color: #fff;
 	}
-	
+	.aitools-messages-action-wrapper .aitools-uploaded-files .file-attachment {
+		background: var(--vbo-grey-blue-bg);
+		border-color: var(--vbo-config-bg-dark);
+	}
+
 	/* Color Tags */
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.red {
-		background-color: var(--vbo-tag-red-bg);
-		color: var(--vbo-tag-red-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.green {
-		background-color: var(--vbo-tag-green-bg);
-		color: var(--vbo-tag-green-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.olive {
-		background-color: var(--vbo-tag-olive-bg);
-		color: var(--vbo-tag-olive-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.blue {
-		background-color: var(--vbo-tag-blue-bg);
-		color: var(--vbo-tag-blue-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.ocean {
-		background-color: var(--vbo-tag-ocean-bg);
-		color: var(--vbo-tag-ocean-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.brown {
-		background-color: var(--vbo-tag-brown-bg);
-		color: var(--vbo-tag-brown-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.yellow {
-		background-color: var(--vbo-tag-yellow-bg);
-		color: var(--vbo-tag-yellow-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.orange {
-		background-color: var(--vbo-tag-orange-bg);
-		color: var(--vbo-tag-orange-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.purple {
-		background-color: var(--vbo-tag-purple-bg);
-		color: var(--vbo-tag-purple-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.pink {
-		background-color: var(--vbo-tag-pink-bg);
-		color: var(--vbo-tag-pink-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.black {
-		background-color: var(--vbo-tag-black-bg);
-		color: var(--vbo-tag-black-txt);
-	}
-	.vbo-tagcolors-elems-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice .vbo-sel2-selected-tag.gray {
-		background-color: var(--vbo-tag-gray-bg);
-		color: var(--vbo-tag-gray-txt);
-	}
-	.vbo-colortag-circle.red {
+	.vbo-tagcolors-elems-wrap .red, .vbo-tm-color.red, .vbo-colortag-circle.red {
 		background-color: var(--vbo-tag-red-bg);
 		border-color: var(--vbo-tag-red-border);
 	}
-	.vbo-colortag-circle.green {
+	.vbo-tagcolors-elems-wrap .green, .vbo-tm-color.green, .vbo-colortag-circle.green {
 		background-color: var(--vbo-tag-green-bg);
 		border-color: var(--vbo-tag-green-border);
 	}
-	.vbo-colortag-circle.olive {
+	.vbo-tagcolors-elems-wrap .olive, .vbo-tm-color.olive, .vbo-colortag-circle.olive {
 		background-color: var(--vbo-tag-olive-bg);
 		border-color: var(--vbo-tag-olive-border);
 	}
-	.vbo-colortag-circle.blue {
+	.vbo-tagcolors-elems-wrap .blue, .vbo-tm-color.blue, .vbo-colortag-circle.blue {
 		background-color: var(--vbo-tag-blue-bg);
 		border-color: var(--vbo-tag-blue-border);
 	}
-	.vbo-colortag-circle.ocean {
+	.vbo-tagcolors-elems-wrap .ocean, .vbo-tm-color.ocean, .vbo-colortag-circle.ocean {
 		background-color: var(--vbo-tag-ocean-bg);
 		border-color: var(--vbo-tag-ocean-border);
 	}
-	.vbo-colortag-circle.brown {
+	.vbo-tagcolors-elems-wrap .brown, .vbo-tm-color.brown, .vbo-colortag-circle.brown {
 		background-color: var(--vbo-tag-brown-bg);
 		border-color: var(--vbo-tag-brown-border);
 	}
-	.vbo-colortag-circle.yellow {
+	.vbo-tagcolors-elems-wrap .yellow, .vbo-tm-color.yellow, .vbo-colortag-circle.yellow {
 		background-color: var(--vbo-tag-yellow-bg);
 		border-color: var(--vbo-tag-yellow-border);
 	}
-	.vbo-colortag-circle.orange {
+	.vbo-tagcolors-elems-wrap .orange, .vbo-tm-color.orange, .vbo-colortag-circle.orange {
 		background-color: var(--vbo-tag-orange-bg);
 		border-color: var(--vbo-tag-orange-border);
 	}
-	.vbo-colortag-circle.purple {
+	.vbo-tagcolors-elems-wrap .purple, .vbo-tm-color.purple, .vbo-colortag-circle.purple {
 		background-color: var(--vbo-tag-purple-bg);
 		border-color: var(--vbo-tag-purple-border);
 	}
-	.vbo-colortag-circle.pink {
+	.vbo-tagcolors-elems-wrap .pink, .vbo-tm-color.pink, .vbo-colortag-circle.pink {
 		background-color: var(--vbo-tag-pink-bg);
 		border-color: var(--vbo-tag-pink-border);
 	}
-	.vbo-colortag-circle.black {
+	.vbo-tagcolors-elems-wrap .black, .vbo-tm-color.black, .vbo-colortag-circle.black {
 		background-color: var(--vbo-tag-black-bg);
 		border-color: var(--vbo-tag-black-border);
 	}
-	.vbo-colortag-circle.gray {
+	.vbo-tagcolors-elems-wrap .gray, .vbo-tm-color.gray, .vbo-colortag-circle.gray {
 		background-color: var(--vbo-tag-gray-bg);
 		border-color: var(--vbo-tag-gray-border);
 	}
@@ -1330,5 +1298,34 @@
 	}
 	.vbo-history-timeline .history-timeline-change .change-details .change-events-list {
 		background: #4f4f4f;   
+	}
+
+	/* MultiSwitcher double status */
+	.vik-multiswitch-wrap.vbo-multiswitch-double .vik-multiswitch-radiobtn input:checked + .vik-multiswitch-trigger, .vik-multiswitch-wrap.vbo-multiswitch-double .vik-multiswitch-radiobtn input:checked + .vik-multiswitch-trigger + .vik-multiswitch-txt {
+		color: #444;
+	}
+
+	/* Reports */
+	.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody .vbo-report-row-group-1 td {
+		background: var(--vbo-basic-btn-hover);
+	}
+	.vbo-reports-output.vbo-report-output-rms_occupancy_pace table tbody tr.vbo-report-row-comparison td {
+		border-top: 1px solid #1f232b;
+	}
+
+	/* Pagination */
+	.pagination-links .button:not(.disabled) {
+		border: 1px solid var(--vbo-light-color-btn) !important;
+		background: var(--vbo-config-bg-color) !important;
+		border-color: var(--vbo-contrast-text-color);
+	}
+	.pagination-links .button:not(.disabled):hover, .pagination-links .button:not(.disabled):focus {
+		border-color: var(--vbo-base-color) !important;
+		color:  var(--vbo-base-color) !important;
+	}
+	.pagination-links .button.disabled {
+		background: var(--vbo-basic-btn) !important;
+		color: var(--vbo-config-title-color) !important;
+		border-color: var(--vbo-config-border-color) !important;
 	}
 }

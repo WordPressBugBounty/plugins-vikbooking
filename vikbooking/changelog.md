@@ -1,5 +1,72 @@
 # Changelog
 
+## 1.8.6
+
+*Release date - 22 January 2026*
+
+- Availability Overview new "inline-scroll" layout.
+- Increase/Decrease Rates in Rates Overview and Multi-Calendar.
+- Rates Overview new option to display OTA rates (E4jConnect channel manager required).
+- Newly created derived rate plans can populate the base rates for all listings.
+- Identity document AI-powered details extraction through MRZ (E4jConnect channel manager required).
+- Various pre-check-in improvements, including MRZ detection support.
+- Introducing Revenue Manager (RMS) framework and libraries.
+- New RMS Reports: Occupancy Pace and Booking Pace (E4jConnect channel manager required).
+- New Door Access Control integration for Nuki - Smart Locks (E4jConnect channel manager required).
+- Door Access Control passcode generation failures support re-try actions through the Notifications Center.
+- OAuth2 support for custom third-party applications and Door Access Control framework.
+- Webhook endpoint support for custom third-party applications and Door Access Control framework.
+- Booking.com Virtual Card Update notifications (E4jConnect channel manager required).
+- Automatic payment scheduling and collection for Virtual Credit Cards.
+- Various improvements to OTA payout notifications (E4jConnect channel manager required).
+- Various improvements to the electronic invoicing framework.
+- Batch update for "unsafe" customer PIN codes detected.
+- New admin-widget AI Training Drafts (E4jConnect channel manager required).
+- Guest messaging: AI self-training functionalities for approval or rejection (E4jConnect channel manager required).
+- Guest messaging: added support to suspicious messages (phishing) delivered by OTA notifications.
+- Guest messaging: manually generated AI replies can rely on the model's pre-trained knowledge.
+- New backup export type "Reservations - Pricing" to include only time-sensitive operational data.
+
+## 1.8.5
+
+*Release date - 26 November 2025*
+
+- OTA onboarding improvements for new listings (E4jConnect channel manager required).
+- OTA guest messages indexing and faster processing (E4jConnect channel manager required).
+- Split stay bookings calculation improvements.
+- New payment transaction hooks for custom metadata.
+- Database optimization scheduling.
+- Additional caching support to rates calculation.
+- Minor framework improvements.
+
+## 1.8.4
+
+*Release date - 13 November 2025*
+
+- Introducing the new Door Access Control framework (E4jConnect channel manager required).
+- Native support for TTLock - Smart Locks added to Door Access Control framework.
+- Task Manager: AI maintenance tasks from guest requests.
+- OTA bookings expected payout amounts.
+- Airbnb Hosting Quality metrics and dashboard (E4jConnect channel manager required).
+- Minor framework improvements.
+
+## 1.8.3
+
+*Release date - 13 October 2025*
+
+- Search results filtering options (categories, amenities, price range).
+- Search results new interactive map with grid layout and advanced map markers.
+- Custom check-in/out times can be defined and overwritten at listing-level.
+- Minimum advance booking notice can be defined and overwritten at listing-level.
+- Custom currency position (before or after price).
+- Silent notifications within the Notification Center.
+- Added support to new OTA payout notifications (E4jConnect channel manager required).
+- Several new hooks added for the creation and modification of bookings.
+- Various performance improvements with large data-sets.
+- New PMS report "Guest Registration Data".
+- Different format for customers PIN code (8 alphanumeric random characters).
+- Various improvements to the Electronic Invoicing framework and interface.
+
 ## 1.8.2
 
 *Release date - 28 July 2025*

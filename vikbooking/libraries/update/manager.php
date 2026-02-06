@@ -740,13 +740,22 @@ class VikBookingUpdateManager
 		$ok = true;
 
 		$sql_base = VIKBOOKING_BASE . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'update' . DIRECTORY_SEPARATOR . 'mysql' . DIRECTORY_SEPARATOR;
+		$sqlFiles = glob($sql_base . '*.sql');
+
+		/**
+		 * Make sure the SQL files are properly executed per ascending version rather than alphabetically.
+		 * 
+		 * @since 1.8.3
+		 */
+		usort($sqlFiles, function($a, $b) {
+			return version_compare(basename($a, '.sql'), basename($b, '.sql'));
+		});
 
 		try
 		{
-			foreach (glob($sql_base . '*.sql') as $file)
+			foreach ($sqlFiles as $file)
 			{
-				$name  = basename($file);
-				$sql_v = substr($name, 0, strrpos($name, '.'));
+				$sql_v = basename($file, '.sql');
 
 				if (version_compare($sql_v, $version, '>'))
 				{

@@ -3,7 +3,7 @@
 Plugin Name:  VikBooking
 Plugin URI:   https://vikwp.com/plugin/vikbooking
 Description:  Certified Booking Engine for Hotels and Accommodations.
-Version:      1.8.2
+Version:      1.8.6
 Author:       E4J s.r.l.
 Author URI:   https://vikwp.com
 License:      GPL2
@@ -215,6 +215,14 @@ add_action('admin_menu', array('VikBookingBuilder', 'setupAdminMenu'));
 
 // register widgets
 add_action('widgets_init', array('VikBookingBuilder', 'setupWidgets'));
+
+/**
+ * Load plugin language when registering the widgets as well.
+ * Since translations are now loaded at "init", they might not be available yet.
+ * 
+ * @since 1.8.4
+ */
+add_action('widgets_init', ['VikBookingBuilder', 'loadLanguage'], 1);
 
 // handle shortcodes (SITE controller dispatcher)
 add_shortcode('vikbooking', function($atts, $content = null)
@@ -613,11 +621,36 @@ add_action('vikbooking_cron_payments_scheduled', function()
 add_action('vikbooking_cron_performance_cleaner', ['VBOPerformanceCleaner', 'runCheck']);
 
 /**
+ * Action used to register a periodic check of door-access-control framework.
+ * This hook will be called by a scheduled event in WP-Cron.
+ * 
+ * @since 	1.8.4
+ * @since 	1.8.6 added support to watch the devices first access.
+ */
+add_action('vikbooking_cron_door_access_control', function()
+{
+	// watch if any booking is approaching the check-in date
+	VBOFactory::getDoorAccessControl()->handleUpcomingArrivals();
+	// watch if passcodes get used for the first time
+	VBOFactory::getDoorAccessControl()->watchFirstAccess();
+});
+
+/**
+ * Action used to register a periodic database cleaning check.
+ * This hook will be called by a scheduled event in WP-Cron.
+ * 
+ * @since 	1.8.5
+ */
+add_action('vikbooking_cron_db_optimization', ['VBOPerformanceCleaner', 'optimizeDatabase']);
+
+/**
  * Install the scheduling of the hook within WP-Cron needed
  * to watch and process the automatic payments scheduled.
  * 
  * @since 	1.6.10
  * @since 	1.7.2  registered "vikbooking_cron_performance_cleaner".
+ * @since 	1.8.4  registered "vikbooking_cron_door_access_control".
+ * @since 	1.8.5  registered "vikbooking_cron_db_optimization".
  */
 add_action('plugins_loaded', function()
 {
@@ -634,6 +667,20 @@ add_action('plugins_loaded', function()
 	{
 		// schedule event starting from the current time for "every week"
 		wp_schedule_event(time(), 'weekly', 'vikbooking_cron_performance_cleaner');
+	}
+
+	// make sure the cron event hasn't been yet scheduled.
+	if (!wp_next_scheduled('vikbooking_cron_door_access_control'))
+	{
+		// schedule event starting from the current time for "every hour"
+		wp_schedule_event(time(), 'hourly', 'vikbooking_cron_door_access_control');
+	}
+
+	// make sure the cron event hasn't been yet scheduled.
+	if (!wp_next_scheduled('vikbooking_cron_db_optimization'))
+	{
+		// schedule event starting from the current time for "every hour"
+		wp_schedule_event(time(), 'hourly', 'vikbooking_cron_db_optimization');
 	}
 }, (PHP_INT_MAX - 1));
 

@@ -157,7 +157,7 @@ class VikBookingRssFeeds
 				// opt-in missing, ask the user to agree to our terms
 				echo JLayoutHelper::render('html.rss.optin');
 			}
-			catch (Exception $e)
+			catch (Throwable $e)
 			{
 				// service declined, go ahead silently	
 			}

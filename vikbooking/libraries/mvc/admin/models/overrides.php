@@ -378,6 +378,16 @@ class VikBookingModelOverrides extends JModel
 				// scan files within the module
 				$files = JFolder::files($tmpl, '\.php$', $recursive = false, $fullPath = true);
 
+				if (!$files)
+				{
+					/**
+					 * Do not include module within the tree in case there are not overrideable files.
+					 * 
+					 * @since 1.8.4
+					 */
+					continue;
+				}
+
 				// iterate files
 				foreach ($files as $file)
 				{

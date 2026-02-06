@@ -111,7 +111,7 @@ class VBOConfigRegistryDatabase extends VBOConfigRegistry
 		if ($this->has($key))
 		{
 			// update existing record
-			$result = $db->updateObject($this->options['table'], $data, 'param');
+			$result = $db->updateObject($this->options['table'], $data, 'param', $updateNulls = true);
 		}
 		else
 		{

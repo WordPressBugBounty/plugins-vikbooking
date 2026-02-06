@@ -139,13 +139,13 @@ class VboApplication extends VikApplication
 	}
 
 	/**
-	* @param $arr_values array
-	* @param $current_key string
-	* @param $empty_value string (J3.x only)
-	* @param $default
-	* @param $input_name string
-	* @param $record_id = '' string
-	*/
+	 * @param $arr_values array
+	 * @param $current_key string
+	 * @param $empty_value string (J3.x only)
+	 * @param $default
+	 * @param $input_name string
+	 * @param $record_id = '' string
+	 */
 	public function getDropDown($arr_values, $current_key, $empty_value, $default, $input_name, $record_id = '')
 	{
 		$dropdown = '';
@@ -307,6 +307,230 @@ JS
 	}
 
 	/**
+	 * Prepares the document to allow JS functions to format currency values.
+	 * 
+	 * @param 	array 	$options 	Optional list of currency settings.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public function prepareJavaScriptCurrency(array $options = [])
+	{
+		static $currencyjs_loaded = null;
+
+		if ($currencyjs_loaded) {
+			// loaded flag
+			return;
+		}
+
+		// cache loaded flag
+		$currencyjs_loaded = 1;
+
+		// get currency formatting options
+		list($currency_digits, $currency_decimals, $currency_thousands) = explode(':', VikBooking::getNumberFormatData());
+
+		// default configuration
+		$config = [
+			'symbol'     => VikBooking::getCurrencySymb() ?: '$',
+			'position'   => VikBooking::getCurrencyPosition(),
+			'digits'     => (int) $currency_digits,
+			'decimals'   => $currency_decimals ?: '.',
+			'thousands'  => $currency_thousands ?: ',',
+			'noDecimals' => 1,
+		];
+
+		// merge settings and encode them in JSON
+		$config = json_encode(array_merge($config, $options));
+
+		// build script declaration
+		$decl = <<<JAVASCRIPT
+VBOCore.DOMLoaded(() => {
+	VBOCore.getCurrency($config);
+});
+JAVASCRIPT;
+
+		// add script declaration to document
+		JFactory::getDocument()->addScriptDeclaration($decl);
+	}
+
+	/**
+	 * Renders a dual slider element composed of two native range input
+	 * elements to pick a minimum and a maximum value.
+	 * 
+	 * @param 	array 	$options 	Optional list of currency settings.
+	 * 
+	 * @return 	string 				The HTML string necessary to render the dual slider element.
+	 * 
+	 * @since 	1.18.3 (J) - 1.8.3 (WP)
+	 */
+	public function renderDualSlider(array $options = [])
+	{
+		static $dual_slider_instances = -1;
+
+		// increase instance counter
+		$dual_slider_instances++;
+
+		// extra container class and suffix
+		$extra_class = $options['class'] ?? '';
+		$extra_class = $extra_class ? ' ' . $extra_class : $extra_class;
+		$suffix_elem = preg_replace('/[^a-z0-9\-_]+/i', '', (string) ($options['suffix'] ?? ''));
+
+		if (empty($options['suffix'])) {
+			// the suffix is required
+			$options['suffix'] = uniqid('ds_');
+		}
+
+		// minimum and maximum range values
+		$min_range = floor((float) ($options['min'] ?? 0));
+		$max_range = ceil((float) ($options['max'] ?? 100));
+		$max_range = $max_range <= $min_range ? ($min_range + 1) : $max_range;
+
+		// default range values
+		$min_default = (float) ($options['min_def'] ?? 0);
+		$max_default = (float) ($options['max_def'] ?? 100);
+		$max_default = $max_default < $min_default ? $min_default : $max_default;
+
+		// range steps
+		$range_diff = $max_range - $min_range;
+		if (empty($options['step']) || ($options['step'] ?? '') === 'auto') {
+			// calculate the best step value
+			if ($range_diff < 50) {
+				$step_default = 1;
+			} elseif ($range_diff < 500) {
+				$step_default = 5;
+			} elseif ($range_diff < 2000) {
+				$step_default = 10;
+			} else {
+				$step_default = 50;
+			}
+		} else {
+			$step_default = (float) ($options['step'] ?? 5);
+		}
+		$step_min = (float) ($options['step_min'] ?? $step_default);
+		$step_max = (float) ($options['step_max'] ?? $step_default);
+
+		if (empty($options['fixed_range'])) {
+			// ensure ranges allow to fullfil the first or last step for both ranges
+			if ($remainder = ($min_range % $step_min)) {
+				$min_range -= $remainder;
+			}
+			if ($remainder = ($max_range % $step_max)) {
+				$max_range += $step_max - $remainder;
+			}
+			$min_range = $min_range < 0 ? 0 : $min_range;
+			$max_range = $max_range < 0 ? 0 : $max_range;
+
+			// ensure the min/max default values can fulfill the step
+			if ($remainder = ($min_default % $step_min)) {
+				// i.e. browser behavior: step 5 - 422 goes to 420 - while 423 goes to 425
+				if ($remainder > ($step_min / 2)) {
+					$min_default -= $remainder;
+				}
+			}
+			if ($remainder = ($max_default % $step_max)) {
+				// i.e. browser behavior: step 5 - 822 goes to 820 - while 823 goes to 825
+				if ($remainder < ($step_max / 2)) {
+					$max_default += $step_max - $remainder;
+				}
+			}
+		}
+
+		// input name attributes
+		$min_name = $options['min_name'] ?? '';
+		$max_name = $options['max_name'] ?? '';
+		$min_name = $min_name ? 'name="' . $min_name . '"' : $min_name;
+		$max_name = $max_name ? 'name="' . $max_name . '"' : $max_name;
+
+		// current range and value HTML/text templates
+		$value_tpl  = ((string) ($options['value_format'] ?? '')) ?: '%d - %d';
+		$value_data = sprintf($value_tpl, $min_default, $max_default);
+		$value_html = <<<HTML
+<span class="vbo-dual-slider-range-value" data-format="{$value_tpl}">{$value_data}</span>
+HTML;
+		$range_tpl  = (string) ($options['range_tpl'] ?? '');
+		$range_html = $range_tpl ? sprintf($range_tpl, $value_html) : '';
+		if ($range_html) {
+			// enclose within fixed HTML container
+			$range_html = <<<HTML
+<div class="vbo-dual-slider-range-current">{$range_html}</div>
+HTML;
+		}
+
+		// build script content
+		$jscript = <<<HTML
+<script>
+	function vboUpdateSliderTrack(trackSuffix) {
+		const dualSlider = document.getElementById('vbo-dual-slider-' + trackSuffix);
+		const minRange = dualSlider.querySelector('input[type="range"].vbo-dual-slider-range-min');
+		const maxRange = dualSlider.querySelector('input[type="range"].vbo-dual-slider-range-max');
+		const track = dualSlider.querySelector('.vbo-dual-slider-track');
+		const rangeValue = dualSlider.querySelector('.vbo-dual-slider-range-value');
+
+		let min = parseInt(minRange.value);
+		let max = parseInt(maxRange.value);
+		if (min > max) {
+			[minRange.value, maxRange.value] = [max, min];
+		}
+
+		let rangeMin = parseInt(minRange.min);
+		let rangeMax = parseInt(minRange.max);
+		let percent1 = ((minRange.value - rangeMin) / (rangeMax - rangeMin)) * 100;
+		let percent2 = ((maxRange.value - rangeMin) / (rangeMax - rangeMin)) * 100;
+
+		track.style.left = percent1 + '%';
+		track.style.width = (percent2 - percent1) + '%';
+
+		if (rangeValue) {
+			let rangeValueFormat = rangeValue.getAttribute('data-format') || '%d - %d';
+			let rangeValueString = rangeValueFormat.replace('%d', minRange.value).replace('%d', maxRange.value);
+			rangeValue.textContent = rangeValueString;
+		}
+	}
+</script>
+HTML;
+
+		if ($dual_slider_instances > 0) {
+			// restart the JS script content to avoid repeating the same function
+			$jscript = '';
+		}
+
+		// keep building script content
+		$jscript .= <<<HTML
+<script>
+	var dualSlider = document.getElementById('vbo-dual-slider-{$suffix_elem}');
+	dualSlider
+		.querySelector('input[type="range"].vbo-dual-slider-range-min')
+		.addEventListener('input', () => {
+			vboUpdateSliderTrack('{$suffix_elem}');
+		});
+	dualSlider
+		.querySelector('input[type="range"].vbo-dual-slider-range-max')
+		.addEventListener('input', () => {
+			vboUpdateSliderTrack('{$suffix_elem}');
+		});
+	vboUpdateSliderTrack('{$suffix_elem}');
+</script>
+HTML;
+
+		// build final HTML string
+		$html = <<<HTML
+<div class="vbo-dual-slider-container{$extra_class}" id="vbo-dual-slider-{$suffix_elem}">
+	<div class="vbo-dual-slider-wrap">
+		<div class="vbo-dual-slider-track vbo-pref-background"></div>
+		<input type="range" class="vbo-dual-slider-range vbo-dual-slider-range-min" min="{$min_range}" max="{$max_range}" value="{$min_default}" step="{$step_min}" {$min_name}/>
+		<input type="range" class="vbo-dual-slider-range vbo-dual-slider-range-max" min="{$min_range}" max="{$max_range}" value="{$max_default}" step="{$step_max}" {$max_name}/>
+	</div>
+	{$range_html}
+</div>
+{$jscript}
+HTML;
+
+		// return the HTML string to be displayed
+		return $html;
+	}
+
+	/**
 	 * Renders a date-time locale input element to pick a date and time.
 	 * 
 	 * @param 	array 	$options 	Associative list of element options.
@@ -364,6 +588,68 @@ JS
 		// build HTML string
 		$html = <<<HTML
 <input type="datetime-local" {$attr_str} />
+HTML;
+
+		// return the HTML string to be displayed
+		return $html;
+	}
+
+	/**
+	 * Renders a time input element to pick a time.
+	 * 
+	 * @param 	array 	$options 	Associative list of element options.
+	 * 
+	 * @return 	string 				The HTML string necessary to render the time picker.
+	 * 
+	 * @since 	1.18.4 (J) - 1.8.4 (WP)
+	 */
+	public function renderTimePicker(array $options = [])
+	{
+		if (!($options['id'] ?? null)) {
+			// the ID attribute is mandatory
+			$options['id'] = uniqid('tp_');
+		}
+
+		// ensure attributes are set
+		if (!($options['attributes'] ?? [])) {
+			$options['attributes'] = [];
+		}
+
+		// attributes name, value, min and max can also be specified outside the "attributes" key
+		if (($options['name'] ?? null) && !($options['attributes']['name'] ?? null)) {
+			// resort the attribute inside the apposite key
+			$options['attributes']['name'] = $options['name'];
+		}
+		if (($options['value'] ?? null) && !($options['attributes']['value'] ?? null)) {
+			// resort the attribute inside the apposite key
+			$options['attributes']['value'] = $options['value'];
+		}
+		if (($options['min'] ?? null) && !($options['attributes']['min'] ?? null)) {
+			// resort the attribute inside the apposite key
+			$options['attributes']['min'] = $options['min'];
+		}
+		if (($options['max'] ?? null) && !($options['attributes']['max'] ?? null)) {
+			// resort the attribute inside the apposite key
+			$options['attributes']['max'] = $options['max'];
+		}
+		if (($options['step'] ?? null) && !($options['attributes']['step'] ?? null)) {
+			// resort the attribute inside the apposite key
+			$options['attributes']['step'] = $options['step'];
+		}
+
+		// build attributes list
+		$attributes = array_merge([
+			'id' => $options['id'],
+		], $options['attributes']);
+
+		// build attributes string
+		$attr_str = implode(' ', array_map(function($name, $value) {
+			return $name . '="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"'; 
+		}, array_keys($attributes), array_values($attributes)));
+
+		// build HTML string
+		$html = <<<HTML
+<input type="time" {$attr_str} />
 HTML;
 
 		// return the HTML string to be displayed
@@ -654,7 +940,7 @@ JAVASCRIPT;
 			$elements = VikBooking::getAvailabilityInstance(true)->loadRooms($filter_listing_ids, 0, true);
 		}
 
-		if (!$elements) {
+		if (!$elements && !$groups) {
 			// abort
 			return '';
 		}
@@ -665,6 +951,11 @@ JAVASCRIPT;
 		if (!($options['id'] ?? null)) {
 			// the ID attribute is mandatory
 			$options['id'] = uniqid('ldd_');
+		}
+
+		if ($options['attributes']['multiple'] ?? null) {
+			// inject custom data attribute to prevent flashing via CSS during JS mutation
+			$options['attributes']['data-will-mutate'] = 1;
 		}
 
 		// build attributes list
@@ -715,6 +1006,11 @@ JAVASCRIPT;
 				'text' => $element['name'] ?? $element['id'],
 				'img'  => $element_img_uri,
 			];
+
+			if (!$element_img_uri && !empty($element['html'])) {
+				// set element HTML (icon) content
+				$data_source['html'] = $element['html'];
+			}
 
 			// check for option selected status
 			if (($options['selected_value'] ?? null) && $options['selected_value'] == $element['id']) {
@@ -888,10 +1184,13 @@ jQuery(function() {
 		data: $data_sources_str,
 		placeholder: $placeholder,
 		templateResult: (element) => {
-			if (!element.img) {
-				return element.text;
+			if (element.img) {
+				return jQuery('<span class="vbo-sel2-element-img"><img src="' + element.img + '" /> <span>' + element.text + '</span></span>');
 			}
-			return jQuery('<span class="vbo-sel2-element-img"><img src="' + element.img + '" /> <span>' + element.text + '</span></span>');
+			if (element.html) {
+				return jQuery('<span class="vbo-sel2-element-img">' + element.html + ' <span>' + element.text + '</span></span>');
+			}
+			return element.text;
 		},
 		$selectionFn
 	});
@@ -1294,14 +1593,31 @@ JS
 		$juidf = $vbo_df == "%d/%m/%Y" ? 'dd/mm/yy' : ($vbo_df == "%m/%d/%Y" ? 'mm/dd/yy' : 'yy/mm/dd');
 
 		$is_rtl_lan = false;
-		$day_names_min_len = 2;
 		$now_lang = JFactory::getLanguage();
 		if (method_exists($now_lang, 'isRtl')) {
 			$is_rtl_lan = $now_lang->isRtl();
-			if ($is_rtl_lan) {
-				// for most RTL languages, 2 chars for the week-days would not make sense
-				$day_names_min_len = 3;
-			}
+		}
+
+		// list of week day names for "short" and "min" versions
+		$day_names_short_list = [
+			JText::translate('SUN'),
+			JText::translate('MON'),
+			JText::translate('TUE'),
+			JText::translate('WED'),
+			JText::translate('THU'),
+			JText::translate('FRI'),
+			JText::translate('SAT'),
+		];
+		$day_names_min_list = [];
+		foreach ($day_names_short_list as $wdn) {
+			$day_names_min_list[] = $this->safeSubstr($wdn, 2);
+		}
+
+		// ensure this language does not produce conflicting week-days "min"
+		$day_names_min_list = array_unique($day_names_min_list);
+		if (count($day_names_min_list) != count($day_names_short_list)) {
+			// fallback onto the "short" week-days list to avoid conflicts with this language
+			$day_names_min_list = $day_names_short_list;
 		}
 
 		// build default regional values for datepicker
@@ -1311,60 +1627,44 @@ JS
 			'nextText'    => JText::translate('VBJQCALNEXT'),
 			'currentText' => JText::translate('VBJQCALTODAY'),
 			'monthNames'  => [
-				JText::translate('VBMONTHONE'),
-				JText::translate('VBMONTHTWO'),
-				JText::translate('VBMONTHTHREE'),
-				JText::translate('VBMONTHFOUR'),
-				JText::translate('VBMONTHFIVE'),
-				JText::translate('VBMONTHSIX'),
-				JText::translate('VBMONTHSEVEN'),
-				JText::translate('VBMONTHEIGHT'),
-				JText::translate('VBMONTHNINE'),
-				JText::translate('VBMONTHTEN'),
-				JText::translate('VBMONTHELEVEN'),
-				JText::translate('VBMONTHTWELVE'),
+				JText::translate('JANUARY'),
+				JText::translate('FEBRUARY'),
+				JText::translate('MARCH'),
+				JText::translate('APRIL'),
+				JText::translate('MAY'),
+				JText::translate('JUNE'),
+				JText::translate('JULY'),
+				JText::translate('AUGUST'),
+				JText::translate('SEPTEMBER'),
+				JText::translate('OCTOBER'),
+				JText::translate('NOVEMBER'),
+				JText::translate('DECEMBER'),
 			],
 			'monthNamesShort' => [
-				$this->safeSubstr(JText::translate('VBMONTHONE')),
-				$this->safeSubstr(JText::translate('VBMONTHTWO')),
-				$this->safeSubstr(JText::translate('VBMONTHTHREE')),
-				$this->safeSubstr(JText::translate('VBMONTHFOUR')),
-				$this->safeSubstr(JText::translate('VBMONTHFIVE')),
-				$this->safeSubstr(JText::translate('VBMONTHSIX')),
-				$this->safeSubstr(JText::translate('VBMONTHSEVEN')),
-				$this->safeSubstr(JText::translate('VBMONTHEIGHT')),
-				$this->safeSubstr(JText::translate('VBMONTHNINE')),
-				$this->safeSubstr(JText::translate('VBMONTHTEN')),
-				$this->safeSubstr(JText::translate('VBMONTHELEVEN')),
-				$this->safeSubstr(JText::translate('VBMONTHTWELVE')),
+				JText::translate('JANUARY_SHORT'),
+				JText::translate('FEBRUARY_SHORT'),
+				JText::translate('MARCH_SHORT'),
+				JText::translate('APRIL_SHORT'),
+				JText::translate('MAY_SHORT'),
+				JText::translate('JUNE_SHORT'),
+				JText::translate('JULY_SHORT'),
+				JText::translate('AUGUST_SHORT'),
+				JText::translate('SEPTEMBER_SHORT'),
+				JText::translate('OCTOBER_SHORT'),
+				JText::translate('NOVEMBER_SHORT'),
+				JText::translate('DECEMBER_SHORT'),
 			],
 			'dayNames' => [
-				JText::translate('VBWEEKDAYZERO'),
-				JText::translate('VBWEEKDAYONE'),
-				JText::translate('VBWEEKDAYTWO'),
-				JText::translate('VBWEEKDAYTHREE'),
-				JText::translate('VBWEEKDAYFOUR'),
-				JText::translate('VBWEEKDAYFIVE'),
-				JText::translate('VBWEEKDAYSIX'),
+				JText::translate('SUNDAY'),
+				JText::translate('MONDAY'),
+				JText::translate('TUESDAY'),
+				JText::translate('WEDNESDAY'),
+				JText::translate('THURSDAY'),
+				JText::translate('FRIDAY'),
+				JText::translate('SATURDAY'),
 			],
-			'dayNamesShort' => [
-				$this->safeSubstr(JText::translate('VBWEEKDAYZERO')),
-				$this->safeSubstr(JText::translate('VBWEEKDAYONE')),
-				$this->safeSubstr(JText::translate('VBWEEKDAYTWO')),
-				$this->safeSubstr(JText::translate('VBWEEKDAYTHREE')),
-				$this->safeSubstr(JText::translate('VBWEEKDAYFOUR')),
-				$this->safeSubstr(JText::translate('VBWEEKDAYFIVE')),
-				$this->safeSubstr(JText::translate('VBWEEKDAYSIX')),
-			],
-			'dayNamesMin' => [
-				$this->safeSubstr(JText::translate('VBWEEKDAYZERO'), $day_names_min_len),
-				$this->safeSubstr(JText::translate('VBWEEKDAYONE'), $day_names_min_len),
-				$this->safeSubstr(JText::translate('VBWEEKDAYTWO'), $day_names_min_len),
-				$this->safeSubstr(JText::translate('VBWEEKDAYTHREE'), $day_names_min_len),
-				$this->safeSubstr(JText::translate('VBWEEKDAYFOUR'), $day_names_min_len),
-				$this->safeSubstr(JText::translate('VBWEEKDAYFIVE'), $day_names_min_len),
-				$this->safeSubstr(JText::translate('VBWEEKDAYSIX'), $day_names_min_len),
-			],
+			'dayNamesShort'      => $day_names_short_list,
+			'dayNamesMin'        => $day_names_min_list,
 			'weekHeader'         => JText::translate('VBJQCALWKHEADER'),
 			'dateFormat'         => $juidf,
 			'firstDay'           => VikBooking::getFirstWeekDay(),

@@ -286,6 +286,7 @@ class VboCurrencyConverter
 			'JMD' => array('symbol' => '74'),
 			'JPY' => array('symbol' => '165', 'decimals' => 0),
 			'JEP' => array('symbol' => '163'),
+			'KES' => array('decimals' => 2),
 			'KZT' => array('symbol' => '1083'),
 			'KPW' => array('symbol' => '8361'),
 			'KRW' => array('symbol' => '8361', 'decimals' => 0),

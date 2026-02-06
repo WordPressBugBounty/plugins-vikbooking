@@ -26,6 +26,36 @@ abstract class VBOCheckinAdapter implements VBOCheckinPaxfields
 	protected $collector_id = '';
 
 	/**
+	 * Default pax fields MRZ type map.
+	 * 
+	 * @var 	VBOCheckinPaxfieldsMrzMap
+	 */
+	protected $mrzFieldsMapper = null;
+
+	/**
+	 * Class constructor will define internal properties.
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function __construct()
+	{
+		// get pax data collector base class name
+		$collector_base_class = preg_replace('/^VBOCheckinPaxfields/i', '', strtolower(get_class($this))) ?: 'basic';
+
+		// build expected pax fields MRZ type map class name
+		$pax_mrz_class = 'VBOCheckinPaxfieldsMrzMap' . ucfirst($collector_base_class);
+
+		// define current pax fields MRZ type map
+		if (class_exists($pax_mrz_class)) {
+			// pax data collector provides a dedicated MRZ type map
+			$this->mrzFieldsMapper = new $pax_mrz_class($this->collector_id, $this->listFields());
+		} else {
+			// use the default (basic) MRZ type map
+			$this->mrzFieldsMapper = new VBOCheckinPaxfieldsMrzMapBasic($this->collector_id, $this->listFields());
+		}
+	}
+
+	/**
 	 * Tells whether children should be registered.
 	 * Children registration is disabled by default.
 	 * 
@@ -39,6 +69,44 @@ abstract class VBOCheckinAdapter implements VBOCheckinPaxfields
 	{
 		// disabled by default, unless method gets overridden
 		return false;
+	}
+
+	/**
+	 * Tells whether the check-in driver supports MRZ detection
+	 * for the uploaded guest documents (Machine Readable Zone).
+	 * 
+	 * @return 	bool    True if MRZ is supported, or false.
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function supportsMRZDetection()
+	{
+		static $mrzSupportChecked = null;
+
+		if ($mrzSupportChecked !== null) {
+			// use the cached support check
+			return (bool) $mrzSupportChecked;
+		}
+
+		// enabled by default, only if the Channel Manager is installed with active AI support
+		$mrzSupportChecked = class_exists('VikChannelManager') &&
+			defined('VikChannelManagerConfig::AI') &&
+			VikChannelManager::getChannel(VikChannelManagerConfig::AI);
+
+		// return the support value
+		return $mrzSupportChecked;
+	}
+
+	/**
+	 * Returns the current pax fields MRZ mapper.
+	 * 
+	 * @return 	VBOCheckinPaxfieldsMrzMap
+	 * 
+	 * @since 	1.18.6 (J) - 1.8.6 (WP)
+	 */
+	public function getMRZMapper()
+	{
+		return $this->mrzFieldsMapper;
 	}
 
 	/**

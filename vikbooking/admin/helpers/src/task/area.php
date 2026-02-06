@@ -314,4 +314,29 @@ final class VBOTaskArea
         // the driver may declare a parameter within the area/project to define the private visibility
         return (bool) ($this->record['settings']['private'] ?? 0);
     }
+
+    /**
+     * Tells whether the area allows AI to create tasks from guest requests.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.4 (J) - 1.8.4 (WP)
+     */
+    public function isAiCapable()
+    {
+        if (isset($this->record['settings']['ai'])) {
+            return (bool) $this->record['settings']['ai'];
+        }
+
+        // check if the driver implements an AI support parameter
+        $taskManager = VBOFactory::getTaskManager();
+        if ($taskManager->driverExists($this->getType())) {
+            // access the task driver parameters
+            $params = $taskManager->getDriverInstance($this->getType(), [$this])->getParams();
+
+            return (bool) ($params['ai']['default'] ?? false);
+        }
+
+        return false;
+    }
 }

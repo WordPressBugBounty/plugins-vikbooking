@@ -208,8 +208,11 @@ trait VBOTaskStatusHelperAssigner
 
         $statuses = (array) $statuses;
 
+        // in case of empty statuses, use the provided ones as the area supports all them
+        $areaStatuses = $area->getStatuses() ?: $statuses;
+
         // obtain all the provided statuses that are actually supported by the area of the task
-        $matching = array_intersect($statuses, $area->getStatuses());
+        $matching = array_intersect($statuses, $areaStatuses);
 
         if (!$matching) {
             return null;

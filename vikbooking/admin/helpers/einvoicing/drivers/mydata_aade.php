@@ -234,6 +234,7 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 			jQuery(".vbo-einvoicing-sentaction").change(function() {
 				var propregen = "regeneratebid"+jQuery(this).attr("data-bid");
 				var propresend = "resendbid"+jQuery(this).attr("data-bid");
+				var propresendecofee = "resendecofeebid"+jQuery(this).attr("data-bid");
 				var curval = jQuery(this).val();
 				var splitval = curval.split("-");
 				var einvid = parseInt(splitval[0]);
@@ -243,17 +244,26 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 					jQuery(this).closest("td").attr("data-einvaction", -1);
 					pobj[propregen] = einvid;
 					pobj[propresend] = einvid;
+					pobj[propresendecofee] = einvid;
 				} else {
 					if (splitval[1] == "regen") {
 						// update cell data attribute for CSS to generate
 						jQuery(this).closest("td").attr("data-einvaction", 1);
 						pobj[propregen] = einvid;
 						pobj[propresend] = 0;
+						pobj[propresendecofee] = 0;
 					} else if (splitval[1] == "resend") {
 						// update cell data attribute for CSS to transmitted
 						jQuery(this).closest("td").attr("data-einvaction", -1);
 						pobj[propregen] = 0;
 						pobj[propresend] = einvid;
+						pobj[propresendecofee] = 0;
+					} else if (splitval[1] == "resendecofee") {
+						// update cell data attribute for CSS to transmitted
+						jQuery(this).closest("td").attr("data-einvaction", -1);
+						pobj[propregen] = 0;
+						pobj[propresend] = 0;
+						pobj[propresendecofee] = einvid;
 					}
 				}
 				vboSetFilters(pobj, false);
@@ -793,7 +803,7 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 			}
 			// we make the same query but by passing the IDs of the bookings found according to the filters
 			$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`idpayment`,`o`.`coupon`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`chcurrency`,`o`.`country`,`o`.`tot_taxes`,".
-				"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`pkg`,`o`.`refund`,`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`c`.`country_name`,`c`.`country_2_code`,`r`.`name` AS `room_name`,`r`.`fromadult`,`r`.`toadult`,`ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent` ".
+				"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`pkg`,`o`.`refund`,`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`c`.`country_name`,`c`.`country_2_code`,`r`.`name` AS `room_name`,`r`.`fromadult`,`r`.`toadult`,`ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent`,`ei`.`trans_data` AS `einvtndata` ".
 				"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
 				"LEFT JOIN `#__vikbooking_rooms` AS `r` ON `or`.`idroom`=`r`.`id` ".
 				"LEFT JOIN `#__vikbooking_countries` AS `c` ON `o`.`country`=`c`.`country_3_code` ".
@@ -802,7 +812,7 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 				"ORDER BY `o`.`ts` ASC, `o`.`id` ASC;";
 			// check if we need to merge custom (manual) invoices
 			if ($mergecustoms) {
-				$customsq = "SELECT `ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`created_on`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent`,`ei`.`idorder`,`ei`.`idcustomer`,`inv`.`id` AS `invid`,`inv`.`rawcont`,`inv`.`for_date` AS `inv_fordate_ts` ".
+				$customsq = "SELECT `ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`created_on`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent`,`ei`.`trans_data` AS `einvtndata`,`ei`.`idorder`,`ei`.`idcustomer`,`inv`.`id` AS `invid`,`inv`.`rawcont`,`inv`.`for_date` AS `inv_fordate_ts` ".
 					"FROM `#__vikbooking_einvoicing_data` AS `ei` ".
 					"LEFT JOIN `#__vikbooking_invoices` AS `inv` ON `ei`.`idorder`=`inv`.`idorder` ".
 					"WHERE `ei`.`idorder` < 0 AND `ei`.`obliterated`=0 AND `ei`.`id` IN (".implode(', ', $customsids).");";
@@ -830,7 +840,7 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 					break;
 			}
 			$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`idpayment`,`o`.`coupon`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`chcurrency`,`o`.`country`,`o`.`tot_taxes`,".
-				"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`pkg`,`o`.`refund`,`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`c`.`country_name`,`c`.`country_2_code`,`r`.`name` AS `room_name`,`r`.`fromadult`,`r`.`toadult`,`ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent` ".
+				"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`pkg`,`o`.`refund`,`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`c`.`country_name`,`c`.`country_2_code`,`r`.`name` AS `room_name`,`r`.`fromadult`,`r`.`toadult`,`ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent`,`ei`.`trans_data` AS `einvtndata` ".
 				"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
 				"LEFT JOIN `#__vikbooking_rooms` AS `r` ON `or`.`idroom`=`r`.`id` ".
 				"LEFT JOIN `#__vikbooking_countries` AS `c` ON `o`.`country`=`c`.`country_3_code` ".
@@ -840,7 +850,7 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 				"ORDER BY `o`.`ts` ASC, `o`.`id` ASC;";
 			// check if we need to merge custom (manual) invoices (they should be searched with the apposite dates filters for matching `created_on` or `for_date`)
 			if ($mergecustoms) {
-				$customsq = "SELECT `ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`created_on`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent`,`ei`.`idorder`,`ei`.`idcustomer`,`inv`.`id` AS `invid`,`inv`.`rawcont`,`inv`.`for_date` AS `inv_fordate_ts` ".
+				$customsq = "SELECT `ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`created_on`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent`,`ei`.`trans_data` AS `einvtndata`,`ei`.`idorder`,`ei`.`idcustomer`,`inv`.`id` AS `invid`,`inv`.`rawcont`,`inv`.`for_date` AS `inv_fordate_ts` ".
 					"FROM `#__vikbooking_einvoicing_data` AS `ei` ".
 					"LEFT JOIN `#__vikbooking_invoices` AS `inv` ON `ei`.`idorder`=`inv`.`idorder` ".
 					"WHERE `ei`.`idorder` < 0 AND `ei`.`obliterated`=0 AND {$typeclause}".
@@ -1007,15 +1017,15 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 			$country3 = $gbook[0]['country'];
 			$country2 = $gbook[0]['country_2_code'];
 			$countryfull = $gbook[0]['country_name'];
-			if (empty($country3) && count($customer) && !empty($customer['country'])) {
+			if (empty($country3) && $customer && !empty($customer['country'])) {
 				$country3 = $customer['country'];
 				$gbook[0]['country'] = $country3;
 			}
-			if (empty($country2) && count($customer) && !empty($customer['country_2_code'])) {
+			if (empty($country2) && $customer && !empty($customer['country_2_code'])) {
 				$country2 = $customer['country_2_code'];
 				$gbook[0]['country_2_code'] = $country2;
 			}
-			if (empty($countryfull) && count($customer) && !empty($customer['country_name'])) {
+			if (empty($countryfull) && $customer && !empty($customer['country_name'])) {
 				$countryfull = $customer['country_name'];
 				$gbook[0]['country_name'] = $countryfull;
 			}
@@ -1040,6 +1050,14 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 
 			// einvnum (if exists)
 			$einvnum = !empty($gbook[0]['einvnum']) ? $gbook[0]['einvnum'] : 0;
+
+			// attempt to decode the transaction data, if any
+			if (!empty($gbook[0]['einvtndata']) && is_scalar($gbook[0]['einvtndata'])) {
+				$gbook[0]['einvtndata'] = json_decode($gbook[0]['einvtndata'], true);
+			}
+
+			// set e-invoice transaction data, if any
+			$einvtndata = is_array(($gbook[0]['einvtndata'] ?? null)) ? $gbook[0]['einvtndata'] : null;
 
 			// always update the main array reference
 			$bookings[$bk] = $gbook;
@@ -1235,7 +1253,7 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 						'class="center vbo-einvoicing-cellaction"',
 						'data-einvaction="'.$canbeinvoiced.'"'
 					),
-					'callback' => function ($val) use ($bid, $noinvoicereason, $einvnum) {
+					'callback' => function ($val) use ($bid, $noinvoicereason, $einvnum, $einvtndata) {
 						if ($val === 0) {
 							// invoice cannot be issued
 							$noinvoicereason = empty($noinvoicereason) ? 'Missing data to generate the invoice' : $noinvoicereason;
@@ -1243,7 +1261,7 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 						}
 						if ($val === -1) {
 							// e-invoice already issued and transmitted: print drop down to let the customer regenerate this invoice and obliterate the other or to re-send
-							return '<select class="vbo-einvoicing-sentaction" data-bid="'.$bid.'"><option value="0-none">Invoice #'.$einvnum.' transmitted</option><option value="'.$noinvoicereason.'-regen">- Regenerate invoice</option><option value="'.$noinvoicereason.'-resend">- Retransmit invoice</option></select>';
+							return '<select class="vbo-einvoicing-sentaction" data-bid="'.$bid.'"><option value="0-none">Invoice #'.$einvnum.' transmitted</option><option value="'.$noinvoicereason.'-regen">- Regenerate invoice</option><option value="'.$noinvoicereason.'-resend">- Retransmit invoice</option>' . (isset($einvtndata['env_fee_tn_res']) && !$einvtndata['env_fee_tn_res'] ?'<option value="'.$noinvoicereason.'-resendecofee">- Retransmit (only) eco-fee invoice</option>' : '') . '</select>';
 						}
 						if ($val === -2) {
 							// e-invoice already issued but NOT transmitted: print drop down to let the customer regenerate this invoice and obliterate the other
@@ -1500,6 +1518,10 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 
 			if (isset($booking['optionals'])) {
 				$booking['optionals'] = $rooms[0]['optionals'];
+			}
+
+			if (isset($booking['extracosts'])) {
+				$booking['extracosts'] = $rooms[0]['extracosts'];
 			}
 		}
 
@@ -1792,7 +1814,7 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 		if (is_int($data)) {
 			// query to obtain the booking records
 			$q = "SELECT `o`.`id`,`o`.`ts`,`o`.`days`,`o`.`checkin`,`o`.`checkout`,`o`.`totpaid`,`o`.`idpayment`,`o`.`coupon`,`o`.`roomsnum`,`o`.`total`,`o`.`idorderota`,`o`.`channel`,`o`.`chcurrency`,`o`.`country`,`o`.`tot_taxes`,".
-				"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`pkg`,`o`.`refund`,`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`c`.`country_name`,`r`.`name` AS `room_name`,`r`.`fromadult`,`r`.`toadult`,`ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent` ".
+				"`o`.`tot_city_taxes`,`o`.`tot_fees`,`o`.`cmms`,`o`.`pkg`,`o`.`refund`,`or`.`idorder`,`or`.`idroom`,`or`.`adults`,`or`.`children`,`or`.`idtar`,`or`.`optionals`,`or`.`cust_cost`,`or`.`cust_idiva`,`or`.`extracosts`,`or`.`room_cost`,`c`.`country_name`,`r`.`name` AS `room_name`,`r`.`fromadult`,`r`.`toadult`,`ei`.`id` AS `einvid`,`ei`.`driverid` AS `einvdriver`,`ei`.`for_date` AS `einvdate`,`ei`.`number` AS `einvnum`,`ei`.`transmitted` AS `einvsent`,`ei`.`trans_data` AS `einvtndata` ".
 				"FROM `#__vikbooking_orders` AS `o` LEFT JOIN `#__vikbooking_ordersrooms` AS `or` ON `or`.`idorder`=`o`.`id` ".
 				"LEFT JOIN `#__vikbooking_rooms` AS `r` ON `or`.`idroom`=`r`.`id` ".
 				"LEFT JOIN `#__vikbooking_countries` AS `c` ON `o`.`country`=`c`.`country_3_code` ".
@@ -1884,12 +1906,32 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 		} else {
 			// get a new invoice number
 			if ($correlated) {
-				$correlated_invnum = (int)($settings['params']['envfeeinvoiceinum'] ?: 0) + 1;
+				$correlated_invnum = (int) ($settings['params']['envfeeinvoiceinum'] ?: 0) + 1;
 			} else {
 				$invnum = VikBooking::getNextInvoiceNumber();
 			}
+
+			// get the new invoice date
 			$invdate = $settings['params']['einvdttype'] == 'ts' ? date('Y-m-d', $data[0]['ts']) : date('Y-m-d');
+
+			/**
+			 * Trigger event to allow third party plugins to apply a custom invoice number and date.
+			 * 
+			 * @since 	1.18.6 (J) - 1.8.6 (WP)
+			 */
+			$custom_einv_data = VBOFactory::getPlatform()->getDispatcher()->filter('onMydataDetermineNewEinvoiceProperties', [($correlated ? $correlated_invnum : $invnum), $invdate, $correlated, $settings, $data]);
+			if ($custom_einv_data) {
+				// invoice number is expected to be returned at index 0
+				if ($correlated) {
+					$correlated_invnum = ($custom_einv_data[0] ?? '') ?: $correlated_invnum;
+				} else {
+					$invnum = ($custom_einv_data[0] ?? '') ?: $invnum;
+				}
+				// invoice date is expected to be returned at index 1
+				$invdate = ($custom_einv_data[1] ?? '') ?: $invdate;
+			}
 		}
+
 		if (isset($this->externalData['einvnum']) && intval($this->externalData['einvnum']) > 0) {
 			// external calls may inject the invoice number to use
 			$invnum = (int)$this->externalData['einvnum'];
@@ -2458,6 +2500,17 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 		$this->formatXmlString($xml);
 
 		if ($correlated) {
+			/**
+			 * Trigger event to allow third party plugins to apply a custom eco-fee e-invoice auto-increment number.
+			 * 
+			 * @since 	1.18.6 (J) - 1.8.6 (WP)
+			 */
+			$custom_einv_data = VBOFactory::getPlatform()->getDispatcher()->filter('onMydataUpdateEcofeeEinvoiceAutoincrementNumber', [$correlated_invnum, $settings, $data]);
+			if (intval($custom_einv_data[0] ?? '')) {
+				// overwrite correlated e-invoice auto-increment number
+				$correlated_invnum = (int) $custom_einv_data[0];
+			}
+
 			// update driver setting
 			$this->updateDriverSetting('envfeeinvoiceinum', $correlated_invnum);
 
@@ -2666,9 +2719,9 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 	 * Manipulates the previously created correlated invoice by adding the proper invoice mark,
 	 * then transmits the second e-invoice to myDATA.
 	 * 
-	 * @param 	object 	$main_invoice_data 	the main e-invoice transaction information object.
-	 * @param 	array 	$env_fee_data 		the prepared data for the correlated invoice and fee.
-	 * @param 	array 	$extras 			associative array to pass extra information.
+	 * @param 	object|array 	$main_invoice_data 	the main e-invoice transaction information object (or associative array).
+	 * @param 	array 			$env_fee_data 		the prepared data for the correlated invoice and fee.
+	 * @param 	array 			$extras 			associative array to pass extra information.
 	 * 
 	 * @return 	bool
 	 * 
@@ -2676,8 +2729,26 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 	 */
 	public function transmitCorrelatedInvoice($main_invoice_data, array $env_fee_data, array $extras)
 	{
-		// first off, set the proper correlated invoice number by using the mark
+		// always cast main invoice data to an object
+		$main_invoice_data = (object) $main_invoice_data;
 
+		/**
+		 * Customers have reported an update to myDATA that no longer accepts the XML nodes
+		 * <uid> and <mark> (right under the node <invoice>) otherwise errors with code 273
+		 * will be raised stating that such details will be generated and provided by myDATA.
+		 * 
+		 * @since 	1.18.6 (J) - 1.8.6 (WP)
+		 */
+		$xmlObj = simplexml_load_string($env_fee_data['xml']);
+		if ($xmlObj->invoice->uid ?? null) {
+			// delete nodes
+			unset($xmlObj->invoice->uid, $xmlObj->invoice->mark);
+
+			// re-build XML string
+			$env_fee_data['xml'] = $xmlObj->asXML();
+		}
+
+		// first off, set the proper correlated invoice number by using the mark
 		// we use a regex that will capture two groups to avoid problems with the number-value for replacement
 		$correlated_einv_final_xml = preg_replace("/<(correlatedInvoices)>(\{[a-z_]*\})?<\/correlatedInvoices>/i", '<$1>' . $main_invoice_data->invoice_mark . '</$1>', $env_fee_data['xml']);
 
@@ -2994,6 +3065,9 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 		// electronic invoices IDs referenced to booking IDs
 		$einvs_bids_ref = [];
 
+		// list of eco-fee-only invoices to be (re-)transmitted
+		$ecofee_einvs_retn = [];
+
 		foreach ($this->bookings as $gbook) {
 			// check whether this booking ID was set to be skipped from transmission
 			$exclude = VikRequest::getInt('excludesendbid'.$gbook[0]['id'], 0, 'request');
@@ -3011,7 +3085,13 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 			// check if an e-invoice was already sent for this booking
 			if ($gbook[0]['einvsent'] > 0) {
 				$resend = VikRequest::getInt('resendbid'.$gbook[0]['id'], 0, 'request');
-				if (!($resend > 0)) {
+				$resendecofee = VikRequest::getInt('resendecofeebid'.$gbook[0]['id'], 0, 'request');
+				if ($resendecofee) {
+					// push record for the eco-fee invoice re-transmit only
+					$ecofee_einvs_retn[] = $gbook[0];
+					continue;
+				}
+				if (!$resend) {
 					// we do not re-send the invoice for this booking ID
 					continue;
 				}
@@ -3027,136 +3107,254 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 			$einvs_bids_ref[$gbook[0]['einvid']] = $gbook[0]['id'];
 		}
 
-		if (!$einvspool) {
-			// no e-invoices generated or ready to be transmitted
-			$this->setWarning('No e-invoices generated or ready to be transmitted to myDATA. Please generate first the XML invoices or select some for the re-transmission.');
+		if ($einvspool && $ecofee_einvs_retn) {
+			// pre-check: conflict with re-transmission of eco-fee invoice(s) and main invoice first transmission or re-transmission
+			$this->setWarning('If you choose to re-transmit just eco-fee invoices, then any other main invoice should be excluded from the transmission to avoid conflicts.');
 			return false;
 		}
 
-		// build one XML file for all XML e-invoices (if more than one)
-		$einv_xml_body = $this->buildTransmissionXMLBody($einvspool, $settings);
-		if ($einv_xml_body === false) {
-			// something went wrong with the creation of the XML file
-			$this->setError('Error creating the XML file for the request. Unable to proceed.');
-			return false;
-		}
+		if (!$ecofee_einvs_retn) {
+			// attempt to transmit or re-transmit the main invoices with their (eventually) related eco-fee invoices
+			if (!$einvspool) {
+				// no e-invoices generated or ready to be transmitted
+				$this->setWarning('No e-invoices generated or ready to be transmitted to myDATA. Please generate first the XML invoices or select some for the re-transmission.');
+				return false;
+			}
 
-		if ($this->debugging()) {
-			// when in debug mode, the raw XML request is sent to output
-			$this->setWarning('Raw XML request for Debug Mode');
-			$this->setWarning('<pre> ' . htmlentities($einv_xml_body) . ' </pre>');
-		}
+			// build one XML file for all XML e-invoices (if more than one)
+			$einv_xml_body = $this->buildTransmissionXMLBody($einvspool, $settings);
+			if ($einv_xml_body === false) {
+				// something went wrong with the creation of the XML file
+				$this->setError('Error creating the XML file for the request. Unable to proceed.');
+				return false;
+			}
 
-		// transmit e-invoices to myDATA
-		$response = $this->myDATARequestPOST('SendInvoices', $einv_xml_body, $settings);
-		if ($response->code != 200) {
-			// the request was not successful, and the XML invoices were not parsed at all by myDATA
-			$this->setError(sprintf('Invalid response (code %s): %s', $response->code, htmlspecialchars($response->body)));
-			$this->setError('Could not send the invoice(s) to myDATA.');
-			return false;
-		}
+			if ($this->debugging()) {
+				// when in debug mode, the raw XML request is sent to output
+				$this->setWarning('Raw XML request for Debug Mode');
+				$this->setWarning('<pre> ' . htmlentities($einv_xml_body) . ' </pre>');
+			}
 
-		if ($this->debugging()) {
-			// when in debug mode, the raw XML response is sent to output
-			$this->setWarning('Raw XML response for Debug Mode');
-			$this->setWarning('<pre> ' . htmlentities($response->body) . ' </pre>');
-		}
-
-		// check if the XML response contains errors, and adjust the e-invoices that succeeded
-		list($success, $valid_einv_marks, $valid_einv_uids, $valid_qrcode_urls) = $this->myDATAParseXMLResponse($response->body, $einvspool, $einvnumbs);
-
-		if (!$success) {
-			// some errors occurred
-			if (!is_array($valid_einv_marks) || !$valid_einv_marks) {
+			// transmit e-invoices to myDATA
+			$response = $this->myDATARequestPOST('SendInvoices', $einv_xml_body, $settings);
+			if ($response->code != 200) {
+				// the request was not successful, and the XML invoices were not parsed at all by myDATA
+				$this->setError(sprintf('Invalid response (code %s): %s', $response->code, htmlspecialchars($response->body)));
 				$this->setError('Could not send the invoice(s) to myDATA.');
 				return false;
-			} else {
-				// some e-invoices were transmitted successfully
-				$einvspool = array_keys($valid_einv_marks);
 			}
-		}
 
-		// update ProgressivoInvio driver setting by increasing it for the next run
-		$this->updateProgressiveNumber(++$settings['progcount']);
+			if ($this->debugging()) {
+				// when in debug mode, the raw XML response is sent to output
+				$this->setWarning('Raw XML response for Debug Mode');
+				$this->setWarning('<pre> ' . htmlentities($response->body) . ' </pre>');
+			}
 
-		// set to transmitted=1 all e-invoice IDs that were transmitted with success
-		foreach ($einvspool as $einvid) {
-			// find the corresponding booking ID
-			$einv_bid = $einvs_bids_ref[$einvid] ?? 0;
+			// check if the XML response contains errors, and adjust the e-invoices that succeeded
+			list($success, $valid_einv_marks, $valid_einv_uids, $valid_qrcode_urls) = $this->myDATAParseXMLResponse($response->body, $einvspool, $einvnumbs);
 
-			// flag to check if the PDF invoice should be refreshed
-			$qrcode_fname = null;
+			if (!$success) {
+				// some errors occurred
+				if (!is_array($valid_einv_marks) || !$valid_einv_marks) {
+					$this->setError('Could not send the invoice(s) to myDATA.');
+					return false;
+				} else {
+					// some e-invoices were transmitted successfully
+					$einvspool = array_keys($valid_einv_marks);
+				}
+			}
 
-			// prepare "transmission data" object
-			$trans_data = new stdClass;
-			$trans_data->invoice_uid    = (isset($valid_einv_uids[$einvid]) && $einvid != $valid_einv_uids[$einvid] ? $valid_einv_uids[$einvid] : null);
-			$trans_data->invoice_mark   = (isset($valid_einv_marks[$einvid]) && $einvid != $valid_einv_marks[$einvid] ? $valid_einv_marks[$einvid] : null);
-			$trans_data->invoice_qrcode = (isset($valid_qrcode_urls[$einvid]) && $einvid != $valid_qrcode_urls[$einvid] ? $valid_qrcode_urls[$einvid] : null);
-			$trans_data->qrcode_img 	= null;
-			$trans_data->trans_dtime    = date('Y-m-d H:i:s');
+			// update ProgressivoInvio driver setting by increasing it for the next run
+			$this->updateProgressiveNumber(++$settings['progcount']);
 
-			if ($trans_data->invoice_qrcode) {
+			// set to transmitted=1 all e-invoice IDs that were transmitted with success
+			foreach ($einvspool as $einvid) {
+				// find the corresponding booking ID
+				$einv_bid = $einvs_bids_ref[$einvid] ?? 0;
+
+				// flag to check if the PDF invoice should be refreshed
+				$qrcode_fname = null;
+
+				// prepare "transmission data" object
+				$trans_data = new stdClass;
+				$trans_data->invoice_uid    = (isset($valid_einv_uids[$einvid]) && $einvid != $valid_einv_uids[$einvid] ? $valid_einv_uids[$einvid] : null);
+				$trans_data->invoice_mark   = (isset($valid_einv_marks[$einvid]) && $einvid != $valid_einv_marks[$einvid] ? $valid_einv_marks[$einvid] : null);
+				$trans_data->invoice_qrcode = (isset($valid_qrcode_urls[$einvid]) && $einvid != $valid_qrcode_urls[$einvid] ? $valid_qrcode_urls[$einvid] : null);
+				$trans_data->qrcode_img 	= null;
+				$trans_data->trans_dtime    = date('Y-m-d H:i:s');
+
+				if ($trans_data->invoice_qrcode) {
+					/**
+					 * Attempt to generate the QR Code image file for the current invoice correctly transmitted.
+					 * 
+					 * @since 	1.16.7 (J) - 1.6.7 (WP)
+					 */
+					$qrcode_fname = $this->generateInvoiceQRCode($einvid, $einv_bid, $trans_data);
+					if ($qrcode_fname) {
+						$trans_data->qrcode_img = $qrcode_fname;
+					}
+				}
+
 				/**
-				 * Attempt to generate the QR Code image file for the current invoice correctly transmitted.
+				 * Update the original XML on main invoice to change the content of the nodes UID and Mark, even
+				 * if they will be removed at runtime before the transmission after the myDATA update (Jan 2026).
+				 * 
+				 * @since 	1.18.6 (J) - 1.8.6 (WP)
+				 */
+				$updatedEinvoiceXML = null;
+				$prev_einv_data = $this->loadEInvoiceDetails($einvid);
+				if ($trans_data->invoice_uid && $trans_data->invoice_mark && !empty($prev_einv_data['xml'])) {
+					// load XML e-invoice
+					$dom = new DOMDocument();
+					$dom->preserveWhiteSpace = false;
+					$dom->formatOutput = true;
+					$dom->loadXML($prev_einv_data['xml']);
+
+					// locate the parent <invoice> node
+					$invoiceNode = $dom->getElementsByTagName('invoice')->item(0);
+
+					// locate the <uid> node
+					$uidNode = $invoiceNode->getElementsByTagName('uid')->item(0);
+					if ($uidNode) {
+						// replace text content
+						$uidNode->nodeValue = $trans_data->invoice_uid;
+					}
+
+					// locate the <mark> node
+					$markNode = $invoiceNode->getElementsByTagName('mark')->item(0);
+					if ($markNode) {
+						// replace text content
+						$markNode->nodeValue = $trans_data->invoice_mark;
+					}
+
+					// turn flag on for updating the XML content
+					$updatedEinvoiceXML = $dom->saveXML();
+				}
+
+				// build e-invoice object for update (with "transmission data")
+				$data = new stdClass;
+				$data->id = $einvid;
+				$data->transmitted = 1;
+				$data->trans_data = json_encode($trans_data);
+
+				if ($updatedEinvoiceXML) {
+					// e-invoice XML content should be updated
+					$data->xml = $updatedEinvoiceXML;
+				}
+
+				// update e-invoice record
+				$this->updateEInvoice($data);
+
+				// check if the PDF invoice requires a refresh to let the conditional text rules run after having updated the e-invoice
+				if ($qrcode_fname) {
+					// attempt to refresh the PDF invoice, if available, in case it uses the Conditional Text Rules
+					if ($this->refreshPdfInvoice($einv_bid)) {
+						$qrcode_url = VikBookingMydataAadeConstants::getQRCodeBase('uri', $qrcode_fname);
+						// trigger an event to allow third-party plugins to do something, like sending the invoice via email
+						VBOFactory::getPlatform()->getDispatcher()->trigger('onMydataAfterQrcodeInvoiceSubmitted', [$einv_bid, $einvid, $trans_data, $qrcode_url]);
+					}
+				}
+
+				/**
+				 * Check if an e-invoice for the environmental fee was prepared to be generated and transmitted as well.
 				 * 
 				 * @since 	1.16.7 (J) - 1.6.7 (WP)
 				 */
-				$qrcode_fname = $this->generateInvoiceQRCode($einvid, $einv_bid, $trans_data);
-				if ($qrcode_fname) {
-					$trans_data->qrcode_img = $qrcode_fname;
+				$env_fee_inv_details = VBOFactory::getConfig()->getArray($this->getCorrelatedInvoiceParamName($einvid, $einv_bid), []);
+				if ($env_fee_inv_details && $trans_data->invoice_mark) {
+					/**
+					 * It is recommended to sleep at least one second after the main invoice has been
+					 * transmitted and before the correlated invoice gets transmitted to ensure the
+					 * main invoice mark is registered on the myDATA platform.
+					 */
+					sleep(1);
+
+					// use the obtained invoice mark to adjust and transmit the environmental fee invoice
+					$env_fee_tn_result = $this->transmitCorrelatedInvoice(
+						$trans_data,
+						$env_fee_inv_details,
+						[
+							'einvid' => $einvid,
+							'bid' 	 => $einv_bid,
+						]
+					);
+
+					/**
+					 * Store within the main e-invoice record the transmission result and timestamp for the eco-fee invoice.
+					 * This is useful for eventually allowing to re-transmit just the eco-fee invoice in case of errors, usually
+					 * caused by a premature transmission of the eco-fee invoice before the main invoice mark is registered.
+					 * 
+					 * @since 	1.18.3 (J) - 1.8.3 (WP)
+					 */
+					if (is_object($data ?? null) && is_object($trans_data ?? null)) {
+						// set the eco-fee invoice transmission result within the main invoice transaction data object
+						$trans_data->env_fee_tn_res = (int) $env_fee_tn_result;
+						$trans_data->env_fee_tn_ts  = time();
+
+						// update object property
+						$data->trans_data = json_encode($trans_data);
+
+						// update main e-invoice record
+						$this->updateEInvoice($data);
+					}
 				}
 			}
 
-			// build e-invoice object for update (with "transmission data")
-			$data = new stdClass;
-			$data->id = $einvid;
-			$data->transmitted = 1;
-			$data->trans_data = json_encode($trans_data);
-
-			// update e-invoice record
-			$this->updateEInvoice($data);
-
-			// check if the PDF invoice requires a refresh to let the conditional text rules run after having updated the e-invoice
-			if ($qrcode_fname) {
-				// attempt to refresh the PDF invoice, if available, in case it uses the Conditional Text Rules
-				if ($this->refreshPdfInvoice($einv_bid)) {
-					$qrcode_url = VikBookingMydataAadeConstants::getQRCodeBase('uri', $qrcode_fname);
-					// trigger an event to allow third-party plugins to do something, like sending the invoice via email
-					VBOFactory::getPlatform()->getDispatcher()->trigger('onMydataAfterQrcodeInvoiceSubmitted', [$einv_bid, $einvid, $trans_data, $qrcode_url]);
-				}
-			}
-
+			// display info message
+			$this->setInfo('Electronic invoices transmitted: ' . count($einvspool));
+		} else {
 			/**
-			 * Check if an e-invoice for the environmental fee was prepared to be generated and transmitted as well.
+			 * Retry to (re-)transmit just the selected eco-fee invoice(s).
 			 * 
-			 * @since 	1.16.7 (J) - 1.6.7 (WP)
+			 * @since 	1.18.3 (J) - 1.8.3 (WP)
 			 */
-			$env_fee_inv_details = VBOFactory::getConfig()->getArray($this->getCorrelatedInvoiceParamName($einvid, $einv_bid), []);
-			if ($env_fee_inv_details && $trans_data->invoice_mark) {
-				/**
-				 * It is recommended to sleep at least one second after the main invoice has been
-				 * transmitted and before the correlated invoice gets transmitted to ensure the
-				 * main invoice mark is registered on the myDATA platform.
-				 */
-				sleep(1);
+			$eco_fee_invs_retn_attempts = 0;
+			$eco_fee_invs_retn_success = 0;
+			foreach ($ecofee_einvs_retn as $ecofee_einv_data) {
+				// get the eco-fee e-invoice details
+				$env_fee_inv_details = VBOFactory::getConfig()->getArray($this->getCorrelatedInvoiceParamName($ecofee_einv_data['einvid'], $ecofee_einv_data['id']), []);
+				// get the main e-invoice transaction data
+				$trans_data = $ecofee_einv_data['einvtndata'] ?? null;
+				if ($env_fee_inv_details && is_array($trans_data) && ($trans_data['invoice_mark'] ?? null)) {
+					// increase global retry counter
+					$eco_fee_invs_retn_attempts++;
 
-				// use the obtained invoice mark to adjust and transmit the environmental fee invoice
-				$this->transmitCorrelatedInvoice(
-					$trans_data,
-					$env_fee_inv_details,
-					[
-						'einvid' => $einvid,
-						'bid' 	 => $einv_bid,
-					]
-				);
+					// use the previous invoice mark to adjust and transmit the environmental fee invoice
+					$env_fee_tn_result = $this->transmitCorrelatedInvoice(
+						$trans_data,
+						$env_fee_inv_details,
+						[
+							'einvid' => $ecofee_einv_data['einvid'],
+							'bid' 	 => $ecofee_einv_data['id'],
+						]
+					);
+
+					if ($env_fee_tn_result) {
+						// increase success counter
+						$eco_fee_invs_retn_success++;
+					}
+
+					// always update the transmission result for the eco-fee invoice within the main invoice transaction data object
+					$trans_data['env_fee_tn_res'] = (int) $env_fee_tn_result;
+					$trans_data['env_fee_tn_ts']  = time();
+
+					// build the object record for update
+					$main_record = new stdClass;
+					$main_record->id = $ecofee_einv_data['einvid'];
+					$main_record->trans_data = json_encode($trans_data);
+
+					// update main e-invoice record
+					$this->updateEInvoice($main_record);
+				}
 			}
-		}
 
-		// display info message
-		$this->setInfo('Electronic invoices transmitted: ' . count($einvspool));
+			// display info message
+			$this->setInfo('Electronic invoices (eco-fee) re-transmitted: ' . $eco_fee_invs_retn_attempts . ' - Success counter: ' . $eco_fee_invs_retn_success);
+		}
 
 		// we need to unset the bookings var so that the later call to getBookingsData() made by the View will reload the information
 		$this->bookings = [];
+
 		// unset also cols, rows and footer row to not merge data
 		$this->cols = [];
 		$this->rows = [];
@@ -3196,6 +3394,22 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 				// all e-invoices must exist as they will be set to transmitted=1 so we break the process
 				$this->setError('Unable to load data for the electronic invoice ID ' . $einvid);
 				return false;
+			}
+
+			/**
+			 * Customers have reported an update to myDATA that no longer accepts the XML nodes
+			 * <uid> and <mark> (right under the node <invoice>) otherwise errors with code 273
+			 * will be raised stating that such details will be generated and provided by myDATA.
+			 * 
+			 * @since 	1.18.6 (J) - 1.8.6 (WP)
+			 */
+			$xmlObj = simplexml_load_string($einv_data['xml']);
+			if ($xmlObj->invoice->uid ?? null) {
+				// delete nodes
+				unset($xmlObj->invoice->uid, $xmlObj->invoice->mark);
+
+				// re-build XML string
+				$einv_data['xml'] = $xmlObj->asXML();
 			}
 
 			// push e-invoice content

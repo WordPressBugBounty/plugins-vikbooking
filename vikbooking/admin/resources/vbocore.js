@@ -1,6 +1,6 @@
 /**
- * VikBooking Core v1.8.0
- * Copyright (C) 2025 E4J s.r.l. All Rights Reserved.
+ * VikBooking Core v1.8.6
+ * Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
  */
@@ -58,6 +58,53 @@
 				// DOMContentLoaded event has fired already
 				fireFn();
 			}
+		}
+
+		/**
+		 * Returns a promise that resolves when the specified instance gets defined.
+		 * 
+		 * @param 	function  check      The callback to invoke to check whether the instance is ready.
+		 * @param   mixed     threshold  An optional threshold to estabilish the max number of attempts.
+		 * 
+		 * @return 	Promise
+		 */
+		static onInstanceReady(check, threshold) {
+			return new Promise((resolve, reject) => {
+				// prepare safe counter
+				let count = 0;
+
+				const callback = function() {
+					// increase counter
+					count++;
+
+					let instance;
+
+					try {
+						// check whether the instance is ready
+						instance = check();
+					} catch (err) {
+						// an error has occurred, manually abort
+						reject();
+						return;
+					}
+
+					if (instance) {
+						// object is now ready
+						resolve(instance);
+					} else {
+						if (!threshold || count < Math.abs(threshold)) {
+							// check again
+							setTimeout(callback, 32 + Math.floor(Math.random() * 128));
+						} else {
+							// instance not ready
+							reject();
+						}
+					}
+				};
+
+				// check
+				callback();
+			});
 		}
 
 		/**
@@ -195,11 +242,21 @@
 				attempt = 1;
 			}
 
-			return $.ajax({
+			let requestOptions = {
 				type: 'POST',
 				url: url,
-				data: data
-			}).done(function(resp) {
+				data: data,
+			};
+
+			if (data instanceof FormData) {
+				// ensure the FormData object is not manipulated
+				requestOptions.processData = false;
+				requestOptions.contentType = false;
+			}
+
+			return $.ajax(
+				requestOptions
+			).done(function(resp) {
 				if (success !== undefined) {
 					// launch success callback function
 					success(resp);
@@ -508,6 +565,45 @@
 		static vcmMultitasking(env) {
 			// tell VCM that VBOCore supports it
 			return true;
+		}
+
+		/**
+		 * Registers an event identifier as delegated.
+		 * Useful to flag an event as registered.
+		 * 
+		 * @param 	string 	ev 	The event name.
+		 * 
+		 * @return 	Array
+		 */
+		static setEventDelegated(ev) {
+			VBOCore.options.events_delegated.push(ev);
+			return VBOCore.options.events_delegated;
+		}
+
+		/**
+		 * Un-registers an event identifier as delegated.
+		 * 
+		 * @param 	string 	ev 	The event name.
+		 * 
+		 * @return 	Array
+		 */
+		static unsetEventDelegated(ev) {
+			let index = VBOCore.options.events_delegated.indexOf(ev);
+			if (index >= 0) {
+				VBOCore.options.events_delegated.splice(index, 1);
+			}
+			return VBOCore.options.events_delegated;
+		}
+
+		/**
+		 * Tells if an event identifier was delegated.
+		 * 
+		 * @param 	string 	ev 	The event name.
+		 * 
+		 * @return 	bool
+		 */
+		static wasEventDelegated(ev) {
+			return VBOCore.options.events_delegated.includes(ev);
 		}
 
 		/**
@@ -2356,6 +2452,40 @@
 		}
 
 		/**
+		 * Renders an admin widget "inline", by loading the necessary assets.
+		 * To be called outside VikBooking for displaying an admin widget.
+		 * 
+		 * @param 	string 	widget_id 	the widget identifier string to add.
+		 * @param 	any 	data 		the optional multitask data to inject.
+		 * 
+		 * @return 	Promise
+		 */
+		static handleDisplayInlineWidget(widget_id, data) {
+			return new Promise((resolve, reject) => {
+				if (VBOCore.options.is_vbo) {
+					reject('Unable to display the inline widget within VikBooking.');
+					return;
+				}
+
+				VBOCore.loadAdminWidgetAssets(data).then((assets) => {
+					// append assets to DOM
+					assets.forEach((asset) => {
+						if (!$('link#' + asset['id']).length) {
+							$('head').append('<link rel="stylesheet" id="' + asset['id'] + '" href="' + asset['href'] + '" media="all" />');
+						}
+					});
+					VBOCore.renderAdminWidget(widget_id, data).then((content) => {
+						resolve(content);
+					}).catch((error) => {
+						reject(error);
+					});
+				}).catch((error) => {
+					reject(error);
+				});
+			});
+		}
+
+		/**
 		 * Fetches the details for a specific widget.
 		 * 
 		 * @param 	string 	widget_id 	the widget identifier string to fetch.
@@ -2616,6 +2746,8 @@
 				}
 
 				// start minimizing animation
+				custom_modal.removeClass('vbo-restoring');
+				modal_content.removeClass('vbo-restoring');
 				custom_modal.addClass('vbo-minimizing');
 				modal_content.addClass('vbo-minimizing');
 
@@ -3359,6 +3491,7 @@
 		client: 				'admin',
 		panel_opts: 			{},
 		admin_widgets: 			[],
+		events_delegated:       [],
 		notif_audio_url: 		'',
 		active_listeners: 		{},
 		tn_texts: 				{
@@ -3555,6 +3688,12 @@
 			let def_no_decimals = this.noDecimals !== undefined ? this.noDecimals : 1;
 			let def_conv_rate   = this.conversionRate !== undefined ? this.conversionRate : 1;
 
+			// normalize option properties
+			if (options.position && /^[a-zA-Z]+$/.test(options.position)) {
+				// convert alphanumeric position to integer
+				options.position = options.position.toLowerCase() === 'after' ? 2 : 1;
+			}
+
 			// set currency options
 			this.symbol      = (options.hasOwnProperty('symbol')      ? options.symbol    : def_symbol);
 			this.position    = (options.hasOwnProperty('position')    ? options.position  : def_position);
@@ -3646,6 +3785,29 @@
 			} else {
 				price = price[0];
 			}
+
+			if (Math.abs(options.position) == 1) {
+				// do not use space in case the position is "-1"
+				return options.symbol + (options.position == 1 ? ' ' : '') + price;
+			}
+
+			// do not use space in case the position is "-2"
+			return price + (options.position == 2 ? ' ' : '') + options.symbol;
+		}
+
+		/**
+		 * Displays the given (formatted) price according to the currency settings.
+		 * 
+		 * @param   string  price    The price to display (expected to be already formatted).
+		 * @param   object  options  Temporarily overrides the currency options.
+		 * 
+		 * @return  string  The currency and price final string to display.
+		 * 
+		 * @since 	1.8.3
+		 */
+		display(price, options) {
+			// merge currency settings
+			options = Object.assign(this.getOptions(), (options || {}));
 
 			if (Math.abs(options.position) == 1) {
 				// do not use space in case the position is "-1"
@@ -3965,6 +4127,9 @@
 						modalRestore.extra_class = data.extra_class + ' ' + details.modal.add_class;
 					}
 
+					// add modal restoring class
+					data.extra_class = ((data.extra_class || '') + ' vbo-restoring').trim();
+
 					// display modal with previous content and details to bind
 					let restoredBody = VBOCore.displayModal(
 						Object.assign(data, modalRestore),
@@ -4031,6 +4196,11 @@
 
 					// set dock-minimized attribute
 					(body[0] || body).setAttribute('data-dock-minimized', 1);
+
+					// always dispatch the native minimize event for the current widget
+					VBOCore.emitEvent('vbo-admin-dock-minimize-' + widgetId, {
+						data: data?.event_data || {},
+					});
 				} catch(e) {
 					// do nothing
 				}

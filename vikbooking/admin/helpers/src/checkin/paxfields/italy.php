@@ -143,9 +143,19 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 				continue;
 			}
 			if (!strcasecmp($field_type, 'file') && ($def_fields[0][$field_key] ?? null)) {
-				// append this pax field of type "file" for uploading IDs
-				$labels[$field_key] = $def_fields[0][$field_key];
-				$attributes[$field_key] = $field_type;
+				// append or prepend this pax field of type "file" for uploading IDs
+				if ($this->supportsMRZDetection()) {
+					// when MRZ detection is supported, prepend the pax field of type file
+					$labels = [$field_key => $def_fields[0][$field_key]] + $labels;
+					$attributes = [$field_key => $field_type] + $attributes;
+				} else {
+					// append pax field of type file when no MRZ support
+					$labels[$field_key] = $def_fields[0][$field_key];
+					$attributes[$field_key] = $field_type;
+				}
+
+				// break the loop once we've found the desired field type
+				break;
 			}
 		}
 
@@ -239,12 +249,22 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 			}
 		}
 
-		// map of guest-type codes with equal last name
+		// map of guest-type codes
 		$guest_type_codes_map = [
 			// main guest "Head of Family" expects other guests with equal last name to be "Family Member"
 			17 => 19,
 			// main guest "Head of Group" expects other guests with equal last name to be "Group Member"
 			18 => 20,
+		];
+
+		// map of guest-type codes and related translations
+		$guest_type_codes_map_tn = [
+			// main guest
+			17 => JText::translate('VBO_FAMILY_HEAD'),
+			18 => JText::translate('VBO_GROUP_HEAD'),
+			// additional guests
+			19 => JText::translate('VBO_FAMILY_MEMBER'),
+			20 => JText::translate('VBO_GROUP_MEMBER'),
 		];
 
 		// fields are sufficient, prevent transmission errors with invalid guest-type codes
@@ -275,6 +295,19 @@ final class VBOCheckinPaxfieldsItaly extends VBOCheckinAdapter
 						// expected additional guest type code differs from the selected value
 						throw new Exception(sprintf('The guest #%d for room #%d has got the same last name as the main guest, but their guest-type codes do not match.', $g, ($index + 1)), 500);
 					}
+				}
+			}
+
+			// if the main guest is "Head of Family" then all guests are expected to be "Family Members", otherwise
+			// if the main guest is "Head of Group" then all guests are expected to be "Group Members" or validation will fail
+			for ($g = 2; $g <= $room_guests; $g++) {
+				if ($guest_type_codes_map[$main_guest_type] != ($data[$index][$g]['guest_type'] ?? 0)) {
+					// invalid guest type selected according to the main guest type
+					$main_guest_type_tn = $guest_type_codes_map_tn[($data[$index][1]['guest_type'] ?? 0)] ?? '';
+					$guest_type_tn = $guest_type_codes_map_tn[($data[$index][$g]['guest_type'] ?? 0)] ?? '';
+					$guest_type_exp_code = ($data[$index][$g]['guest_type'] ?? 0) == 19 ? 20 : (($data[$index][$g]['guest_type'] ?? 0) == 20 ? 19 : 0);
+					$guest_type_exp_tn = $guest_type_codes_map_tn[$guest_type_exp_code] ?? '';
+					throw new Exception(sprintf('Invalid type "%s" for the guest #%d in room #%d. "%s" is expected when the main guest is the "%s".', $guest_type_tn, $g, ($index + 1), $guest_type_exp_tn, $main_guest_type_tn), 500);
 				}
 			}
 		}

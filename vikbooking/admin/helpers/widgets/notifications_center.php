@@ -1581,8 +1581,16 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				$group_badge_cnt = '<img class="vbo-ai-icn" src="' . VBO_ADMIN_URI . 'resources/channels/ai-icn-white.png" />';
 				if (strpos($notif->type, 'error') !== false) {
 					$group_badge_cls = 'vbo-badge-group-red';
+				} elseif ($notif->type == 'training.drafts') {
+					$group_badge_cls = 'vbo-badge-group-orange';
 				} else {
 					$group_badge_cls = 'vbo-badge-group-green';
+				}
+			} elseif (!strcasecmp($notif->group, 'dac')) {
+				$group_badge_icon = 'fingerprint';
+				$group_badge_cls  = 'vbo-badge-group-orange';
+				if (strpos((string) $notif->type, '.nok') !== false) {
+					$group_badge_cls = 'vbo-badge-group-red';
 				}
 			}
 

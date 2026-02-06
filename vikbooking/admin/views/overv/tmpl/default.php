@@ -23,6 +23,9 @@ $vbo_app = VikBooking::getVboApplication();
 // load context menu assets
 $vbo_app->loadContextMenuAssets();
 
+// prepare JS currency
+$vbo_app->prepareJavaScriptCurrency();
+
 $vbo_auth_pricing = JFactory::getUser()->authorise('core.vbo.pricing', 'com_vikbooking');
 
 JHtml::fetch('script', VBO_SITE_URI.'resources/jquery-ui.min.js');
@@ -92,7 +95,9 @@ $pcategory_id = $session->get('vbOvwCatid', 0);
 $cookie = $app->input->cookie;
 $cookie_uleft = $cookie->get('vboAovwUleft', '', 'string');
 $cookie_sticky_heads = $cookie->get('vboAovwStheads', 'off', 'string');
+$table_scroll_layout = $cookie->get('vboAovwScroll', (count($rows) > 3 ? 'inline' : 'tables'), 'string');
 $colortags = VikBooking::loadBookingsColorTags();
+$long_list = (count($rows) * $mnum) > 10;
 
 // View mode - Classic or Tags
 $pbmode = $session->get('vbTagsMode', 'classic');
@@ -140,8 +145,9 @@ foreach ($rows as $kr => $room) {
 					 * Beside the holding area, we also add a row for the unassigned room bookings.
 					 * 
 					 * @since 	1.18.2 (J) - 1.8.2 (WP)
+					 * @since 	1.18.3 (J) - 1.8.3 (WP) 2 sub-units are sufficient.
 					 */
-					if ($room['units'] > 2) {
+					if ($room['units'] >= 2) {
 						// set holding area row
 						$clone_room['unit_index'] = 0;
 						$clone_room['unit_index_str'] = JText::translate('VBO_HOLDING_AREA');
@@ -183,15 +189,15 @@ $globally_closed = VikBooking::getClosingDates();
 ?>
 <script type="text/Javascript">
 function vboUnitsLeftOrBooked() {
-	var set_to = jQuery('#uleftorbooked').val();
+	let set_to = jQuery('#uleftorbooked').val();
 	jQuery('.vbo-overv-avcell[data-units-booked]').each(function() {
-		var counter_el = jQuery(this).find('a');
+		let counter_el = jQuery(this).find('a');
 		if (!counter_el.length) {
 			return;
 		}
 		counter_el.first().text(jQuery(this).attr('data-'+set_to));
 	});
-	var nd = new Date();
+	let nd = new Date();
 	nd.setTime(nd.getTime() + (365*24*60*60*1000));
 	document.cookie = "vboAovwUleft="+set_to+"; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
 }
@@ -239,7 +245,7 @@ var vboRdayNotes = <?php echo json_encode($this->rdaynotes); ?>;
 
 	$stickyheaders_cmd_on = '';
 	$stickyheaders_cmd_off = '';
-	if ((count($rows) * $mnum) > 10) {
+	if ($long_list) {
 		if (VBOPlatformDetection::isJoomla()) {
 			/**
 			 * @joomlaonly 	fixed offset selector is ".navbar"
@@ -256,7 +262,7 @@ var vboRdayNotes = <?php echo json_encode($this->rdaynotes); ?>;
 	?>
 		<script type="text/javascript">
 			function vboToggleStickyTableHeaders(val) {
-				var sticky_heads_cval = 'off';
+				let sticky_heads_cval = 'off';
 				if (val > 0) {
 					sticky_heads_cval = 'on';
 					jQuery('table.vboverviewtable').addClass('vbo-overv-sticky-table-head-on');
@@ -282,19 +288,19 @@ var vboRdayNotes = <?php echo json_encode($this->rdaynotes); ?>;
 						table.parentNode.addEventListener('scroll', vboOvervHandleHScrollTableHead);
 					});
 				}
-				var nd = new Date();
+				let nd = new Date();
 				nd.setTime(nd.getTime() + (365*24*60*60*1000));
 				document.cookie = "vboAovwStheads=" + sticky_heads_cval + "; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
 			}
 		</script>
 	<?php
-	if ((count($rows) * $mnum) > 10 || $tags_view_supported === true) {
+	if ($long_list || $tags_view_supported === true) {
 		// group into an apposite context menu the layout and view types
 		?>
 		<script type="text/javascript">
 			const vboOvervLayoutBtns = [];
 		<?php
-		if ((count($rows) * $mnum) > 10) {
+		if ($long_list) {
 			// push buttons to choose between the scroll or table layout
 			?>
 			vboOvervLayoutBtns.push({
@@ -304,9 +310,24 @@ var vboRdayNotes = <?php echo json_encode($this->rdaynotes); ?>;
 			});
 			vboOvervLayoutBtns.push({
 				class: 'vbo-context-menu-entry-secondary',
-				text: <?php echo json_encode(JText::translate('VBO_SCROLL')); ?>,
-				icon: '<?php echo $cookie_sticky_heads == 'off' ? VikBookingIcons::i('check-square') : VikBookingIcons::i('far fa-square'); ?>',
+				text: <?php echo json_encode(JText::translate('VBO_INLINE_SCROLL')); ?>,
+				icon: '<?php echo $cookie_sticky_heads == 'off' && $table_scroll_layout == 'inline' ? VikBookingIcons::i('check-square') : VikBookingIcons::i('far fa-square'); ?>',
 				action: (root, event) => {
+					let nd = new Date();
+					nd.setTime(nd.getTime() + (365*24*60*60*1000));
+					document.cookie = "vboAovwScroll=inline; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
+					vboToggleStickyTableHeaders(0);
+					document.vboverview.submit();
+				},
+			});
+			vboOvervLayoutBtns.push({
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBO_SCROLL')); ?>,
+				icon: '<?php echo $cookie_sticky_heads == 'off' && $table_scroll_layout != 'inline' ? VikBookingIcons::i('check-square') : VikBookingIcons::i('far fa-square'); ?>',
+				action: (root, event) => {
+					let nd = new Date();
+					nd.setTime(nd.getTime() + (365*24*60*60*1000));
+					document.cookie = "vboAovwScroll=tables; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
 					vboToggleStickyTableHeaders(0);
 					document.vboverview.submit();
 				},
@@ -432,26 +453,61 @@ foreach ((array) $app->input->get('tmfilters', [], 'array') as $tm_filter_key =>
 
 <?php
 $todayymd = date('Y-m-d');
+$last_displayed_day_ts = strtotime(date('Y-m-t 23:59:59', strtotime(sprintf('+%d %s', $mnum - 1, (($mnum - 1) === 1 ? 'month' : 'months')), $tsstart)));
+$last_displayed_day_info = getdate($last_displayed_day_ts);
 $nowts = getdate($tsstart);
 $curts = $nowts;
-for ($mind = 1; $mind <= $mnum; $mind++) {
+for ($mind = 1; $mind <= ($table_scroll_layout === 'inline' ? 1 : $mnum); $mind++) {
 	$monthname = VikBooking::sayMonth($curts['mon']);
+	$month_names_cache = [
+		$curts['mon'] => $monthname,
+	];
+	$displayMonthLabel = sprintf('%s %d', $monthname, $curts['year']);
+	if ($table_scroll_layout === 'inline') {
+		$startMonthName = VikBooking::sayMonth($nowts['mon'], true);
+		$endMonthName = VikBooking::sayMonth($last_displayed_day_info['mon'], true);
+		if ($nowts['year'] != $last_displayed_day_info['year']) {
+			$displayMonthLabel = sprintf('%s %d - %s %d', $startMonthName, $nowts['year'], $endMonthName, $last_displayed_day_info['year']);
+		} else {
+			if ($mnum > 1) {
+				$displayMonthLabel = sprintf('%s - %s %d', $startMonthName, $endMonthName, $last_displayed_day_info['year']);
+			} else {
+				$displayMonthLabel = sprintf('%s %d', $monthname, $last_displayed_day_info['year']);
+			}
+		}
+	}
 	?>
 <div class="vbo-overv-montable-wrap">
 	<div class="vbo-table-responsive">
-		<table class="vboverviewtable vbo-roverview-table vbo-table <?php echo $cookie_sticky_heads == 'off' ? 'vbo-overv-sticky-table-head-off' : 'vbo-overv-sticky-table-head-on'; ?>" data-table-index="<?php echo ($mind - 1); ?>" data-month-from="<?php echo date('Y-m-01', $curts[0]); ?>" data-month-to="<?php echo date('Y-m-t', $curts[0]); ?>">
+		<table class="vboverviewtable vbo-roverview-table vbo-table <?php echo $cookie_sticky_heads == 'off' ? 'vbo-overv-sticky-table-head-off' : 'vbo-overv-sticky-table-head-on'; ?>" data-table-index="<?php echo ($mind - 1); ?>" data-month-from="<?php echo date('Y-m-01', $curts[0]); ?>" data-month-to="<?php echo $table_scroll_layout === 'inline' ? date('Y-m-d', $last_displayed_day_ts) : date('Y-m-t', $curts[0]); ?>">
 			<thead>
 				<tr class="vboverviewtablerowone">
-					<th class="bluedays skip-bluedays-click vbo-overview-month"><?php echo $monthname . " " . $curts['year']; ?></th>
+					<th class="bluedays skip-bluedays-click vbo-overview-month" data-initial-period="<?php echo JHtml::fetch('esc_attr', $displayMonthLabel); ?>"><?php echo $displayMonthLabel; ?></th>
 				<?php
 				$moncurts = $curts;
 				$mon = $moncurts['mon'];
-				while ($moncurts['mon'] == $mon) {
+				// loop until the end of the range of dates, or until the end of the current month
+				while (($table_scroll_layout === 'inline' && $moncurts[0] < $last_displayed_day_ts) || ($table_scroll_layout !== 'inline' && $moncurts['mon'] == $mon)) {
 					$curdayymd = date('Y-m-d', $moncurts[0]);
-					$read_day  = $days_labels[$moncurts['wday']] . ' ' . $moncurts['mday'] . ' ' . $monthname . ' ' . $curts['year'];
+					if (!($month_names_cache[$moncurts['mon']] ?? null)) {
+						$month_names_cache[$moncurts['mon']] = VikBooking::sayMonth($moncurts['mon']);
+					}
+					$read_day  = $days_labels[$moncurts['wday']] . ' ' . $moncurts['mday'] . ' ' . $month_names_cache[$moncurts['mon']] . ' ' . $curts['year'];
+					$displayDayLabel = $days_labels[$moncurts['wday']];
+					$headCellClasses = [
+						'bluedays',
+						($todayymd == $curdayymd ? 'vbo-overv-todaycell' : null),
+						(isset($this->festivities[$curdayymd]) ? 'vbo-overv-festcell' : null),
+					];
+					if ($moncurts['mday'] == 1 && $table_scroll_layout === 'inline') {
+						$displayDayLabel = sprintf('%s, %s', VikBooking::sayMonth($moncurts['mon'], true), $days_labels[$moncurts['wday']]);
+						if ($nowts['mon'] != $moncurts['mon']) {
+							$headCellClasses[] = 'vbo-overv-cell-newmonth';
+						}
+					}
 					?>
-					<th class="bluedays<?php echo ($todayymd == $curdayymd ? ' vbo-overv-todaycell' : '') . (isset($this->festivities[$curdayymd]) ? ' vbo-overv-festcell' : ''); ?>" data-ymd="<?php echo $curdayymd; ?>" data-readymd="<?php echo $read_day; ?>">
-						<span class="vbo-overw-tablewday"><?php echo $days_labels[$moncurts['wday']]; ?></span>
+					<th class="<?php echo implode(' ', array_filter($headCellClasses)); ?>" data-ymd="<?php echo $curdayymd; ?>" data-readymd="<?php echo $read_day; ?>">
+						<span class="vbo-overw-tablewday"><?php echo $displayDayLabel; ?></span>
 						<span class="vbo-overw-tablemday"><?php echo $moncurts['mday']; ?></span>
 					</th>
 					<?php
@@ -516,10 +572,10 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 					<?php
 				}
 
-				// loop through every day of the month
+				// loop until the end of the range of dates, or until the end of the current month
 				$room_bids_pool = [];
 				$room_bookings = [];
-				while ($moncurts['mon'] == $mon) {
+				while (($table_scroll_layout === 'inline' && $moncurts[0] < $last_displayed_day_ts) || ($table_scroll_layout !== 'inline' && $moncurts['mon'] == $mon)) {
 					// init cell values
 					$dclass = 'vbo-grid-avcell vbo-overv-avcell ' . (!$is_subunit ? "notbusy" : "subnotbusy");
 					$is_checkin = false;
@@ -578,7 +634,8 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 								$dalt = JText::translate('VBPICKUPAT')." ".date('H:i', $b['checkin']);
 								$is_checkin = true;
 								$lastbidcheckout = $b['checkout'];
-								$bids_checkins[$bid] = $cur_day_key;
+								$bids_checkins[$bid] = $bids_checkins[$bid] ?? [];
+								$bids_checkins[$bid][] = $cur_day_key;
 							} elseif ($moncurts[0] == $conts) {
 								$dalt = JText::translate('VBRELEASEAT')." ".date('H:i', $b['checkout']);
 							}
@@ -653,14 +710,18 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 							}
 						}
 					}
-					if ($is_subunit && isset($rooms_bids_pools[$room['id']][$cur_day_key]) && isset($rooms_features_bookings[$room['id']][$room['unit_index']])) {
+					if ($is_subunit && isset($rooms_bids_pools[$room['id']][$cur_day_key]) && isset($rooms_features_bookings[$room['id']][$room['unit_index']]) && isset($room_bookings_pool[$room['id']][$cur_day_key][$room['unit_index']])) {
 						foreach ($rooms_bids_pools[$room['id']][$cur_day_key] as $bid) {
 							$bid = intval(str_replace('-', '', $bid));
 							if (in_array($bid, $rooms_features_bookings[$room['id']][$room['unit_index']])) {
 								$room['units'] = 1;
 								$totfound = 1;
 								$dclass = "vbo-grid-avcell vbo-overv-avcell subroom-busy";
-								$is_checkin = isset($bids_checkins[$bid]) && $bids_checkins[$bid] == $cur_day_key ? true : $is_checkin;
+								$is_checkin = isset($bids_checkins[$bid]) && in_array($cur_day_key, $bids_checkins[$bid]) ? true : $is_checkin;
+								if (count($room_bookings_pool[$room['id']][$cur_day_key]) > 1 && !empty($room_bookings_pool[$room['id']][$cur_day_key][$room['unit_index']]['checkin'])) {
+									// ensure multi-room bookings display the proper check-in day in case of different nights of stay
+									$is_checkin = date('Y-m-d', $room_bookings_pool[$room['id']][$cur_day_key][$room['unit_index']]['checkin']) == $cur_day_key;
+								}
 
 								/**
 								 * In case of mixed room-types (hotels inventory and listings), we allow
@@ -860,7 +921,17 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 						}
 
 						$write_units = strpos($dclass, 'subroom-busy') !== false ? '' : $write_units;
-						$stopdrag = ($mind == $mnum && !is_null($lastbidcheckout) && (int)date('n', $lastbidcheckout) != (int)$mon);
+						if ($table_scroll_layout === 'inline') {
+							// one table for the whole range, determine if dragging this cell would move a non-displayed check-out
+							$stopdrag = $lastbidcheckout && $lastbidcheckout > $last_displayed_day_ts;
+							// check if we are displaying the first day of a new month
+							if ($moncurts['mday'] == 1 && $nowts['mon'] != $moncurts['mon']) {
+								$dclass .= ' vbo-overv-cell-newmonth';
+							}
+						} else {
+							// one table per month, determine if dragging this cell would move a non-displayed check-out
+							$stopdrag = ($mind == $mnum && !is_null($lastbidcheckout) && (int) date('n', $lastbidcheckout) != (int) $mon);
+						}
 						$dclass .= $is_checkin === true ? ' vbo-checkinday' : '';
 
 						// build proper link
@@ -892,6 +963,12 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 						</td>
 						<?php
 					} elseif ($totfound > 1) {
+						if ($table_scroll_layout === 'inline') {
+							// check if we are displaying the first day of a new month
+							if ($moncurts['mday'] == 1 && $nowts['mon'] != $moncurts['mon']) {
+								$dclass .= ' vbo-overv-cell-newmonth';
+							}
+						}
 						?>
 						<td align="center" class="<?php echo $dclass; ?>"<?php echo $dstyle; ?> data-day="<?php echo $cur_day_key; ?>" data-units-booked="<?php echo $totfound; ?>" data-units-left="<?php echo ($room['units'] - $totfound); ?>" data-bids="<?php echo implode(',', $bids_pool); ?>">
 							<a href="index.php?option=com_vikbooking&task=choosebusy&idroom=<?php echo $room['id']; ?>&ts=<?php echo $moncurts[0]; ?>&goto=overv" class="vbo-overview-redday"<?php echo $astyle; ?>><?php echo $write_units; ?></a>
@@ -900,6 +977,12 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 						<?php
 					} else {
 						// no booked records
+						if ($table_scroll_layout === 'inline') {
+							// check if we are displaying the first day of a new month
+							if ($moncurts['mday'] == 1 && $nowts['mon'] != $moncurts['mon']) {
+								$dclass .= ' vbo-overv-cell-newmonth';
+							}
+						}
 						?>
 						<td align="center" class="<?php echo $dclass; ?>" data-day="<?php echo $cur_day_key; ?>" data-bids="">
 						<?php
@@ -933,6 +1016,7 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 					 * Load also the eventually unassigned bookings.
 					 * 
 					 * @since 	1.18.2 (J) - 1.8.2 (WP)
+					 * @since 	1.18.3 (J) - 1.8.3 (WP) improved support for multi-room bookings with different stay dates.
 					 */
 					list($room_indexes_bids, $room_unassigned_bids) = VikBooking::loadRoomIndexesBookings($room['id'], $room_bids_pool, $unassigned = true);
 					if ($room_indexes_bids || $room_unassigned_bids) {
@@ -942,24 +1026,47 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 					if ($room_indexes_bids) {
 						// set bookings allocated per room index
 						$rooms_features_bookings[$room['id']] = $room_indexes_bids;
+						// build a list of room index positions for every booking ID
+						$bid_rindex_pos = [];
+						foreach ($room_indexes_bids as $rindex => $rindex_bids) {
+							foreach ((array) $rindex_bids as $seek_bid) {
+								$bid_rindex_pos[$seek_bid] = $bid_rindex_pos[$seek_bid] ?? [];
+								$bid_rindex_pos[$seek_bid][] = $rindex;
+							}
+						}
 						// map sub-unit room bookings
 						foreach ($room_indexes_bids as $rindex => $rindex_bids) {
-							if (!is_array($rindex_bids) || !$rindex_bids) {
-								continue;
-							}
-							foreach ($rindex_bids as $seek_bid) {
-								foreach ($room_bookings as $day_key => $day_ress) {
+							foreach ((array) $rindex_bids as $seek_bid) {
+								// collect a list of busy IDs affecting the current room reservation record
+								$room_res_busy_ids = [];
+								foreach ($room_bookings as $day_ress) {
 									foreach ($day_ress as $day_res) {
-										if ($day_res['idorder'] != $seek_bid) {
-											continue;
+										if ($day_res['idorder'] == $seek_bid && !in_array($day_res['id'], $room_res_busy_ids)) {
+											// push busy ID
+											$room_res_busy_ids[] = $day_res['id'];
 										}
-										if (!isset($room_bookings_pool[$room['id']])) {
-											$room_bookings_pool[$room['id']] = [];
-										}
-										if (!isset($room_bookings_pool[$room['id']][$day_key])) {
-											$room_bookings_pool[$room['id']][$day_key] = [];
-										}
-										$room_bookings_pool[$room['id']][$day_key][$rindex] = $day_res;
+									}
+								}
+								// sort the busy IDs affecting the current room reservation record
+								sort($room_res_busy_ids);
+								// iterate all room bookings
+								foreach ($room_bookings as $day_key => $day_ress) {
+									// filter all bookings by getting only the needed one(s)
+									$eligible_day_reservations = array_values(array_filter($day_ress, function($day_res) use ($seek_bid) {
+										// there could be multiple valid bookings in case of multi-room bookings
+										return $day_res['idorder'] == $seek_bid;
+									}));
+									// identify the position of this room index for the current booking ID
+									$rindex_res_busy_pos = array_search($rindex, $bid_rindex_pos[$seek_bid] ?? []);
+									// identify the busy ID that belongs to the current room index in case of multi-room bookings
+									$rindex_res_busy_id = $rindex_res_busy_pos !== false ? ($room_res_busy_ids[$rindex_res_busy_pos] ?? 0) : 0;
+									// filter all day reservations by getting only the one with the proper busy ID
+									$rindex_day_reservations = array_values(array_filter($eligible_day_reservations, function($res) use ($rindex_res_busy_id) {
+										return $rindex_res_busy_id && $res['id'] == $rindex_res_busy_id;
+									}));
+									if ($rindex_day_reservations[0] ?? []) {
+										// allocate the proper room-day-index booking even in case of multi-room bookings
+										$room_bookings_pool[$room['id']][$day_key][$rindex] = $rindex_day_reservations[0];
 									}
 								}
 							}
@@ -968,8 +1075,10 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 					if ($room_unassigned_bids) {
 						// map room unassigned bookings with missing sub-unit (placeholder index = -1)
 						$use_rindex = -1;
-						// force only the first room booking record
-						$rooms_features_bookings[$room['id']][$use_rindex] = [$room_unassigned_bids[0]];
+						// always set all bookings that are missing a sub-unit, not only the first booking record found
+						$rooms_features_bookings[$room['id']][$use_rindex] = $room_unassigned_bids;
+						// start unassigned bookings intersection container
+						$unassigned_bids_intersect = [];
 						// start counter
 						$unassigned_bids_count = 0;
 						// iterate the unassigned reservations
@@ -978,27 +1087,63 @@ for ($mind = 1; $mind <= $mnum; $mind++) {
 							foreach ($room_bookings as $day_key => $day_ress) {
 								foreach ($day_ress as $day_res) {
 									if ($day_res['idorder'] != $seek_bid || !empty($day_res['closure'])) {
+										// unwanted booking
 										continue;
 									}
+									if ($room_bookings_pool[$room['id']][$day_key][$use_rindex] ?? []) {
+										/**
+										 * Even if there could be multiple room bookings without a sub-unit on the same room and day,
+										 * we cannot allow to push more than booking, because the row for the missing sub-units is
+										 * just one, and it is therefore impossible to display multiple reservations under the same day.
+										 */
+										continue;
+									}
+									/**
+									 * Make sure the booking with missing sub-unit that we are about to add is not intersecting other
+									 * bookings for the same room that were previously pushed as missing sub-units. This technique
+									 * allows us to push unlimited bookings with missing sub-units, rather than just the first one
+									 * found in the current month (scroll=tables), or in the current period (scroll=inline), but we
+									 * need to make sure the eventually multiple bookings added are not intersecting with each other,
+									 * or the display of the bookings would be wrong with overlapping data on certain dates.
+									 * 
+									 * @since 	1.18.6 (J) - 1.8.6 (WP)
+									 */
+									$is_intersecting_others = false;
+									foreach ($unassigned_bids_intersect as $previous_bid => $previous_intersection) {
+										if ($previous_bid == $day_res['idorder']) {
+											// this is fine, we need to keep pushing this booking for all stay dates
+											continue;
+										}
+										if (strtotime('00:00:00', $day_res['checkin']) <= $previous_intersection['checkout'] && strtotime('00:00:00', $day_res['checkout']) >= $previous_intersection['checkin']) {
+											// intersection found, this missing sub-unit room reservation would interfere
+											// with another reservation that was previously processed, so we skip it
+											$is_intersecting_others = true;
+											break;
+										}
+									}
+									if ($is_intersecting_others) {
+										// do not push this booking under the rooms booking pool for this day
+										// it can live in the rooms feature bookings array, but not in the pool
+										continue;
+									}
+									// start containers, if needed
 									if (!isset($room_bookings_pool[$room['id']])) {
 										$room_bookings_pool[$room['id']] = [];
 									}
 									if (!isset($room_bookings_pool[$room['id']][$day_key])) {
 										$room_bookings_pool[$room['id']][$day_key] = [];
 									}
+									// set room-day booking for the unassigned index
 									$room_bookings_pool[$room['id']][$day_key][$use_rindex] = $day_res;
+									// set room-day booking intersection data
+									$unassigned_bids_intersect[$day_res['idorder']] = [
+										'checkin'  => strtotime('00:00:00', $day_res['checkin']),
+										'checkout' => strtotime('00:00:00', $day_res['checkout']),
+									];
+									// increase counter
 									$unassigned_bids_count++;
 								}
 							}
-
-							/**
-							 * Even if there could be multiple room bookings without a sub-unit, we need
-							 * to evaluate only the first room booking record, because the row is just one
-							 * and we cannot support to display all missing sub-unit records.
-							 * 
-							 * @since 	1.18.2 (J) - 1.8.2 (WP)
-							 */
-							break;
 						}
 						if (!$unassigned_bids_count) {
 							// there were probably only closures, so we unset the bookings for the unassigned row index
@@ -1100,13 +1245,12 @@ echo $vbo_app->getJmodalHtml('vbo-new-res', JText::translate('VBOSHOWQUICKRES'))
 <a class="vbo-basenavuri-edit" href="index.php?option=com_vikbooking&task=editbusy&goto=overv&cid[]=%d" style="display: none;"></a>
 
 <script type="text/Javascript">
+const vboOvervMonthNames = <?php echo json_encode($month_names_cache ?? (new stdClass)); ?>;
+
 var hovtimer;
 var hovtip = false;
 var vbodialogorph_on = false;
 var isdragging = false;
-var vboMessages = {
-	currencySymb: "<?php echo $currencysymb; ?>"
-};
 var debug_mode = '<?php echo $pdebug; ?>';
 var bctags_count = <?php echo count($colortags); ?>;
 var bctags_pool = <?php echo json_encode($colortags); ?>;
@@ -1143,7 +1287,7 @@ function hideVboDialogOverv(action) {
 	// check action
 	if (action < 0) {
 		// stop reminding, set cookie
-		var nd = new Date();
+		let nd = new Date();
 		nd.setTime(nd.getTime() + (365*24*60*60*1000));
 		document.cookie = "vboHideOrphans=1; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
 	}
@@ -1598,9 +1742,9 @@ function loadTooltipBookings(bids, celldata) {
 						bcont += "<div class=\"vbo-overview-tip-optindexes\"><span class=\"vbo-overview-tip-lbl\"> </span><span class=\"vbo-overview-tip-cnt\"><select onchange=\"vboMoveSubunit('" + v.id + "', '" + subroomids[0] + "', '" + subroomids[1] + "', this.value, '" + celldata[1] + "');\">" + v.optindexes + "</select></span></div>";
 					}
 					bcont += "<div class=\"vbo-overview-tip-bookingcont-total\">";
-					bcont += "<div class=\"vbo-overview-tip-btot\"><span class=\"vbo-overview-tip-lbl\">" + Joomla.JText._('VBEDITORDERNINE') + "</span><span class=\"vbo-overview-tip-cnt\">" + vboMessages.currencySymb + " " + v.format_tot + "</span></div>";
+					bcont += "<div class=\"vbo-overview-tip-btot\"><span class=\"vbo-overview-tip-lbl\">" + Joomla.JText._('VBEDITORDERNINE') + "</span><span class=\"vbo-overview-tip-cnt\">" + VBOCore.getCurrency().display(v.format_tot) + "</span></div>";
 					if (v.totpaid > 0.00) {
-						bcont += "<div class=\"vbo-overview-tip-btot vbo-overview-tip-btotpaid\"><span class=\"vbo-overview-tip-lbl\">" + Joomla.JText._('VBPEDITBUSYTOTPAID') + "</span><span class=\"vbo-overview-tip-cnt\">" + vboMessages.currencySymb + " " + v.format_totpaid + "</span></div>";
+						bcont += "<div class=\"vbo-overview-tip-btot vbo-overview-tip-btotpaid\"><span class=\"vbo-overview-tip-lbl\">" + Joomla.JText._('VBPEDITBUSYTOTPAID') + "</span><span class=\"vbo-overview-tip-cnt\">" + VBOCore.getCurrency().display(v.format_totpaid) + "</span></div>";
 					}
 					var getnotes = v.adminnotes;
 					if (getnotes !== null && getnotes.length) {
@@ -2960,19 +3104,19 @@ jQuery(function() {
 
 	jQuery(document).mouseup(function(e) {
 		if (!hovtip && !vbodialogorph_on) {
-			return false;
+			return;
 		}
 		if (hovtip) {
 			var vbo_overlay_cont = jQuery(".vbo-overview-tipblock");
 			if (!vbo_overlay_cont.is(e.target) && vbo_overlay_cont.has(e.target).length === 0) {
 				hideVboTooltip();
-				return true;
+				return;
 			}
 			if (jQuery(".vbo-overview-tip-bctag-subtip").length) {
 				var vbo_overlay_subtip_cont = jQuery(".vbo-overview-tip-bctag-wrap");
 				if (!vbo_overlay_subtip_cont.is(e.target) && vbo_overlay_subtip_cont.has(e.target).length === 0) {
 					jQuery(".vbo-overview-tip-bctag-subtip").remove();
-					return true;
+					return;
 				}
 			}
 		}
@@ -3038,7 +3182,7 @@ jQuery(function() {
 	}
 
 	/* Default state for sticky table heads */
-	vboToggleStickyTableHeaders(<?php echo (count($rows) * $mnum) > 10 && $cookie_sticky_heads != 'off' ? 1 : 0; ?>);
+	vboToggleStickyTableHeaders(<?php echo $long_list && $cookie_sticky_heads != 'off' ? 1 : 0; ?>);
 
 	/**
 	 * Check orphans (only if not disabled with the cookie).
@@ -3283,6 +3427,21 @@ function vboOvervHandleHScrollTableHead(e) {
 			return;
 		}
 
+		if (<?php echo $table_scroll_layout === 'inline' ? 'true' : 'false'; ?>) {
+			// the inline-scroll layout requires to update the visible month name upon scrolling
+			let firstVisibleCell = vboOvervFirstVisibleTableHeadNode(tables[0]);
+			let periodEl = tables[0].querySelector('.bluedays.vbo-overview-month[data-initial-period]');
+			if (firstVisibleCell && periodEl) {
+				if (!firstVisibleCell.no_scroll && vboOvervMonthNames[firstVisibleCell.mon]) {
+					// display current scroll position month name
+					periodEl.textContent = vboOvervMonthNames[firstVisibleCell.mon] + ' ' + firstVisibleCell.year;
+				} else {
+					// restore the original range/month name
+					periodEl.textContent = periodEl.getAttribute('data-initial-period');
+				}
+			}
+		}
+
 		// pool of fixed table heads
 		let fixedTableHeadNodes = vboOvervBuildFixedTableHeads(tables);
 
@@ -3365,10 +3524,13 @@ function vboOvervBuildFixedTableHeads(tables) {
 			fixedTableHeadWrap.appendChild(fixedTableHeadMonth);
 
 			// obtain the list of visible month-day cells
-			vboOvervVisibleTableHeadNodes(table, index).forEach((mday) => {
+			vboOvervVisibleTableHeadNodes(table, index).forEach((mday, mdayIndex) => {
 				// month-day cell element node
 				let fixedTableHeadMday = document.createElement('div');
 				fixedTableHeadMday.className = 'vbo-overv-sticky-scroll-month-d';
+				if (mdayIndex && mday?.mday == 1) {
+					fixedTableHeadMday.classList.add('vbo-overv-sticky-scroll-newmonth-d');
+				}
 				fixedTableHeadMday.style.width = mday['vwidth'] + 'px';
 				fixedTableHeadMday.addEventListener('click', () => {
 					try {
@@ -3477,6 +3639,67 @@ function vboOvervVisibleTableHeadNodes(table, index) {
 	});
 
 	return visibleMonthDays;
+}
+
+/**
+ * Returns the information of the first visible month-day cell in a table head upon scrolling.
+ * 
+ * @param 	object 	table 	the NodeList element representing a table.
+ * 
+ * @return 	object|null
+ * 
+ * @since 	1.18.6 (J) - 1.8.6 (WP)
+ */
+function vboOvervFirstVisibleTableHeadNode(table) {
+	// get the main table head element
+	let tableHeadElement = table.querySelector('tr.vboverviewtablerowone');
+
+	// get month element of the given table
+	let monthElement = tableHeadElement.querySelector('.vbo-overview-month');
+	let monthLeft    = monthElement.offsetLeft - 2;
+	let monthWidth   = monthElement.offsetWidth;
+
+	// get horizontal scroll left and table width from parent node
+	let tableScrollLeft = table.parentNode.scrollLeft;
+	let tableViewWidth  = table.parentNode.offsetWidth;
+
+	// attempt to identify the first visible month-day cell
+	let firstVisibleMonthDay = null;
+
+	// scan all visible month-day elements
+	tableHeadElement.querySelectorAll('.bluedays:not(.vbo-overview-month)').forEach((cell) => {
+		if (firstVisibleMonthDay) {
+			return;
+		}
+
+		// get cell offsets
+		let monthDayLeft  = cell.offsetLeft;
+		let monthDayWidth = cell.offsetWidth;
+
+		// ensure cell is visible from left scroll
+		if ((monthDayLeft + monthDayWidth) >= (monthLeft + monthWidth)) {
+			// ensure cell is also visible from right scroll
+			if ((monthLeft + tableViewWidth) > monthDayLeft) {
+				// visible cell found, gather the information
+				let ymd = cell.getAttribute('data-ymd');
+				let matchData = ymd.match(/^([0-9]{4})-(0?[1-9]|1[0-2])-[0-9]{2}$/);
+				if (!matchData) {
+					// unexpected cell information
+					return;
+				}
+
+				// set first visible cell properties
+				firstVisibleMonthDay = {
+					ymd: ymd,
+					year: matchData[1],
+					mon: Number(matchData[2]),
+					no_scroll: !tableScrollLeft ? 1 : 0,
+				};
+			}
+		}
+	});
+
+	return firstVisibleMonthDay;
 }
 
 /**

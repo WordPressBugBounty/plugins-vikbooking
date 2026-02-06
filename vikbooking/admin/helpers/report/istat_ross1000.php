@@ -65,6 +65,13 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	protected $nazioni = [];
 
 	/**
+	 * Indicates if no bookings were found for the requested dates.
+	 * 
+	 * @var 	bool
+	 */
+	protected $datesHaveNoBookings = false;
+
+	/**
 	 * List of tourism type codes.
 	 * 
 	 * @var  	array
@@ -884,6 +891,9 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 	 */
 	public function getReportData()
 	{
+		// always reset no bookings detection flag
+		$this->datesHaveNoBookings = false;
+
 		if ($this->getError()) {
 			// export functions may set errors rather than exiting the process, and
 			// the View may continue the execution to attempt to render the report.
@@ -1005,8 +1015,14 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 		$this->dbo->setQuery($q);
 		$records = $this->dbo->loadAssocList();
 		if (!$records) {
+			// set error message
 			$this->setError(JText::translate('VBOREPORTSERRNORESERV'));
 			$this->setError('Nessun check-in, check-out o prenotazione nelle date selezionate.');
+
+			// set no bookings detection flag
+			$this->datesHaveNoBookings = true;
+
+			// abort
 			return false;
 		}
 
@@ -1570,6 +1586,11 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 		// build the XML file
 		$xml = $this->buildXMLFile();
 
+		if ($this->datesHaveNoBookings) {
+			// reset errors that may have been set for the View in case of no bookings to proceed
+			$this->resetErrors();
+		}
+
 		// build report action data, if needed
 		$action_data = array_merge($this->getActionData($registry = false), ['xml' => $xml]);
 
@@ -1677,7 +1698,8 @@ JS
 	 */
 	protected function buildXMLFile()
 	{
-		if (!$this->getReportData()) {
+		if (!$this->getReportData() && !$this->datesHaveNoBookings) {
+			// do not generate the XML file
 			return '';
 		}
 

@@ -4962,7 +4962,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Upload File', 'vikbooking');
 				break;
 			case 'VBODROPFILES':
-				$result = __('or DRAG FILES HERE', 'vikbooking');
+				$result = __('or drag and drop files here', 'vikbooking');
 				break;
 			case 'VBODROPFILESSTOPREMOVING':
 				$result = __('Press ESC from keyboard to stop deleting the files', 'vikbooking');
@@ -8158,6 +8158,311 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_UNASSIGNED_ROW_FORBID':
 				$result = __('Reservations cannot be moved onto this row.', 'vikbooking');
+				break;
+			case 'VBO_DROP_FILES_TO_UPLOAD':
+				$result = __('Drop your files here to upload them.', 'vikbooking');
+				break;
+			case 'VBO_GUESTS_REGISTRATION_DATA':
+				$result = __('Guests Registration Data', 'vikbooking');
+				break;
+			case 'VBO_TURNOVER_TIME_WARNING':
+				$result = __('Check-in must be later than check-out. Otherwise, an extra turnover night will be added after each stay.', 'vikbooking');
+				break;
+			case 'VBO_POSITION':
+				$result = __('Position', 'vikbooking');
+				break;
+			case 'VBO_CURRENCY_POS_BEFORE':
+				$result = __('Before price', 'vikbooking');
+				break;
+			case 'VBO_CURRENCY_POS_AFTER':
+				$result = __('After price', 'vikbooking');
+				break;
+			case 'VBO_MIN_ADV_BOOK_NOTICE':
+				$result = __('Minimum advance booking notice', 'vikbooking');
+				break;
+			case 'VBO_SEARCH_FILTERS':
+				$result = __('Search Filters', 'vikbooking');
+				break;
+			case 'VBO_EXPECTED_PAYOUT':
+				$result = __('Expected payout', 'vikbooking');
+				break;
+			case 'VBO_REPEAT':
+				$result = __('Repeat', 'vikbooking');
+				break;
+			case 'VBO_W_DOORACCESSCONTROL_TITLE':
+				$result = __('Door Access Control', 'vikbooking');
+				break;
+			case 'VBO_W_DOORACCESSCONTROL_DESCR':
+				$result = __('Manage integrations with supported smart lock and door access providers.', 'vikbooking');
+				break;
+			case 'VBO_PROVIDER':
+				$result = __('Provider', 'vikbooking');
+				break;
+			case 'VBO_DEVICES':
+				$result = __('Devices', 'vikbooking');
+				break;
+			case 'VBO_CONNECTED_LISTINGS':
+				$result = __('Connected listings', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_GENERATION':
+				$result = __('Passcode generation', 'vikbooking');
+				break;
+			case 'VBO_AT_TIME_BOOKING':
+				$result = __('At the time of booking', 'vikbooking');
+				break;
+			case 'VBO_BEFORE_CHECKIN':
+				$result = __('Before check-in', 'vikbooking');
+				break;
+			case 'VBO_SYNC':
+				$result = __('Synchronize', 'vikbooking');
+				break;
+			case 'VBO_LOCK':
+				$result = __('Lock', 'vikbooking');
+				break;
+			case 'VBO_LIST_PASSCODES':
+				$result = __('List Passcodes', 'vikbooking');
+				break;
+			case 'VBO_SEARCH_PASSCODE':
+				$result = __('Search Passcode', 'vikbooking');
+				break;
+			case 'VBO_OPT_SEARCH_KEYWORD':
+				$result = __('Optional search keyword.', 'vikbooking');
+				break;
+			case 'VBO_CREATE_PASSCODE':
+				$result = __('Create Passcode', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_NAME':
+				$result = __('Passcode Name', 'vikbooking');
+				break;
+			case 'VBO_OPT_PASSCODE_NAME':
+				$result = __('Optional passcode name for an easier identification.', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_VALID_START':
+				$result = __('Passcode validity start date and time.', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_VALID_END':
+				$result = __('Passcode validity end date and time.', 'vikbooking');
+				break;
+			case 'VBO_DELETE_PASSCODE':
+				$result = __('Delete Passcode', 'vikbooking');
+				break;
+			case 'VBO_UNLOCK_DEVICE_HELP':
+				$result = __('Unlock the device to grant entry.', 'vikbooking');
+				break;
+			case 'VBO_LOCK_DEVICE_HELP':
+				$result = __('Lock the device to restrict entry.', 'vikbooking');
+				break;
+			case 'VBO_LIST_PASSCODES_HELP':
+				$result = __('List all the device passcodes.', 'vikbooking');
+				break;
+			case 'VBO_CREATE_PASSCODE_HELP':
+				$result = __('Create a random passcode for the device.', 'vikbooking');
+				break;
+			case 'VBO_DELETE_PASSCODE_HELP':
+				$result = __('Delete a passcode from the device.', 'vikbooking');
+				break;
+			case 'VBO_CREATE_PASSCODECUST':
+				$result = __('Create Custom Passcode', 'vikbooking');
+				break;
+			case 'VBO_CREATE_PASSCODECUST_HELP':
+				$result = __('Create a custom passcode for the device.', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE':
+				$result = __('Passcode', 'vikbooking');
+				break;
+			case 'VBO_AI_SUPPORT':
+				$result = __('AI Support', 'vikbooking');
+				break;
+			case 'VBO_TASK_AI_SUPPORT_HELP':
+				$result = __('Allow AI assistants to schedule tasks from guest requests.', 'vikbooking');
+				break;
+			case 'VBO_NOTIFS_GROUP_DAC':
+				$result = __('Access Control', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTND':
+				$result = __('Access Control - New Passcode', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTMD':
+				$result = __('Access Control - Passcode Modified', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTCD':
+				$result = __('Access Control - Passcode Cancelled', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_GEN_OK_DEVICE':
+				// @TRANSLATORS: Door Access Control framework successfully generated a passcode to open a lock.
+				$result = _x('Passcode %s successfully generated for the device "%s".', 'Door Access Control framework successfully generated a passcode to open a lock.', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_DEL_OK_DEVICE':
+				// @TRANSLATORS: Door Access Control framework successfully deleted a passcode for a lock.
+				$result = _x('The passcode was successfully deleted from the device "%s".', 'Door Access Control framework successfully deleted a passcode for a lock.', 'vikbooking');
+				break;
+			case 'VBO_DAC_AI_SUPPORT_HELP':
+				$result = __('Allow AI assistants to share access codes or unlock doors upon guest requests during their stay.', 'vikbooking');
+				break;
+			case 'VBO_PASSCODES':
+				$result = __('Passcodes', 'vikbooking');
+				break;
+			case 'VBO_PASSCODES_QUANT_HELP':
+				$result = __('For listings with multiple devices, you can choose to use the same passcode for all devices or generate a unique passcode for each one.', 'vikbooking');
+				break;
+			case 'VBO_ONE_PER_DEVICE':
+				$result = __('One per device', 'vikbooking');
+				break;
+			case 'VBO_ONE_PER_BOOKING':
+				$result = __('One per booking', 'vikbooking');
+				break;
+			case 'VBO_CHOOSE_DEVICE':
+				$result = __('Choose a device from the list.', 'vikbooking');
+				break;
+			case 'VBO_AUTOPAY_COLLECT_HELP':
+				$result = __('If enabled, the balance of OTA reservations paid with a Virtual Credit Card will be automatically collected on the card\'s activation date (requires an eligible payment processor).', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_EMPTY_HELP':
+				$result = __('Leave empty to generate a random passcode.', 'vikbooking');
+				break;
+			case 'VBO_SEL_TIME_OP_RUN':
+				$result = __('Select the time when the operation should run.', 'vikbooking');
+				break;
+			case 'VBO_DB_OPTIM_DURATION':
+				// @TRANSLATORS: i.e. Database optimization completed in 20 seconds.
+				$result = _x('Database optimization completed in %d seconds.', 'i.e. Database optimization completed in 20 seconds.', 'vikbooking');
+				break;
+			case 'VBO_MAINTENANCE':
+				$result = __('Maintenance', 'vikbooking');
+				break;
+			case 'VBO_ACTIVITY_LOGS':
+				$result = __('Activity Logs', 'vikbooking');
+				break;
+			case 'VBO_ACTIVITY_LOGS_HELP':
+				$result = __('View all recorded activities for the device.', 'vikbooking');
+				break;
+			case 'VBO_NOTIFY_FIRST_ACCESS':
+				$result = __('Notify on first access', 'vikbooking');
+				break;
+			case 'VBO_NOTIFY_FIRST_ACCESS_HELP':
+				$result = __('Get notified when the generated access code is used for the first time.', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTFA':
+				$result = __('Access Control - First Access', 'vikbooking');
+				break;
+			case 'VBO_VARIATION':
+				$result = __('Variation', 'vikbooking');
+				break;
+			case 'VBO_RMS':
+				$result = __('Revenue Manager', 'vikbooking');
+				break;
+			case 'VBO_RMS_BOOKING_PACE':
+				$result = __('RMS - Booking Pace', 'vikbooking');
+				break;
+			case 'VBO_RMS_OCCUPANCY_PACE':
+				$result = __('RMS - Occupancy Pace', 'vikbooking');
+				break;
+			case 'VBO_NEW_BOOKINGS':
+				$result = __('New Bookings', 'vikbooking');
+				break;
+			case 'VBO_SAMET_YEARS_AGO':
+				// @TRANSLATORS: i.e. "Same time 2 years ago" or "Same time 3 years ago"
+				$result = _x('Same time %d years ago', 'i.e. "Same time 2 years ago" or "Same time 3 years ago"', 'vikbooking');
+				break;
+			case 'VBO_SAMET_LAST_YEAR':
+				$result = __('Same time last year', 'vikbooking');
+				break;
+			case 'VBO_PICKUP_DATE':
+				$result = __('Pickup date', 'vikbooking');
+				break;
+			case 'VBO_PICKUP_DATE_START':
+				$result = __('Pickup date start', 'vikbooking');
+				break;
+			case 'VBO_PICKUP_DATE_END':
+				$result = __('Pickup date end', 'vikbooking');
+				break;
+			case 'VBO_TARGET_DATE':
+				$result = __('Target date', 'vikbooking');
+				break;
+			case 'VBO_TARGET_DATE_START':
+				$result = __('Target date start', 'vikbooking');
+				break;
+			case 'VBO_TARGET_DATE_END':
+				$result = __('Target date end', 'vikbooking');
+				break;
+			case 'VBO_COMPARE_AGAINST':
+				$result = __('Compare against', 'vikbooking');
+				break;
+			case 'VBO_ALIGN_WEEKDAYS':
+				$result = __('Align by weekday', 'vikbooking');
+				break;
+			case 'VBO_RATE_HISTORY':
+				$result = __('Rate History', 'vikbooking');
+				break;
+			case 'VBO_PREV':
+				// @TRANSLATORS: Short version of "Previous"
+				$result = _x('Prev', 'Short version of "Previous"', 'vikbooking');
+				break;
+			case 'VBO_NEXT':
+				// @TRANSLATORS: Can be displayed next to "Prev", so use a short form when translating
+				$result = _x('Next', 'Can be displayed next to "Prev", so use a short form when translating', 'vikbooking');
+				break;
+			case 'VBO_W_AITRAININGDRAFTS_TITLE':
+				$result = __('AI - Training Drafts', 'vikbooking');
+				break;
+			case 'VBO_W_AITRAININGDRAFTS_DESCR':
+				$result = __('Review and approve AI-generated training drafts before they are used.', 'vikbooking');
+				break;
+			case 'VBO_REVIEW_TRAINING_DRAFT':
+				$result = __('Review training draft', 'vikbooking');
+				break;
+			case 'VBO_APPROVE':
+				$result = __('Approve', 'vikbooking');
+				break;
+			case 'VBO_REJECT':
+				$result = __('Reject', 'vikbooking');
+				break;
+			case 'VBO_AITRAININGDRAFTS_SUMMARY_COUNT':
+				// @TRANSLATORS: Plural form for "Review %d new training drafts created from your guest replies to enable future automated responses."
+				$result = _x('Review %d new training drafts created from your guest replies to enable future automated responses.', 'Plural form for "Review %d new training drafts created from your guest replies to enable future automated responses."', 'vikbooking');
+				break;
+			case 'VBO_AITRAININGDRAFTS_SUMMARY_COUNT_1':
+				$result = __('Review one new training draft created from your guest replies to enable future automated responses.', 'vikbooking');
+				break;
+			case 'VBO_CUSTOMERS_SHORT_PIN_ALERT':
+				$result = __('Warning: some customer records are using short, numeric and insecure PIN codes.', 'vikbooking');
+				break;
+			case 'VBO_CANC_DATE':
+				$result = __('Cancellation date', 'vikbooking');
+				break;
+			case 'VBO_SET_FIXED_RATE':
+				$result = __('Set Fixed Rate', 'vikbooking');
+				break;
+			case 'VBO_INCR_DECR_RATES':
+				$result = __('Increase/Decrease Rates', 'vikbooking');
+				break;
+			case 'VBO_SHOW_OTA_RATES':
+				$result = __('Display OTA Rates', 'vikbooking');
+				break;
+			case 'VBO_PASSCODE_UPD_OK_DEVICE':
+				// @TRANSLATORS: Door Access Control framework successfully updated a passcode for a lock.
+				$result = _x('The passcode was successfully updated on the device "%s".', 'Door Access Control framework successfully updated a passcode for a lock.', 'vikbooking');
+				break;
+			case 'VBO_UPDATE_PASSCODE':
+				$result = __('Update Passcode', 'vikbooking');
+				break;
+			case 'VBO_UPDATE_PASSCODE_HELP':
+				$result = __('Update a passcode on the device.', 'vikbooking');
+				break;
+			case 'VBO_ENABLED_FOR_ALL_BOOKINGS':
+				$result = __('Enabled for all bookings', 'vikbooking');
+				break;
+			case 'VBO_AUTO_PAY_COLLECT_ENABLE_CONF':
+				$result = __('Enabling Automatic Payment Collection will schedule charges for all eligible bookings on the provided credit card at its activation date and time.', 'vikbooking');
+				break;
+			case 'VBO_AUTO_PAY_COLLECT_DISABLE_CONF':
+				$result = __('Disabling Automatic Payment Collection will stop all automatic credit card charges for OTA bookings and require payments to be collected manually.', 'vikbooking');
+				break;
+			case 'VBO_AUTO_PAY_COLLECT_HELP':
+				$result = __('Automatic payment collection is enabled for all bookings. Charges will be automatically scheduled upon receiving the OTA notification for the card activation date.', 'vikbooking');
+				break;
+			case 'VBO_INLINE_SCROLL':
+				$result = __('Inline-Scroll', 'vikbooking');
 				break;
 		}
 

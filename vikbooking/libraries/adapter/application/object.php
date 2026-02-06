@@ -98,9 +98,35 @@ class JObject
 		{
 			foreach ($vars as $key => $value)
 			{
-				if ('_' == substr($key, 0, 1))
+				if (substr($key, 0, 1) === '_')
 				{
 					unset($vars[$key]);
+				}
+			}
+
+			/**
+			 * Collect all none public properties of the current class and it's parents.
+			 * This way, protected and private properties won't be returned.
+			 * 
+			 * @since 10.1.68 
+			 */
+			$nonePublicProperties = [];
+			$reflection = new ReflectionObject($this);
+
+			do {
+				$nonePublicProperties = array_merge(
+					$reflection->getProperties(ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_PROTECTED),
+					$nonePublicProperties
+				);
+			} while ($reflection = $reflection->getParentClass());
+
+			// unset all none public properties, this is needed as get_object_vars returns now all vars
+			// from the current object and not only the CMSObject and the public ones from the inheriting classes
+			foreach ($nonePublicProperties as $prop)
+			{
+				if (array_key_exists($prop->getName(), $vars))
+				{
+					unset($vars[$prop->getName()]);
 				}
 			}
 		}

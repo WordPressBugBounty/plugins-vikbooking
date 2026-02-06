@@ -34,6 +34,7 @@ JText::script('VBO_SET_STANDBY');
 JText::script('VBO_CONF_RM_OVERBOOKING_FLAG');
 JText::script('VBO_NEW_PAYSCHEDULE');
 JText::script('VBANNULLA');
+JText::script('VBOCLOSE');
 JText::script('VBSAVE');
 JText::script('VBELIMINA');
 JText::script('VBO_REG_NEW_PAYMENT');
@@ -47,6 +48,7 @@ $dbo = JFactory::getDbo();
 
 $vbo_app = VikBooking::getVboApplication();
 $vbo_app->loadVisualEditorAssets();
+$vbo_app->prepareJavaScriptCurrency();
 
 // preload chat assets
 VBOFactory::getChatMediator()->useAssets();
@@ -67,7 +69,12 @@ if (VBOPlatformDetection::isWordPress()) {
 $canDo = JFactory::getUser();
 $vbo_auth_bookings = $canDo->authorise('core.vbo.bookings', 'com_vikbooking');
 
+// check if automatic payment collection is enabled for all bookings
+$automatic_payment_collection = VBOFactory::getConfig()->getBool('auto_payment_collection', false);
+
 $booking_has_damage_dep = 0;
+$current_ts = time();
+$ota_type_data = !empty($row['ota_type_data']) ? ((array) json_decode($row['ota_type_data'], true)) : [];
 $currencyname = VikBooking::getCurrencyName();
 $currencysymb = VikBooking::getCurrencySymb();
 $after_tax = VikBooking::ivaInclusa();
@@ -163,7 +170,7 @@ if (!empty($row['channel'])) {
 		$otaccparts = explode('.', $otachannel);
 		$otachannel = $otaccparts[0];
 	}
-	$otacurrency = strlen($row['chcurrency']) > 0 ? $row['chcurrency'] : '';
+	$otacurrency = strlen((string) $row['chcurrency']) > 0 ? $row['chcurrency'] : '';
 }
 
 /**
@@ -488,8 +495,8 @@ function toggleDiscount(elem) {
 		$prev_tn_data = $history_obj->getEventsWithData(array('P0', 'PN'), $tn_data_callback);
 
 		// whether it's refundable/capturable
-		$refundable = ($row['status'] != 'standby' && !empty($row['totpaid']) && $max_refund_ts >= time() && is_array($prev_tn_data) && $prev_tn_data);
-		$off_session_capturing = ($row['status'] != 'standby' && $max_refund_ts >= time() && is_array($prev_tn_data) && array_filter($prev_tn_data, function($data) {
+		$refundable = ($row['status'] != 'standby' && !empty($row['totpaid']) && $max_refund_ts >= $current_ts && is_array($prev_tn_data) && $prev_tn_data);
+		$off_session_capturing = ($row['status'] != 'standby' && $max_refund_ts >= $current_ts && is_array($prev_tn_data) && array_filter($prev_tn_data, function($data) {
 			return is_object($data) && ($data->future_usage ?? null);
 		}));
 
@@ -638,7 +645,7 @@ JS
 			</div>
 				<?php
 			}
-			if (!empty($row['channel']) && stripos($row['channel'], 'booking.com') !== false && $row['checkin'] <= time() && strtotime('+ 7 days', $row['checkout']) >= time()) {
+			if (!empty($row['channel']) && stripos($row['channel'], 'booking.com') !== false && $row['checkin'] <= $current_ts && strtotime('+ 7 days', $row['checkout']) >= $current_ts) {
 				/**
 				 * Guest misconduct reporting API for Booking.com.
 				 * Only after reservation check-in date and no later than 7 days after check-out date. 
@@ -1140,7 +1147,7 @@ JS
 					<?php
 				}
 			}
-			if ($row['status'] == "standby" || ($row['status'] == "cancelled" && $row['checkout'] >= time())) {
+			if ($row['status'] == "standby" || ($row['status'] == "cancelled" && $row['checkout'] >= $current_ts)) {
 				?>
 				<div class="vbo-bookingdet-command">
 					<button class="btn btn-success" type="button" onclick="if (confirm('<?php echo htmlspecialchars(JText::translate('VBSETORDCONFIRMED')); ?> ?')) {document.location.href='index.php?option=com_vikbooking&task=setordconfirmed&cid[]=<?php echo $row['id'] . ($row['status'] == "cancelled" ? '&skip_notification=1' : ''); ?>';}"><?php VikBookingIcons::e('check'); ?> <?php echo JText::translate('VBSETORDCONFIRMED'); ?></button>
@@ -1446,6 +1453,7 @@ JS
 						if ($ch_logo = VikBooking::getVcmChannelsLogo($row['channel'], true)) {
 							$tiny_logo_url = $ch_logo->getTinyLogoURL();
 						}
+						$displayOtaBid = !strcasecmp((string) $row['type'], 'Inquiry') && $row['status'] == 'standby' ? '' : $row['idorderota'];
 						?>
 						<div class="vbo-bookingdet-detcont-label vbo-bookingdet-detcont-label-idorderota <?php echo strtolower(preg_replace('/[^a-z0-9]/i', '', $channelparts[0])); ?>">
 							<span class="label label-info">
@@ -1459,8 +1467,9 @@ JS
 								?>
 									<span class="vbo-bookingdet-ota-name"><?php echo $otachannel_name . ' ID'; ?></span>
 								</span>
-								<span class="badge"><?php echo !strcasecmp((string)$row['type'], 'Inquiry') && $row['status'] == 'standby' ? '-----' : $row['idorderota']; ?></span>
+								<span class="badge<?php echo $displayOtaBid ? ' vbo-tooltip vbo-tooltip-top vbo-reservation-copy-otabid' : ''; ?>" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', JText::translate('VBO_COPY')); ?>"><?php echo $displayOtaBid ? $row['idorderota'] : '-----'; ?></span>
 							</span>
+							<textarea class="vbo-textarea-copyable" data-copy="otabid"><?php echo htmlentities($displayOtaBid); ?></textarea>
 						</div>
 						<?php
 					}
@@ -1982,7 +1991,7 @@ JS
 										$actopt[0]['chageintv'] = $chvar;
 										$actopt[0]['name'] .= ' ('.$optagenames[($chvar - 1)].')';
 										$realcost = (intval($actopt[0]['perday']) == 1 ? (floatval($optagecosts[($chvar - 1)]) * $room_stay_nights * $stept[1]) : (floatval($optagecosts[($chvar - 1)]) * $stept[1]));
-									} else {
+									} elseif (is_numeric($stept[1])) {
 										// VBO 1.11 - options percentage cost of the room total fee
 										if ($is_package === true || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
 											$deftar_basecosts = $or['cust_cost'];
@@ -1993,6 +2002,8 @@ JS
 										$actopt[0]['cost'] = (int)$actopt[0]['pcentroom'] ? ($deftar_basecosts * $actopt[0]['cost'] / 100) : $actopt[0]['cost'];
 										//
 										$realcost = (intval($actopt[0]['perday']) == 1 ? ($actopt[0]['cost'] * $room_stay_nights * $stept[1]) : ($actopt[0]['cost'] * $stept[1]));
+									} else {
+										$realcost = 0;
 									}
 									if ($actopt[0]['maxprice'] > 0 && $realcost > $actopt[0]['maxprice']) {
 										$realcost = $actopt[0]['maxprice'];
@@ -2191,7 +2202,24 @@ JS
 									</div>
 								</td>
 								<td>
-									<span class="vbo-bookingdet-summary-cost"><?php echo (strlen($otacurrency) > 0 ? '('.$otacurrency.') '.$currencyname : $currencyname); ?> <?php echo VikBooking::numberFormat($row['total']); ?></span>
+									<span class="vbo-bookingdet-summary-cost"><?php echo (!empty($otacurrency) && $otacurrency != $currencyname ? '('.$otacurrency.') ' . $currencyname : $currencyname); ?> <?php echo VikBooking::numberFormat($row['total']); ?></span>
+								<?php
+								/**
+								 * Display the information about the expected payout, if available and eligible.
+								 * 
+								 * @since 	1.18.4 (J) - 1.8.4 (WP)
+								 */
+								if ($row['status'] == 'confirmed' && !empty($row['channel']) && !empty($row['idorderota']) && $row['checkout'] >= $current_ts && !empty($ota_type_data['expected_payout'])) {
+									?>
+									<div class="vbo-bookingdet-exp-payout">
+										<span class="vbo-bookingdet-exp-payout-lbl"><?php echo JText::translate('VBO_EXPECTED_PAYOUT'); ?></span>
+										<span class="vbo-bookingdet-exp-payout-txt"><?php
+											echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($ota_type_data['expected_payout']), (!empty($otacurrency) && $otacurrency != $currencyname ? $otacurrency : $currencysymb));
+										?></span>
+									</div>
+									<?php
+								}
+								?>
 								</td>
 							</tr>
 						<?php
@@ -2675,7 +2703,7 @@ JS
 										<tr class="vbo-booking-takings-row">
 											<td>
 											<?php
-											echo $currencysymb . ' ' . VikBooking::numberFormat($tn_amount_paid);
+											echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tn_amount_paid), $currencysymb);
 											if (!strcasecmp($hist['type'], 'PU')) {
 												/**
 												 * Allow to edit or delete the history record.
@@ -2693,7 +2721,7 @@ JS
 											</td>
 											<td><?php echo JHtml::fetch('date', $hist['dt'], 'Y-m-d H:i:s'); ?></td>
 											<td><?php echo $history_obj->validType($hist['type'], true); ?></td>
-											<td><?php echo $currencysymb . ' ' . VikBooking::numberFormat($tn_amount_fees); ?></td>
+											<td><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($tn_amount_fees), $currencysymb); ?></td>
 											<td><?php echo $tn_description; ?></td>
 										</tr>
 										<?php
@@ -2703,11 +2731,11 @@ JS
 									<tfoot>
 										<tr>
 											<td colspan="2">
-												<span><?php echo $currencysymb . ' ' . VikBooking::numberFormat($booking_total_taking); ?></span>
+												<span><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($booking_total_taking), $currencysymb); ?></span>
 											</td>
 											<td></td>
 											<td>
-												<span><?php echo $currencysymb . ' ' . VikBooking::numberFormat($booking_total_prfees); ?></span>
+												<span><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($booking_total_prfees), $currencysymb); ?></span>
 											</td>
 											<td>
 												<button type="button" class="btn btn-small btn-success vbo-takings-addnew"><?php VikBookingIcons::e('plus-circle'); ?> <?php echo JText::translate('VBO_REG_NEW_PAYMENT'); ?></button>
@@ -2733,7 +2761,7 @@ JS
 																<input type="number" id="new_taking_amount" value="" min="0" max="<?php echo $row['total']; ?>" step="any" />
 															</div>
 															<span class="vbo-param-setting-comment">
-																<?php echo JText::translate('VBOCUSTOMERCMMSONTOTAL') . ' ' . $currencysymb . ' ' . VikBooking::numberFormat($row['total']) . ' - ' . JText::translate('VBAMOUNTPAID') . ' ' . $currencysymb . ' ' . VikBooking::numberFormat($row['totpaid']); ?>
+																<?php echo JText::translate('VBOCUSTOMERCMMSONTOTAL') . ' ' . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($row['total']), $currencysymb) . ' - ' . JText::translate('VBAMOUNTPAID') . ' ' . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($row['totpaid']), $currencysymb); ?>
 															</span>
 														</div>
 													</div>
@@ -3031,7 +3059,7 @@ JS
 								 * @since 	1.13
 								 */
 								$cardlimit = mktime(23, 59, 59, $checkout_info['mon'], ($checkout_info['mday'] + 10), $checkout_info['year']);
-								if (time() < $cardlimit && $may_have_cc_details) {
+								if ($current_ts < $cardlimit && $may_have_cc_details) {
 									// log contains credit card details
 									// prepare modal (Credit Card Details)
 									array_push($vbo_modals_html, $vbo_app->getJmodalHtml('vbo-vcm-pcid', JText::translate('GETFULLCARDDETAILS'), '', 'width: 80%; height: 60%; margin-left: -40%; top: 20% !important;'));
@@ -3075,14 +3103,15 @@ JS
 										// display action buttons for payment schedules
 										?>
 								<div class="vbo-eorder-payschedules-wrap">
-									<button type="button" class="btn btn-<?php echo $active_payschedules ? 'success' : 'primary'; ?> vbo-context-menu-btn vbo-context-menu-payschedules">
+									<button type="button" class="btn btn-<?php echo $active_payschedules || $automatic_payment_collection ? 'success' : 'primary'; ?> vbo-context-menu-btn vbo-context-menu-payschedules">
 										<span class="vbo-context-menu-lbl"><?php echo JText::translate('VBO_AUTOPAY_SCHEDULED'); ?></span>
 										<span class="vbo-context-menu-ico"><?php VikBookingIcons::e('sort-down'); ?></span>
 									</button>
 								</div>
 
 								<div class="vbo-eorder-newpayschedule-helper-wrap" style="display: none;">
-									<div class="vbo-eorder-newpayschedule-helper-cont">
+									<div class="vbo-eorder-newpayschedule-helper-cont" data-auto-pay-schedules="<?php echo (int) $automatic_payment_collection; ?>">
+										<p class="info" data-auto-pay-schedules="help" style="display: none;"><?php echo JText::translate('VBO_AUTO_PAY_COLLECT_HELP'); ?></p>
 										<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
 											<div class="vbo-params-wrap">
 												<div class="vbo-params-container">
@@ -3096,7 +3125,7 @@ JS
 																	<span><?php echo $currencysymb; ?></span>
 																	<input type="number" id="new_payschedule_amount" value="<?php echo $tot_scheduled < $row['total'] ? ($row['total'] - $tot_scheduled) : 0; ?>" min="0" step="any" />
 																</div>
-																<span class="vbo-param-setting-comment"><?php echo JText::translate('VBEDITORDERNINE') . ' ' . $currencysymb . ' ' . VikBooking::numberFormat($row['total']); ?></span>
+																<span class="vbo-param-setting-comment"><?php echo JText::translate('VBEDITORDERNINE') . ' ' . VikBooking::formatCurrencyNumber(VikBooking::numberFormat($row['total']), $currencysymb); ?></span>
 															</div>
 														</div>
 														<div class="vbo-param-container">
@@ -3136,6 +3165,50 @@ JS
 
 									// build base buttons list for context menu
 									var vbo_payschedule_btns = [
+										// toggle automatic payment collection scheduling for all bookings
+										{
+											activeState: <?php echo $automatic_payment_collection ? 'true' : 'false'; ?>,
+											text: <?php echo json_encode(JText::translate('VBO_ENABLED_FOR_ALL_BOOKINGS')); ?>,
+											separator: true,
+											icon: function() {
+												return this.activeState ? '<?php echo VikBookingIcons::i('toggle-on', 'vbo-enabled-icon'); ?>' : '<?php echo VikBookingIcons::i('toggle-off'); ?>';
+											},
+											action: function(root, event) {
+												// create reference to button object
+												let that = this;
+
+												// get new state
+												let newState = !this.activeState;
+
+												// determine confirmation message
+												let confirm_enable = <?php echo json_encode(JText::translate('VBO_AUTO_PAY_COLLECT_ENABLE_CONF')); ?>;
+												let confirm_disable = <?php echo json_encode(JText::translate('VBO_AUTO_PAY_COLLECT_DISABLE_CONF')); ?>;
+
+												if ((newState && confirm(confirm_enable)) || (!newState && confirm(confirm_disable))) {
+													// silently update configuration setting
+													VBOCore.doAjax(
+														"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=configuration.update'); ?>",
+														{
+															settings: {
+																auto_payment_collection: newState ? 1 : 0,
+															}
+														},
+														(success) => {
+															// toggle state
+															that.activeState = newState;
+															// update data attribute with the newly saved configuration value
+															let statusEl = document.querySelector('.vbo-eorder-newpayschedule-helper-cont[data-auto-pay-schedules]');
+															if (statusEl) {
+																statusEl.setAttribute('data-auto-pay-schedules', (newState ? 1 : 0));
+															}
+														},
+														(error) => {
+															console.error(error);
+														}
+													);
+												}
+											},
+										},
 										// add new payment schedule button
 										{
 											icon: '<?php echo VikBookingIcons::i('plus-circle'); ?>',
@@ -3176,8 +3249,10 @@ JS
 															VBOCore.emitEvent('vbo-eorder-new-payschedule-dismiss');
 															// populate the new schedule buttons
 															let new_pay_schedule_btns = [];
-															// push the button to add a new schedule
+															// push button to toggle automatic payment collection scheduling for all bookings
 															new_pay_schedule_btns.push(vbo_payschedule_btns[0]);
+															// push button to add a new schedule
+															new_pay_schedule_btns.push(vbo_payschedule_btns[1]);
 															// push all active schedules
 															new_pay_schedules.forEach((payschedule) => {
 																new_pay_schedule_btns.push(
@@ -3220,6 +3295,19 @@ JS
 													},
 												});
 
+												// check current automatic payment schedules status
+												let statusEl = document.querySelector('.vbo-eorder-newpayschedule-helper-cont[data-auto-pay-schedules]');
+												if (statusEl) {
+													let autoPayStatus = statusEl.getAttribute('data-auto-pay-schedules');
+													if (autoPayStatus == 1) {
+														// show help element
+														statusEl.querySelector('[data-auto-pay-schedules="help"]').style.display = '';
+													} else {
+														// hide help element
+														statusEl.querySelector('[data-auto-pay-schedules="help"]').style.display = 'none';
+													}
+												}
+
 												// append modal body
 												jQuery('.vbo-eorder-newpayschedule-helper-cont').appendTo(modal_body);
 											},
@@ -3243,7 +3331,7 @@ JS
 
 										return {
 											icon: ((payschedule.status || 0) > 0 ? (payschedule.status == 1 ? icn_processed : icn_error) : icn_to_process),
-											text: '<?php echo $currencysymb . ' '; ?>' + payschedule?.amount + ' - ' + say_dt,
+											text: VBOCore.getCurrency().format(payschedule?.amount) + ' - ' + say_dt,
 											class: ((payschedule.status || 0) == 1 ? 'vbo-context-menu-entry-success' : ((payschedule.status || 0) == 2 ? 'vbo-context-menu-entry-warning' : 'vbo-context-menu-entry-danger')),
 											separator: false,
 											action: (root, config) => {
@@ -3260,8 +3348,10 @@ JS
 															(new_pay_schedules) => {
 																// populate the new schedule buttons
 																let new_pay_schedule_btns = [];
-																// push the button to add a new schedule
+																// push button to toggle automatic payment collection scheduling for all bookings
 																new_pay_schedule_btns.push(vbo_payschedule_btns[0]);
+																// push button to add a new schedule
+																new_pay_schedule_btns.push(vbo_payschedule_btns[1]);
 																// push all active schedules
 																new_pay_schedules.forEach((payschedule) => {
 																	new_pay_schedule_btns.push(
@@ -3315,8 +3405,10 @@ JS
 																	VBOCore.emitEvent('vbo-eorder-payschedule-logs-dismiss');
 																	// populate the new schedule buttons
 																	let new_pay_schedule_btns = [];
-																	// push the button to add a new schedule
+																	// push button to toggle automatic payment collection scheduling for all bookings
 																	new_pay_schedule_btns.push(vbo_payschedule_btns[0]);
+																	// push button to add a new schedule
+																	new_pay_schedule_btns.push(vbo_payschedule_btns[1]);
 																	// push all active schedules
 																	new_pay_schedules.forEach((payschedule) => {
 																		new_pay_schedule_btns.push(
@@ -4040,7 +4132,7 @@ jQuery(function() {
 			let cancel_btn = jQuery('<button></button>')
 				.attr('type', 'button')
 				.addClass('btn')
-				.text(Joomla.JText._('VBANNULLA'))
+				.text(Joomla.JText._('VBOCLOSE'))
 				.on('click', () => {
 					VBOCore.emitEvent('vbo-tm-edittask-dismiss');
 				});
@@ -4147,6 +4239,19 @@ jQuery(function() {
 			);
 		});
 	});
+
+	// register click event to copy the OTA booking ID
+	const otaBidEl = document.querySelector('.vbo-reservation-copy-otabid');
+	if (otaBidEl) {
+		otaBidEl.addEventListener('click', () => {
+			let copyEl = document.querySelector('textarea.vbo-textarea-copyable[data-copy="otabid"]');
+			VBOCore.copyToClipboard(copyEl).then((success) => {
+				otaBidEl.setAttribute('data-tooltiptext', <?php echo json_encode(JText::translate('VBO_COPIED') . '!'); ?>);
+			}).catch((err) => {
+				// do nothing
+			});
+		});
+	}
 
 });
 var cur_emtpl = <?php echo json_encode($cur_emtpl); ?>;
