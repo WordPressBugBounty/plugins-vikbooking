@@ -427,8 +427,9 @@ final class VBODooraccessFactory
                 // find the corresponding device identifier in the new list
                 foreach ($newDevices as $newDevice) {
                     if ($newDevice->getID() === $previousDevice->getID()) {
-                        // device found, set the previously connected listings
+                        // device found, set the previously connected listings and sub-units
                         $newDevice->setConnectedListings($previousDevice->getConnectedListings());
+                        $newDevice->setConnectedSubunits($previousDevice->getConnectedSubunits());
                         break;
                     }
                 }
@@ -548,16 +549,16 @@ final class VBODooraccessFactory
                 continue;
             }
 
-            // get the unique list of booked listing ids
-            $bookedListingIds = $registry->getBookedListingIds();
+            // get list of booked listing ids and subunits
+            $bookedListingSubunits = $registry->getBookedListingSubunits();
 
             // count the number of expected passcodes that were generated for this booking
             $expectedPasscodes = 0;
 
             // iterate all provider integration devices
             foreach ($integration->getDevices() as $device) {
-                // count, if any, how many listings are compatible with the current device
-                $expectedPasscodes += count(array_intersect($bookedListingIds, $device->getConnectedListings()));
+                // count, if any, how many listings (with subunits) are compatible with the current device
+                $expectedPasscodes += $device->countMatchingListingUnits($bookedListingSubunits);
             }
 
             if (!$expectedPasscodes) {
@@ -654,8 +655,9 @@ final class VBODooraccessFactory
             return [];
         }
 
-        // get the unique list of booked listing ids
+        // get the unique list of booked listing ids and subunits
         $bookedListingIds = $registry->getBookedListingIds();
+        $bookedListingSubunits = $registry->getBookedListingSubunits();
 
         // build the pool of devices and passcodes data
         $devicePasscodesSignatures = [];
@@ -688,8 +690,8 @@ final class VBODooraccessFactory
             // count the number of expected passcodes that were generated for this booking by the current integration provider
             $expectedPasscodes = 0;
             foreach ($integration->getDevices() as $device) {
-                // count, if any, how many listings are compatible with the current device
-                $expectedPasscodes += count(array_intersect($bookedListingIds, $device->getConnectedListings()));
+                // count, if any, how many listings (with subunits) are compatible with the current device
+                $expectedPasscodes += $device->countMatchingListingUnits($bookedListingSubunits);
             }
 
             // ensure we are not getting too many passcodes for this provider, which may have been cancelled
@@ -748,8 +750,8 @@ final class VBODooraccessFactory
      */
     public function handleBookingDeviceUnlock(VBOBookingRegistry $registry, ?array $options = null)
     {
-        // get the unique list of booked listing ids
-        $bookedListingIds = $registry->getBookedListingIds();
+        // get list of booked listing ids and subunits
+        $bookedListingSubunits = $registry->getBookedListingSubunits();
 
         // list of provider integrations capable of unlocking a device
         $integrations = array_filter($this->loadActiveIntegrations(), function($integration) {
@@ -771,10 +773,10 @@ final class VBODooraccessFactory
         foreach ($integrations as $integration) {
             // iterate all integration devices
             foreach ($integration->getDevices() as $device) {
-                // get the listings compatible with the current device
-                $deviceListingIds = array_intersect($bookedListingIds, $device->getConnectedListings());
+                // get the listing-subunit pairs compatible with the current device
+                $deviceListingUnits = $device->intersectListingUnits($bookedListingSubunits);
 
-                if (!$deviceListingIds) {
+                if (!$deviceListingUnits) {
                     // the device is not connected to any of the booked listings
                     continue;
                 }
@@ -831,6 +833,165 @@ final class VBODooraccessFactory
         }
 
         return $unlockResults;
+    }
+
+    /**
+     * Takes care of cleaning the expired passcodes to free up memory on the device.
+     * 
+     * @param   ?array  $options    Optional associative list of processing options.
+     * 
+     * @return  int     Number of passcodes deleted.
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function cleanExpiredPasscodes(?array $options = null)
+    {
+        // count total passcodes deleted
+        $passcodesDeleted = 0;
+
+        // list of configured provider integrations to delete expired passcodes
+        $integrations = array_filter($this->loadActiveIntegrations(), function($integration) {
+            return $integration->canCleanExpiredPasscodes();
+        });
+
+        if (!$integrations) {
+            // do not proceed
+            return $passcodesDeleted;
+        }
+
+        // calculate timestamp bounds, last week by default
+        $tsBounds = [
+            strtotime('00:00:00', strtotime(($options['date_from'] ?? date('Y-m-d', strtotime('-1 week'))))),
+            strtotime('23:59:59', strtotime(($options['date_to'] ?? date('Y-m-d', strtotime('-1 day')))))
+        ];
+
+        // load the departed reservations in the last week
+        $lastDepartures = $this->loadCheckedOutReservations($tsBounds);
+
+        // map bookings with previously generated passcodes
+        $lastDepartures = array_map(function($booking) {
+            // set booking DAC passcodes
+            $booking['_dac_passcodes_data'] = [];
+
+            // check if any passcode was previously created
+            $previousPasscodes = VikBooking::getBookingHistoryInstance($booking['id'])
+                ->getEventsWithData(['ND', 'MD'], function($data) {
+                    // cast history data payload to an array
+                    $data = (array) $data;
+
+                    // ensure the passcode was generated by/for a valid provider, profile and device
+                    return !empty($data['provider']) &&
+                        !empty($data['profile']) &&
+                        !empty($data['device']) &&
+                        (!empty($data['passcode']) || !empty($data['props']));
+                });
+
+            foreach (array_reverse((array) $previousPasscodes) as $previousData) {
+                // ensure we only have array values
+                $previousData = (array) json_decode(json_encode($previousData), true);
+
+                // push booking passcode data
+                $passcodeData = ($previousData['passcode'] ?? '') ?: (array) ($previousData['props'] ?? []);
+
+                if ($passcodeData) {
+                    // push booking passcode data
+                    $booking['_dac_passcodes_data'][] = ($previousData['passcode'] ?? '') ?: (array) ($previousData['props'] ?? []);
+                }
+            }
+
+            // returned the mapped booking array
+            return $booking;
+        }, $lastDepartures);
+
+        // filter out bookings for which no passcodes were ever generated
+        $lastDepartures = array_filter($lastDepartures, function($booking) {
+            // ensure booking passcodes data is set
+            return !empty($booking['_dac_passcodes_data']);
+        });
+
+        if (!$lastDepartures) {
+            // nothing to delete at this time
+            return $passcodesDeleted;
+        }
+
+        // build the readable date bounds
+        $startInfo = getdate($tsBounds[0]);
+        $endInfo = getdate($tsBounds[1]);
+        $targetDtFrom = sprintf('%s %d', VikBooking::sayMonth($startInfo['mon'], true), $startInfo['mday']);
+        $targetDtTo = sprintf('%s %d', VikBooking::sayMonth($endInfo['mon'], true), $endInfo['mday']);
+        if ($startInfo['year'] != $endInfo['year']) {
+            // append short year to both target dates
+            $targetDtFrom .= ' ' . date('y', $tsBounds[0]);
+            $targetDtTo .= ' ' . date('y', $tsBounds[1]);
+        } else {
+            // append full year to target end date
+            $targetDtTo .= ' ' . $endInfo['year'];
+        }
+
+        // iterate departed reservations
+        foreach ($lastDepartures as $booking) {
+            // wrap the booking information into a registry
+            $registry = VBOBookingRegistry::getInstance($booking);
+
+            // get list of booked listing ids and subunits
+            $bookedListingSubunits = $registry->getBookedListingSubunits();
+
+            // scan all the eligible integration records
+            foreach ($integrations as $integration) {
+                // set DAC passcodes data within the booking registry
+                $registry->setDACProperty($integration->getAlias(), 'passcodes_data', $booking['_dac_passcodes_data'] ?? []);
+
+                // start integration counter
+                $integrationDeletion = 0;
+
+                // iterate all provider integration devices
+                foreach ($integration->getDevices() as $device) {
+                    // get the listing-subunit pairs compatible with the current device
+                    $deviceListingUnits = $device->intersectListingUnits($bookedListingSubunits);
+
+                    // iterate all listing units connected to the current device, if any
+                    foreach ($deviceListingUnits as $listingIndex => $listingSubunitPair) {
+                        // obtain listing ID and subunit number
+                        list($listingId, $subunitId) = $listingSubunitPair;
+
+                        // set current room index to identify a multi-room booking context
+                        $registry->setCurrentRoomIndex($listingIndex);
+
+                        // set current room number (1-based index) to identify an exact subunit for hotels inventory (if any)
+                        $registry->setCurrentRoomNumber($subunitId);
+
+                        try {
+                            // attempt to delete a previously created passcode on this device for the current booking
+                            if ($integration->cancelBookingDoorAccess($device, $listingId, $registry)) {
+                                // increase global counter
+                                $passcodesDeleted++;
+
+                                // increase integration counter
+                                $integrationDeletion++;
+                            }
+                        } catch (Exception $e) {
+                            // do nothing
+                        }
+                    }
+                }
+
+                if ($integrationDeletion) {
+                    // store an entry within the notifications center for the successful operation
+                    VBOFactory::getNotificationCenter()
+                        ->store([
+                            [
+                                'sender'  => 'dac',
+                                'type'    => 'dac.EX.ok',
+                                'title'   => sprintf('%s', (string) $integration->getProfileName()),
+                                'summary' => JText::sprintf('VBO_EXP_PASSCODES_DEL_OK_RES', $integrationDeletion, $targetDtFrom, $targetDtTo),
+                                'avatar'  => preg_match('/^http/', (string) $integration->getIcon()) ? $integration->getIcon() : null,
+                            ],
+                        ]);
+                }
+            }
+        }
+
+        return $passcodesDeleted;
     }
 
     /**
@@ -914,8 +1075,8 @@ final class VBODooraccessFactory
             // wrap the booking information into a registry
             $registry = VBOBookingRegistry::getInstance($booking);
 
-            // get the unique list of booked listing ids
-            $bookedListingIds = $registry->getBookedListingIds();
+            // get list of booked listing ids and subunits
+            $bookedListingSubunits = $registry->getBookedListingSubunits();
 
             // scan all the eligible integration records
             foreach ($integrations as $integration) {
@@ -924,13 +1085,19 @@ final class VBODooraccessFactory
 
                 // iterate all provider integration devices
                 foreach ($integration->getDevices() as $device) {
-                    // get the listings compatible with the current device
-                    $deviceListingIds = array_intersect($bookedListingIds, $device->getConnectedListings());
+                    // get the listing-subunit pairs compatible with the current device
+                    $deviceListingUnits = $device->intersectListingUnits($bookedListingSubunits);
 
-                    // iterate all listing IDs connected to the current device, if any
-                    foreach (array_values($deviceListingIds) as $listingIndex => $listingId) {
+                    // iterate all listing units connected to the current device, if any
+                    foreach ($deviceListingUnits as $listingIndex => $listingSubunitPair) {
+                        // obtain listing ID and subunit number
+                        list($listingId, $subunitId) = $listingSubunitPair;
+
                         // set current room index to identify a multi-room booking context
                         $registry->setCurrentRoomIndex($listingIndex);
+
+                        // set current room number (1-based index) to identify an exact subunit for hotels inventory (if any)
+                        $registry->setCurrentRoomNumber($subunitId);
 
                         try {
                             // attempt to find the first access on this device for the current booking
@@ -968,7 +1135,6 @@ final class VBODooraccessFactory
                             // do nothing
                         }
                     }
-
                 }
             }
         }
@@ -1014,18 +1180,24 @@ final class VBODooraccessFactory
                 // flag the booking as processed
                 $integration->setBookingAccessProcessed($registry->getID());
 
-                // get the unique list of booked listing ids
-                $bookedListingIds = $registry->getBookedListingIds();
+                // get list of booked listing ids and subunits
+                $bookedListingSubunits = $registry->getBookedListingSubunits();
 
                 // iterate all provider integration devices
                 foreach ($integration->getDevices() as $device) {
-                    // get the listings compatible with the current device
-                    $deviceListingIds = array_intersect($bookedListingIds, $device->getConnectedListings());
+                    // get the listing-subunit pairs compatible with the current device
+                    $deviceListingUnits = $device->intersectListingUnits($bookedListingSubunits);
 
-                    // iterate all listing IDs connected to the current device, if any
-                    foreach (array_values($deviceListingIds) as $listingIndex => $listingId) {
+                    // iterate all listing units connected to the current device, if any
+                    foreach ($deviceListingUnits as $listingIndex => $listingSubunitPair) {
+                        // obtain listing ID and subunit number
+                        list($listingId, $subunitId) = $listingSubunitPair;
+
                         // set current room index to identify a multi-room booking context
                         $registry->setCurrentRoomIndex($listingIndex);
+
+                        // set current room number (1-based index) to identify an exact subunit for hotels inventory (if any)
+                        $registry->setCurrentRoomNumber($subunitId);
 
                         // call door access control on provider record for the current device, listing and booking
                         try {
@@ -1164,7 +1336,8 @@ final class VBODooraccessFactory
             return false;
         }
 
-        if (!$registry->detectAlterations()) {
+        // detect changes from previous to current booking even at room-level (subunits)
+        if (!$registry->detectAlterations($roomLevel = true)) {
             // do nothing when no significant changes were made to the booking
             return false;
         }
@@ -1364,8 +1537,15 @@ final class VBODooraccessFactory
         // count the door access handling actions performed
         $doorAccessActions = 0;
 
-        // get the unique list of booked listing ids
-        $bookedListingIds = $registry->getBookedListingIds();
+        // get list of booked listing ids and subunits
+        $bookedListingSubunits = $registry->getBookedListingSubunits();
+
+        // check if the booking was only modified at room-level (subunits)
+        $modifiedRoomLevelOnly = false;
+        if ($type === 'modification' && !$registry->detectAlterations($roomLevel = false)) {
+            // turn flag on, because no booking-level changes were detected, only room-level changes (subunits)
+            $modifiedRoomLevelOnly = true;
+        }
 
         // scan the eligible integrations for generating passcodes at the time of booking or pre-checkin
         foreach ($this->loadGeneratingIntegrations($generationTypes) as $record) {
@@ -1387,13 +1567,24 @@ final class VBODooraccessFactory
 
             // iterate all provider integration devices
             foreach ($integration->getDevices() as $device) {
-                // get the listings compatible with the current device
-                $deviceListingIds = array_intersect($bookedListingIds, $device->getConnectedListings());
+                if ($modifiedRoomLevelOnly && !$device->getConnectedSubunits()) {
+                    // prevent useless passcode modifications in case of room-level only changes and no subunits mapped
+                    continue;
+                }
 
-                // iterate all listing IDs connected to the current device, if any
-                foreach (array_values($deviceListingIds) as $listingIndex => $listingId) {
+                // get the listing-subunit pairs compatible with the current device
+                $deviceListingUnits = $device->intersectListingUnits($bookedListingSubunits);
+
+                // iterate all listing units connected to the current device, if any
+                foreach ($deviceListingUnits as $listingIndex => $listingSubunitPair) {
+                    // obtain listing ID and subunit number
+                    list($listingId, $subunitId) = $listingSubunitPair;
+
                     // set current room index to identify a multi-room booking context
                     $registry->setCurrentRoomIndex($listingIndex);
+
+                    // set current room number (1-based index) to identify an exact subunit for hotels inventory (if any)
+                    $registry->setCurrentRoomNumber($subunitId);
 
                     // call door access control on provider record for the current device, listing and booking
                     try {
@@ -1517,6 +1708,31 @@ final class VBODooraccessFactory
                 ->where($dbo->qn('status') . ' = ' . $dbo->q('confirmed'))
                 ->where($dbo->qn('closure') . ' = 0')
                 ->where('(' . $dbo->qn('checkin') . ' BETWEEN ' . ((int) ($intervals[0] ?? time())) . ' AND ' . ((int) ($intervals[1] ?? strtotime('+1 hour'))) . ')')
+        );
+
+        return $dbo->loadAssocList();
+    }
+
+    /**
+     * Loads the checked-out reservations within the given check-in timestamp intervals.
+     * 
+     * @param   array   $intervals  List of two timestamps for the check-out bounds.
+     * 
+     * @return  array               List of eligible reservation records, if any.
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    protected function loadCheckedOutReservations(array $intervals)
+    {
+        $dbo = JFactory::getDbo();
+
+        $dbo->setQuery(
+            $dbo->getQuery(true)
+                ->select('*')
+                ->from($dbo->qn('#__vikbooking_orders'))
+                ->where($dbo->qn('status') . ' = ' . $dbo->q('confirmed'))
+                ->where($dbo->qn('closure') . ' = 0')
+                ->where('(' . $dbo->qn('checkout') . ' BETWEEN ' . ((int) ($intervals[0] ?? strtotime('-1 week', strtotime('00:00:00')))) . ' AND ' . ((int) ($intervals[1] ?? strtotime('-1 day', strtotime('23:59:59')))) . ')')
         );
 
         return $dbo->loadAssocList();

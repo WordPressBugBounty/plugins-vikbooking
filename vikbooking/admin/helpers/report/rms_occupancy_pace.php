@@ -1256,7 +1256,7 @@ JAVASCRIPT;
                         $blockMetricsTpl .= <<<HTML
                         <div class="vbo-report-footer-rms-metric $metricCls">
                             <div class="vbo-report-footer-rms-metric-year"><span>$targetName:</span></div>
-                            <div class="vbo-report-footer-rms-metric-value">$avgValue <span>($avgOccPcent%)</span></div>
+                            <div class="vbo-report-footer-rms-metric-value">$totalValue <span>($avgOccPcent%)</span></div>
                         </div>
                         HTML;
                     }

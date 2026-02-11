@@ -477,15 +477,17 @@ class VikBookingAvailability
 	}
 
 	/**
-	 * Finds a room by name.
+	 * Finds a room (or multiple rooms) by name.
 	 * 
 	 * @param 	string 	$name 	The room name to look for.
+	 * @param 	bool 	$all 	True to return a list of matches.
 	 * 
 	 * @return 	array
 	 * 
 	 * @since 	1.16.10 (J) - 1.6.10 (WP)
+	 * @since 	1.18.17 (J) - 1.8.17 (WP) added argument $all.
 	 */
-	public function getRoomByName(string $name)
+	public function getRoomByName(string $name, bool $all = false)
 	{
 		$dbo = JFactory::getDbo();
 
@@ -497,6 +499,12 @@ class VikBookingAvailability
 
 		foreach (array_filter(preg_split("/[\s\-_.,]+/", $name)) as $nm_part) {
 			$q->where($dbo->qn('name') . ' LIKE ' . $dbo->q("%{$nm_part}%"));
+		}
+
+		if ($all) {
+			// match all records
+			$dbo->setQuery($q);
+			return $dbo->loadAssocList();
 		}
 
 		$dbo->setQuery($q, 0, 1);
@@ -2482,9 +2490,14 @@ class VikBookingAvailability
 	 */
 	public function getDefaultNightsTransfersRatio()
 	{
-		$config = VBOFactory::getConfig();
+		static $transferRatio = null;
 
-		return (int) $config->get('split_stay_ratio', 50);
+		if ($transferRatio === null) {
+			$config = VBOFactory::getConfig();
+			$transferRatio = (int) $config->get('split_stay_ratio', 50);
+		}
+
+		return $transferRatio;
 	}
 
 	/**

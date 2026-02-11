@@ -359,6 +359,9 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 		//get VBO Application Object
 		$vbo_app = VikBooking::getVboApplication();
 
+		// get the possibly injected report options
+		$options = $this->getReportOptions();
+
 		//load the jQuery UI Datepicker
 		$this->loadDatePicker();
 
@@ -506,7 +509,7 @@ class VikBookingReportIstatRoss1000 extends VikBookingReport
 					'name' => 'listings[]',
 					'multiple' => 'multiple',
 				],
-				'selected_values' => (array) $app->input->get('listings', [], 'array'),
+				'selected_values' => (array) ($app->input->get('listings', [], 'array') ?: $options->get('listings', [])),
 			]) . '</span>',
 			'type' => 'select',
 			'multiple' => true,
@@ -1709,9 +1712,9 @@ JS
 		// get the possibly injected report options
 		$options = $this->getReportOptions();
 
-		// injected options will replace request variables, if any
-		$pfromdate = $options->get('fromdate', VikRequest::getString('fromdate', '', 'request'));
-		$ptodate = $options->get('todate', VikRequest::getString('todate', '', 'request'));
+		// injected options will substitute request variables, if any
+		$pfromdate = VikRequest::getString('fromdate', $options->get('fromdate', ''), 'request');
+		$ptodate = VikRequest::getString('todate', $options->get('todate', ''), 'request');
 
 		// access manually filled values, if any
 		$pfiller = VikRequest::getString('filler', '', 'request', VIKREQUEST_ALLOWRAW);
@@ -1771,7 +1774,7 @@ JS
 			}
 
 			// check if some listings were filtered
-			$filtered_listings = ((array) VikRequest::getVar('listings', array())) ?: ((array) $options->get('listings', []));
+			$filtered_listings = (array) (VikRequest::getVar('listings', array()) ?: $options->get('listings', []));
 			$filtered_listings = array_filter(array_map('intval', $filtered_listings));
 
 			// property is open today

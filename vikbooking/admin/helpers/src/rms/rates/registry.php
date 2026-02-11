@@ -29,6 +29,11 @@ final class VBORmsRatesRegistry
     private array $flowRecords = [];
 
     /**
+     * @var  array
+     */
+    private array $ratePlansList = [];
+
+    /**
      * @var  int
      */
     private $mainRatePlanId = 0;
@@ -44,8 +49,11 @@ final class VBORmsRatesRegistry
         $this->options = $options;
 
         // identify the main rate plan ID across all listings
-        $all_rate_plans = array_values(VikBooking::getAvailabilityInstance(true)->loadRatePlans());
-        $this->mainRatePlanId = (int) ($all_rate_plans[0]['id'] ?? 0);
+        $this->ratePlansList = VikBooking::getAvailabilityInstance(true)->loadRatePlans(true);
+        foreach ($this->ratePlansList as $rplan) {
+            $this->mainRatePlanId = $rplan['id'] ?? 0;
+            break;
+        }
     }
 
     /**
@@ -194,6 +202,16 @@ final class VBORmsRatesRegistry
             return $aRank <=> $bRank;
         });
 
+        // list of channels requiring net rates (pricing before tax)
+        $netRateOtas = [
+            VikChannelManagerConfig::AIRBNBAPI,
+            VikChannelManagerConfig::VRBOAPI,
+        ];
+
+        // pricing tax policy (included or excluded)
+        $pricingTaxInclusive = VikBooking::ivaInclusa();
+        $handleVat = $this->options['handle_vat'] ?? 1;
+
         // obtain the iterable dates period
         $datePeriod = VBORmsPace::getInstance()->getDatePeriodInterval(strtotime($this->options['from_date']), strtotime($this->options['to_date']), 'P1D');
 
@@ -204,6 +222,8 @@ final class VBORmsRatesRegistry
         foreach ($involvedListingIds as $listingId) {
             // scan the involved rate plan IDs
             foreach ($involvedRateIds as $ratePlanId) {
+                // tell whether the rate plan is tax eligible
+                $taxEligible = !empty($this->ratePlansList[$ratePlanId]['idiva']);
                 // scan the involved channel IDs
                 foreach ($involvedChannelIds as $channelId) {
                     // build listing flow container
@@ -238,8 +258,21 @@ final class VBORmsRatesRegistry
                             $totMatches++;
                         }
 
+                        // calculate OTA nightly rate, if any
+                        $otaNightlyRate = $matchRecord ? (floatval($matchRecord['nightly_fee'] ?? 0)) : null;
+                        if ($otaNightlyRate && $taxEligible && $handleVat) {
+                            // check if rate needs to be adjusted by VAT/GST
+                            if ($pricingTaxInclusive && in_array($channelId, $netRateOtas)) {
+                                // add VAT/GST to nightly rate
+                                $otaNightlyRate = VikBooking::sayPackagePlusIva($otaNightlyRate, ($this->ratePlansList[$ratePlanId]['idiva'] ?? 0), true);
+                            } elseif (!$pricingTaxInclusive && !in_array($channelId, $netRateOtas)) {
+                                // deduct VAT/GST from nightly rate
+                                $otaNightlyRate = VikBooking::sayPackageMinusIva($otaNightlyRate, ($this->ratePlansList[$ratePlanId]['idiva'] ?? 0), true);
+                            }
+                        }
+
                         // set OTA nightly rate (null if no matching records found)
-                        $listingRecords['rates'][$period->format('Y-m-d')] = $matchRecord ? (floatval($matchRecord['nightly_fee'] ?? 0)) : null;
+                        $listingRecords['rates'][$period->format('Y-m-d')] = $otaNightlyRate;
                     }
 
                     if ($totMatches) {

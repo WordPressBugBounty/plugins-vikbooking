@@ -2379,7 +2379,13 @@ class VikBookingController extends JControllerVikBooking
 			}
 			$booking_record->payable = $new_payable;
 
-			$dbo->updateObject('#__vikbooking_orders', $booking_record, 'id');
+			// update booking record
+			if (!$dbo->updateObject('#__vikbooking_orders', $booking_record, 'id')) {
+				// payments log content may break the update
+				unset($booking_record->paymentlog);
+				// try once more
+				$dbo->updateObject('#__vikbooking_orders', $booking_record, 'id');
+			}
 
 			// assign room specific unit
 			$set_room_indexes = VikBooking::autoRoomUnit();

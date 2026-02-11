@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.8.7
+
+*Release date - 11 February 2026*
+
+- Door Access Control: framework improvements (device data mapping).
+- Door Access Control: automatic removal of expired passcodes.
+- Door Access Control: hotel inventory room-types mapping (subunits).
+- Door Access Control: new integration for U-tec Smart Home.
+- Resolve room assignments through intelligent combinations matrix.
+- Hotel inventory room-types with multiple subunits reassignment options.
+- New notification of type "OTA Bank Transfer Update" (E4jConnect channel manager required).
+- Improved notification of type "OTA Payout Update" (E4jConnect channel manager required).
+- Rates Overview OTA Rates improvements (net rates) and automatic loading.
+- Availability Overview preference for automatically loading rates and restrictions (Multi-calendar).
+- Longer and alphanumeric customer pin codes enforcements.
+- Template file customization improvements (DOMDocument HTML strings loading).
+- Various RMS report metric calculations improved.
+- PMS Reports automatic execution improvements with all-profiles processing.
+- Improved Virtual Credit Cards fetching operations from OTAs (E4jConnect channel manager required).
+- Various internal libraries updates.
+
 ## 1.8.6
 
 *Release date - 22 January 2026*

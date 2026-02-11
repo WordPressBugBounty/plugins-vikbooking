@@ -11,7 +11,6 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 $dbo = JFactory::getDbo();
-$session = JFactory::getSession();
 $document = JFactory::getDocument();
 $vbo_tn = VikBooking::getTranslator();
 

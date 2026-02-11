@@ -344,6 +344,7 @@ class VboCurrencyConverter
 			'UZS' => array('symbol' => '1083'),
 			'VEF' => array('symbol' => '66'),
 			'VND' => array('symbol' => '8363'),
+			'XOF' => array('decimals' => 0),
 			'YER' => array('symbol' => '65020'),
 			'ZWD' => array('symbol' => '90'),
 			'TND' => array('decimals' => 3),
@@ -665,9 +666,23 @@ class VboCurrencyConverter
 	protected function loadFloatRatesDotComRates($currency = '')
 	{
 		$feed_name 	 = empty($currency) ? 'eur' : substr(strtolower($currency), 0, 3);
-		$rates_doc 	 = "http://www.floatrates.com/daily/{$feed_name}.xml";
+		$rates_doc 	 = "https://www.floatrates.com/daily/{$feed_name}.xml";
 		$cache_rates = dirname(__FILE__) . DIRECTORY_SEPARATOR . date('Y-m-d') . "{$feed_name}" . '_floatrates.xml';
 		$xml_data  	 = '';
+
+		/**
+		 * Add support to always-valid exchange rates XML file that could be uploaded onto the server.
+		 * This is useful to overcome server limitations for fetching remote XML files.
+		 * 
+		 * @since 	1.18.7 (J) - 1.8.7 (WP)
+		 */
+		if (!is_file($cache_rates)) {
+			$always_valid_cache_rates = dirname(__FILE__) . DIRECTORY_SEPARATOR . "cache_{$feed_name}" . '_floatrates.xml';
+			if (is_file($always_valid_cache_rates)) {
+				// overwrite cached rates path
+				$cache_rates = $always_valid_cache_rates;
+			}
+		}
 
 		if (!is_file($cache_rates)) {
 			// cached rates are not available, attempt to download the information
@@ -1052,7 +1067,7 @@ class VboCurrencyConverter
 	 */
 	public function currencyExists($currency_name)
 	{
-		if (isset($this->currencymap[$currency_name])) {
+		if (isset($this->currencymap[$currency_name]) || array_key_exists($currency_name, $this->currency_names)) {
 			return true;
 		}
 

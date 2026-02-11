@@ -3,7 +3,7 @@ Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
 Tested up to: 6.9
-Stable tag: 1.8.6
+Stable tag: 1.8.7
 Requires PHP: 7.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -129,6 +129,26 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 
 == Changelog ==
 
+= 1.8.7 =
+*Release date - 11 February 2026*
+
+* Door Access Control: framework improvements (device data mapping).
+* Door Access Control: automatic removal of expired passcodes.
+* Door Access Control: hotel inventory room-types mapping (subunits).
+* Door Access Control: new integration for U-tec Smart Home.
+* Resolve room assignments through intelligent combinations matrix.
+* Hotel inventory room-types with multiple subunits reassignment options.
+* New notification of type "OTA Bank Transfer Update" (E4jConnect channel manager required).
+* Improved notification of type "OTA Payout Update" (E4jConnect channel manager required).
+* Rates Overview OTA Rates improvements (net rates) and automatic loading.
+* Availability Overview preference for automatically loading rates and restrictions (Multi-calendar).
+* Longer and alphanumeric customer pin codes enforcements.
+* Template file customization improvements (DOMDocument HTML strings loading).
+* Various RMS report metric calculations improved.
+* PMS Reports automatic execution improvements with all-profiles processing.
+* Improved Virtual Credit Cards fetching operations from OTAs (E4jConnect channel manager required).
+* Various internal libraries updates.
+
 = 1.8.6 =
 *Release date - 22 January 2026*
 
@@ -191,24 +211,6 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 * New PMS report "Guest Registration Data".
 * Different format for customers PIN code (8 alphanumeric random characters).
 * Various improvements to the Electronic Invoicing framework and interface.
-
-= 1.8.2 =
-*Release date - 28 July 2025*
-
-* Custom cancellation policies for custom rate plans.
-* Multi-calendar improvements in Availability Overview.
-* Availability Overview "Holding Area" row for hotel-inventory rooms.
-* Availability Overview "Unassigned units" row for hotel-inventory rooms.
-* Availability Overview drag & drop actions improved.
-* Main framework updated.
-* Introducing the Help Wizard to automatically configure country-related functions.
-* Booking.com Payments API for VCC reservations (E4jConnect channel manager required).
-* New Task Manager settings for sequential or balanced operators assignment strategy.
-* Task Manager new tasks scheduling frequency for pre-arrival.
-* Booking availability pre-flight during manual modifications.
-* Improved query execution timing for rooms with hotel-inventory.
-* New PMS reports (Trentino, Italy).
-* Minor fixes.
 
 = Earlier versions =
 

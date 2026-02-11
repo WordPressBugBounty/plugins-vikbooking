@@ -438,6 +438,9 @@ class VikBookingReportItTrentinoGuestCard extends VikBookingReport
         // get VBO Application Object
         $vbo_app = VikBooking::getVboApplication();
 
+        // get the possibly injected report options
+        $options = $this->getReportOptions();
+
         // load the jQuery UI Datepicker
         $this->loadDatePicker();
 
@@ -561,7 +564,7 @@ class VikBookingReportItTrentinoGuestCard extends VikBookingReport
                     'name' => 'listings[]',
                     'multiple' => 'multiple',
                 ],
-                'selected_values' => (array) $app->input->get('listings', [], 'array'),
+                'selected_values' => (array) ($app->input->get('listings', [], 'array') ?: $options->get('listings', [])),
             ]) . '</span>',
             'type' => 'select',
             'multiple' => true,

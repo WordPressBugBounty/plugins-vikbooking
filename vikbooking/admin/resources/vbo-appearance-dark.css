@@ -397,6 +397,10 @@ body code, body pre {
 .vbo-roverview-table .vboverviewtablerow-subunit-unassigned td:first-child, .vbo-roverview-table .vboverviewtablerow-subunit-unassigned td.vbo-overv-avcell {
     color: #222;
 }
+.vbo-room-reassignment-head .vbo-room-reassignment-move-to {
+    color: #1e2648;
+    background: var(--vbo-tag-ocean-txt);    
+}
 .block-picked-start, .block-picked-middle, .block-picked-end {
     background: rgba(255, 196, 153, 0.5);
 }

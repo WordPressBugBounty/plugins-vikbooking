@@ -10981,6 +10981,11 @@ class VikBookingController extends JControllerVikBooking
 		}
 
 		if (!$booking_infos) {
+			if (!empty($pidroom) && $psharedcal) {
+				// when this flag is enabled, we are excluding bookings not made directly
+				// for the given room type ID, hence we may get an empty list due to shared calendars
+				VBOHttpDocument::getInstance()->close(500, 'No bookings made directly for this room-type.');
+			}
 			// output the error
 			VBOHttpDocument::getInstance()->close(500, '2 - ' . JText::translate('VBOVWGETBKERRMISSDATA'));
 		}
@@ -10995,6 +11000,7 @@ class VikBookingController extends JControllerVikBooking
 	 * @return 	void
 	 * 
 	 * @since 	1.18.2 (J) - 1.8.2 (WP) method refactored.
+	 * @since 	1.18.7 (J) - 1.8.7 (WP) introduced history update.
 	 */
 	public function switchRoomIndex()
 	{
@@ -11024,7 +11030,7 @@ class VikBookingController extends JControllerVikBooking
 				->from($dbo->qn('#__vikbooking_ordersrooms'))
 				->where($dbo->qn('idorder') . ' = ' . $bid)
 				->where($dbo->qn('idroom') . ' = ' . $rid)
-				->where($dbo->qn('roomindex') . (empty($old_rindex) && $is_from_tmp_row ? ' IS NULL' : ' = ' . $old_rindex))
+				->where($dbo->qn('roomindex') . ((empty($old_rindex) || $old_rindex == -1) && $is_from_tmp_row ? ' IS NULL' : ' = ' . $old_rindex))
 				->order($dbo->qn('id') . ' ASC')
 		);
 		$roomRow = $dbo->loadAssoc();
@@ -11032,6 +11038,19 @@ class VikBookingController extends JControllerVikBooking
 		if (!$roomRow) {
 			// abort for record not found
 			VBOHttpDocument::getInstance($app)->close(200, 'e4j.error.#2 Record not found');
+		}
+
+		// load booking and booking rooms data for the history before updating
+		$booking = VikBooking::getBookingInfoFromID($bid);
+		$prev_booking_rooms = VikBooking::loadOrdersRoomsData($bid);
+		$current_booking_rooms = $prev_booking_rooms;
+		// update new room index for current booking rooms
+		foreach ($current_booking_rooms as $k => $booking_room) {
+			if ($booking_room['id'] == $roomRow['id']) {
+				// update new room index
+				$current_booking_rooms[$k]['roomindex'] = empty($new_rindex) && $is_tmp_row ? null : $new_rindex;
+				break;
+			}
 		}
 
 		// update booking room record by switching sub-unit
@@ -11042,6 +11061,21 @@ class VikBookingController extends JControllerVikBooking
 				->where($dbo->qn('id') . ' = ' . (int) $roomRow['id'])
 		);
 		$dbo->execute();
+
+		// update history record by setting the proper bookings data
+		$user = JFactory::getUser();
+		VikBooking::getBookingHistoryInstance($bid)
+			->setPrevBooking(array_merge($booking, ['rooms_info' => $prev_booking_rooms]))
+			->setBookingData($booking, $current_booking_rooms)
+			->store(
+				'MB',
+				sprintf(
+					'%s [%d → %d]',
+					JText::translate('VBODEFAULTDISTFEATUREONE'),
+					(int) $roomRow['roomindex'],
+					(int) (empty($new_rindex) && $is_tmp_row ? 0 : $new_rindex)
+				) . " ({$user->name})"
+			);
 
 		// process completed
 		VBOHttpDocument::getInstance($app)->close(200, 'e4j.ok');
@@ -14707,7 +14741,11 @@ jQuery(".' . $selector . '").hover(function() {
 				$queries_list = JDatabaseHelper::splitSql($bytes);
 			} else {
 				try {
-					$queries_list = Joomla\Database\DatabaseDriver::splitSql($bytes);
+					if (class_exists('JDatabaseDriver')) {
+						$queries_list = JDatabaseDriver::splitSql($bytes);
+					} else {
+						$queries_list = Joomla\Database\DatabaseDriver::splitSql($bytes);
+					}
 				} catch(Throwable $e) {
 					$app->enqueueMessage(sprintf('Error splitting queries: %s', $e->getMessage()), 'error');
 					$queries_list = [];

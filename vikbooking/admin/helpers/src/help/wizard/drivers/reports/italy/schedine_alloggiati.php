@@ -43,6 +43,7 @@ class VBOHelpWizardDriverReportsItalySchedineAlloggiati extends VBOHelpWizardIns
             'todate' => '{Y-m-d}',
             'listings' => [],
             '_reportAction' => 'transmitCards',
+            '_allReportProfiles' => true,
         ];
     }
     
@@ -103,6 +104,15 @@ class VBOHelpWizardDriverReportsItalySchedineAlloggiati extends VBOHelpWizardIns
      */
     protected function postflight()
     {
+        // schedule first "test transmit cards"
+        $payload = $this->autoExportPayload;
+        $payload['fromdate'] = '{Y-m-d +1 day}';
+        $payload['todate'] = '{Y-m-d +1 day}';
+        $payload['_reportAction'] = 'testTransmitCards';
+
+        $this->saveAutoExport($payload['_reportAction'], $payload);
+
+        // schedule "download receipt" of previous day
         $payload = $this->autoExportPayload;
         $payload['fromdate'] = '{Y-m-d -1 day}';
         $payload['todate'] = '{Y-m-d -1 day}';

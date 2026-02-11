@@ -100,6 +100,19 @@ abstract class VBODooraccessIntegrationAware
     }
 
     /**
+     * Tells if the integration can clean expired passcodes.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function canCleanExpiredPasscodes()
+    {
+        // providers should eventually override this method
+        return true;
+    }
+
+    /**
      * Returns the integration parameters.
      * 
      * @return  array
@@ -701,7 +714,7 @@ abstract class VBODooraccessIntegrationAware
         $currentSetting = (array) $config->getArray($paramName, []);
 
         // access current expiration timestamp, if any
-        $currentExpiryTs = $currentSetting['expiryTs'] ?? null;
+        $currentExpiryTs = $currentSetting['expiry_ts'] ?? null;
 
         // a new OAuth code will be generated if unavailable or expired
         if (!($currentSetting['code'] ?? null) || ($currentExpiryTs !== null && $currentExpiryTs < time())) {

@@ -1859,12 +1859,13 @@ function vboSetSubunit(bid, rid, orkey, rindex) {
 }
 
 /**
- * Move a subunit group of cells to another subroom row. Triggered by the Hover Tooltip, by the room-day bookings modal, or by DnD.
+ * Move a subunit group of cells to another subroom row. Triggered by
+ * the hovering tooltip, by the room-day bookings modal, or by DnD etc..
  */
 function vboMoveSubunit(bid, rid, old_rindex, new_rindex, dday) {
 	let new_rindex_name = new_rindex.replace('#', '');
 	let is_tmp_subunit_row = new_rindex_name == 0;
-	let is_from_tmp_row = old_rindex == 0;
+	let is_from_tmp_row = old_rindex == 0 || old_rindex == -1;
 
 	if (new_rindex_name == -1 || (old_rindex == -1 && is_tmp_subunit_row)) {
 		// no landing on the unassigned row, or unassigned room cannot land on the holding area
@@ -2387,6 +2388,237 @@ function vboOvervOpenBooking(bid) {
 }
 
 /**
+ * Resolves room assignment for a given booking.
+ */
+function vboOvervResolveRoomAssignment(bid, broomid) {
+	// the moveset signature to apply, empty by default
+	let movesetSignature = null;
+
+	// the number of reassignment solutions found
+	let solutionsFound = 0;
+
+	// list of moveset signatures to skip
+	let skipMovesets = [];
+
+	// list of booking IDs to skip
+	let skipBookings = [];
+
+	// init modal body element
+	let modalBody = null;
+
+	// define the function to find a reassignment solution
+	const findReassignmentFn = () => {
+		// show loading
+		VBOCore.emitEvent('vbo-loading-modal-overv-resolveroomassign');
+
+		// make the request to get the bookings information
+		VBOCore.doAjax(
+			"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.resolve_room_assignment'); ?>",
+			{
+				bid: bid,
+				room_booking_id: broomid,
+				skip_booking_ids: skipBookings,
+				skip_moveset_signatures: skipMovesets,
+			},
+			(res) => {
+				// stop loading
+				VBOCore.emitEvent('vbo-loading-modal-overv-resolveroomassign');
+
+				try {
+					let obj_res = typeof res === 'string' ? JSON.parse(res) : res;
+
+					// update moveset signature to apply
+					movesetSignature = obj_res?.movesetSignature;
+
+					// update number of solutions found so far
+					solutionsFound = obj_res?.solutionsCount || solutionsFound;
+
+					// append HTML content
+					(modalBody[0] || modalBody).innerHTML = obj_res?.html;
+
+					// show modal apply button group
+					applyBtnGroup.style.display = '';
+				} catch(e) {
+					console.error(e);
+					alert('Invalid response.');
+				}
+			},
+			(err) => {
+				// display error message
+				alert(err.responseText || err);
+
+				// dismiss modal
+				VBOCore.emitEvent('vbo-dismiss-modal-overv-resolveroomassign');
+			}
+		);
+	};
+
+	// define the function to apply a moveset signature
+	const applyReassignmentFn = (useSignature) => {
+		// determine the signature to use
+		useSignature = useSignature || movesetSignature;
+
+		// show loading
+		VBOCore.emitEvent('vbo-loading-modal-overv-resolveroomassign');
+
+		// make the request to apply the moveset
+		VBOCore.doAjax(
+			"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.apply_room_assignment'); ?>",
+			{
+				moveset: useSignature,
+			},
+			(res) => {
+				// dismiss modal
+				VBOCore.emitEvent('vbo-dismiss-modal-overv-resolveroomassign');
+
+				// reload the page
+				location.reload();
+			},
+			(err) => {
+				// display error message
+				alert(err.responseText || err);
+
+				// stop loading
+				VBOCore.emitEvent('vbo-loading-modal-overv-resolveroomassign');
+			}
+		);
+	};
+
+	// define the function to apply the reassignment "preview"
+	const previewReassignmentFn = () => {
+		if (!movesetSignature) {
+			throw new Error('Empty moveset signature');
+		}
+
+		// store the moveset and its status to the admin-dock as temporary data
+		VBOCore.getAdminDock().addTemporaryData(
+			{
+				id: '_tmp',
+				persist_id: 'reassignmentmoveset',
+				name: <?php echo json_encode(JText::translate('VBO_RESOLVE_ROOM_ASSIGNMENT')); ?>,
+				icon: '<?php VikBookingIcons::e('random'); ?>',
+				style: 'orange',
+			},
+			{
+				moveset:      movesetSignature,
+				skipMovesets: skipMovesets,
+				skipBookings: skipBookings,
+			}
+		);
+
+		// the "preview" will actually apply the moveset,
+		// but it will be possible to undo the changes
+		applyReassignmentFn();
+	};
+
+	// build modal buttons
+	let cancelBtn = document.createElement('button');
+	cancelBtn.setAttribute('type', 'button');
+	cancelBtn.classList.add('btn');
+	cancelBtn.textContent = Joomla.JText._('VBANNULLA');
+	cancelBtn.addEventListener('click', () => {
+		VBOCore.emitEvent('vbo-dismiss-modal-overv-resolveroomassign');
+	});
+
+	let applyBtn = document.createElement('button');
+	applyBtn.setAttribute('type', 'button');
+	applyBtn.classList.add('btn', 'btn-primary');
+	applyBtn.textContent = <?php echo json_encode(JText::translate('VBAPPLY')); ?>;
+	applyBtn.addEventListener('click', () => {
+		// apply moveset to reassign room numbers
+		applyReassignmentFn();
+	});
+
+	let actionsBtn = document.createElement('button');
+	actionsBtn.setAttribute('type', 'button');
+	actionsBtn.classList.add('btn', 'btn-primary');
+	actionsBtn.innerHTML = '<?php VikBookingIcons::e('ellipsis-h'); ?>';
+
+	// define the context menu for the actions button
+	jQuery(actionsBtn).vboContextMenu({
+		placement: 'top-right',
+		buttons: [
+			{
+                class: 'btngroup',
+                text: '',
+                disabled: true,
+                visible: function (root, event) {
+                	// always overwrite title property
+                	let baseText = <?php echo json_encode(JText::translate('VBO_NUM_SOLUTIONS_FOUND')); ?>;
+                	this.text = baseText.replace('%d', solutionsFound);
+                	return solutionsFound ? true : false;
+                },
+            },
+			{
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBO_SUGG_ANOTHER_SOL')); ?>,
+				icon: '<?php echo VikBookingIcons::i('forward'); ?>',
+				separator: false,
+				action: (root, event) => {
+					// suggest another solution, push current moveset to skip
+					skipMovesets.push(movesetSignature);
+					// find all bookings set to be excluded
+					document.querySelectorAll('.vbo-room-reassignment-move-exclude[data-booking-id]').forEach((excludeEl) => {
+						let excludeInput = excludeEl.querySelector('input[type="checkbox"][name*="skip_booking_id"]');
+						if (excludeInput && excludeInput.checked) {
+							// push booking ID to exclude
+							skipBookings.push(excludeEl.getAttribute('data-booking-id'));
+						}
+					});
+					// call function to find another reassignment solution
+					findReassignmentFn();
+				},
+			},
+			{
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBOPREVIEW')); ?>,
+				icon: '<?php echo VikBookingIcons::i('eye'); ?>',
+				separator: true,
+				action: (root, event) => {
+					// call function to build the preview
+					previewReassignmentFn();
+				},
+			},
+			{
+				class: 'vbo-context-menu-entry-secondary',
+				text: <?php echo json_encode(JText::translate('VBO_RESTART')); ?>,
+				icon: '<?php echo VikBookingIcons::i('play'); ?>',
+				action: (root, event) => {
+					// restart matrix search
+					skipMovesets = [];
+					skipBookings = [];
+					// call function to restart finding a reassignment solution
+					findReassignmentFn();
+				},
+			},
+		],
+	});
+
+	let applyBtnGroup = document.createElement('div');
+	applyBtnGroup.classList.add('btn-group', 'vbo-context-menu-btn-group', 'vbo-overv-resolveroomassign-actions');
+	applyBtnGroup.style.display = 'none';
+	applyBtnGroup.append(applyBtn);
+	applyBtnGroup.append(actionsBtn);
+
+	// display modal
+	modalBody = VBOCore.displayModal({
+		suffix:         'overv-resolveroomassign',
+		extra_class:    'vbo-modal-rounded vbo-modal-tall',
+		title:          <?php echo json_encode(JText::translate('VBO_RESOLVE_ROOM_ASSIGNMENT')); ?>,
+		draggable:      true,
+		escape_dismiss: false,
+		footer_left:    cancelBtn,
+		footer_right:   applyBtnGroup,
+		dismiss_event:  'vbo-dismiss-modal-overv-resolveroomassign',
+		loading_event:  'vbo-loading-modal-overv-resolveroomassign',
+		loading_body:   '<?php VikBookingIcons::e('circle-notch', 'fa-spin fa-fw'); ?>',
+	});
+
+	// call function to find a reassignment solution
+	findReassignmentFn();
+}
+
+/**
  * DOM ready state
  */
 jQuery(function() {
@@ -2736,30 +2968,57 @@ jQuery(function() {
 			jQuery(this).trigger('mouseleave');
 
 			// get room name, date and day-bids
-			var room_name = '';
-			var sub_room_data = '';
-			var room_id = 0;
+			let room_name = '';
+			let sub_room_data = '';
+			let room_id = 0;
 			if (jQuery(this).hasClass('subroom-busy')) {
 				sub_room_data = jQuery(this).parent('tr').attr('data-subroomid');
 				room_id = sub_room_data.split('-')[0];
 				room_name = jQuery('td.roomname[data-roomid="' + room_id + '"]').not('.subroomname').first().find('.vbo-overview-roomname').text();
 			} else {
-				var main_room_cell = jQuery(this).parent('tr').find('td.roomname');
+				let main_room_cell = jQuery(this).parent('tr').find('td.roomname');
 				room_id = main_room_cell.attr('data-roomid');
 				room_name = main_room_cell.find('.vbo-overview-roomname').text();
 			}
-			var date_ymd  = jQuery(this).attr('data-day');
-			var date_read = jQuery('.bluedays[data-ymd="' + date_ymd + '"]').attr('data-readymd');
-			var date_bids = jQuery(this).attr('data-bids');
-			var def_bicon = '<?php VikBookingIcons::e('user', 'vbo-dashboard-guest-activity-avatar-icon'); ?>';
-			var closure_i = '<?php VikBookingIcons::e('ban', 'vbo-dashboard-guest-activity-avatar-icon'); ?>';
+			let date_ymd  = jQuery(this).attr('data-day');
+			let date_read = jQuery('.bluedays[data-ymd="' + date_ymd + '"]').attr('data-readymd');
+			let date_bids = jQuery(this).attr('data-bids');
+			let date_ubk  = jQuery(this).attr('data-units-booked');
+			let date_ulft = jQuery(this).attr('data-units-left');
+			let def_bicon = '<?php VikBookingIcons::e('user', 'vbo-dashboard-guest-activity-avatar-icon'); ?>';
+			let closure_i = '<?php VikBookingIcons::e('ban', 'vbo-dashboard-guest-activity-avatar-icon'); ?>';
+
+			let sub_room_index = sub_room_data ? (sub_room_data.split('-')[1] || '') : '';
+
+			// build new reservation button
+			let newResBtn = null;
+			if (date_ubk > 1 || date_ulft > 1 || sub_room_data) {
+				newResBtn = document.createElement('button');
+				newResBtn.setAttribute('type', 'button');
+				newResBtn.classList.add('btn', 'btn-primary');
+				newResBtn.textContent = <?php echo json_encode(JText::translate('VBOSHOWQUICKRES')); ?>;
+				newResBtn.addEventListener('click', () => {
+					// dismiss modal
+					VBOCore.emitEvent('vbo-dismiss-modal-overv-rdaybookings');
+					// create new reservation
+					VBOCore.handleDisplayWidgetNotification({
+						widget_id: 'bookings_calendar',
+					}, {
+						id_room: room_id,
+						offset: date_ymd,
+						day: date_ymd,
+						newbook: 1,
+					});
+				});
+			}
 
 			// display modal with booking details
-			var rday_bookings_modal_body = VBOCore.displayModal({
+			let rday_bookings_modal_body = VBOCore.displayModal({
 				suffix: 	   'overv-rdaybookings',
-				extra_class:   'vbo-modal-rounded vbo-modal-tall vbo-modal-nofooter',
-				title: 		   room_name + (sub_room_data ? ' #' + sub_room_data.split('-')[1] : '') + ' - ' + date_read,
+				extra_class:   'vbo-modal-rounded vbo-modal-tall' + (!newResBtn ? ' vbo-modal-nofooter' : ''),
+				title: 		   room_name + (sub_room_index ? ' #' + sub_room_index : '') + ' - ' + date_read,
 				draggable:     true,
+				footer_right:  newResBtn,
 				dismiss_event: 'vbo-dismiss-modal-overv-rdaybookings',
 				loading_event: 'vbo-loading-modal-overv-rdaybookings',
 				loading_body:  '<?php VikBookingIcons::e('circle-notch', 'fa-spin fa-fw'); ?>',
@@ -2848,8 +3107,8 @@ jQuery(function() {
 							rday_booking.attr('data-idorder', obj_res[b]['id']);
 							rday_booking.on('click', function(e) {
 								var click_target = jQuery(e.target);
-								if (click_target.is('a') || click_target.is('select') || click_target.is('option')) {
-									return false;
+								if (click_target.is('a') || click_target.is('select') || click_target.is('option') || click_target.is('button')) {
+									return;
 								}
 								if ((click_target.is('span') && click_target.hasClass('label')) || click_target.is('img') || click_target.is('i')) {
 									// open booking details within the apposite admin-widget
@@ -2939,6 +3198,11 @@ jQuery(function() {
 										// append drop down
 										rday_booking_html += set_subunit_node;
 									}
+									rday_booking_html += '	</div>' + "\n";
+								} else {
+									// allow the system to relocate the room booking record
+									rday_booking_html += '	<div class="vbo-rdaybooking-subunits-list vbo-rdaybooking-subunit-relocate-wrap">' + "\n";
+									rday_booking_html += '		<button type="button" class="btn vbo-config-btn vbo-reassign-room-unit-btn" data-bid="' + obj_res[b]['id'] + '"><?php VikBookingIcons::e('random'); ?> ' + <?php echo json_encode(JText::translate('VBO_RESOLVE_ROOM_ASSIGNMENT')); ?> + '</button>' + "\n";
 									rday_booking_html += '	</div>' + "\n";
 								}
 								rday_booking_html += '	</div>' + "\n";
@@ -3340,6 +3604,28 @@ jQuery(function() {
 					let alert_icon = document.createElement('span');
 					alert_icon.classList.add('badge', 'badge-warning');
 					alert_icon.innerHTML = '<?php VikBookingIcons::e('exclamation-triangle'); ?>';
+					alert_icon.addEventListener('click', () => {
+						// find the first room reservation record with missing sub-unit
+						let reassignBookingEl = unassigned_row.querySelector('td.subroom-busy.vbo-checkinday[data-lastbid]');
+						if (reassignBookingEl) {
+							// scroll the table to make the room booking cell visible
+							let mainTable = unassigned_row.closest('table');
+							let tableWrapper = mainTable.closest('.vbo-table-responsive');
+							let firstCellWidth = mainTable
+								.querySelector('tr.vboverviewtablerow[data-roomid="' + main_room_id + '"]')
+								.querySelector('td.roomname')
+								.offsetWidth;
+							tableWrapper.scrollTo({
+								left: reassignBookingEl.offsetLeft - firstCellWidth - reassignBookingEl.offsetWidth,
+								behavior: 'smooth',
+							});
+
+							// find a reassignment solution for the first booking found
+							setTimeout(() => {
+								vboOvervResolveRoomAssignment(reassignBookingEl.getAttribute('data-lastbid'));
+							}, 200);
+						}
+					});
 
 					alert_elem.append(alert_icon);
 
@@ -3352,8 +3638,117 @@ jQuery(function() {
 				} catch(e) {
 					console.error(e);
 				}
+
+				// restore any previous temporary data for "previewing" a reassignment moveset applied
+				let previousMovesetData = VBOCore.getAdminDock().loadTemporaryData(
+					{
+						id: '_tmp',
+						persist_id: 'reassignmentmoveset',
+					},
+					(movesetData) => {
+						// temporary data restored from dock
+						let closeBtn = document.createElement('button');
+						closeBtn.setAttribute('type', 'button');
+						closeBtn.classList.add('btn');
+						closeBtn.textContent = <?php echo json_encode(JText::translate('VBO_KEEP_CHANGES')); ?>;
+						closeBtn.addEventListener('click', () => {
+							// dismiss modal and keep changes
+							VBOCore.emitEvent('vbo-dismiss-modal-overv-resolveroomassign-undo');
+						});
+
+						let undoBtn = document.createElement('button');
+						undoBtn.setAttribute('type', 'button');
+						undoBtn.classList.add('btn', 'btn-danger');
+						undoBtn.textContent = <?php echo json_encode(JText::translate('VBO_UNDO_CHANGES')); ?>;
+						undoBtn.addEventListener('click', () => {
+							// start loading
+							VBOCore.emitEvent('vbo-loading-modal-overv-resolveroomassign-undo');
+
+							// make the request to undo the changes made by the moveset
+							VBOCore.doAjax(
+								"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.apply_room_assignment'); ?>",
+								{
+									moveset: movesetData?.moveset,
+									undo:    1,
+								},
+								(res) => {
+									// dismiss modal
+									VBOCore.emitEvent('vbo-dismiss-modal-overv-resolveroomassign-undo');
+
+									// reload the page
+									location.reload();
+								},
+								(err) => {
+									// display error message
+									alert(err.responseText || err);
+
+									// stop loading
+									VBOCore.emitEvent('vbo-loading-modal-overv-resolveroomassign-undo');
+								}
+							);
+						});
+
+						// display prompt modal to apply or undo the changes just made
+						VBOCore.displayModal({
+							suffix:         'overv-resolveroomassign-undo',
+							extra_class:    'vbo-modal-rounded vbo-modal-prompt',
+							title:          <?php echo json_encode(JText::translate('VBO_RESOLVE_ROOM_ASSIGNMENT')); ?>,
+							body:           <?php echo json_encode(sprintf('%s / %s?', JText::translate('VBO_KEEP_CHANGES'), JText::translate('VBO_UNDO_CHANGES'))); ?>,
+							draggable:      true,
+							escape_dismiss: false,
+							footer_left:    undoBtn,
+							footer_right:   closeBtn,
+							dismiss_event:  'vbo-dismiss-modal-overv-resolveroomassign-undo',
+							loading_event:  'vbo-loading-modal-overv-resolveroomassign-undo',
+							loading_body:   '<?php VikBookingIcons::e('circle-notch', 'fa-spin fa-fw'); ?>',
+						});
+					},
+					(movesetData) => {
+						// temporary data removed from dock
+						// do nothing as moveset was already applied
+					}
+				);
 			}
 		});
+
+	/**
+	 * Add body click event delegation for elements that may be later added to the DOM.
+	 */
+	document.body.addEventListener('click', (e) => {
+
+		// resolve room assignment button in modal window
+		if (e.target.matches('.vbo-reassign-room-unit-btn[data-bid]') || e.target.closest('.vbo-reassign-room-unit-btn[data-bid]')) {
+			const btnEl = !e.target.matches('.vbo-reassign-room-unit-btn[data-bid]') ? e.target.closest('.vbo-reassign-room-unit-btn[data-bid]') : e.target;
+			const bid = btnEl.getAttribute('data-bid');
+
+			// dismiss modal
+			VBOCore.emitEvent('vbo-dismiss-modal-overv-rdaybookings');
+
+			// call the function that handles the room assignment for a specific booking
+			setTimeout(() => {
+				vboOvervResolveRoomAssignment(bid);
+			}, 200);
+
+			// do not proceed
+			return;
+		}
+
+		// resolve room assignment modal window include/exclude bookings checkbox
+		if (e.target.matches('input[type="checkbox"][name*="skip_booking_id"]')) {
+			const spanBtn = e.target.closest('.vbo-toggle-double-status');
+			if (spanBtn) {
+				if (e.target.checked) {
+					spanBtn.setAttribute('data-tooltiptext', spanBtn.getAttribute('data-text-disabled'));
+				} else {
+					spanBtn.setAttribute('data-tooltiptext', spanBtn.getAttribute('data-text-enabled'));
+				}
+			}
+
+			// do not proceed
+			return;
+		}
+
+	});
 
 <?php
 /**
@@ -3372,6 +3767,9 @@ if ($cookie_sticky_heads == 'off') {
 	tables.forEach((table) => {
 		table.parentNode.addEventListener('scroll', vboOvervHandleHScrollTableHead);
 	});
+
+	// launch the handling function
+	vboOvervHandleHScrollTableHead();
 	<?php
 }
 ?>
@@ -3420,10 +3818,12 @@ function vboOvervHandleHScrollTableHead(e) {
 	// register throttling callback
 	VBOCore.throttleTimer(() => {
 		// horizontal scrolling happens on the parent DIV node
-		let tables = e.target.querySelectorAll('table.vboverviewtable.vbo-overv-sticky-table-head-off');
+		let tables = (e?.target || document).querySelectorAll('table.vboverviewtable.vbo-overv-sticky-table-head-off');
 		if (tables.length !== 1) {
 			// un-register event for missing table
-			e.target.removeEventListener('scroll', vboOvervHandleHScrollTableHead);
+			if (e?.target) {
+				e.target.removeEventListener('scroll', vboOvervHandleHScrollTableHead);
+			}
 			return;
 		}
 

@@ -14,8 +14,22 @@ defined('ABSPATH') or die('No script kiddies please!');
  * Always check for customer records with a "short" PIN code to suggest normalization.
  * 
  * @since 	1.18.6 (J) - 1.8.6 (WP)
+ * @since 	1.18.7 (J) - 1.8.7 (WP) enforcement for urgent normalization.
  */
 if (VikBooking::getCPinInstance()->countShortPins()) {
+	// access last alert date
+	$config = VBOFactory::getConfig();
+	$warn_last_ts = (int) $config->get('warn_cpin_ts', 0);
+	if ($warn_last_ts && (time() - $warn_last_ts) > (86400 * 2)) {
+		// enforce urgent normalization
+		$config->set('warn_cpin_ts', 0);
+		JFactory::getApplication()->redirect(
+			VBOFactory::getPlatform()->getUri()->addCSRF('index.php?option=com_vikbooking&task=maintenance.normalize_short_pins', $xhtml = false)
+		);
+		JFactory::getApplication()->close();
+	}
+	// update last alert date
+	$config->set('warn_cpin_ts', time());
 	// display alert message with button to normalize records
 	JFactory::getApplication()->enqueueMessage(sprintf(
 		'%s <a class="btn btn-warning" href="%s">%s</a>',

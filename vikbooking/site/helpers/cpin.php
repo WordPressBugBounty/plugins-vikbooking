@@ -227,8 +227,11 @@ class VikBookingCustomersPin
 
 		$masked = '';
 
-		for ($i = 0; $i < strlen($pin); $i++) {
-			$masked .= chr(ord($pin[$i]) ^ ord($key[$i % strlen($key)]));
+		$pinLength = strlen($pin);
+		$keyLength = strlen($key);
+
+		for ($i = 0; $i < $pinLength; $i++) {
+			$masked .= chr(ord($pin[$i]) ^ ord($key[$i % $keyLength]));
 		}
 
 		return base64_encode($masked);
@@ -243,18 +246,23 @@ class VikBookingCustomersPin
 	 * @return 	string 			The un-masked PIN string.
 	 * 
 	 * @since 	1.18.4 (J) - 1.8.4 (WP)
+	 * @since 	1.18.7 (J) - 1.8.7 (WP) fixed base64 decoding order.
 	 */
 	private function unMaskPinValue(string $pin, ?string $key = null)
 	{
 		$key = $key ?: VBOFactory::getConfig()->getString('cpin_mask_salt_key', 'vbo1987');
 
+		$pin = base64_decode($pin);
 		$unmasked = '';
 
-		for ($i = 0; $i < strlen($pin); $i++) {
-			$unmasked .= chr(ord($pin[$i]) ^ ord($key[$i % strlen($key)]));
+		$pinLength = strlen($pin);
+		$keyLength = strlen($key);
+
+		for ($i = 0; $i < $pinLength; $i++) {
+			$unmasked .= chr(ord($pin[$i]) ^ ord($key[$i % $keyLength]));
 		}
 
-		return base64_decode($unmasked);
+		return $unmasked;
 	}
 
 	/**

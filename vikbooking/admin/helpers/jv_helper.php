@@ -931,13 +931,61 @@ JAVASCRIPT;
 	 * @return 	string 				The HTML string necessary to render the dropdown.
 	 * 
 	 * @since 	1.17.5 (J) - 1.7.5 (WP)
+	 * @since 	1.18.7 (J) - 1.8.7 (WP) added support to elements "listings" with sub-units.
 	 */
 	public function renderElementsDropDown(array $options = [], array $elements = [], array $groups = [])
 	{
 		if (!$elements && ($options['elements'] ?? '') == 'listings') {
 			// load listing records
 			$filter_listing_ids = (array) ($options['element_ids'] ?? []);
-			$elements = VikBooking::getAvailabilityInstance(true)->loadRooms($filter_listing_ids, 0, true);
+			$elements = array_values(VikBooking::getAvailabilityInstance(true)->loadRooms($filter_listing_ids, 0, true));
+
+			if (($options['subunits'] ?? [])) {
+				// check if any of the listings involved is using a room-type (hotel) inventory
+				$hotelInventoryListingIds = array_column(array_filter($elements, function($roomRecord) {
+					return ($roomRecord['units'] ?? 0) > 1;
+				}), 'id');
+
+				// determine the value format for the sub-unit IDs
+				$subunitValueFormat = $options['subunits']['value_format'] ?? '%d-%d';
+
+				foreach ($hotelInventoryListingIds as $hotelInventoryListingId) {
+					foreach ($elements as $elIndex => $element) {
+						if ($element['id'] != $hotelInventoryListingId) {
+							// single-unit (or previous sub-unit) listing identified
+							continue;
+						}
+
+						// clone first element for sub-unit
+						$subunitEl = $element;
+
+						if (!($options['subunits']['entire_listing'] ?? true)) {
+							// the entire listing should no longer be included
+							unset($elements[$elIndex]);
+							$elIndex -= 1;
+						} else {
+							// modify the "entire listing" name ("All" by default)
+							$nameSuffix = (string) ($options['subunits']['listing_suffix'] ?? sprintf(' (%s)', strtolower(JText::translate('VBNEWCOUPONEIGHT'))));
+							$elements[$elIndex]['name'] .= $nameSuffix;
+						}
+
+						// handle sub-unit listing element to insert
+						$counter = 1;
+						for ($u = 1; $u <= $element['units']; $u++) {
+							// set sub-unit ID and name
+							$subunitEl['id'] = sprintf($subunitValueFormat, $hotelInventoryListingId, $u);
+							$subunitEl['name'] = $element['name'] . sprintf(' #%d', $u);
+							$subunitEl['_nested'] = true;
+
+							// insert the sub-unit element array next to the parent listing
+							array_splice($elements, $elIndex + $counter, 0, [$subunitEl]);
+
+							// increase counter
+							$counter++;
+						}
+					}
+				}
+			}
 		}
 
 		if (!$elements && !$groups) {
@@ -1010,6 +1058,11 @@ JAVASCRIPT;
 			if (!$element_img_uri && !empty($element['html'])) {
 				// set element HTML (icon) content
 				$data_source['html'] = $element['html'];
+			}
+
+			if (!empty($element['_nested'])) {
+				// set element nested flag
+				$data_source['_nested'] = 1;
 			}
 
 			// check for option selected status
@@ -1184,11 +1237,15 @@ jQuery(function() {
 		data: $data_sources_str,
 		placeholder: $placeholder,
 		templateResult: (element) => {
+			let isNested = element?._nested;
 			if (element.img) {
-				return jQuery('<span class="vbo-sel2-element-img"><img src="' + element.img + '" /> <span>' + element.text + '</span></span>');
+				return jQuery('<span class="vbo-sel2-element-img' + (isNested ? ' vbo-sel2-element-nested' : '') + '"><img src="' + element.img + '" /> <span>' + element.text + '</span></span>');
 			}
 			if (element.html) {
-				return jQuery('<span class="vbo-sel2-element-img">' + element.html + ' <span>' + element.text + '</span></span>');
+				return jQuery('<span class="vbo-sel2-element-img' + (isNested ? ' vbo-sel2-element-nested' : '') + '">' + element.html + ' <span>' + element.text + '</span></span>');
+			}
+			if (isNested) {
+				return jQuery('<span class="vbo-sel2-element-nested"><span>' + element.text + '</span></span>');
 			}
 			return element.text;
 		},

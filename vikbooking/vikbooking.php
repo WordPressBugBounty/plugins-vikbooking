@@ -3,7 +3,7 @@
 Plugin Name:  VikBooking
 Plugin URI:   https://vikwp.com/plugin/vikbooking
 Description:  Certified Booking Engine for Hotels and Accommodations.
-Version:      1.8.6
+Version:      1.8.7
 Author:       E4J s.r.l.
 Author URI:   https://vikwp.com
 License:      GPL2
@@ -617,8 +617,15 @@ add_action('vikbooking_cron_payments_scheduled', function()
  * This hook will be called by a scheduled event in WP-Cron.
  * 
  * @since 	1.7.2
+ * @since 	1.8.7 scheduled DAC expired passcodes cleaning.
  */
-add_action('vikbooking_cron_performance_cleaner', ['VBOPerformanceCleaner', 'runCheck']);
+add_action('vikbooking_cron_performance_cleaner', function()
+{
+	// performance cleaning check
+	VBOPerformanceCleaner::runCheck();
+	// clean up expired passcodes from smart locks
+	VBOFactory::getDoorAccessControl()->cleanExpiredPasscodes();
+});
 
 /**
  * Action used to register a periodic check of door-access-control framework.

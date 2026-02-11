@@ -44,7 +44,7 @@ class VikBookingControllerReport extends JControllerAdmin
         // fetch the report form settings
         $layout_data = [
             'report'   => $report,
-            'fields'   => $report_obj->getSettingFields(),
+            'fields'   => $report_obj->getProfileSettingFields(),
             'settings' => $report_obj->loadSettings(),
             'instance' => $report_obj,
         ];

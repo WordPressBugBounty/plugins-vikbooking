@@ -378,40 +378,52 @@ class VikBookingLanguageSite implements JLanguageHandler
 				$result = __('To see your booking details, visit the following page', 'vikbooking');
 				break;
 			case 'VBMONTHONE':
-				$result = __('January', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('January', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHTWO':
-				$result = __('February', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('February', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHTHREE':
-				$result = __('March', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('March', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHFOUR':
-				$result = __('April', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('April', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHFIVE':
-				$result = __('May', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('May', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHSIX':
-				$result = __('June', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('June', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHSEVEN':
-				$result = __('July', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('July', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHEIGHT':
-				$result = __('August', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('August', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHNINE':
-				$result = __('September', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('September', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHTEN':
-				$result = __('October', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('October', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHELEVEN':
-				$result = __('November', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('November', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHTWELVE':
-				$result = __('December', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('December', 'Full month name', 'vikbooking');
 				break;
 			case 'VBLEAVEDEPOSIT':
 				$result = __('Leave a deposit of ', 'vikbooking');
@@ -1155,40 +1167,52 @@ class VikBookingLanguageSite implements JLanguageHandler
 				$result = __('%d units of %s are not available for %d nights', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHONE':
-				$result = __('Jan', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Jan', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHTWO':
-				$result = __('Feb', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Feb', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHTHREE':
-				$result = __('Mar', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Mar', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHFOUR':
-				$result = __('Apr', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Apr', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHFIVE':
-				$result = __('May', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('May', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHSIX':
-				$result = __('Jun', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Jun', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHSEVEN':
-				$result = __('Jul', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Jul', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHEIGHT':
-				$result = __('Aug', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Aug', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHNINE':
-				$result = __('Sep', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Sep', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHTEN':
-				$result = __('Oct', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Oct', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHELEVEN':
-				$result = __('Nov', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Nov', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHTWELVE':
-				$result = __('Dec', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Dec', 'Short month name', 'vikbooking');
 				break;
 			case 'VBMDAYFRIST':
 				$result = __('st', 'vikbooking');

@@ -457,6 +457,9 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 		// get VBO Application Object
 		$vbo_app = VikBooking::getVboApplication();
 
+		// get the possibly injected report options
+		$options = $this->getReportOptions();
+
 		// load the jQuery UI Datepicker
 		$this->loadDatePicker();
 
@@ -651,7 +654,7 @@ class VikBookingReportEsHospedajes extends VikBookingReport
 					'name' => 'listings[]',
 					'multiple' => 'multiple',
 				],
-				'selected_values' => (array) $app->input->get('listings', [], 'array'),
+				'selected_values' => (array) ($app->input->get('listings', [], 'array') ?: $options->get('listings', [])),
 			]) . '</span>',
 			'type' => 'select',
 			'multiple' => true,
@@ -2466,8 +2469,8 @@ JS
 		// get the possibly injected report options
 		$options = $this->getReportOptions();
 
-		// injected options will replace request variables, if any
-		$export_type = $type ?: $options->get('type', VikRequest::getString('type', 'checkin', 'request'));
+		// injected options will substitute request variables, if any
+		$export_type = $type ?: VikRequest::getString('type', $options->get('type', 'checkin'), 'request');
 
 		// access manually filled values, if any
 		$pfiller = VikRequest::getString('filler', '', 'request', VIKREQUEST_ALLOWRAW);

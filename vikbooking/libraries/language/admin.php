@@ -915,40 +915,52 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('To see your booking details, visit the following page', 'vikbooking');
 				break;
 			case 'VBMONTHONE':
-				$result = __('January', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('January', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHTWO':
-				$result = __('February', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('February', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHTHREE':
-				$result = __('March', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('March', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHFOUR':
-				$result = __('April', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('April', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHFIVE':
-				$result = __('May', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('May', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHSIX':
-				$result = __('June', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('June', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHSEVEN':
-				$result = __('July', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('July', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHEIGHT':
-				$result = __('August', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('August', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHNINE':
-				$result = __('September', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('September', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHTEN':
-				$result = __('October', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('October', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHELEVEN':
-				$result = __('November', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('November', 'Full month name', 'vikbooking');
 				break;
 			case 'VBMONTHTWELVE':
-				$result = __('December', 'vikbooking');
+				// @TRANSLATORS: Full month name
+				$result = _x('December', 'Full month name', 'vikbooking');
 				break;
 			case 'VBNOSEASONS':
 				$result = __('No Special Prices found', 'vikbooking');
@@ -2361,40 +2373,52 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Any Room', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHONE':
-				$result = __('Jan', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Jan', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHTWO':
-				$result = __('Feb', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Feb', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHTHREE':
-				$result = __('Mar', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Mar', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHFOUR':
-				$result = __('Apr', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Apr', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHFIVE':
-				$result = __('May', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('May', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHSIX':
-				$result = __('Jun', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Jun', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHSEVEN':
-				$result = __('Jul', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Jul', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHEIGHT':
-				$result = __('Aug', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Aug', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHNINE':
-				$result = __('Sep', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Sep', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHTEN':
-				$result = __('Oct', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Oct', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHELEVEN':
-				$result = __('Nov', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Nov', 'Short month name', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHTWELVE':
-				$result = __('Dec', 'vikbooking');
+				// @TRANSLATORS: Short month name
+				$result = _x('Dec', 'Short month name', 'vikbooking');
 				break;
 			case 'VBMDAYFRIST':
 				$result = __('st', 'vikbooking');
@@ -8463,6 +8487,51 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_INLINE_SCROLL':
 				$result = __('Inline-Scroll', 'vikbooking');
+				break;
+			case 'VBO_RESOLVE_ROOM_ASSIGNMENT':
+				$result = __('Resolve Room Assignment', 'vikbooking');
+				break;
+			case 'VBO_REASSIGNMENT_SOLUTION':
+				$result = __('Room Reassignment Solution', 'vikbooking');
+				break;
+			case 'VBO_NECESSARY_MOVES':
+				$result = __('Necessary moves', 'vikbooking');
+				break;
+			case 'VBO_REASSIGNMENT_MATRIX_DETAILS':
+				// @TRANSLATORS: i.e. Solution found after evaluating 78,637 room arrangements out of 6,103,515,625 possible combinations.
+				$result = _x('Solution found after evaluating %s room arrangements out of %s possible combinations.', 'i.e. Solution found after evaluating 78,637 room arrangements out of 6,103,515,625 possible combinations.', 'vikbooking');
+				break;
+			case 'VBO_NUM_SOLUTIONS_FOUND':
+				// @TRANSLATORS: i.e. Solutions found: 5
+				$result = _x('Solutions found: %d', 'i.e. Solutions found: 5', 'vikbooking');
+				break;
+			case 'VBO_REASSIGNMENT_NO_STAY_CHANGES':
+				$result = __('No stay dates or room types will change, only room numbers.', 'vikbooking');
+				break;
+			case 'VBO_RESTART':
+				$result = __('Restart', 'vikbooking');
+				break;
+			case 'VBO_SUGG_ANOTHER_SOL':
+				$result = __('Suggest another solution', 'vikbooking');
+				break;
+			case 'VBO_NEXT_SOLUTION':
+				$result = __('Next solution', 'vikbooking');
+				break;
+			case 'VBO_UNDO_CHANGES':
+				$result = __('Undo changes', 'vikbooking');
+				break;
+			case 'VBO_KEEP_CHANGES':
+				$result = __('Keep changes', 'vikbooking');
+				break;
+			case 'VBO_REMEMBER_PREF':
+				$result = __('Remember preference', 'vikbooking');
+				break;
+			case 'VBO_EXP_PASSCODES_DEL_OK_RES':
+				// @TRANSLATORS: i.e. Expired passcodes (5) were successfully deleted from devices for reservations with check-out dates between May 1st and May 7th.
+				$result = _x('Expired passcodes (%d) were successfully deleted from devices for reservations with check-out dates between %s and %s.', 'i.e. Expired passcodes (5) were successfully deleted from devices for reservations with check-out dates between May 1st and May 7th.', 'vikbooking');
+				break;
+			case 'VBO_INCR_ZERO_RESTR_TIP':
+				$result = __('No rate value entered. To update only the minimum stay, switch to "Increase/Decrease rates" and use 0 as the amount.', 'vikbooking');
 				break;
 		}
 

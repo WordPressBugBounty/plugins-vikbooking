@@ -81,6 +81,12 @@ class VBOModelBackup extends JObject
 
 			$backup->type->id = implode('_', $chunks);
 
+			if (empty($backup->type->id))
+			{
+				// unexpected file format
+				return null;
+			}
+
 			// try to fetch the matching export type
 			$type = $this->getExportTypes($backup->type->id);
 

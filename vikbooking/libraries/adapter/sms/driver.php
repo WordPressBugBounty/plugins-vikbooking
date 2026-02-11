@@ -165,6 +165,20 @@ abstract class JSmsDriver
 	}
 
 	/**
+	 * Replaces the internal order details with the specified ones.
+	 * 
+	 * @param   array|object  $order
+	 *
+	 * @return 	void
+	 * 
+	 * @since   10.1.69
+	 */
+	public function setOrder($order)
+	{
+		$this->order = new JObject($order);
+	}
+
+	/**
 	 * Returns the configuration parameter related to the specified key.
 	 *
 	 * @param 	string 	$key 	The registry key.

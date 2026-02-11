@@ -12,14 +12,13 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 /**
- * Door Access integration provider for Nuki.
+ * Door Access integration provider for U-Tec.
  * 
- * @since   1.18.6 (J) - 1.8.6 (WP)
+ * @since   1.18.7 (J) - 1.8.7 (WP)
  * 
- * @link    https://api.nuki.io/
- * @link    https://developer.nuki.io/
+ * @link    https://doc.api.u-tec.com/
  */
-final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
+final class VBODooraccessProviderUtec extends VBODooraccessIntegrationAware
 {
     /**
      * @var     array
@@ -29,7 +28,7 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
     /**
      * @var     string
      */
-    private string $authScopes = 'smartlock smartlock.action smartlock.auth smartlock.log webhook.central';
+    private string $authScopes = 'openapi';
 
     /**
      * @inheritDoc
@@ -44,7 +43,7 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
      */
     public function getName()
     {
-        return 'Nuki - Smart Locks';
+        return 'U-tec Smart Home';
     }
 
     /**
@@ -52,7 +51,7 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
      */
     public function getShortName()
     {
-        return 'Nuki';
+        return 'U-tec';
     }
 
     /**
@@ -60,7 +59,7 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
      */
     public function getIcon()
     {
-        return VBO_ADMIN_URI . 'resources/nuki-vikbooking-integration-logo.png';
+        return VBO_ADMIN_URI . 'resources/u-tec-vikbooking-integration-logo.png';
     }
 
     /**
@@ -71,52 +70,49 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
         // load current settings
         $settings = $this->getSettings();
 
-        // always build the OAuth redirect URL
+        // build the OAuth redirect URL
         $dac_oauth_spawn_url = $this->buildOAuthURL();
 
         // check if the application was authorised through OAuth
         $oauth_authorised = !empty($settings['_oauth']['access_token']);
 
         // build OAuth2 authorization link
-        if (empty($settings['oauth2_api_key']) || empty($settings['oauth2_api_secret'])) {
+        if (empty($settings['client_id']) || empty($settings['client_secret'])) {
             // settings must be saved first
             $oauth2_auth_link = '<span class="label label-error">Save settings first. OAuth2 API Key and API Secret cannot be empty.</span>';
             // convert the redirect URI to a text
             $dac_oauth_spawn_url = 'Save settings first.';
         } else {
             // build button-link for the authorization code URL
-            $nuki_auth_data = [
+            $utec_auth_data = [
                 'response_type' => 'code',
-                'client_id'     => $settings['oauth2_api_key'],
+                'client_id'     => $settings['client_id'],
+                'client_secret' => $settings['client_secret'],
                 'scope'         => $this->authScopes,
-                'state'         => $this->getOAuthCode(),
                 'redirect_uri'  => $dac_oauth_spawn_url,
+                'state'         => $this->getOAuthCode(),
             ];
 
-            // build final Nuki authorization URL to be clicked
-            $nuki_auth_link = 'https://api.nuki.io/oauth/authorize?' . http_build_query($nuki_auth_data);
+            // build final authorization URL to be clicked
+            $utec_auth_link = 'https://oauth.u-tec.com/authorize?' . http_build_query($utec_auth_data);
 
             // set button content
-            $oauth2_auth_link = '<a class="btn btn-warning" href="' . $nuki_auth_link . '">' . ($oauth_authorised ? '(Re-)' : '') . 'Authorize Application</a>';
+            $oauth2_auth_link = '<a class="btn btn-warning" href="' . $utec_auth_link . '">' . ($oauth_authorised ? '(Re-)' : '') . 'Authorize Application</a>';
         }
 
         // build HTML instructions for obtaining the OAuth2 information
-        $help_url_webhook = $this->buildWebhookURL();
         $oauth_instructions_html = <<<HTML
-        <div>Visit your <a href="https://web.nuki.io/" target="_blank">Nuki Web</a> account (section <em>API</em> - <em>OAuth2</em>) to enable and obtain the <strong>OAuth2 API Key</strong> and <strong>OAuth2 API Secret</strong>. Then enter the following <strong>OAuth2 redirect URL</strong>:</div>
+        <div>By using the official U-tec App, visit the section <strong>OpenAPI</strong> to obtain your <strong>Client ID</strong> and <strong>Client Secret</strong>. Then enter the following <strong>Redirect URI</strong>:</div>
         <ul>
             <li><em>$dac_oauth_spawn_url</em></li>
         </ul>
-        <div>From the <em>Nuki Advanced API Integration section</em>, enther the following <strong>Webhook URL</strong>:</div>
-        <ul>
-            <li><em>$help_url_webhook</em></li>
-        </ul>
+        <div>Save your settings on the U-tec App.</div>
         HTML;
 
         if (!$oauth_authorised) {
             // add to the instructions that the application must be authorised
             $oauth_instructions_html .= <<<HTML
-            <div>Proceed by clicking the authorization link below after saving your OAuth settings.</div>
+            <div>Proceed by clicking the authorization link below after saving your account settings from this interface.</div>
             HTML;
         }
 
@@ -146,50 +142,29 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
                 ],
                 'default' => 1,
             ],
-            'authmeth' => [
-                'type'    => 'select',
-                'label'   => 'Authentication Method',
-                'help'    => 'Choose the authentication type configured in your Nuki Web account.',
-                'options' => [
-                    'oauth'     => 'OAuth2',
-                    'api_token' => 'API Token',
-                ],
-                'default' => 'oauth',
-            ],
-            'api_token' => [
-                'type'  => 'password',
-                'label' => 'API Token',
-                'conditional' => 'authmeth:api_token',
-            ],
             '_oauth2_auth_help' => [
                 'type'  => 'custom',
-                // 'label' => 'Instructions',
                 'html'  => $oauth_instructions_html,
-                'conditional' => 'authmeth:oauth',
             ],
             '_oauth2_auth_status' => [
                 'type'  => 'custom',
                 'label' => 'Authorization Status',
                 'html'  => $oauth2_auth_status,
-                'conditional' => 'authmeth:oauth',
             ],
             '_oauth2_auth_link' => [
                 'type'  => 'custom',
                 'label' => 'Authorization Link',
                 'html'  => $oauth2_auth_link,
-                'conditional' => 'authmeth:oauth',
             ],
-            'oauth2_api_key' => [
+            'client_id' => [
                 'type'  => 'text',
-                'label' => 'OAuth2 API Key (Client ID)',
-                'help'  => (empty($settings['oauth2_api_key']) ? 'Save settings to see the authorization link. ' : '') . 'OAuth2 API Key from Nuki Web > Menu > API.',
-                'conditional' => 'authmeth:oauth',
+                'label' => 'Client ID',
+                'help'  => (empty($settings['client_id']) ? 'Save settings to see the authorization link.' : ''),
             ],
-            'oauth2_api_secret' => [
+            'client_secret' => [
                 'type'  => 'password',
-                'label' => 'OAuth2 API Secret (Client Secret)',
-                'help'  => (empty($settings['oauth2_api_key']) ? 'Save settings to see the authorization link. ' : '') . 'OAuth2 API Secret from Nuki Web > Menu > API.',
-                'conditional' => 'authmeth:oauth',
+                'label' => 'Client Secret',
+                'help'  => (empty($settings['client_id']) ? 'Save settings to see the authorization link. ' : ''),
             ],
         ];
     }
@@ -206,7 +181,7 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
         $auth_state = ($data['state'] ?? '') ?: $app->input->getString('state', '');
 
         if (!empty($auth_code) && empty($auth_state)) {
-            // missing CSRF proof token from Nuki
+            // missing CSRF proof token
             throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
         }
 
@@ -234,17 +209,16 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
 
             // build request data, inclusive of redirect URI (must match the one for the initial authorization)
             $requestData = [
-                'client_id'     => ($settings['oauth2_api_key'] ?? ''),
-                'client_secret' => ($settings['oauth2_api_secret'] ?? ''),
                 'grant_type'    => 'authorization_code',
+                'client_id'     => ($settings['client_id'] ?? ''),
+                'client_secret' => ($settings['client_secret'] ?? ''),
                 'code'          => $auth_code,
-                'redirect_uri'  => $this->buildOAuthURL(),
             ];
 
-            // make the API request (POST with query string values in endpoint URL)
-            $response = $transporter->post('https://api.nuki.io/oauth/token', http_build_query($requestData), $this->httpHeaders, 60);
+            // make the API request
+            $response = $transporter->get('https://oauth.u-tec.com/token?' . http_build_query($requestData), $this->httpHeaders, 60);
 
-            // obtain the response data (response should be empty in case of success)
+            // obtain response data
             $responseData = (array) json_decode((string) $response->body, true);
 
             if (empty($response->code) || $response->code > 299) {
@@ -254,7 +228,7 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
 
             if (empty($responseData['access_token']) || empty($responseData['refresh_token'])) {
                 // unexpected response format
-                throw new Exception('Unexpected response format: missing access token or refresh token.', 500);
+                throw new Exception(sprintf('Unexpected response format: missing access token or refresh token. %s', (string) ($responseData['error_description'] ?? '')), 500);
             }
 
             // calculate and set the token expiration timestamp (3600 seconds)
@@ -293,69 +267,21 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
 
     /**
      * @inheritDoc
+     * 
+     * @todo  Identify the payload received for the various Webhook events.
+     *        Validate the payload signature through the registered token.
+     *        Identify the type(s) of Webhook events to process, if any.
      */
     public function spawnWebhookCallback(?array $data = null)
     {
         $app = JFactory::getApplication();
 
-        // load current settings
-        $settings = $this->getSettings();
-
-        // access signing key (client secret)
-        $signingKey = $settings['oauth2_api_secret'] ?? '';
-
-        // access raw body payload
-        $rawPayload = file_get_contents('php://input');
-
-        if (empty($rawPayload)) {
-            // raise an error
-            VBOHttpDocument::getInstance($app)->close(400, 'Missing webhook payload.');
-        }
-
-        // access the signature value from headers
-        $signatureHeader = $app->input->server->get('HTTP_X_NUKI_SIGNATURE_SHA256', '');
-
-        if (empty($signatureHeader)) {
-            // raise an error
-            VBOHttpDocument::getInstance($app)->close(400, 'Missing webhook signature header.');
-        }
-
-        // generate the HMAC SHA256 signature
-        $computedSignature = hash_hmac('sha256', $rawPayload, $signingKey);
-
-        // validate signature
-        if ($computedSignature != $signatureHeader && !hash_equals($computedSignature, $signatureHeader)) {
-            // raise an error
-            VBOHttpDocument::getInstance($app)->close(401, 'Invalid webhook signature value.');
-        }
-
-        // access webhook data
-        $webhookData = $app->input->json->getArray();
-
-        // determine the webhook notification type
-        $webhookType = strtoupper((string) ($webhookData['feature'] ?? ''));
-
-        // process the request, if known and needed
-        try {
-            switch ($webhookType) {
-                case 'DEVICE_STATUS':
-                    // handle device status update webhook notification
-                    $this->webhookHandleDeviceStatus($webhookData);
-                    break;
-
-                case 'DEVICE_LOGS':
-                    // handle device log webhook notification
-                    $this->webhookHandleDeviceLogs($webhookData);
-                    break;
-
-                default:
-                    // do nothing
-                    break;
-            }
-        } catch (Exception $e) {
-            // propagate the "error" (could also be 200) by closing the response
-            VBOHttpDocument::getInstance($app)->close($e->getCode() ?: 500, $e->getMessage());
-        }
+        /**
+         * @todo  remove webhook payload debugging
+         */
+        $fp = fopen(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'webhook_debug.txt', 'a+');
+        fwrite($fp, date('c') . "\n" . print_r(file_get_contents('php://input'), true) . "\n" . print_r($app->input->request->getArray(), true) . "\n" . print_r($app->input->server->getArray(), true) . "\n\n\n");
+        fclose($fp);
 
         // close the response with a 200 status code
         VBOHttpDocument::getInstance($app)->close(200, 'Webhook data successfully received.');
@@ -382,17 +308,42 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
      * 
      * @return  VBODooraccessDeviceCapabilityResult
      * 
-     * @link    https://api.nuki.io/#/Smartlock/SmartlockUnlockActionResource_postUnlock_post
+     * @link    https://doc.api.u-tec.com/ Lock User Management - Command: st.lock - unlock
      */
     public function unlockDevice(VBODooraccessIntegrationDevice $device, ?array $options = null)
     {
-        // start transporter
-        $transporter = $this->createHTTPTransporter();
+        // start transporter (by setting the Content-Type header)
+        $transporter = $this->createHTTPTransporter([
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        // build request data
+        $data = [
+            'header' => [
+                'namespace' => 'Uhome.Device',
+                'name' => 'Command',
+                'messageId' => VBOPerformanceIndicator::uuid(),
+                'payloadVersion' => '1',
+            ],
+            'payload' => [
+                'devices' => [
+                    [
+                        'id' => $device->getID(),
+                        'command' => [
+                            'capability' => 'st.lock',
+                            'name' => 'unlock',
+                        ],
+                    ],
+                ],
+            ],
+        ];
 
         // make the API request
-        $response = $transporter->post('https://api.nuki.io/smartlock/' . $this->getDecimalDeviceID($device) . '/action/unlock', [], $this->httpHeaders, 60);
+        $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
 
-        // obtain the response data (response should be empty in case of success)
+        // obtain the response data
         $responseData = (array) json_decode((string) $response->body, true);
 
         if (empty($response->code) || $response->code > 299) {
@@ -411,17 +362,42 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
      * 
      * @return  VBODooraccessDeviceCapabilityResult
      * 
-     * @link    https://api.nuki.io/#/Smartlock/SmartlockLockActionResource_postLock_post
+     * @link    https://doc.api.u-tec.com/ Lock User Management - Command: st.lock - lock
      */
     public function lockDevice(VBODooraccessIntegrationDevice $device, ?array $options = null)
     {
-        // start transporter
-        $transporter = $this->createHTTPTransporter();
+        // start transporter (by setting the Content-Type header)
+        $transporter = $this->createHTTPTransporter([
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        // build request data
+        $data = [
+            'header' => [
+                'namespace' => 'Uhome.Device',
+                'name' => 'Command',
+                'messageId' => VBOPerformanceIndicator::uuid(),
+                'payloadVersion' => '1',
+            ],
+            'payload' => [
+                'devices' => [
+                    [
+                        'id' => $device->getID(),
+                        'command' => [
+                            'capability' => 'st.lock',
+                            'name' => 'lock',
+                        ],
+                    ],
+                ],
+            ],
+        ];
 
         // make the API request
-        $response = $transporter->post('https://api.nuki.io/smartlock/' . $this->getDecimalDeviceID($device) . '/action/lock', [], $this->httpHeaders, 60);
+        $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
 
-        // obtain the response data (response should be empty in case of success)
+        // obtain the response data
         $responseData = (array) json_decode((string) $response->body, true);
 
         if (empty($response->code) || $response->code > 299) {
@@ -442,54 +418,119 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
      * 
      * @throws  Exception
      * 
-     * @link    https://api.nuki.io/#/SmartlockAuth/SmartlocksAuthsResource_get_get
+     * @link    https://doc.api.u-tec.com/ Lock User Management - Command: st.lockUser - list/get(id)
      */
     public function listPasscodes(VBODooraccessIntegrationDevice $device, ?array $options = null)
     {
-        // start transporter
-        $transporter = $this->createHTTPTransporter();
-
-        // check if a specific passcode name should be matched from the API response (filter not supported)
-        $searchPasscode = $options['search'] ?? null;
+        // start transporter (by setting the Content-Type header)
+        $transporter = $this->createHTTPTransporter([
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+        ]);
 
         // build request data
         $data = [
-            // type option could be "any", but we only accept integers, to be casted to string
-            // as the query-string filter accept a list of comma-separated values (i.e. "0,2,13")
-            'types' => is_numeric($options['type'] ?? null) ? (string) $options['type'] : null,
+            'header' => [
+                'namespace' => 'Uhome.Device',
+                'name' => 'Command',
+                'messageId' => VBOPerformanceIndicator::uuid(),
+                'payloadVersion' => '1',
+            ],
+            'payload' => [
+                'devices' => [
+                    [
+                        'id' => $device->getID(),
+                        'command' => [
+                            'capability' => 'st.lockUser',
+                            'name' => 'list',
+                        ],
+                    ],
+                ],
+            ],
         ];
 
-        // make a request to obtain all created passcodes of a lock
-        $response = $transporter->get('https://api.nuki.io/smartlock/' . $this->getDecimalDeviceID($device) . '/auth?' . http_build_query(array_filter($data, function($value) {
-            // allow to filter by type "0" which equals to "App"
-            return !empty($value) || $value === '0';
-        })), $this->httpHeaders, 20);
+        // make the API request
+        $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
 
         // obtain the response data
         $responseData = (array) json_decode((string) $response->body, true);
 
         if (empty($response->code) || $response->code > 299) {
             // an error occurred
-            throw new Exception($response->body ?: 'Error fetching device passcodes.', ($response->code ?: 500));
+            throw new Exception($response->body ?: 'Error fetching device passcodes (lock users).', ($response->code ?: 500));
         }
 
-        // returned passcodes list expected
-        $passcodes = $responseData;
+        if (empty($responseData['payload']['devices'][0]['users'])) {
+            throw new Exception('No passcodes (lock users) found for the device.', 500);
+        }
 
-        if ($searchPasscode && is_array($passcodes)) {
-            // filter passcodes found by the given name
-            $passcodes = array_filter($passcodes, function($authPasscode) use ($searchPasscode) {
-                // passcode name must match the given one as we are doing an exact search
-                return ($authPasscode['name'] ?? '') === $searchPasscode;
+        // list of lock users returned
+        $lockUsersList = (array) $responseData['payload']['devices'][0]['users'];
+
+        // check if a specific passcode name should be matched from the API response (filter not supported)
+        $searchPasscode = $options['search'] ?? null;
+
+        // check if the list of lock users needs to be filtered by an exact search term (passcode name)
+        if ($searchPasscode && $lockUsersList) {
+            // filter lock users (passcodes) found by the given name
+            $lockUsersList = array_filter($lockUsersList, function($lockUser) use ($searchPasscode) {
+                // lock user (passcode) name must match the given one as we are doing an exact search
+                return ($lockUser['name'] ?? '') === $searchPasscode;
             });
         }
 
-        if (!$passcodes) {
-            throw new Exception('No authorization codes found for the device.', 404);
+        if (!$lockUsersList) {
+            throw new Exception('No matching passcodes (lock users) found for the device.', 500);
         }
 
-        // list of passcode IDs and values obtained
-        $passcodesAssoc = [];
+        // reset array keys
+        $lockUsersList = array_values($lockUsersList);
+
+        // parse the lock users list and fetch their details (password)
+        foreach ($lockUsersList as &$lockUser) {
+            // build request data to obtain all lock-user (password) details
+            $data = [
+                'header' => [
+                    'namespace' => 'Uhome.Device',
+                    'name' => 'Command',
+                    'messageId' => VBOPerformanceIndicator::uuid(),
+                    'payloadVersion' => '1',
+                ],
+                'payload' => [
+                    'devices' => [
+                        [
+                            'id' => $device->getID(),
+                            'command' => [
+                                'capability' => 'st.lockUser',
+                                'name' => 'get',
+                                'arguments' => [
+                                    'id' => $lockUser['id'] ?? null,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+
+            // make the API request
+            $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
+
+            // obtain the response data
+            $responseData = (array) json_decode((string) $response->body, true);
+
+            // check if we got a password for the lock-user
+            if ($responseData['payload']['devices'][0]['user']['password'] ?? null) {
+                // lock user details were read successfully, merge user-lock information
+                $lockUser = array_merge($lockUser, $responseData['payload']['devices'][0]['user']);
+            }
+        }
+
+        // unset last reference
+        unset($lockUser);
+
+        // associative list of lock user IDs and related details
+        $lockUsersAssoc = [];
 
         // build HTML output
         $output = '';
@@ -498,8 +539,6 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
         $lang_passcode  = JText::translate('VBO_PASSCODE');
         $lang_startdate = JText::translate('VBNEWPKGDFROM');
         $lang_enddate   = JText::translate('VBNEWPKGDTO');
-        $lang_createdon = JText::translate('VBOINVCREATIONDATE');
-        $lang_createdby = JText::translate('VBCSVCREATEDBY');
 
         // table head
         $output .= <<<HTML
@@ -507,48 +546,48 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
     <table class="vbo-dac-table">
         <thead>
             <tr>
-                <td>Passcode ID</td>
-                <td>Passcode Name</td>
+                <td>Password ID</td>
+                <td>Name</td>
                 <td>{$lang_passcode}</td>
-                <td>Passcode Type</td>
                 <td>{$lang_startdate}</td>
                 <td>{$lang_enddate}</td>
-                <td>{$lang_createdon}</td>
-                <td>{$lang_createdby}</td>
+                <td>Type</td>
+                <td>Status</td>
+                <td>Sync Status</td>
             </tr>
         </thead>
         <tbody>
 HTML;
 
         // scan all passcodes obtained
-        foreach ($passcodes as $passcode) {
+        foreach ($lockUsersList as $lockUser) {
             // set passcode properties
-            $passcodeId = $passcode['id'] ?? '';
-            $passcodeValue = $passcode['code'] ?? '';
-            $passcodeName = $passcode['name'] ?? '';
-            $passcodeType = $this->getPasscodeTypes((int) ($passcode['type'] ?? 0), true);
-            $startDate = ($passcode['allowedFromDate'] ?? '') ? JHtml::fetch('date', $passcode['allowedFromDate'], 'Y-m-d H:i:s') : '---';
-            $endDate = ($passcode['allowedUntilDate'] ?? '') ? JHtml::fetch('date', $passcode['allowedUntilDate'], 'Y-m-d H:i:s') : '---';
-            $sendDate = ($passcode['creationDate'] ?? '') ? JHtml::fetch('date', $passcode['creationDate'], 'Y-m-d H:i:s') : '---';
-            $senderUsername = $passcode['accountUserId'] ?? '';
+            $lockUserId = $lockUser['id'] ?? '';
+            $lockUserName = $lockUser['name'] ?? '';
+            $lockUserPwd = $lockUser['password'] ?? '';
+            $lockUserPwdFrom = $lockUser['daterange'][0] ?? '';
+            $lockUserPwdTo = $lockUser['daterange'][1] ?? '';
+            $lockUserType = $this->getUserTypes((int) ($lockUser['type'] ?? 0), true);
+            $lockUserStatus = $lockUser['status'] ?? '';
+            $lockUserSyncStatus = $lockUser['sync_status'] ?? '';
 
             // bind passcode id values
-            $passcodesAssoc[$passcodeId] = [
-                'name'  => $passcodeName,
-                'value' => $passcodeValue,
+            $lockUsersAssoc[$lockUserId] = [
+                'name'  => $lockUserName,
+                'value' => $lockUserPwd,
             ];
 
             // build passcode HTML code
             $output .= <<<HTML
             <tr>
-                <td><span class="vbo-dac-table-passcode-id">{$passcodeId}</span></td>
-                <td><span class="vbo-dac-table-passcode-name">{$passcodeName}</span></td>
-                <td><span class="vbo-dac-table-passcode-code">{$passcodeValue}</span></td>
-                <td>{$passcodeType}</td>
-                <td>{$startDate}</td>
-                <td>{$endDate}</td>
-                <td>{$sendDate}</td>
-                <td>{$senderUsername}</td>
+                <td><span class="vbo-dac-table-passcode-id">{$lockUserId}</span></td>
+                <td><span class="vbo-dac-table-passcode-name">{$lockUserName}</span></td>
+                <td><span class="vbo-dac-table-passcode-code">{$lockUserPwd}</span></td>
+                <td>{$lockUserPwdFrom}</td>
+                <td>{$lockUserPwdTo}</td>
+                <td>{$lockUserType}</td>
+                <td>{$lockUserStatus}</td>
+                <td>{$lockUserSyncStatus}</td>
             </tr>
 HTML;
         }
@@ -561,7 +600,7 @@ HTML;
 HTML;
 
         // return the capability result object by setting the output value
-        return (new VBODooraccessDeviceCapabilityResult($passcodesAssoc))
+        return (new VBODooraccessDeviceCapabilityResult($lockUsersAssoc))
             ->setOutput($output);
     }
 
@@ -573,7 +612,7 @@ HTML;
      * 
      * @return  VBODooraccessDeviceCapabilityResult
      * 
-     * @link    https://api.nuki.io/#/SmartlockAuth/SmartlockAuthsResource_put_put
+     * @link    https://doc.api.u-tec.com/ Lock User Management - Command: st.lockUser - add(user)
      */
     public function createCustomPasscode(VBODooraccessIntegrationDevice $device, ?array $options = null)
     {
@@ -591,21 +630,50 @@ HTML;
 
         // build request data
         $data = [
-            'name'             => $options['pwdname'] ?? null,
-            'allowedFromDate'  => (($options['startdate'] ?? '') ? $this->getDateRFC3339($options['startdate']) : null),
-            'allowedUntilDate' => (($options['enddate'] ?? '') ? $this->getDateRFC3339($options['enddate']) : null),
-            'allowedWeekDays'  => 127,
-            'allowedFromTime'  => 0,
-            'allowedUntilTime' => 0,
-            'remoteAllowed'    => true,
-            'type'             => 13,
-            'code'             => (int) $options['pwdvalue'],
+            'header' => [
+                'namespace' => 'Uhome.Device',
+                'name' => 'Command',
+                'messageId' => VBOPerformanceIndicator::uuid(),
+                'payloadVersion' => '1',
+            ],
+            'payload' => [
+                'devices' => [
+                    [
+                        'id' => $device->getID(),
+                        'command' => [
+                            'capability' => 'st.lockUser',
+                            'name' => 'add',
+                            'arguments' => [
+                                'name' => $options['pwdname'] ?? null,
+                                // type = 2 means "temporary user"
+                                'type' => 2,
+                                'password' => (int) $options['pwdvalue'],
+                                'daterange' => [
+                                    date('Y-m-d H:i', strtotime($options['startdate'] ?? date('Y-m-d H:i:s'))),
+                                    date('Y-m-d H:i', strtotime($options['enddate'] ?? date('Y-m-d H:i:s'))),
+                                ],
+                                'weeks' => [0, 1, 2, 4, 5, 6],
+                                'timerange' => ['00:00', '23:59'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ];
 
-        // make the API request
-        $response = $transporter->put('https://api.nuki.io/smartlock/' . $this->getDecimalDeviceID($device) . '/auth', json_encode($data), $this->httpHeaders, 60);
+        if (empty($options['startdate']) || empty($options['enddate'])) {
+            // unset the validity date-range and related properties when no dates provided
+            unset(
+                $data['payload']['devices'][0]['command']['arguments']['daterange'],
+                $data['payload']['devices'][0]['command']['arguments']['weeks'],
+                $data['payload']['devices'][0]['command']['arguments']['timerange']
+            );
+        }
 
-        // obtain the response data (should be empty in case of success)
+        // make the API request
+        $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
+
+        // obtain the response data
         $responseData = (array) json_decode((string) $response->body, true);
 
         if (empty($response->code) || $response->code > 299) {
@@ -619,7 +687,19 @@ HTML;
             throw $dacError;
         }
 
-        // build result properties to bind (operation is asynchronous, so we don't immediately get an authorization ID for the new access code)
+        if ($responseData['payload']['devices'][0]['error']['message'] ?? null) {
+            // erroneous response
+            // an error occurred, build DAC Exception with retry-data
+            $dacError = (new VBODooraccessException(sprintf('(%s) %s', ($responseData['payload']['devices'][0]['error']['code'] ?? '0'), $responseData['payload']['devices'][0]['error']['message']), 500))
+                ->setDevice($device)
+                ->setRetryCallback('createCustomPasscode')
+                ->setRetryData($options);
+
+            // throw error
+            throw $dacError;
+        }
+
+        // build result properties to bind
         $resultProps = [
             'code'      => (string) $options['pwdvalue'],
             'name'      => (string) ($options['pwdname'] ?? ''),
@@ -647,26 +727,59 @@ HTML;
      * 
      * @return  VBODooraccessDeviceCapabilityResult
      * 
-     * @link    https://api.nuki.io/#/SmartlockAuth/SmartlockAuthResource_delete_delete
+     * @link    https://doc.api.u-tec.com/ Lock User Management - Command: st.lockUser - delete(id)
      */
     public function deletePasscode(VBODooraccessIntegrationDevice $device, ?array $options = null)
     {
         if (empty($options['pwdid'])) {
-            throw new Exception($response->body ?: 'Missing authorization (access code) ID to delete.', 400);
+            throw new Exception($response->body ?: 'Missing lock user (passcode) ID to delete.', 400);
         }
 
-        // start transporter
-        $transporter = $this->createHTTPTransporter();
+        // start transporter (by setting the Content-Type header)
+        $transporter = $this->createHTTPTransporter([
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        // build request data
+        $data = [
+            'header' => [
+                'namespace' => 'Uhome.Device',
+                'name' => 'Command',
+                'messageId' => VBOPerformanceIndicator::uuid(),
+                'payloadVersion' => '1',
+            ],
+            'payload' => [
+                'devices' => [
+                    [
+                        'id' => $device->getID(),
+                        'command' => [
+                            'capability' => 'st.lockUser',
+                            'name' => 'delete',
+                            'arguments' => [
+                                'id' => $options['pwdid'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
 
         // make the API request
-        $response = $transporter->delete('https://api.nuki.io/smartlock/' . $this->getDecimalDeviceID($device) . '/auth/' . $options['pwdid'], [], $this->httpHeaders, 60);
+        $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
 
         // obtain the response data
         $responseData = (array) json_decode((string) $response->body, true);
 
         if (empty($response->code) || $response->code > 299) {
             // an error occurred
-            throw new Exception($response->body ?: 'Error deleting passcode from device.', ($response->code ?: 500));
+            throw new Exception($response->body ?: 'Error deleting lock user (passcode) from device.', ($response->code ?: 500));
+        }
+
+        if ($responseData['payload']['devices'][0]['error']['message'] ?? null) {
+            // erroneous response
+            throw new Exception(sprintf('(%s) %s', ($responseData['payload']['devices'][0]['error']['code'] ?? '0'), $responseData['payload']['devices'][0]['error']['message']), 500);
         }
 
         return (new VBODooraccessDeviceCapabilityResult)
@@ -681,12 +794,12 @@ HTML;
      * 
      * @return  VBODooraccessDeviceCapabilityResult
      * 
-     * @link    https://api.nuki.io/#/SmartlockAuth/SmartlockAuthResource_post_post
+     * @link    https://doc.api.u-tec.com/ Lock User Management - Command: st.lockUser - update(user)
      */
     public function updatePasscode(VBODooraccessIntegrationDevice $device, ?array $options = null)
     {
         if (empty($options['pwdid'])) {
-            throw new Exception($response->body ?: 'Missing authorization (access code) ID to update.', 400);
+            throw new Exception($response->body ?: 'Missing lock user (passcode) ID to update.', 400);
         }
 
         // start transporter (by setting the Content-Type header)
@@ -698,23 +811,63 @@ HTML;
 
         // build request data
         $data = [
-            'allowedFromDate'  => (($options['startdate'] ?? '') ? $this->getDateRFC3339($options['startdate']) : null),
-            'allowedUntilDate' => (($options['enddate'] ?? '') ? $this->getDateRFC3339($options['enddate']) : null),
-            'allowedWeekDays'  => 127,
-            'allowedFromTime'  => 0,
-            'allowedUntilTime' => 0,
-            'remoteAllowed'    => true,
+            'header' => [
+                'namespace' => 'Uhome.Device',
+                'name' => 'Command',
+                'messageId' => VBOPerformanceIndicator::uuid(),
+                'payloadVersion' => '1',
+            ],
+            'payload' => [
+                'devices' => [
+                    [
+                        'id' => $device->getID(),
+                        'command' => [
+                            'capability' => 'st.lockUser',
+                            'name' => 'update',
+                            'arguments' => [
+                                'id' => $options['pwdid'],
+                                'password' => $options['pwdvalue'] ?? null,
+                                'daterange' => [
+                                    date('Y-m-d H:i', strtotime($options['startdate'] ?? date('Y-m-d H:i:s'))),
+                                    date('Y-m-d H:i', strtotime($options['enddate'] ?? date('Y-m-d H:i:s'))),
+                                ],
+                                'weeks' => [0, 1, 2, 4, 5, 6],
+                                'timerange' => ['00:00', '23:59'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ];
 
+        if (empty($options['pwdvalue'])) {
+            // unset the password property if the same passcode should be kept
+            unset($data['payload']['devices'][0]['command']['arguments']['password']);
+        }
+
+        if (empty($options['startdate']) || empty($options['enddate'])) {
+            // unset the validity date-range and related properties to keep the existing value
+            unset(
+                $data['payload']['devices'][0]['command']['arguments']['daterange'],
+                $data['payload']['devices'][0]['command']['arguments']['weeks'],
+                $data['payload']['devices'][0]['command']['arguments']['timerange']
+            );
+        }
+
         // make the API request
-        $response = $transporter->post('https://api.nuki.io/smartlock/' . $this->getDecimalDeviceID($device) . '/auth/' . $options['pwdid'], json_encode($data), $this->httpHeaders, 60);
+        $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
 
         // obtain the response data
         $responseData = (array) json_decode((string) $response->body, true);
 
         if (empty($response->code) || $response->code > 299) {
             // an error occurred
-            throw new Exception($response->body ?: 'Error updating passcode on device.', ($response->code ?: 500));
+            throw new Exception($response->body ?: 'Error updating lock user (passcode) on device.', ($response->code ?: 500));
+        }
+
+        if ($responseData['payload']['devices'][0]['error']['message'] ?? null) {
+            // erroneous response
+            throw new Exception(sprintf('(%s) %s', ($responseData['payload']['devices'][0]['error']['code'] ?? '0'), $responseData['payload']['devices'][0]['error']['message']), 500);
         }
 
         return (new VBODooraccessDeviceCapabilityResult)
@@ -722,7 +875,7 @@ HTML;
     }
 
     /**
-     * Device capability implementation to show the list of activity logs of a device.
+     * Device capability implementation to check the current device status, and eventually update the battery level.
      * 
      * @param   VBODooraccessIntegrationDevice  $device     The device executing the capability.
      * @param   ?array                          $options    Optional settings populated from capability parameters.
@@ -731,42 +884,88 @@ HTML;
      * 
      * @throws  Exception
      * 
-     * @link    https://api.nuki.io/#/SmartlockLog/SmartlockLogsResource_get_get
+     * @link    https://doc.api.u-tec.com/ Query Device Status
      */
-    public function showActivityLogs(VBODooraccessIntegrationDevice $device, ?array $options = null)
+    public function checkStatus(VBODooraccessIntegrationDevice $device, ?array $options = null)
     {
-        // start transporter
-        $transporter = $this->createHTTPTransporter();
+        // start transporter (by setting the Content-Type header)
+        $transporter = $this->createHTTPTransporter([
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+        ]);
 
-        // build query string data
+        // build request data
         $data = [
-            'fromDate' => (!empty($options['startdate']) ? $this->getDateRFC3339($options['startdate']) : null),
-            'toDate'   => (!empty($options['enddate']) ? $this->getDateRFC3339($options['enddate']) : null),
-            'limit'    => 50,
+            'header' => [
+                'namespace' => 'Uhome.Device',
+                'name' => 'Query',
+                'messageId' => VBOPerformanceIndicator::uuid(),
+                'payloadVersion' => '1',
+            ],
+            'payload' => [
+                'devices' => [
+                    [
+                        'id' => $device->getID(),
+                    ],
+                ],
+            ],
         ];
 
-        // make a request to obtain the logs of a lock
-        $response = $transporter->get('https://api.nuki.io/smartlock/' . $this->getDecimalDeviceID($device) . '/log?' . http_build_query(array_filter($data)), $this->httpHeaders, 20);
+        // make the API request
+        $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
 
         // obtain the response data
         $responseData = (array) json_decode((string) $response->body, true);
 
         if (empty($response->code) || $response->code > 299) {
             // an error occurred
-            throw new Exception($response->body ?: 'Error fetching device logs.', ($response->code ?: 500));
+            throw new Exception($response->body ?: 'Error checking device status.', ($response->code ?: 500));
         }
 
-        $activities = $responseData;
+        if (empty($responseData['payload']['devices'][0]['states'])) {
+            throw new Exception('No device status information obtained. The device may not be reachable, or may not be connected to the Internet.', 500);
+        }
 
-        if (!is_array($activities) || !$activities) {
-            throw new Exception(sprintf("No log records found for the device.\n%s", print_r($activities, true)), 404);
+        // list of lock states
+        $lockStatesList = (array) $responseData['payload']['devices'][0]['states'];
+
+        // access the current device battery-level information, if any
+        $batteryInfo = null;
+        $devicePayload = $device->getPayload();
+        if (($devicePayload['attributes']['batteryLevelRange']['max'] ?? null)) {
+            // assign the device battery-level information
+            $batteryInfo = $devicePayload['attributes']['batteryLevelRange'];
+        }
+
+        // iterate all lock state properties (statuses) to check if we have the battery level
+        foreach ($lockStatesList as $lockStatus) {
+            if ($batteryInfo && ($lockStatus['capability'] ?? '') === 'st.batteryLevel' && isset($lockStatus['value'])) {
+                // calculate the device batter level
+                $currentLevelPcent = round(100 * (int) $lockStatus['value'] / (((int) $batteryInfo['max']) ?: 1), 0);
+
+                // update device battery level
+                $device->setBatteryLevel((float) $currentLevelPcent);
+
+                // update current device
+                try {
+                    VBODooraccessFactory::getInstance()->saveIntegrationRecord($this, ['devices' => $this->getDevices()]);
+                } catch (Exception $e) {
+                    // silently catch the error and do nothing
+                }
+
+                // do not proceed any further
+                break;
+            }
         }
 
         // build HTML output
         $output = '';
 
         // lang defs
-        $lang_createdon = JText::translate('VBOINVCREATIONDATE');
+        $lang_passcode  = JText::translate('VBO_PASSCODE');
+        $lang_startdate = JText::translate('VBNEWPKGDFROM');
+        $lang_enddate   = JText::translate('VBNEWPKGDTO');
 
         // table head
         $output .= <<<HTML
@@ -774,42 +973,27 @@ HTML;
     <table class="vbo-dac-table">
         <thead>
             <tr>
-                <td>Log ID</td>
                 <td>Name</td>
-                <td>Passcode ID</td>
-                <td>Action</td>
-                <td>Trigger</td>
-                <td>State</td>
-                <td>Source</td>
-                <td>{$lang_createdon}</td>
+                <td>Value</td>
+                <td>Capability</td>
             </tr>
         </thead>
         <tbody>
 HTML;
 
-        // scan all activities obtained
-        foreach ($activities as $activity) {
-            // set activity properties
-            $activityId = $activity['id'] ?? '';
-            $activityName = $activity['name'] ?? '';
-            $activityAuthId = $activity['authId'] ?? '';
-            $activityAction = $this->getActivityAction((int) ($activity['action'] ?? 0));
-            $activityTrigger = $this->getActivityTrigger((int) ($activity['trigger'] ?? 0));
-            $activityState = $this->getActivityState((int) ($activity['state'] ?? 0));
-            $activitySource = $this->getActivitySource((int) ($activity['source'] ?? 0));
-            $activityDate = ($activity['date'] ?? '') ? JHtml::fetch('date', $activity['date'], 'Y-m-d H:i:s') : '---';
+        // scan all statuses obtained
+        foreach ($lockStatesList as $lockStatus) {
+            // set passcode properties
+            $lockStatusName = $lockStatus['name'] ?? '';
+            $lockStatusValue = $lockStatus['value'] ?? '';
+            $lockStatusCap = $lockStatus['capability'] ?? '';
 
             // build passcode HTML code
             $output .= <<<HTML
             <tr>
-                <td><span class="vbo-dac-table-passcode-id">{$activityId}</span></td>
-                <td><span class="vbo-dac-table-passcode-name">{$activityName}</span></td>
-                <td><span class="vbo-dac-table-passcode-id">{$activityAuthId}</span></td>
-                <td>{$activityAction}</td>
-                <td>{$activityTrigger}</td>
-                <td>{$activityState}</td>
-                <td>{$activitySource}</td>
-                <td>{$activityDate}</td>
+                <td><span class="vbo-dac-table-passcode-name">{$lockStatusName}</span></td>
+                <td><span class="vbo-dac-table-passcode-code">{$lockStatusValue}</span></td>
+                <td><span class="vbo-dac-table-passcode-id">{$lockStatusCap}</span></td>
             </tr>
 HTML;
         }
@@ -822,7 +1006,7 @@ HTML;
 HTML;
 
         // return the capability result object by setting the output value
-        return (new VBODooraccessDeviceCapabilityResult($activities))
+        return (new VBODooraccessDeviceCapabilityResult($lockStatesList))
             ->setOutput($output);
     }
 
@@ -906,14 +1090,14 @@ HTML;
 
             /**
              * The generation of booking passcodes is asynchronous, hence we don't immediately get and store the
-             * passcode ID to be used for deleting it immediately. We need to "search" the passcode by name.
+             * lock user ID to be used for deleting it immediately. We need to "search" the lock user by name.
              */
 
             // get the previous passcode name
             $previousPasscodeName = ($previousData['props']['name'] ?? '');
 
             if (empty($previousPasscodeName) || in_array($previousPasscodeName, $previousPasscodeNamings)) {
-                // no passcode name to search and delete, or already deleted
+                // no lock-user name to search and delete, or already deleted
                 continue;
             }
 
@@ -923,15 +1107,13 @@ HTML;
             try {
                 // attempt to find the passcode on this device by name, which includes booking and listing IDs
                 $findResult = $this->listPasscodes($device, [
-                    // type "Keypad"
-                    'type'   => 13,
-                    // inject search property to match this exact passcode name
+                    // inject search property to match this exact lock-user (passcode) name
                     'search' => sprintf('bid:%d-%d', $registry->getID(), $listingId),
                 ]);
 
                 if (!$findResult->getProperties()) {
-                    // passcode not found by name
-                    throw new Exception('Previous passcode not found by name.', 404);
+                    // lock-user not found by name
+                    throw new Exception('Previous lock-user not found by name.', 404);
                 }
 
                 // iterate the list of passcodes found, even if only one is expected
@@ -961,15 +1143,13 @@ HTML;
         try {
             // find the previously created passcode for this booking and listing
             $findResult = $this->listPasscodes($device, [
-                // type "Keypad"
-                'type'   => 13,
-                // inject search property to match this exact passcode name
+                // inject search property to match this exact lock-user (passcode) name
                 'search' => sprintf('bid:%d-%d', $registry->getID(), $listingId),
             ]);
 
             if (!$findResult->getProperties()) {
-                // passcode not found
-                throw new Exception('Previous passcode not found.', 404);
+                // lock-user (passcode) not found
+                throw new Exception('Previous lock-user (passcode) not found.', 404);
             }
         } catch (Exception $e) {
             // nothing to cancel, but prevent unwanted errors not related to the real cancellation
@@ -1006,15 +1186,30 @@ HTML;
     /**
      * @inheritDoc
      * 
-     * @link    https://api.nuki.io/#/Smartlock/SmartlocksResource_get_get
+     * @link    https://doc.api.u-tec.com/ Retrieve Device List
      */
     protected function fetchRemoteDevices()
     {
-        // start transporter
-        $transporter = $this->createHTTPTransporter();
+        // start transporter (by setting the Content-Type header)
+        $transporter = $this->createHTTPTransporter([
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+        ]);
 
-        // make a request to obtain the lock list of an account
-        $response = $transporter->get('https://api.nuki.io/smartlock', $this->httpHeaders, 20);
+        // build request data
+        $data = [
+            'header' => [
+                'namespace' => 'Uhome.Device',
+                'name' => 'Discovery',
+                'messageId' => VBOPerformanceIndicator::uuid(),
+                'payloadVersion' => '1',
+            ],
+            'payload' => new stdClass,
+        ];
+
+        // make the API request
+        $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
 
         // obtain the response data
         $responseData = (array) json_decode((string) $response->body, true);
@@ -1024,14 +1219,18 @@ HTML;
             throw new Exception($response->body ?: 'Error fetching the remove devices.', ($response->code ?: 500));
         }
 
-        // get the list of devices returned
-        $devices = $responseData;
-
-        if (empty($devices[0]['smartlockId'])) {
+        if (empty($responseData['payload']['devices'])) {
             throw new Exception('No devices found under the current account.', 500);
         }
 
-        return $devices;
+        /**
+         * We should register the Notification URL at this point to allow
+         * Webhook Notifications to be delivered by U-tec for any device.
+         */
+        $this->registerNotificationURL();
+
+        // return the list of devices fetched
+        return (array) $responseData['payload']['devices'];
     }
 
     /**
@@ -1039,28 +1238,36 @@ HTML;
      */
     protected function decorateDeviceProperties(VBODooraccessIntegrationDevice $decorator, array $device)
     {
-        // set device ID
-        $decorator->setID($device['smartlockId'] ?? '');
+        // set device ID (device MAC address)
+        $decorator->setID(($device['id'] ?? ''), $raw = true);
 
         // set device name
         $decorator->setName($device['name'] ?? '');
 
         // set device description
-        $decorator->setDescription($device['accountId'] ?? '');
+        $decorator->setDescription(implode(' - ', array_filter([
+            $device['category'] ?? '',
+            $device['handleType'] ?? '',
+        ])));
 
         // set device icon
-        $decorator->setIcon('<i class="' . VikBookingIcons::i('fingerprint') . '"></i>');
-
-        // map device model (type)
-        $modelName = ($device['type'] ?? '') ? $this->getDeviceTypes((int) $device['type'], true) : '';
+        if (!strcasecmp(($device['category'] ?? ''), 'LIGHT')) {
+            // not a smartlock, but a light
+            $decorator->setIcon('<i class="' . VikBookingIcons::i('lightbulb') . '"></i>');
+        } elseif (stripos(($device['category'] ?? ''), 'plug') !== false) {
+            // not a smartlock, but a smart-plug
+            $decorator->setIcon('<i class="' . VikBookingIcons::i('plug') . '"></i>');
+        } else {
+            // default to smartlock
+            $decorator->setIcon('<i class="' . VikBookingIcons::i('fingerprint') . '"></i>');
+        }
 
         // set device model
-        $decorator->setModel($modelName);
-
-        if ($device['state']['batteryCharge'] ?? null) {
-            // set device battery level
-            $decorator->setBatteryLevel((float) $device['state']['batteryCharge']);
-        }
+        $decorator->setModel($device['deviceInfo']['model'] ?? '');
+        $decorator->setModel(implode(' - ', array_filter([
+            $device['deviceInfo']['manufacturer'] ?? '',
+            $device['deviceInfo']['model'] ?? '',
+        ])));
 
         // set device capabilities
         $decorator->setCapabilities([
@@ -1087,18 +1294,6 @@ HTML;
                 'description' => JText::translate('VBO_LIST_PASSCODES_HELP'),
                 'icon'        => '<i class="' . VikBookingIcons::i('key') . '"></i>',
                 'callback'    => 'listPasscodes',
-                'params'      => [
-                    'type' => [
-                        'type'    => 'select',
-                        'label'   => JText::translate('VBPSHOWSEASONSTHREE'),
-                        'options' => [
-                            'any' => sprintf('- %s', JText::translate('VBANYTHING')),
-                            13    => 'Keypad',
-                            0     => 'App',
-                            2     => 'Fob',
-                        ],
-                    ],
-                ],
             ]),
             // create (custom) passcode
             $this->createDeviceCapability([
@@ -1111,7 +1306,7 @@ HTML;
                     'pwdvalue' => [
                         'type'    => 'text',
                         'label'   => JText::translate('VBO_PASSCODE'),
-                        'help'    => JText::translate('VBO_PASSCODE_EMPTY_HELP') . ' 6 digits (1-9), should not start with 12 and should not contain 0.',
+                        'help'    => JText::translate('VBO_PASSCODE_EMPTY_HELP') . ' 4-8 digits (1-9, 6 digits by default), should not start with 12 and should not contain 0.',
                         'attributes' => [
                             'pattern' => '^(?!12)[1-9]{6}$',
                         ],
@@ -1144,6 +1339,7 @@ HTML;
                     'pwdid' => [
                         'type'  => 'text',
                         'label' => 'Passcode ID',
+                        'help'  => 'The password ID to delete. List all passcodes to find it.',
                     ],
                 ],
             ]),
@@ -1158,6 +1354,15 @@ HTML;
                     'pwdid' => [
                         'type'  => 'text',
                         'label' => 'Passcode ID',
+                        'help'  => 'The password ID to update. List all passcodes to find it.',
+                    ],
+                    'pwdvalue' => [
+                        'type'    => 'text',
+                        'label'   => JText::translate('VBO_PASSCODE'),
+                        'help'    => 'Leave empty to keep the existing password.',
+                        'attributes' => [
+                            'pattern' => '^(?!12)[1-9]{6}$',
+                        ],
                     ],
                     'startdate' => [
                         'type'  => 'datetime',
@@ -1171,409 +1376,135 @@ HTML;
                     ],
                 ],
             ]),
-            // show activity logs
+            // check (query) device status
             $this->createDeviceCapability([
-                'id'          => 'activity_logs',
-                'title'       => JText::translate('VBO_ACTIVITY_LOGS'),
-                'description' => JText::translate('VBO_ACTIVITY_LOGS_HELP'),
-                'icon'        => '<i class="' . VikBookingIcons::i('search') . '"></i>',
-                'callback'    => 'showActivityLogs',
-                'params'      => [
-                    'startdate' => [
-                        'type'  => 'datetime',
-                        'label' => JText::translate('VBOREPORTSDATEFROM'),
-                    ],
-                    'enddate' => [
-                        'type'  => 'datetime',
-                        'label' => JText::translate('VBOREPORTSDATETO'),
-                    ],
-                ],
+                'id'          => 'device_status',
+                'title'       => JText::translate('VBSTATUS'),
+                'description' => 'Check the current device status.',
+                'icon'        => '<i class="' . VikBookingIcons::i('signal') . '"></i>',
+                'callback'    => 'checkStatus',
             ]),
         ]);
 
-        // set device payload by unsetting the unwanted properties
-        unset(
-            $device['advancedConfig'],
-            $device['openerAdvancedConfig'],
-            $device['smartdoorAdvancedConfig'],
-            $device['webConfig'],
-            $device['previousSubscriptions'],
-            $device['currentSubscription']
-        );
+        // set device payload
         $decorator->setPayload($device);
     }
 
     /**
-     * Handles a Nuki Webhook notification of type "DEVICE_STATUS".
+     * Registers the Notification URL to receive Webhook notifications from U-tec.
      * 
-     * @param   ?array  $data   The notification payload array.
-     * 
-     * @return  void
-     * 
-     * @throws  Exception
-     */
-    protected function webhookHandleDeviceStatus(?array $data = null)
-    {
-        if (empty($data['smartlockId'])) {
-            // useless to proceed without knowing the device ID
-            // abort with no error status codes
-            throw new Exception('Missing smartlock ID.', 200);
-        }
-
-        // access the current device by ID
-        try {
-            $device = $this->getDeviceById((string) $data['smartlockId']);
-        } catch (Exception $e) {
-            // abort with no error status codes
-            throw new Exception($e->getMessage(), 200);
-        }
-
-        if (is_numeric($data['state']['batteryCharge'] ?? null)) {
-            // update the device battery level
-            $device->setBatteryLevel((float) $data['state']['batteryCharge']);
-        }
-
-        // update current device
-        try {
-            VBODooraccessFactory::getInstance()->saveIntegrationRecord($this, ['devices' => $this->getDevices()]);
-        } catch (Exception $e) {
-            // abort with no error status codes
-            throw new Exception($e->getMessage(), 200);
-        }
-    }
-
-    /**
-     * Handles a Nuki Webhook notification of type "DEVICE_LOGS".
-     * 
-     * @param   ?array  $data   The notification payload array.
+     * @param   bool    $updateToken    True to generate a new verification token.
      * 
      * @return  void
      * 
      * @throws  Exception
+     * 
+     * @todo    they need an "access_token": at the moment we are generating a random token
+     *          internally to pass it to U-tec for the registration. They suggest to change
+     *          it periodically, so we are guessing they don't want the OAuth2 access token
+     *          that would be obtained through $this->getOauthToken(). However, their response
+     *          payload property was empty in both cases.
      */
-    protected function webhookHandleDeviceLogs(?array $data = null)
+    protected function registerNotificationURL(bool $updateToken = false)
     {
-        if (empty($data['smartlockLog']['smartlockId'])) {
-            // useless to proceed without knowing the device ID
-            // abort with no error status codes
-            throw new Exception('Missing smartlock ID.', 200);
-        }
+        // access the integration settings
+        $settings = $this->getSettings();
 
-        // access the current device by ID
-        try {
-            $device = $this->getDeviceById((string) $data['smartlockLog']['smartlockId']);
-        } catch (Exception $e) {
-            // abort with no error status codes
-            throw new Exception($e->getMessage(), 200);
-        }
+        // obtain current webhook token
+        $webhookToken = $settings['_webhook']['token'] ?? null;
 
-        // identify log action, trigger, state and source
-        $logAction  = $data['smartlockLog']['action'] ?? null;
-        $logTrigger = $data['smartlockLog']['trigger'] ?? null;
-        $logState   = $data['smartlockLog']['state'] ?? null;
-        $logSource  = $data['smartlockLog']['source'] ?? null;
-
-        /**
-         * Check if the smartlock log refers to a successful authentication code through keypad.
-         * 
-         * Action:  should be 3, 1 or 5 (unlatch, unlock, lock-n-go with unlatch).
-         * Trigger: should be 255 (keypad).
-         * State:   should be 0 (successful).
-         * Source:  should be 1 or 2 (keypad or fingerprint).
-         */
-        if (($logAction == 1 || $logAction == 3) && $logTrigger == 255 && $logState == 0 && ($logSource == 1 || $logSource == 2)) {
-            // the device webhook log refers to a keypad/fingerprint successfuly authentication
-
-            // attempt to match a previously generated passcode name and authentication ID
-            if (empty($data['smartlockLog']['authId']) || !preg_match('/^bid\:([0-9]+)\-([0-9]+)$/', (string) ($data['smartlockLog']['name'] ?? ''), $matches)) {
-                // silently abort with a success code in order to not break the webhook response
-                throw new Exception('Smartlock log verified with no needed actions.', 200);
-            }
-
-            // identify booking ID and booking room ID from authentication code name
-            $bookingId = (int) $matches[1];
-            $bookingRoomId = (int) $matches[2];
-
-            // obtain the booking details
-            $booking = VikBooking::getBookingInfoFromID($bookingId);
-
-            if (!$booking) {
-                // silently abort with a success code in order to not break the webhook response
-                throw new Exception('Smartlock log verified with no booking details.', 200);
-            }
-
-            // wrap the booking information into a registry
-            $registry = VBOBookingRegistry::getInstance($booking);
-
-            // obtain the authentication ID
-            $authenticationId  = (string) $data['smartlockLog']['authId'];
-
-            // make sure a first access notification for this booking was not already processed
-            $history = VikBooking::getBookingHistoryInstance($booking['id']);
-
-            if ($history->hasEvent('FA')) {
-                // silently abort with a success code in order to not break the webhook response
-                throw new Exception('Smartlock log already processed.', 200);
-            }
-
-            // we trust the webhook notification authentication ID to be the one previously generated
-            // without performing any API request to match the authentication code saved in the history
-
-            // store booking history record
-            VikBooking::getBookingHistoryInstance($registry->getID())
-                ->setBookingData($registry->getData(), $registry->getRooms())
-                ->setExtraData([
-                    'provider' => $this->getProfileProvider(),
-                    'profile'  => $this->getProfileID(),
-                    'device'   => $device->getID(),
-                ])
-                ->store('FA', sprintf('%s - %s: %s', (string) $this->getProfileName(), (string) $device->getName(), $authenticationId));
-
-            // store an entry within the notifications center for the successful operation
-            VBOFactory::getNotificationCenter()
-                ->store([
-                    [
-                        'sender'  => 'dac',
-                        'type'    => 'dac.FA.ok',
-                        'title'   => sprintf('%s - %s', (string) $this->getProfileName(), (string) $device->getName()),
-                        'summary' => sprintf('%s: %s', JText::translate('VBOBOOKHISTORYTFA'), $authenticationId),
-                        'idorder' => $registry->getID(),
-                        'avatar'  => preg_match('/^http/', (string) $this->getIcon()) ? $this->getIcon() : null,
-                    ],
-                ]);
-
-            // terminate and go no further
+        if ($webhookToken && !$updateToken) {
+            // the notification URL was already registered with success
             return;
         }
-    }
 
-    /**
-     * Given a date-time string in military format, returns the ISO 8601 / RFC 3339 date.
-     * 
-     * @param   string  $dateTime   The datetime in military format, eventually with time.
-     * 
-     * @return  string              The formatted date in UTC timezone.
-     */
-    private function getDateRFC3339(string $dateTime)
-    {
-        // construct datetime object
-        $dt = new DateTime($dateTime, new DateTimeZone(date_default_timezone_get()));
-
-        // force the timezone to be UTC
-        $dt->setTimezone(new DateTimeZone('UTC'));
-
-        // return the formatted date
-        return $dt->format('Y-m-d\TH:i:s.v\Z');
-    }
-
-    /**
-     * HTTP requests towards Nuki require the smartlock ID to be an integer, but
-     * for some locks, the value fetched is in hexadecimal format. In order to
-     * convert it into decimal format, hence integer, we also need to prefix a
-     * number matching the device type to obtain a valid decimal ID for the lock.
-     * 
-     * @param   VBODooraccessIntegrationDevice  $device     The device to parse.
-     * 
-     * @return  int     The decimal smartlock ID.
-     */
-    private function getDecimalDeviceID(VBODooraccessIntegrationDevice $device)
-    {
-        // obtain the current device ID
-        $deviceId = (string) $device->getID();
-
-        if (!preg_match('/(?=.*[a-fA-F])[0-9a-fA-F]+/', $deviceId)) {
-            // no hexadecimal values found within the device ID, hence it's supposingly a decimal value
-            return (int) $deviceId;
+        if (!$webhookToken || $updateToken) {
+            // generate a new token
+            $webhookToken = VikBooking::getCPinInstance()->generateSerialCode(32, [
+                'abcdefghijklmnopqrstuvwxyz',
+                '0123456789',
+            ]);
         }
 
-        // attempt to access the device type
-        $devicePayload  = $device->getPayload();
-        $deviceTypeInfo = $this->getDeviceTypes($devicePayload['type'] ?? -1);
-        $deviceTypeId   = $deviceTypeInfo['type'] ?? 0;
+        // start transporter (by setting the Content-Type header)
+        $transporter = $this->createHTTPTransporter([
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+        ]);
 
-        // prefix the hexadecimal string with exact device type prefix
-        $prefixedHex = $deviceTypeId . $deviceId;
-
-        // return the converted decimal ID for the device
-        return (int) hexdec($prefixedHex);
-    }
-
-    /**
-     * Fetches the activity action name from the given code.
-     * 
-     * @param   int     $code   The activity action code.
-     * 
-     * @return  string
-     */
-    private function getActivityAction(int $code)
-    {
-        $list = [
-            1   => 'unlock',
-            2   => 'lock',
-            3   => 'unlatch',
-            4   => 'lock\'n\'go',
-            5   => 'lock\'n\'go with unlatch',
-            6   => 'activate cm',
-            7   => 'deactivate cm',
-            208 => 'door warning ajar',
-            209 => 'door warning status mismatch',
-            224 => 'doorbell recognition (only Opener)',
-            240 => 'door opened',
-            241 => 'door closed',
-            242 => 'door sensor jammed',
-            243 => 'firmware update',
-            250 => 'door log enabled',
-            251 => 'door log disabled',
-            252 => 'initialization',
-            253 => 'calibration',
-            254 => '(activity) log enabled',
-            255 => '(activity) log disabled',
+        // build request data
+        $data = [
+            'header' => [
+                'namespace' => 'Uhome.Configure',
+                'name' => 'Set',
+                'messageId' => VBOPerformanceIndicator::uuid(),
+                'payloadVersion' => '1',
+            ],
+            'payload' => [
+                'configure' => [
+                    'notification' => [
+                        // this is a value that will be used to sign the Webhook requests
+                        'access_token' => $webhookToken,
+                        // webhook endpoint URL for the current integration profile
+                        'url' => $this->buildWebhookURL(),
+                    ],
+                ],
+            ],
         ];
 
-        return $list[$code] ?? '';
-    }
+        // make the API request
+        $response = $transporter->post('https://api.u-tec.com/action', json_encode($data), $this->httpHeaders, 60);
 
-    /**
-     * Fetches the activity trigger name from the given code.
-     * 
-     * @param   int     $code   The activity trigger code.
-     * 
-     * @return  string
-     */
-    private function getActivityTrigger(int $code)
-    {
-        $list = [
-            0   => 'system (bluetooth)',
-            1   => 'manual',
-            2   => 'button',
-            3   => 'automatic',
-            4   => 'web',
-            5   => 'app',
-            6   => 'auto lock',
-            7   => 'external accessory',
-            255 => 'keypad',
+        // obtain the response data
+        $responseData = (array) json_decode((string) $response->body, true);
+
+        if (empty($response->code) || $response->code > 299) {
+            // an error occurred
+            throw new Exception($response->body ?: 'Error registering the notification URL.', ($response->code ?: 500));
+        }
+
+        // update settings to identify the webhook activation
+        $webhookDetails = [
+            'token'       => $webhookToken,
+            'creation_ts' => time(),
         ];
 
-        return $list[$code] ?? '';
+        // merge webhook details with any possible value obtained within the response
+        $webhookDetails = array_merge((array) ($responseData['payload'] ?? []), $webhookDetails);
+
+        // inject webhook details within the current integration settings
+        $settings['_webhook'] = $webhookDetails;
+
+        // update integration record settings
+        $this->setProfileRecordProp('settings', $settings);
+
+        // store integration record settings
+        VBODooraccessFactory::getInstance()->saveIntegrationRecord($this, ['settings' => $this->getSettings()]);
     }
 
     /**
-     * Fetches the activity state name from the given code.
+     * Maps the supported user type identifiers with name.
      * 
-     * @param   int     $code   The activity state code.
+     * @param   ?int    $type   Optional user type identifier to fetch.
+     * @param   bool    $name   True to get only the user type name.
      * 
-     * @return  string
+     * @return  array|string    Full list, user type array or type string name.
      */
-    private function getActivityState(int $code)
+    private function getUserTypes(?int $type = null, bool $name = false)
     {
-        $list = [
-            0   => 'Success',
-            1   => 'Motor blocked',
-            2   => 'Cancelled',
-            3   => 'Too recent',
-            4   => 'Busy',
-            5   => 'Low motor voltage',
-            6   => 'Clutch failure',
-            7   => 'Motor power failure',
-            8   => 'Incomplete',
-            9   => 'Rejected',
-            10  => 'Rejected night mode',
-            254 => 'Other errors',
-            255 => 'Unknown error',
-        ];
-
-        return $list[$code] ?? '';
-    }
-
-    /**
-     * Fetches the activity source name from the given code.
-     * 
-     * @param   int     $code   The activity source code.
-     * 
-     * @return  string
-     */
-    private function getActivitySource(int $code)
-    {
-        $list = [
-            0 => 'Default',
-            1 => 'Keypad code',
-            2 => 'Fingerprint',
-        ];
-
-        return $list[$code] ?? '';
-    }
-
-    /**
-     * Maps the supported device type identifiers with name and prefix.
-     * 
-     * @param   ?int    $type   Optional device type identifier to fetch.
-     * @param   bool    $name   True to get only the device type name.
-     * 
-     * @return  array|string    Full list, device type array or type string name.
-     */
-    private function getDeviceTypes(?int $type = null, bool $name = false)
-    {
-        // list of device types, whose key "type" is equal to the hexadecimal prefix
         $list = [
             0 => [
-                'name' => 'Nuki Smartlock 1 or 2',
-                'type' => '0',
+                'name' => 'Normal User',
             ],
             1 => [
-                'name' => 'Nuki Box',
-                'type' => '1',
+                'name' => 'User',
             ],
             2 => [
-                'name' => 'Nuki Opener',
-                'type' => '2',
+                'name' => 'Temporary User',
             ],
             3 => [
-                'name' => 'Nuki Smartdoor',
-                'type' => '3',
-            ],
-            4 => [
-                'name' => 'Nuki Smartlock 3rd/4th Gen (Basic & Pro)',
-                'type' => '4',
-            ],
-            5 => [
-                'name' => 'Nuki Smartlock Ultra',
-                'type' => '5',
-            ],
-        ];
-
-        if (is_null($type)) {
-            return $list;
-        }
-
-        if (!$name) {
-            return $list[$type] ?? [];
-        }
-
-        return $list[$type]['name'] ?? '';
-    }
-
-    /**
-     * Maps the supported passcode type identifiers with name and description.
-     * 
-     * @param   ?int    $type   Optional passcode type identifier to fetch.
-     * @param   bool    $name   True to get only the passcode name.
-     * 
-     * @return  array|string    Full list, passcode type array or passcode string name.
-     */
-    private function getPasscodeTypes(?int $type = null, bool $name = false)
-    {
-        $list = [
-            0 => [
-                'name' => 'App',
-                'descr' => 'Authentication code for the App.',
-            ],
-            2 => [
-                'name' => 'Fob',
-                'descr' => 'Authentication code for Fob.',
-            ],
-            13 => [
-                'name' => 'Keypad',
-                'descr' => 'Authentication code for the Keypad.',
+                'name' => 'Admin',
             ],
         ];
 
@@ -1590,8 +1521,8 @@ HTML;
 
     /**
      * Generates a random serial code made of only digits with a given length.
-     * The sequence obtained will never contain zeros to support the Nuki Keypad
-     * and it will not start with "12".
+     * The sequence obtained will never contain zeros for integer requirements
+     * and it will not start with "12" for better randomness.
      * 
      * @param   int     $length     The passcode length.
      * 
@@ -1607,7 +1538,7 @@ HTML;
     }
 
     /**
-     * Creates the HTTP Transporter to establish API connections with Nuki.
+     * Creates the HTTP Transporter to establish API connections with U-tec.
      * An integration profile record is supposed to be set before making an HTTP request.
      * 
      * @param   ?array  $options    Optional transporter options.
@@ -1621,36 +1552,23 @@ HTML;
         // access current profile settings
         $settings = $this->getSettings();
 
-        // determine the authentication method: OAuth2 or API Token
-        $authMethod = ($settings['authmeth'] ?? '') == 'oauth' ? 'oauth' : 'api_token';
+        if (empty($settings['client_id']) || empty($settings['client_secret'])) {
+            // settings must be configured
+            throw new Exception('Missing OAuth2 API Key (Client ID) and OAuth2 API Secret (Client Secret). Please go through settings.', 500);
+        }
 
-        // access the bearer token depending on the authentication method configured
+        // access bearer token
         $bearerToken = null;
 
-        if ($authMethod === 'api_token') {
-            if (empty($settings['api_token'])) {
-                throw new Exception('Missing API Token for Web API (settings).', 500);
+        // ensure we are not actually using the transporter for authorising the application
+        if (empty($options['doing_oauth'])) {
+            if (empty($settings['_oauth']['access_token'])) {
+                // application must be authorised
+                throw new Exception('Missing OAuth2 authorisation data for the application. Please go through settings.', 500);
             }
 
-            // use static token from configuration settings
-            $bearerToken = $settings['api_token'];
-        } else {
-            // authentication method is OAuth2
-            if (empty($settings['oauth2_api_key']) || empty($settings['oauth2_api_secret'])) {
-                // settings must be configured
-                throw new Exception('Missing OAuth2 API Key (Client ID) and OAuth2 API Secret (Client Secret). Please go through settings.', 500);
-            }
-
-            // ensure we are not actually using the transporter for authorising the application
-            if (empty($options['doing_oauth'])) {
-                if (empty($settings['_oauth']['access_token'])) {
-                    // application must be authorised
-                    throw new Exception('Missing OAuth2 authorisation data for the application. Please go through settings.', 500);
-                }
-
-                // get or refresh the access (bearer) token
-                $bearerToken = $this->getOauthToken();
-            }
+            // get or refresh the access (bearer) token
+            $bearerToken = $this->getOauthToken();
         }
 
         // set HTTP headers
@@ -1673,7 +1591,7 @@ HTML;
     }
 
     /**
-     * Obtains an active OAuth (Bearer) token to establish API connections with Nuki.
+     * Obtains an active OAuth (Bearer) token to establish API connections with U-tec.
      * In this case, the authentication method configured should be "OAuth".
      * 
      * @return  string      An active OAuth (Bearer) token.
@@ -1700,20 +1618,18 @@ HTML;
     }
 
     /**
-     * Makes an API request with Nuki to refresh and save the OAuth token for any HTTP request.
+     * Makes an API request with U-tec to refresh and save the OAuth token for any HTTP request.
      * 
      * @return  string  An active OAuth (Bearer) token ready to be used.
      * 
      * @throws  Exception
-     * 
-     * @link    https://developer.nuki.io/
      */
     private function renewOauthToken()
     {
         // access current profile settings
         $settings = $this->getSettings();
 
-        if (empty($settings['oauth2_api_key']) || empty($settings['oauth2_api_secret'])) {
+        if (empty($settings['client_id']) || empty($settings['client_secret'])) {
             // settings must be configured
             throw new Exception('Missing OAuth2 API Key (Client ID) and OAuth2 API Secret (Client Secret). Please go through settings.', 500);
         }
@@ -1726,13 +1642,13 @@ HTML;
         // build request data
         $data = [
             'grant_type'    => 'refresh_token',
-            'client_id'     => $settings['oauth2_api_key'],
-            'client_secret' => $settings['oauth2_api_secret'],
+            'client_id'     => $settings['client_id'],
+            'client_secret' => $settings['client_secret'],
             'refresh_token' => $settings['_oauth']['refresh_token'],
         ];
 
         // exchange the settings to obtain the OAuth token details
-        $response = (new JHttp)->post('https://api.nuki.io/oauth/token', http_build_query($data), ['Content-Type' => 'application/x-www-form-urlencoded'], 10);
+        $response = (new JHttp)->post('https://oauth.u-tec.com/token', http_build_query($data), ['Content-Type' => 'application/x-www-form-urlencoded'], 10);
 
         // obtain the response data
         $responseData = (array) json_decode((string) $response->body, true);

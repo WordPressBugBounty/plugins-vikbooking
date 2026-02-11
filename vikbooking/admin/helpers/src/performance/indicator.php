@@ -28,11 +28,11 @@ final class VBOPerformanceIndicator
     /**
      * Starts an indicator to measure the performances.
      * 
-     * @param   string  $id  The indicator identifier.
+     * @param   ?string     $id     Optional indicator identifier.
      * 
-     * @return  string       The indicator identifier.
+     * @return  string              The indicator identifier.
      */
-    public static function start(string $id = '')
+    public static function start(?string $id = null)
     {
         if (!$id) {
             $id = static::uuid();
@@ -52,11 +52,11 @@ final class VBOPerformanceIndicator
     /**
      * Ends an indicator to measure the performances.
      * 
-     * @param   string  $id  The indicator identifier.
+     * @param   ?string     $id     Optional indicator identifier.
      * 
-     * @return  array        List of measurements.
+     * @return  array               List of measurements.
      */
-    public static function end(string $id = '')
+    public static function end(?string $id = null)
     {
         if (!$id) {
             $id = end(static::$indicators)['id'] ?? '';
@@ -99,29 +99,48 @@ final class VBOPerformanceIndicator
     /**
      * Registers a memory peak within an indicator.
      * 
-     * @param   string  $id  The indicator identifier.
+     * @param   ?string     $name   Optional peak name for identification.
+     * @param   ?string     $id     Optional indicator identifier.
+     * @param   bool        $onLast Whether to replace the last peak container.
      * 
      * @return  void
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP) added argument $name, $onLast, signature changed.
      */
-    public static function peak(string $id = '')
+    public static function peak(?string $name = null, ?string $id = null, bool $onLast = false)
     {
         if (!$id) {
             $id = end(static::$indicators)['id'] ?? '';
         }
 
-        $start_metrics = static::$indicators[$id] ?? [];
-
-        if (!$start_metrics) {
+        if (!(static::$indicators[$id] ?? [])) {
             return;
         }
 
         $now_memory = memory_get_usage();
 
-        // push peak
-        static::$indicators[$id]['peaks'] = [
+        // build peak container
+        $peakContainer = [
+            'name'     => $name,
             'memory'   => $now_memory,
             'memory_r' => static::formatMemoryBytes($now_memory),
         ];
+
+        if ($onLast) {
+            // get last peak container
+            $lastPeak = end(static::$indicators[$id]['peaks']);
+
+            if ($lastPeak) {
+                // replace last peak container
+                array_splice(static::$indicators[$id]['peaks'], count(static::$indicators[$id]['peaks']) - 1, 1, [$peakContainer]);
+
+                // do not proceed
+                return;
+            }
+        }
+
+        // push peak container
+        static::$indicators[$id]['peaks'][] = $peakContainer;
     }
 
     /**
@@ -131,7 +150,7 @@ final class VBOPerformanceIndicator
      * 
      * @return  void
      */
-    public static function getAll($end = true)
+    public static function getAll(bool $end = true)
     {
         $list = [];
 

@@ -1997,7 +1997,8 @@ class VBOModelReservation extends JObject
 	{
 		$booking_info = $this->getProperties();
 
-		if (empty($booking_info['paymentlog'])) {
+		if (empty($booking_info['paymentlog']) && empty($booking_info['idorderota'])) {
+			// do not proceed when no CC data is available, or cannot be obtained via API
 			return [];
 		}
 

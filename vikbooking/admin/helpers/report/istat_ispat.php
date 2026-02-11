@@ -286,6 +286,9 @@ class VikBookingReportIstatIspat extends VikBookingReport
 		// get VBO Application Object
 		$vbo_app = VikBooking::getVboApplication();
 
+		// get the possibly injected report options
+		$options = $this->getReportOptions();
+
 		// load the jQuery UI Datepicker
 		$this->loadDatePicker();
 
@@ -353,7 +356,7 @@ class VikBookingReportIstatIspat extends VikBookingReport
 					'name' => 'listings[]',
 					'multiple' => 'multiple',
 				],
-				'selected_values' => (array) $app->input->get('listings', [], 'array'),
+				'selected_values' => (array) ($app->input->get('listings', [], 'array') ?: $options->get('listings', [])),
 			]) . '</span>',
 			'type' => 'select',
 			'multiple' => true,
@@ -997,11 +1000,11 @@ class VikBookingReportIstatIspat extends VikBookingReport
 		$options = $this->getReportOptions();
 
 		// from date filter
-		$pfromdate = $options->get('fromdate', '') ?: $app->input->getString('fromdate', '');
+		$pfromdate = $app->input->getString('fromdate', '') ?: $options->get('fromdate', '');
 		$pfromdate_ts = VikBooking::getDateTimestamp($pfromdate);
 
 		// optional listings filtered
-		$plistings = (array) ($options->get('listings', []) ?: $app->input->get('listings', [], 'array'));
+		$plistings = (array) ($app->input->get('listings', [], 'array') ?: $options->get('listings', []));
 
 		// custom data manually filled before saving and reloading
 		$pfiller = $app->input->get('filler', '', 'raw');

@@ -37,10 +37,29 @@ class JSessionHandler
 		    return;
 		}
 
-		if (!self::isStarted())
+		/**
+		 * Do not go ahead in case the session has been already started, otherwise duplicate
+		 * calls to this method risks to register the same hook more than once.
+		 * 
+		 * @since 10.1.70
+		 */
+		if (self::isStarted())
 		{
-			session_start();
+			return;
 		}
+
+		/**
+		 * In case the headers have been already sent, trigger warning and abort.
+		 * 
+		 * @since 10.1.70
+		 */
+		if (headers_sent())
+		{
+			trigger_error('Session cannot be started after headers have already been sent', E_USER_WARNING);
+			return;
+		}
+
+		session_start();
 
 		/**
 		 * Filters whether to preempt an HTTP request's return value.

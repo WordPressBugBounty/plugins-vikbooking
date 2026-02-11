@@ -2741,7 +2741,7 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 		 */
 		$xmlObj = simplexml_load_string($env_fee_data['xml']);
 		if ($xmlObj->invoice->uid ?? null) {
-			// delete nodes
+			// delete nodes, will be added back in case of successful transmission
 			unset($xmlObj->invoice->uid, $xmlObj->invoice->mark);
 
 			// re-build XML string
@@ -2786,6 +2786,39 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 			// get the invoice QRCode URL
 			$invoice_qrcode = isset($res_obj->response->qrUrl) ? (string)$res_obj->response->qrUrl : null;
 			$invoice_qrcode = !isset($res_obj->response->qrUrl) && isset($res_obj->response->qrCodeUrl) ? (string)$res_obj->response->qrCodeUrl : $invoice_qrcode;
+
+			/**
+			 * Update the original XML on main invoice to set the content of the nodes UID and Mark, because
+			 * they were removed at runtime before the transmission after the myDATA update (Jan 2026).
+			 * 
+			 * @since 	1.18.6 (J) - 1.8.6 (WP)
+			 */
+			if ($invoice_uid && $invoice_mark) {
+				// load XML e-invoice
+				$dom = new DOMDocument();
+				$dom->preserveWhiteSpace = false;
+				$dom->formatOutput = true;
+				$dom->loadXML($correlated_einv_final_xml);
+
+				// locate the parent <invoice> node
+				$invoiceNode = $dom->getElementsByTagName('invoice')->item(0);
+
+				// locate the <issuer> node
+				$issuerNode = $invoiceNode->getElementsByTagName('issuer')->item(0);
+
+				// create the two element nodes that should be added
+				$uidNode = $dom->createElement('uid', $invoice_uid);
+				$markNode = $dom->createElement('mark', $invoice_mark);
+
+				// take care of the mark node first, because it will go after uid
+				$invoiceNode->insertBefore($markNode, $issuerNode);
+
+				// take care of the uid node, by placing it before the mark node
+				$invoiceNode->insertBefore($uidNode, $markNode);
+
+				// update the final XML content before it gets saved
+				$correlated_einv_final_xml = $dom->saveXML();
+			}
 
 			// prepare data transmission values to be updated
 			$config_param_name   = $this->getCorrelatedInvoiceParamName($extras['einvid'], $extras['bid']);

@@ -1,5 +1,25 @@
 # Framework Changelog
 
+### 10.1.70
+
+*Release date - 9 February 2026*
+
+##### CHANGE
+
+* In case the session is not started at `init`, the framework will try to lazy load it when requested (only if possible).
+
+---
+
+### 10.1.69
+
+*Release date - 3 February 2026*
+
+##### ADD
+
+* Implemented `JSmsDriver::setOrder()` method to support runtime tags injection.
+
+---
+
 ### 10.1.68
 
 *Release date - 15 January 2026*

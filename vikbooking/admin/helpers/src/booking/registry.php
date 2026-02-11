@@ -39,9 +39,24 @@ class VBOBookingRegistry
     protected $currentRoomIndex = 0;
 
     /**
+     * @var  int
+     */
+    protected $currentRoomNumber = 0;
+
+    /**
      * @var  array
      */
     protected $dacData = [];
+
+    /**
+     * @var  array
+     */
+    protected $roomDetails = [];
+
+    /**
+     * @var  ?array
+     */
+    protected $customer = null;
 
     /**
      * Proxy to construct the object.
@@ -68,14 +83,14 @@ class VBOBookingRegistry
      */
     public function __construct(array $options, array $rooms = [], array $previous = [])
     {
-        if (empty($options['id'])) {
-            throw new Exception('Missing booking ID.', 500);
-        }
-
         // ensure we have enough booking details
-        if ($options === ['id' => $options['id']]) {
+        if ($options === ['id' => $options['id'] ?? 0]) {
             // load full booking details
             $options = VikBooking::getBookingInfoFromID($options['id']);
+        }
+
+        if (empty($options['id'])) {
+            throw new Exception('Missing booking ID.', 500);
         }
 
         // bind booking options to internal registry
@@ -84,6 +99,10 @@ class VBOBookingRegistry
         if (!$rooms) {
             // load booking rooms
             $rooms = VikBooking::loadOrdersRoomsData($this->getID());
+        }
+
+        if (!$rooms) {
+            throw new Exception('No booking rooms found.', 404);
         }
 
         // bind booking rooms
@@ -118,10 +137,21 @@ class VBOBookingRegistry
     /**
      * Returns the number of nights of stay for the current booking ID.
      * 
+     * @param   bool    $roomLevel  True to calculate the nights at room-level.
+     * 
      * @return  int
      */
-    public function getTotalNights()
+    public function getTotalNights(bool $roomLevel = false)
     {
+        if ($roomLevel) {
+            // get the stay timestamps at room-level
+            $stayTimestamps = $this->getStayTimestamps(true);
+
+            // return the room-level nights of stay
+            return VikBooking::getAvailabilityInstance()->countNightsOfStay($stayTimestamps[0], $stayTimestamps[1]) ?: 1;
+        }
+
+        // return the booking nights of stay
         return (int) $this->getProperty('days', 1);
     }
 
@@ -186,6 +216,21 @@ class VBOBookingRegistry
     public function getProperty(string $name, $default = null)
     {
         return $this->registry[$name] ?? $default;
+    }
+
+    /**
+     * Sets a value for the requested registry property name.
+     * 
+     * @param   string  $name     The registry property to set.
+     * @param   mixed   $value    The value to set.
+     * 
+     * @return  self
+     */
+    public function setProperty(string $name, $value)
+    {
+        $this->registry[$name] = $value;
+
+        return $this;
     }
 
     /**
@@ -290,6 +335,112 @@ class VBOBookingRegistry
     }
 
     /**
+     * Returns a list of booked listing IDs and subunits (0 if no subunit).
+     * 
+     * @param   bool    $unique     True to only get a unique list.
+     * 
+     * @return  array   Linear array of strings as "roomid-subunit".
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function getBookedListingSubunits(bool $unique = true)
+    {
+        $bookedListingSubunits = [];
+
+        foreach ($this->bookingRooms as $bookingRoom) {
+            // push booked listing ID and related subunit number
+            $bookedListingSubunits[] = sprintf('%d-%d', $bookingRoom['idroom'], (int) ($bookingRoom['roomindex'] ?? 0));
+        }
+
+        if ($unique) {
+            // remove duplicate entries on listing-level with no subunits
+            $bookedListingSubunits = array_values(array_unique($bookedListingSubunits));
+        }
+
+        return $bookedListingSubunits;
+    }
+
+    /**
+     * Counts the number of total adults, either at booking or room level.
+     * 
+     * @param   bool    $roomLevel  True to count the adults of the current room.
+     * 
+     * @return  int
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function countTotalAdults(bool $roomLevel = false)
+    {
+        if ($roomLevel) {
+            foreach ($this->bookingRooms as $index => $bookingRoom) {
+                if ($index == $this->getCurrentRoomIndex()) {
+                    return (int) ($bookingRoom['adults'] ?? 0);
+                }
+            }
+        }
+
+        return array_sum(array_map('intval', array_column($this->bookingRooms, 'adults')));
+    }
+
+    /**
+     * Counts the number of total children, either at booking or room level.
+     * 
+     * @param   bool    $roomLevel  True to count the children of the current room.
+     * 
+     * @return  int
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function countTotalChildren(bool $roomLevel = false)
+    {
+        if ($roomLevel) {
+            foreach ($this->bookingRooms as $index => $bookingRoom) {
+                if ($index == $this->getCurrentRoomIndex()) {
+                    return (int) ($bookingRoom['children'] ?? 0);
+                }
+            }
+        }
+
+        return array_sum(array_map('intval', array_column($this->bookingRooms, 'children')));
+    }
+
+    /**
+     * Counts the number of total pets, either at booking or room level.
+     * 
+     * @param   bool    $roomLevel  True to count the pets of the current room.
+     * 
+     * @return  int
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function countTotalPets(bool $roomLevel = false)
+    {
+        if ($roomLevel) {
+            foreach ($this->bookingRooms as $index => $bookingRoom) {
+                if ($index == $this->getCurrentRoomIndex()) {
+                    return (int) ($bookingRoom['pets'] ?? 0);
+                }
+            }
+        }
+
+        return array_sum(array_map('intval', array_column($this->bookingRooms, 'pets')));
+    }
+
+    /**
+     * Counts the number of total guests, either at booking or room level.
+     * 
+     * @param   bool    $roomLevel  True to count the guests of the current room.
+     * 
+     * @return  int
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function countTotalGuests(bool $roomLevel = false)
+    {
+        return $this->countTotalAdults($roomLevel) + $this->countTotalChildren($roomLevel);
+    }
+
+    /**
      * Returns the previous booking data.
      * 
      * @return  array
@@ -322,17 +473,277 @@ class VBOBookingRegistry
     }
 
     /**
-     * Returns the booking stay timestamps.
+     * Gets the current room number (1-based index).
+     * 
+     * @return  int
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function getCurrentRoomNumber()
+    {
+        return $this->currentRoomNumber;
+    }
+
+    /**
+     * Sets the current room number (1-based index).
+     * 
+     * @param   int     $number  The current room number.
+     * 
+     * @return  void
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function setCurrentRoomNumber(int $number)
+    {
+        $this->currentRoomNumber = $number;
+    }
+
+    /**
+     * Gets the room ID from the current room index set.
+     * 
+     * @return  int
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP) added argument $roomLevel.
+     */
+    public function getCurrentRoomID()
+    {
+        foreach ($this->getRooms() as $index => $bookingRoom) {
+            if ($index == $this->currentRoomIndex) {
+                return (int) $bookingRoom['idroom'];
+            }
+        }
+
+        return (int) (($this->getRooms()[0]['idroom'] ?? 0) ?: 0);
+    }
+
+    /**
+     * Returns the details for the given room ID or for all rooms set.
+     * 
+     * @param   ?int     $listingId  Optional listing ID to get.
      * 
      * @return  array
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
      */
-    public function getStayTimestamps()
+    public function getRoomDetails(?int $listingId = null)
     {
-        /**
-         * @todo    Do we need to do something different for split-stay bookings?
-         *          We are aware of the current room index when this method is called.
-         */
+        if ($listingId && !($this->roomDetails[$listingId] ?? [])) {
+            // obtain the information for the requested listing ID
+            $listingDetails = VikBooking::getRoomInfo($listingId, ['name', 'img', 'units', 'params'], true);
+            if ($listingDetails) {
+                // cache value
+                $this->setRoomDetails($listingId, $listingDetails);
+            }
+        }
 
+        if (!$listingId) {
+            return $this->roomDetails;
+        }
+
+        return $this->roomDetails[$listingId] ?? [];
+    }
+
+    /**
+     * Sets the details for the given room ID.
+     * 
+     * @param   int     $listingId  The listing ID to update.
+     * @param   array   $data       The details data to set.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function setRoomDetails(int $listingId, array $data)
+    {
+        $this->roomDetails[$listingId] = $data;
+
+        return $this;
+    }
+
+    /**
+     * Gets the booking customer details.
+     * 
+     * @return  array
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function getCustomer()
+    {
+        if ($this->customer === null) {
+            // load and cache customer details
+            $this->customer = VikBooking::getCPinInstance()->getCustomerFromBooking($this->getID());
+        }
+
+        return $this->customer;
+    }
+
+    /**
+     * Sets the booking customer details.
+     * 
+     * @param   array   $customer   Raw customer details.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function setCustomer(array $customer)
+    {
+        $this->customer = $customer;
+
+        return $this;
+    }
+
+    /**
+     * Gets the booking customer data: nominative, logo, provenience name.
+     * 
+     * @return  array   Numeric list of booking-customer data value strings.
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP)
+     */
+    public function getBookingCustomerData()
+    {
+        // starting values
+        $customer_nominative = '';
+        $booking_avatar_src  = '';
+        $booking_avatar_alt  = '';
+
+        if ($this->customer === null) {
+            // attempt to load customer details first
+            $this->getCustomer();
+        }
+
+        if (!empty($this->customer['first_name']) || !empty($this->customer['last_name'])) {
+            // check if we need to display a profile picture or a channel logo
+            if (!empty($this->customer['pic'])) {
+                // customer profile picture
+                $booking_avatar_src = strpos($this->customer['pic'], 'http') === 0 ? $this->customer['pic'] : VBO_SITE_URI . 'resources/uploads/' . $this->customer['pic'];
+                $booking_avatar_alt = basename($booking_avatar_src);
+            } elseif ($this->getProperty('idorderota') && $this->getProperty('channel')) {
+                // channel logo
+                $logo_helper = VikBooking::getVcmChannelsLogo($this->getProperty('channel'), $get_istance = true);
+                if ($logo_helper !== false) {
+                    $booking_avatar_src = $logo_helper->getSmallLogoURL();
+                    $booking_avatar_alt = $logo_helper->provenience;
+                }
+            }
+
+            if (!empty($booking_avatar_src)) {
+                // make sure the alt attribute is not too long in case of broken images
+                $booking_avatar_alt = !empty($booking_avatar_alt) && strlen($booking_avatar_alt) > 15 ? '...' . substr($booking_avatar_alt, -12) : $booking_avatar_alt;
+            }
+
+            // customer name
+            $customer_fullname = trim($this->customer['first_name'] . ' ' . $this->customer['last_name']);
+            if (strlen($customer_fullname) > 26) {
+                if (function_exists('mb_substr')) {
+                    $customer_fullname = trim(mb_substr($customer_fullname, 0, 26, 'UTF-8')) . '..';
+                } else {
+                    $customer_fullname = trim(substr($customer_fullname, 0, 26)) . '..';
+                }
+            }
+            $customer_nominative = $customer_fullname;
+        } else {
+            // parse the customer data string
+            $custdata_parts = explode("\n", (string) $this->getProperty('custdata'));
+            $enoughinfo = false;
+            if (count($custdata_parts) > 2 && strpos($custdata_parts[0], ':') !== false && strpos($custdata_parts[1], ':') !== false) {
+                // get the first two fields
+                $custvalues = array();
+                foreach ($custdata_parts as $custdet) {
+                    if (strlen($custdet) < 1) {
+                        continue;
+                    }
+                    $custdet_parts = explode(':', $custdet);
+                    if (count($custdet_parts) >= 2) {
+                        unset($custdet_parts[0]);
+                        array_push($custvalues, trim(implode(':', $custdet_parts)));
+                    }
+                    if (count($custvalues) > 1) {
+                        break;
+                    }
+                }
+                if (count($custvalues) > 1) {
+                    $enoughinfo = true;
+                    $customer_nominative = trim(implode(' ', $custvalues));
+                    if (strlen($customer_nominative) > 26) {
+                        if (function_exists('mb_substr')) {
+                            $customer_nominative = trim(mb_substr($customer_nominative, 0, 26, 'UTF-8')) . '..';
+                        } else {
+                            $customer_nominative = trim(substr($customer_nominative, 0, 26)) . '..';
+                        }
+                    }
+                    if ($this->getProperty('idorderota') && $this->getProperty('channel')) {
+                        // add support for the channel logo for the imported OTA reservations with no customer record
+                        $logo_helper = VikBooking::getVcmChannelsLogo($this->getProperty('channel'), $get_istance = true);
+                        if ($logo_helper !== false) {
+                            $booking_avatar_src = $logo_helper->getSmallLogoURL();
+                            $booking_avatar_alt = $logo_helper->provenience;
+                            // make sure the alt attribute is not too long in case of broken images
+                            $booking_avatar_alt = !empty($booking_avatar_alt) && strlen($booking_avatar_alt) > 15 ? '...' . substr($booking_avatar_alt, -12) : $booking_avatar_alt;
+                        }
+                    }
+                }
+            }
+            if (!$enoughinfo) {
+                $customer_nominative = '#' . $this->getID();
+            }
+        }
+
+        return [
+            $customer_nominative,
+            $booking_avatar_src,
+            $booking_avatar_alt,
+        ];
+    }
+
+    /**
+     * Returns the booking (or current room booking record) stay timestamps.
+     * 
+     * @param   bool    $roomLevel  True to return the stay timestamps at booking room level.
+     * 
+     * @return  array
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP) added argument $roomLevel.
+     */
+    public function getStayTimestamps(bool $roomLevel = false)
+    {
+        if ($roomLevel) {
+            // current room index signature for the stay timestamps
+            $roomSignature = '_stay_timestamps' . $this->getCurrentRoomIndex();
+
+            if ($cachedTimestamps = $this->getProperty($roomSignature)) {
+                // return the cached stay timestamps for the current room index
+                return $cachedTimestamps;
+            }
+
+            // load room occupied records
+            $room_stay_dates = VikBooking::getAvailabilityInstance(true)->loadSplitStayBusyRecords($this->getID());
+
+            // default room-level stay timestamps
+            $roomLevelCheckin  = $this->getProperty('checkin');
+            $roomLevelCheckout = $this->getProperty('checkout');
+
+            // split-stay booking or booked rooms for modified stay nights should rely on occupied records
+            if ($room_stay_dates[$this->getCurrentRoomIndex()] ?? []) {
+                // set booking-room-level stay timestamps
+                $roomLevelCheckin  = $room_stay_dates[$this->getCurrentRoomIndex()]['checkin'];
+                $roomLevelCheckout = $room_stay_dates[$this->getCurrentRoomIndex()]['checkout'];
+            }
+
+            // build room-level stay timestamps list
+            $roomLevelStayList = [
+                $roomLevelCheckin,
+                $roomLevelCheckout,
+            ];
+
+            // cache stay timestamps for the current room index
+            $this->setProperty($roomSignature, $roomLevelStayList);
+
+            // return booking-room-level stay timestamps, if different than global stay dates
+            return $roomLevelStayList;
+        }
+
+        // global reservation stay timestamps
         return [
             $this->getProperty('checkin'),
             $this->getProperty('checkout'),
@@ -402,9 +813,13 @@ class VBOBookingRegistry
     /**
      * Attempts to detect changes between the current and previous bookings.
      * 
+     * @param   bool    $roomLevel  True to also detect alterations at room-level.
+     * 
      * @return  bool    False if no changes were actually proved, true otherwise.
+     * 
+     * @since   1.18.7 (J) - 1.8.7 (WP) added argument $roomLevel.
      */
-    public function detectAlterations()
+    public function detectAlterations(bool $roomLevel = false)
     {
         if ($this->getProperty('checkin') != $this->getPreviousProperty('checkin')) {
             return true;
@@ -439,6 +854,20 @@ class VBOBookingRegistry
 
         if (!$current_room_ids || !$previous_room_ids || $current_room_ids != $previous_room_ids) {
             return true;
+        }
+
+        // attempt to also detect changes at room-level
+        if ($roomLevel) {
+            // check subunits
+            $current_room_indexes  = array_map('intval', array_column($this->getRooms(), 'roomindex'));
+            $previous_room_indexes = array_map('intval', array_column((array) $this->getPreviousProperty('rooms_info', []), 'roomindex'));
+            sort($current_room_indexes);
+            sort($previous_room_indexes);
+            // ensure room subunits information is available for current and previous booking
+            if ($current_room_indexes && $previous_room_indexes && $current_room_indexes != $previous_room_indexes) {
+                // room subunits alteration detected
+                return true;
+            }
         }
 
         // no significant changes to stay dates or listings could be proved

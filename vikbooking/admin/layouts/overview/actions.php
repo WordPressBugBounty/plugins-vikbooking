@@ -23,6 +23,7 @@ extract($displayData);
 // access the application
 $app = JFactory::getApplication();
 $vbo_app = VikBooking::getVboApplication();
+$cookie = $app->input->cookie;
 
 // load context menu assets
 $vbo_app->loadContextMenuAssets();
@@ -2852,6 +2853,22 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             noDecimals: 1,
         });
 
+        // build context menu button text element
+        let btnRoomRatesEl = document.createElement('span');
+        btnRoomRatesEl.classList.add('vbo-ctxmenu-entry-icn');
+        btnRoomRatesEl.innerHTML = '<span>' + <?php echo json_encode(JText::translate('VBO_RATES_AND_RESTR')); ?> + '</span>';
+        let icnRoomRatesEl = document.createElement('i');
+        icnRoomRatesEl.classList.add('vbo-save-pref-ota-rates');
+        icnRoomRatesEl.classList.add(...(<?php echo json_encode(VikBookingIcons::i('thumbtack', 'vbo-deactivated-icon')); ?>.split(' ')));
+        if (<?php echo $cookie->get('vboAovwLrr', 0, 'int') ? 'true' : 'false'; ?>) {
+            icnRoomRatesEl.classList.add('vbo-activated-icon');
+        }
+        let icnRoomRatesWrapEl = document.createElement('span');
+        icnRoomRatesWrapEl.classList.add('vbo-ctxmenu-entry-icn-secondary', 'vbo-tooltip', 'vbo-tooltip-top-left');
+        icnRoomRatesWrapEl.setAttribute('data-tooltiptext', <?php echo json_encode(JText::translate('VBO_REMEMBER_PREF')); ?>);
+        icnRoomRatesWrapEl.append(icnRoomRatesEl);
+        btnRoomRatesEl.append(icnRoomRatesWrapEl);
+
         // build buttons
         let btns = [
             {
@@ -2860,14 +2877,32 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
                 disabled: true,
             },
             {
-                activeState: false,
+                activeState: <?php echo $cookie->get('vboAovwLrr', 0, 'int') ? 'true' : 'false'; ?>,
+                pinnedState: <?php echo $cookie->get('vboAovwLrr', 0, 'int') ? 'true' : 'false'; ?>,
                 separator: (taskAreas.length > 0),
                 class: 'vbo-context-menu-entry-secondary',
-                text: <?php echo json_encode(JText::translate('VBO_RATES_AND_RESTR')); ?>,
-                icon: () => {
+                text: btnRoomRatesEl,
+                icon: function() {
                     return this.activeState ? '<?php echo VikBookingIcons::i('toggle-on', 'vbo-enabled-icon'); ?>' : '<?php echo VikBookingIcons::i('toggle-off'); ?>';
                 },
-                action: (root, event) => {
+                action: function(root, event) {
+                    if (event?.target && (event.target[0] || event.target).matches('.vbo-save-pref-ota-rates')) {
+                        // toggle pinned state
+                        this.pinnedState = !this.pinnedState;
+
+                        // update cookie preference
+                        let nd = new Date();
+                        nd.setTime(nd.getTime() + (365*24*60*60*1000));
+                        document.cookie = "vboAovwLrr=" + (this.pinnedState ? 1 : 0) + "; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
+
+                        // update icon class
+                        icnRoomRatesEl.classList.toggle('vbo-deactivated-icon', !this.pinnedState);
+                        icnRoomRatesEl.classList.toggle('vbo-activated-icon', this.pinnedState);
+
+                        // do not proceed
+                        return;
+                    }
+
                     // get all month tables
                     let monthTables = document.querySelectorAll('table.vboverviewtable[data-month-from]');
                     if (!monthTables.length) {
@@ -2978,6 +3013,19 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
             placement: 'bottom-left',
             buttons: btns,
         });
+
+        // check default state for actions context menu
+        if (<?php echo $cookie->get('vboAovwLrr', 0, 'int') ? 'true' : 'false'; ?>) {
+            // load room rates upon page loading according to cookie preferences
+            setTimeout(() => {
+                // access "load room rates" button-option
+                let ctxRoomRatesBtn = jQuery('.vbo-context-menu-overview-actions').vboContextMenu('buttons')[1];
+                // let the initial state be disabled
+                ctxRoomRatesBtn.activeState = false;
+                // invoke action callback to toggle the active state to true
+                ctxRoomRatesBtn.action();
+            }, 200);
+        }
 
         // start context menu on the button element to choose the new rates type
         const fixedRateLbl = <?php echo json_encode(JText::translate('VBO_SET_FIXED_RATE')); ?>;

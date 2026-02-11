@@ -161,6 +161,10 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                         <?php
                                         echo VikBooking::getVboApplication()->renderElementsDropDown([
                                             'elements'    => 'listings',
+                                            'subunits'    => [
+                                                'entire_listing' => true,
+                                                'value_format'   => '%d-%d',
+                                            ],
                                             'placeholder' => JText::translate('VBO_LISTING'),
                                             'attributes'  => [
                                                 'class' => 'vbo-door-access-control-add-listing-id',
@@ -644,6 +648,13 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                         // save the new device-listing connection
                         const listingId = add_listing_select.value;
 
+                        // check if we have to connect a specific sub-unit index
+                        let listingSubUnit = null;
+                        let idParts = (listingId + '').split('-');
+                        if (idParts[1]) {
+                            listingSubUnit = idParts[1];
+                        }
+
                         // disable button
                         e.target.disabled = true;
 
@@ -664,6 +675,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                 profile:   id_profile,
                                 device:    id_device,
                                 listing:   listingId,
+                                subunit:   listingSubUnit,
                                 wrapper:   wrapper_id,
                                 tmpl:      "component"
                             },
@@ -748,6 +760,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                     const id_profile = wrapper_el.querySelector('.vbo-door-access-control-setting[data-setting="id_profile"]').value;
                     const id_device = buttonEl.closest('.vbo-widget-dac-device-listings-data').getAttribute('data-device-id');
                     const listingId = buttonEl.getAttribute('data-listing-id');
+                    const subunitId = buttonEl.getAttribute('data-subunit-id') || 0;
 
                     if (confirm(<?php echo json_encode(JText::translate('VBDELCONFIRM')); ?>)) {
                         // start loading animation
@@ -767,6 +780,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                 profile:   id_profile,
                                 device:    id_device,
                                 listing:   listingId,
+                                subunit:   subunitId,
                                 wrapper:   wrapper_id,
                                 tmpl:      "component"
                             },
@@ -823,6 +837,9 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                     const capabilityParamsHelper = wrapper_el.querySelector('.vbo-widget-dac-cap-params-wrap');
                     const capabilityParamsContent = capabilityParamsHelper.querySelector('.vbo-params-block');
 
+                    // disable button to prevent double clicks
+                    buttonEl.disabled = true;
+
                     // check if we have retry-data options to be used only once ("oo")
                     let retry_data_options = vbo_widget_dac_retry_data_oo;
                     if (vbo_widget_dac_retry_data_oo) {
@@ -856,6 +873,9 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                             capabilityNameEl.innerHTML = '';
                             capabilityNameEl.innerText = capabilityName;
 
+                            // re-enable button
+                            buttonEl.disabled = false;
+
                             // init params modal body
                             var paramsModalBody;
 
@@ -879,6 +899,14 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                     wrapper_el.querySelector('.vbo-dac-capabilities-list').classList.remove('vbo-dac-cap-section-active');
                                     wrapper_el.querySelector('.vbo-dac-capability-result-wrap').classList.add('vbo-dac-cap-section-active');
                                     wrapper_el.querySelector('.vbo-dac-device-capability-sections').classList.add('vbo-dac-cap-section-active-result');
+
+                                    if (obj_res[call_method]['device_updated']) {
+                                        // set data-attribute flag to navigation back button
+                                        let backBtn = wrapper_el.querySelector('.vbo-dac-capability-result-back');
+                                        if (backBtn) {
+                                            backBtn.setAttribute('data-device-updated', 1);
+                                        }
+                                    }
                                 } else if (obj_res[call_method]['capability_params']) {
                                     // capability execution provides parameters
                                     let cancel_btn = document.createElement('button');
@@ -1002,6 +1030,11 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                 } else {
                                     // capability was executed, display the result text
                                     alert(obj_res[call_method]['result_text'] || (capabilityName + ' operation completed'));
+
+                                    if (obj_res[call_method]['device_updated']) {
+                                        // reload widget with the selected device upon device update
+                                        vboWidgetDACLoadProvider(wrapper_id, id_provider, id_profile, 'dashboard', id_device);
+                                    }
                                 }
                             } catch(err) {
                                 // log and display error
@@ -1017,6 +1050,9 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                             // stop button animation
                             capabilityNameEl.innerHTML = '';
                             capabilityNameEl.innerText = capabilityName;
+
+                            // re-enable button
+                            buttonEl.disabled = false;
                         }
                     );
 
@@ -1090,6 +1126,14 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
 
                     // empty result
                     wrapper_el.querySelector('.vbo-dac-capability-result-body').innerHTML = '';
+
+                    // check if device was updated
+                    if (buttonEl.getAttribute('data-device-updated') == '1') {
+                        // unset data-attribute
+                        buttonEl.setAttribute('data-device-updated', 0);
+                        // reload widget with the selected device upon device update
+                        vboWidgetDACLoadProvider(wrapper_id, buttonEl.getAttribute('data-provider-id'), buttonEl.getAttribute('data-profile-id'), 'dashboard', buttonEl.getAttribute('data-device-id'));
+                    }
 
                     // do not proceed
                     return;
@@ -1389,7 +1433,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                 </div>
                                 <div class="vbo-dac-capability-result-wrap">
                                     <div class="vbo-dac-capability-result-head">
-                                        <span class="vbo-dac-capability-result-back"><?php VikBookingIcons::e('arrow-left'); ?> <?php echo JText::translate('VBBACK'); ?></span>
+                                        <span class="vbo-dac-capability-result-back" data-provider-id="<?php echo JHtml::fetch('esc_attr', $integration->getAlias()); ?>" data-profile-id="<?php echo JHtml::fetch('esc_attr', $integration->getProfileID()); ?>" data-device-id="<?php echo JHtml::fetch('esc_attr', (($integrationDevice ?? null) ? $integrationDevice->getID() : '')); ?>"><?php VikBookingIcons::e('arrow-left'); ?> <?php echo JText::translate('VBBACK'); ?></span>
                                         <span class="vbo-dac-capability-result-name"></span>
                                     </div>
                                     <div class="vbo-dac-capability-result-body"></div>
@@ -1496,16 +1540,28 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                 <div class="vbo-dac-device-content vbo-widget-dac-device-listings-data" data-device-id="<?php echo $device->getID(); ?>" data-device-name="<?php echo JHtml::fetch('esc_attr', $device->getName()); ?>">
                                     <div class="vbo-dac-device-listings">
                                         <div class="vbo-dac-device-listings-count">
-                                            <span><?php echo JText::translate('VBO_CONNECTED_LISTINGS'); ?> (<?php echo count($device->getConnectedListings()); ?>)</span>
+                                            <span><?php echo JText::translate('VBO_CONNECTED_LISTINGS'); ?> (<?php echo $device->countConnectedListings(); ?>)</span>
                                         </div>
                                         <div class="vbo-dac-device-listings-list">
-                                        <?php
-                                        foreach ($device->getConnectedListings() as $listingId) {
+                                    <?php
+                                    foreach ($device->getConnectedListings() as $listingId) {
+                                        // check if the listing was connected at subunit-level
+                                        $listingSubunitIds = $device->getConnectedListingSubunits($listingId);
+                                        if ($listingSubunitIds) {
+                                            // display only the listing subunit connections
+                                            foreach ($listingSubunitIds as $subunitId) {
+                                                ?>
+                                            <span class="vbo-widget-dac-device-cn-listing" data-listing-id="<?php echo $listingId; ?>" data-subunit-id="<?php echo $subunitId; ?>"><?php VikBookingIcons::e('home'); ?><?php echo sprintf('%s #%d', ($listingsPool[$listingId] ?? $listingId), $subunitId); ?></span>
+                                                <?php
+                                            }
+                                        } else {
+                                            // display the listing connection
                                             ?>
                                             <span class="vbo-widget-dac-device-cn-listing" data-listing-id="<?php echo $listingId; ?>"><?php VikBookingIcons::e('home'); ?><?php echo $listingsPool[$listingId] ?? $listingId; ?></span>
                                             <?php
                                         }
-                                        ?>
+                                    }
+                                    ?>
                                         </div>
                                     </div>
                                     <div class="vbo-dac-device-actions">
@@ -1749,11 +1805,12 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
     {
         $app = JFactory::getApplication();
 
-        $wrapper = $app->input->getString('wrapper', '');
-        $provider = $app->input->getString('provider', '');
+        $wrapper   = $app->input->getString('wrapper', '');
+        $provider  = $app->input->getString('provider', '');
         $idProfile = $app->input->getUInt('profile', 0);
-        $idDevice = $app->input->getString('device', '');
+        $idDevice  = $app->input->getString('device', '');
         $idListing = $app->input->getUInt('listing', 0);
+        $idSubunit = $app->input->getUInt('subunit', 0);
 
         if (empty($provider)) {
             VBOHttpDocument::getInstance($app)->close(400, 'Missing door access control provider identifier.');
@@ -1792,7 +1849,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
         foreach ($integration->getDevices() as $device) {
             if ($device->getID() === $idDevice) {
                 // device ID found, add listing relation
-                $device->addConnectedListing($idListing);
+                $device->addConnectedListing($idListing, $idSubunit);
 
                 // turn flag on and abort
                 $deviceFound = $device;
@@ -1841,6 +1898,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
         $idProfile = $app->input->getUInt('profile', 0);
         $idDevice = $app->input->getString('device', '');
         $idListing = $app->input->getUInt('listing', 0);
+        $idSubunit = $app->input->getUInt('subunit', 0);
 
         if (empty($provider)) {
             VBOHttpDocument::getInstance($app)->close(400, 'Missing door access control provider identifier.');
@@ -1879,7 +1937,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
         foreach ($integration->getDevices() as $device) {
             if ($device->getID() === $idDevice) {
                 // device ID found, remove listing relation
-                $device->removeConnectedListing($idListing);
+                $device->removeConnectedListing($idListing, $idSubunit);
 
                 // turn flag on and abort
                 $deviceFound = $device;
@@ -2055,6 +2113,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
             // display the capability execution result output (HTML)
             return [
                 'result_html' => (string) $capabilityResult,
+                'device_updated' => (int) $device->getDataChanged(),
             ];
         }
 
@@ -2062,12 +2121,14 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
             // display the capability execution result text
             return [
                 'result_text' => (string) $capabilityResult,
+                'device_updated' => (int) $device->getDataChanged(),
             ];
         }
 
         // no result information, yet successful
         return [
             'success' => 1,
+            'device_updated' => (int) $device->getDataChanged(),
         ];
     }
 }

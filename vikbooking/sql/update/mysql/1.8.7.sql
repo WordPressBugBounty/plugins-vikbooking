@@ -1,0 +1,1 @@
+ALTER TABLE `#__vikbooking_chat_messages` MODIFY `id_sender` int(10) DEFAULT 0 COMMENT 'the sender ID (0 for admin, -1 for guest, 1+ for operators)';

@@ -756,7 +756,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_chat_messages` (
   `context` varchar(16) NOT NULL COMMENT 'the context alias identifier',
   `id_context` int(10) UNSIGNED NOT NULL COMMENT 'the foreign ID to link the context',
   `sender_name` varchar(128) NOT NULL COMMENT 'the name of the sender',
-  `id_sender` int(10) UNSIGNED DEFAULT 0 COMMENT 'the sender ID (0 for admin)',
+  `id_sender` int(10) DEFAULT 0 COMMENT 'the sender ID (0 for admin, -1 for guest, 1+ for operators)',
   `message` text DEFAULT NULL,
   `attachments` blob DEFAULT NULL COMMENT 'serialized array of attachments',
   `createdon` datetime NOT NULL,

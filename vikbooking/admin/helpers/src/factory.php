@@ -213,7 +213,10 @@ final class VBOFactory
                  * Should run every week.
                  */
                 static::$crontabSimulator->schedule(new VBOCrontabRunnerAware('performance_cleaner', 60 * 60 * 24 * 7, function(VBOCrontabLogger $logger) {
+                    // performance cleaning check
                     VBOPerformanceCleaner::runCheck();
+                    // clean up expired passcodes from smart locks
+                    VBOFactory::getDoorAccessControl()->cleanExpiredPasscodes();
                 }));
 
                 /**

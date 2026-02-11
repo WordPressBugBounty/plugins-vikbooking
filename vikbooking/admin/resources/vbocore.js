@@ -1,5 +1,5 @@
 /**
- * VikBooking Core v1.8.6
+ * VikBooking Core v1.8.7
  * Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -2843,7 +2843,7 @@
 				modal_pos_y = e.clientY;
 
 				// find the modal element
-				let modal_element = e.target.closest('.vbo-modal-overlay-content');
+				let modal_element = e?.target?.closest('.vbo-modal-overlay-content');
 				if (!modal_element) {
 					return;
 				}

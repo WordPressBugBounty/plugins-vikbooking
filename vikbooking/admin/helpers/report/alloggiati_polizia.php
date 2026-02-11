@@ -358,6 +358,9 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 		// get VBO Application Object
 		$vbo_app = VikBooking::getVboApplication();
 
+		// get the possibly injected report options
+		$options = $this->getReportOptions();
+
 		// load the jQuery UI Datepicker
 		$this->loadDatePicker();
 
@@ -542,7 +545,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					'name' => 'listings[]',
 					'multiple' => 'multiple',
 				],
-				'selected_values' => (array) $app->input->get('listings', [], 'array'),
+				'selected_values' => (array) ($app->input->get('listings', [], 'array') ?: $options->get('listings', [])),
 			]) . '</span>',
 			'type' => 'select',
 			'multiple' => true,
@@ -1041,19 +1044,24 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 			return true;
 		}
 
-		// load all countries
-		$all_countries = VikBooking::getCountriesArray();
+		// get the possibly injected report options
+		$options = $this->getReportOptions();
+
+		// injected options will replace request variables, if any
+		$opt_fromdate = $options->get('fromdate', '');
+		$opt_todate   = $options->get('todate', '');
 
 		// input fields and other vars
-		$pfromdate = VikRequest::getString('fromdate', '', 'request');
-		$ptodate = VikRequest::getString('todate', '', 'request');
+		$pfromdate = $opt_fromdate ?: VikRequest::getString('fromdate', '', 'request');
+		$ptodate = $opt_todate ?: VikRequest::getString('todate', '', 'request');
 		$pkrsort = VikRequest::getString('krsort', $this->defaultKeySort, 'request');
 		$pkrsort = empty($pkrsort) ? $this->defaultKeySort : $pkrsort;
 		$pkrorder = VikRequest::getString('krorder', $this->defaultKeyOrder, 'request');
 		$pkrorder = empty($pkrorder) ? $this->defaultKeyOrder : $pkrorder;
 		$pkrorder = $pkrorder == 'DESC' ? 'DESC' : 'ASC';
-		$plistings = (array) VikRequest::getVar('listings', array());
+		$plistings = ((array) VikRequest::getVar('listings', array())) ?: ((array) $options->get('listings', []));
 		$plistings = array_filter(array_map('intval', $plistings));
+
 		$currency_symb = VikBooking::getCurrencySymb();
 		$df = $this->getDateFormat();
 		$datesep = VikBooking::getDateSeparator();
@@ -2022,7 +2030,7 @@ class VikBookingReportAlloggiatiPolizia extends VikBookingReport
 					),
 					'callback' => function($val) use ($booking_id, $line_number) {
 						$booking_guest_signature = sprintf('excluded-%d-%d', $booking_id, $line_number);
-						return '<span class="vbo-toggle-small">' . VikBooking::getVboApplication()->printYesNoButtons($booking_guest_signature, JText::translate('VBYES'), JText::translate('VBNO'), $val , 1, 0, 'vboAlloggiatiExcludeGuestLine(this);', ['red']) . '</span>';
+						return '<span class="vbo-toggle-mini">' . VikBooking::getVboApplication()->printYesNoButtons($booking_guest_signature, JText::translate('VBYES'), JText::translate('VBNO'), $val , 1, 0, 'vboAlloggiatiExcludeGuestLine(this);', ['red']) . '</span>';
 					},
 					'ignore_export' => 1,
 					'value' => $is_line_excluded,

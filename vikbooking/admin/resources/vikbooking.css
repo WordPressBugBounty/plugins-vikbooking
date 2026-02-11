@@ -216,6 +216,12 @@ a.label.label-info:hover, a.badge.badge-info:hover {
 a.label, a.badge, a.label:hover, a.badge:hover {
 	color: var(--vbo-contrast-text-color);
 }
+/* This info label will have a blue light color */
+.label.label-info-light, .badge.badge-info-light {
+	background-color: var(--vbo-light-blue);
+	color: var(--vbo-base-color);
+	border: 1px solid var(--vbo-info-bg);
+}
 .btn.btn-green {
 	background-color: var(--vbo-green-color);
 	color: #fff;
@@ -570,11 +576,19 @@ body #content .btn-warning:hover, body #wpcontent .btn-warning:hover, .vbo-modal
 	align-items: center;
 	font-weight: 500;
 }
+.select2-container--open.select2-container--default .select2-results__option:has(> .vbo-sel2-element-img) {
+	padding: 4px;
+}
 .vbo-sel2-element-img img {
 	width: 50px;
 	height: 35px;
 	object-fit: cover;
 	border-radius: 6px;
+}
+.vbo-sel2-element-img.vbo-sel2-element-nested img {
+	width: 30px;
+	height: 20px;
+	border-radius: 2px;
 }
 /*** Chrome Hack for the select ***/
 .selector:not(*:root), select {
@@ -860,9 +874,6 @@ div.vborderpartot {
 	float:left;
 	width:117px;
 	margin:8px 0 0 85px;
-}
-.vbmenuentries a {
-	
 }
 .vbsubmitfares {
 	background: none repeat scroll 0 0 #708827 !important;
@@ -5605,6 +5616,12 @@ label.vbo-timeline-label {
 	left: 100%;
 	transform: translate(8px, -50%);
 }
+.vbo-tooltip.vbo-tooltip-top-left::before,
+.vbo-tooltip.vbo-tooltip-top-left::after {
+	top: -50%;
+	right: 50%;
+	transform: translate(-8px, -50%);
+}
 /* Tooltip - End **/
 
 .vbo-dashboard-firstsetup-container {
@@ -6081,6 +6098,8 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	max-width: 100%;
 	border-radius: 50%;
 	object-fit: cover;
+	width: 40px;
+	height: 40px;
 } 
 .vbo-dashboard-guests-latest .vbo-dashboard-guest-activity-content {
 	flex: 1;
@@ -6406,7 +6425,7 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	margin-top: 6px;
 }
 .vbo-rdaybooking-subunits .label-warning {
-	padding: 10px 6px !important;
+	padding: 6px !important;
 }
 .vbo-rdaybooking-subunits .vbo-rdaybooking-subunits-list {
 	display: inline-block;
@@ -6415,6 +6434,12 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	min-height: 34px;
 	line-height: 1.3em;
 	margin: 3px 0;
+}
+.vbo-rdaybooking-subunits .vbo-rdaybooking-subunit-relocate-wrap {
+	margin-left: 10px;
+}
+.vbo-rdaybooking-subunits .vbo-rdaybooking-subunits-list .btn.vbo-reassign-room-unit-btn > i {
+	color: #fff;
 }
 .vbo-dashboard-guest-activity-content-info-icon .vbo-dashboard-guest-activity-content-info-rate {
 	font-weight: bold;
@@ -9489,6 +9514,11 @@ table.vboverviewtable th:has(+ th.vbo-overv-cell-newmonth), table.vboverviewtabl
 	height: 24px;
 	text-align: center;
 	line-height: 24px;	
+	cursor: pointer;
+	border: 1px solid transparent;
+}
+.vbo-roverview-table .vbo-overview-room-info .vbo-overview-alert .badge:hover {
+	border: 1px solid var(--vbo-orange-color);
 }
 .vbo-overv-sticky-table-head-off table.vboverviewtable th, .vbo-overv-sticky-table-head-off table.vboverviewtable td {
 	padding: 10px;
@@ -9552,6 +9582,118 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	bottom: 0;
 	transform: none;
 }
+/* Reassignment sub-unit */
+.vbo-room-reassignment-solution-wrap h4 {
+	margin: 0 0 2px;
+	font-size: 16px;
+}
+.vbo-room-reassignment-solution-wrap .vbo-room-reassignment-moves-help {
+	margin-bottom: 10px;
+	font-size: 12px;
+	color: var(--vbo-config-titles-color-light);	
+}
+.vbo-room-reassignment-move {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+.vbo-room-reassignment-moves-list {
+	margin-top: 10px;
+}
+.vbo-room-reassignment-move-record {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 10px;
+	padding: 10px;
+	border-radius: 10px;
+}
+.vbo-room-reassignment-head .vbo-room-reassignment-move-record {
+	background: var(--vbo-light-blue);
+	border: 1px solid var(--vbo-info-bg);
+}
+.vbo-room-reassignment-head .vbo-booking-guest-id {
+	background: var(--vbo-info-txt);
+	color: var(--vbo-config-bg-color);	
+}
+.vbo-room-reassignment-moves .vbo-room-reassignment-move-record {
+	border: 1px solid var(--vbo-config-border-color);
+	margin-bottom: 10px;
+}
+.vbo-room-reassignment-move-record .vbo-room-reassignment-booking-guest {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.vbo-room-reassignment-move-record .vbo-booking-guest-name {
+	font-size: 14px;
+	font-weight: 600;
+}
+.vbo-room-reassignment-move-record .vbo-tableaux-booking-avatar-img  {
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+.vbo-room-reassignment-move-record .vbo-room-reassignment-booking-info {
+	display: flex;
+	gap: 14px;
+	color: var(--vbo-config-titles-color-light);
+	font-size: 12px;
+}
+.vbo-room-reassignment-move-record .vbo-room-reassignment-move-details {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+.vbo-room-reassignment-head .vbo-room-reassignment-move-icn {
+	color: var(--vbo-info-txt);
+}
+.vbo-room-reassignment-moves .vbo-room-reassignment-move-icn {
+	color: var(--vbo-base-color);
+}
+.vbo-room-reassignment-head .vbo-room-reassignment-move-to {
+	background: var(--vbo-info-txt);
+	color: var(--vbo-config-bg-color);	
+}
+.vbo-room-reassignment-moves .vbo-room-reassignment-move-to {
+	background: var(--vbo-light-blue);
+	border: 1px solid var(--vbo-info-bg);
+	color: var(--vbo-base-color);	
+}
+.vbo-room-reassignment-move-record .vbo-room-reassignment-move-details .label {
+	padding: 5px 8px !important;
+	font-size: 12px;
+}
+.vbo-room-reassignment-move-record .vbo-room-reassignment-move-details .label i {
+	margin-right: 2px;
+}
+.vbo-room-reassignment-move-record .vbo-room-reassignment-move-details .label-warning {
+	background: var(--vbo-body-bg-color);
+	border: 1px solid var(--vbo-warning-txt);
+}
+.vbo-room-reassignment-move-record .vbo-room-reassignment-move-exclude {
+	text-align: right;
+	position: relative;
+	min-width: 100px;
+}
+.vbo-room-reassignment-move-record .vbo-room-reassignment-exclude-lbl {
+	display: block;
+	font-size: 10px;
+	color: var(--vbo-config-text-color-light);
+	font-weight: 500;
+	position: absolute;
+	top: -17px;
+	right: 2px;
+}
+.vbo-room-reassignment-moves h5 {
+	font-size: 16px;
+	margin-bottom: 2px;
+}
+.vbo-room-reassignment-moves .vbo-room-reassignment-moves-help {
+	font-style: italic;
+}
+
 .vbo-roomdaynote-full:hover .vbo-roomdaynote-trigger, .vbo-roomdaynote-empty:hover .vbo-roomdaynote-trigger {
 	animation: 1s vbonotefadeIn;
   	animation-fill-mode: forwards;  
@@ -14269,13 +14411,29 @@ vbo-tm-list-task-cell.vbo-skeleton-loading[data-type="due"] {
 	align-items: center;
 	vertical-align: middle;
 }
-.vbo-ctxmenu-entry-icn > span {
+.vbo-ctxmenu-entry-icn > span:not(.vbo-ctxmenu-entry-icn-secondary) {
     width: calc(100% - 12px);
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
     display: block;
 	margin-right: 10px;
+}
+.vbo-ctxmenu-entry-icn-secondary {
+	font-size: 12px;
+}
+.vbo-ctxmenu-entry-icn > .vbo-tooltip .vbo-deactivated-icon {
+	opacity: .5;
+}
+.vbo-ctxmenu-entry-icn:hover > .vbo-tooltip .vbo-deactivated-icon {
+	opacity: 1;
+}
+.vbo-ctxmenu-entry-icn:hover > .vbo-tooltip .vbo-deactivated-icon:hover {
+	color: var(--vbo-base-color);
+}
+.vbo-ctxmenu-entry-icn > .vbo-tooltip .vbo-activated-icon {
+	opacity: 1;
+	color: var(--vbo-base-color);
 }
 .vbo-ctxmenu-entry-icn .vbo-tm-colortag-edit {
     position: absolute;
@@ -17804,6 +17962,12 @@ select[multiple][data-will-mutate="1"] {
 	color: rgba(19,191,17,1);
 	content: attr(data-on);
 }
+
+/* Style for two states */
+.vbo-toggle-double-status .vik-iostoggle-wrap input.vik-iostoggle-elem:not(:checked) + label::before {
+	background: var(--vbo-base-color-hover);
+}
+
 /* End - iOS-style toggle/switch button */
 
 /* multi toogle/switch button - Start */
@@ -22679,6 +22843,16 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	fieldset.adminform .vbo-list-table-rounded {
 		max-width: 600px;
 	}
+	.vbo-room-reassignment-move-record {
+		flex-wrap: wrap;
+	}
+	.vbo-room-reassignment-move {
+		flex-basis: 100%;
+		margin-top: 10px;		
+	}
+	.vbo-room-reassignment-move-record .vbo-room-reassignment-move-exclude {
+		margin-left: auto;
+	}
 }
 @media screen and (max-width : 680px) {
 	.vbo-preferred-countries-sortlist {
@@ -23488,6 +23662,12 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.btn-group.pull-inline {
 		margin-bottom: 3px;
+	}
+	.vbo-room-reassignment-head .vbo-room-reassignment-move-record .vbo-room-reassignment-move-details {
+		flex-wrap: wrap;
+	}
+	.vbo-room-reassignment-head .vbo-room-reassignment-move-record .vbo-room-reassignment-move-room {
+		flex-basis: 100%;
 	}
 }
 @media screen and (max-width : 550px) {

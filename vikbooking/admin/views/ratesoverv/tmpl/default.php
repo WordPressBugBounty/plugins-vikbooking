@@ -1360,7 +1360,7 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 					</h4>
 					<div class="vbo-roverw-newrcont" data-rate-type="fixed">
 						<label for="roverw-newrate" class="vbo-roverw-setnewrate-currency"><?php echo $currencysymb; ?></label>
-						<input type="number" step="any" min="0" id="roverw-newrate" value="" placeholder="" size="7" />
+						<input type="number" step="any" min="0" id="roverw-newrate" value="" size="7" />
 					</div>
 					<div class="vbo-roverw-newrcont" data-rate-type="addsub" style="display: none;">
 						<div class="vbo-roverw-setnewrate-addsub-elem">
@@ -1370,7 +1370,7 @@ $vcm_enabled = VikBooking::vcmAutoUpdate();
 							</select>
 						</div>
 						<div class="vbo-roverw-setnewrate-addsub-elem">
-							<input type="number" value="" step="any" min="0" data-rate-type-rule="rmodsamount" />
+							<input type="number" value="0" step="any" min="0" data-rate-type-rule="rmodsamount" />
 						</div>
 						<div class="vbo-roverw-setnewrate-addsub-elem">
 							<select data-rate-type-rule="rmodsval">
@@ -2153,6 +2153,22 @@ jQuery(function() {
 		});
 	}, 200));
 
+	// build context menu button text element
+	let btnOtaRatesEl = document.createElement('span');
+	btnOtaRatesEl.classList.add('vbo-ctxmenu-entry-icn');
+	btnOtaRatesEl.innerHTML = '<span>' + <?php echo json_encode(JText::translate('VBO_SHOW_OTA_RATES')); ?> + '</span>';
+	let icnOtaRatesEl = document.createElement('i');
+	icnOtaRatesEl.classList.add('vbo-save-pref-ota-rates');
+	icnOtaRatesEl.classList.add(...(<?php echo json_encode(VikBookingIcons::i('thumbtack', 'vbo-deactivated-icon')); ?>.split(' ')));
+	if (<?php echo $cookie->get('vboRovwOtr', 0, 'int') ? 'true' : 'false'; ?>) {
+		icnOtaRatesEl.classList.add('vbo-activated-icon');
+	}
+	let icnOtaRatesWrapEl = document.createElement('span');
+	icnOtaRatesWrapEl.classList.add('vbo-ctxmenu-entry-icn-secondary', 'vbo-tooltip', 'vbo-tooltip-top-left');
+	icnOtaRatesWrapEl.setAttribute('data-tooltiptext', <?php echo json_encode(JText::translate('VBO_REMEMBER_PREF')); ?>);
+	icnOtaRatesWrapEl.append(icnOtaRatesEl);
+	btnOtaRatesEl.append(icnOtaRatesWrapEl);
+
 	// start context menu on the proper actions button element
 	jQuery('.vbo-context-menu-roverv-actions').vboContextMenu({
 		placement: 'bottom-right',
@@ -2174,14 +2190,32 @@ jQuery(function() {
 				},
 			},
 			{
-				activeState: false,
+				activeState: <?php echo $cookie->get('vboRovwOtr', 0, 'int') ? 'true' : 'false'; ?>,
+				pinnedState: <?php echo $cookie->get('vboRovwOtr', 0, 'int') ? 'true' : 'false'; ?>,
 				class: 'vbo-context-menu-entry-secondary',
-				text: <?php echo json_encode(JText::translate('VBO_SHOW_OTA_RATES')); ?>,
+				text: btnOtaRatesEl,
 				separator: false,
 				icon: function() {
 					return this.activeState ? '<?php echo VikBookingIcons::i('toggle-on', 'vbo-enabled-icon'); ?>' : '<?php echo VikBookingIcons::i('toggle-off'); ?>';
 				},
 				action: function(root, event) {
+					if (event?.target && (event.target[0] || event.target).matches('.vbo-save-pref-ota-rates')) {
+						// toggle pinned state
+						this.pinnedState = !this.pinnedState;
+
+						// update cookie preference
+						let nd = new Date();
+						nd.setTime(nd.getTime() + (365*24*60*60*1000));
+						document.cookie = "vboRovwOtr=" + (this.pinnedState ? 1 : 0) + "; expires=" + nd.toUTCString() + "; path=/; SameSite=Lax";
+
+						// update icon class
+						icnOtaRatesEl.classList.toggle('vbo-deactivated-icon', !this.pinnedState);
+						icnOtaRatesEl.classList.toggle('vbo-activated-icon', this.pinnedState);
+
+						// do not proceed
+                        return;
+					}
+
 					// toggle state
 					this.activeState = !this.activeState;
 
@@ -2327,6 +2361,19 @@ jQuery(function() {
 			},
 		],
 	});
+
+	// check default state for actions context menu
+	if (<?php echo $cookie->get('vboRovwOtr', 0, 'int') ? 'true' : 'false'; ?>) {
+		// display OTA rates upon page loading according to cookie preferences
+		setTimeout(() => {
+			// access "display OTA rates" button-option
+			let ctxOtaRatesBtn = jQuery('.vbo-context-menu-roverv-actions').vboContextMenu('buttons')[1];
+			// let the initial state be disabled
+			ctxOtaRatesBtn.activeState = false;
+			// invoke action callback to toggle the active state to true
+			ctxOtaRatesBtn.action();
+		}, 200);
+	}
 
 	// start context menu on the button element to choose the new rates type
 	const fixedRateLbl = <?php echo json_encode(JText::translate('VBRATESOVWSETNEWRATE')); ?>;
@@ -2685,7 +2732,6 @@ function showVboDialog() {
 			newdayscont += "</div>";
 		});
 		jQuery(".vbo-roverw-alldays-inner").html(newdayscont);
-		jQuery("#roverw-newrate").attr("placeholder", vbolistener.first.defRate).val(highestrate);
 		// if all selected blocks have a closed rate plan, show it in red in the name of the rate plan because this will be triggered to VCM if "Apply" is clicked
 		if (allblocksclosed) {
 			jQuery("#rovervw-rplan").html('<span style="color: #f00"><i class="<?php echo VikBookingIcons::i('ban'); ?>"></i> '+vbolistener.first.rplanName+'</span>');
@@ -2771,8 +2817,8 @@ function showVboDialogPeriod() {
 	jQuery("#rovervw-fromdate").html(vbolistener.first.toDate(format));
 	jQuery("#rovervw-todate").html(vbolistener.last.toDate(format));
 	jQuery(".vbo-roverw-alldays-inner").html("");
-	// reset default new price and placeholder
-	jQuery("#roverw-newrate").attr("placeholder", "").val("");
+	// reset default new price
+	jQuery("#roverw-newrate").val("");
 	// check if all selected blocks are closed
 	var all_blocks = getAllBlocksBetween(vbolistener.first, vbolistener.last, true);
 	if (all_blocks !== false) {
@@ -3284,13 +3330,27 @@ function setNewRates() {
 	let addsub_value = rateType === 'addsub' ? document.querySelector('.vbo-roverw-newrcont[data-rate-type="addsub"] [data-rate-type-rule="rmodsval"]')?.value : 0;
 
 	if (all_blocks === false || (rateType === 'fixed' && (isNaN(toval) || toval <= 0))) {
-		alert(roverw_messages.setNewRatesMissing);
+		if (setminlos && setminlos > 0) {
+			alert(<?php echo json_encode(JText::translate('VBO_INCR_ZERO_RESTR_TIP')); ?>);
+		} else {
+			// incomplete form
+			alert(roverw_messages.setNewRatesMissing);
+		}
+
+		// always abort
 		return false;
 	}
 
 	if (rateType === 'addsub' && (isNaN(addsub_amount) || addsub_amount <= 0)) {
-		alert(roverw_messages.setNewRatesMissing);
-		return false;
+		if (!setminlos || setminlos <= 0) {
+			alert(roverw_messages.setNewRatesMissing);
+			return false;
+		} else {
+			// allow to change just the minimum stay by forcing the operation to increase rates by 0
+			addsub_op = 1;
+			addsub_amount = 0;
+			addsub_value = 0;
+		}
 	}
 
 	// set cookie to remember the action to invoke VCM for this combination of room-rateplan

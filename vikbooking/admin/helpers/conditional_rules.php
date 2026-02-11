@@ -13,7 +13,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 /**
  * Helper class for the conditional rules.
  * 
- * @since 	1.4.0
+ * @since 	1.14 (J) - 1.4.0 (WP)
  */
 class VikBookingHelperConditionalRules
 {
@@ -284,9 +284,8 @@ class VikBookingHelperConditionalRules
 
 		$q = "SELECT `ct`.* FROM `#__vikbooking_condtexts` AS `ct` ORDER BY `ct`.`{$orby_col}` {$orby_dir};";
 		$this->dbo->setQuery($q);
-		$this->dbo->execute();
-		if ($this->dbo->getNumRows()) {
-			$records = $this->dbo->loadAssocList();
+		$records = $this->dbo->loadAssocList();
+		if ($records) {
 			$this->vbo_tn->translateContents($records, '#__vikbooking_condtexts');
 			foreach ($records as $record) {
 				// decode rules
@@ -309,13 +308,10 @@ class VikBookingHelperConditionalRules
 	 */
 	public function getBySpecialTag($token)
 	{
-		$cond_text = array();
-
 		$q = "SELECT * FROM `#__vikbooking_condtexts` WHERE `token`=" . $this->dbo->quote($token) . ";";
 		$this->dbo->setQuery($q);
-		$this->dbo->execute();
-		if ($this->dbo->getNumRows()) {
-			$cond_text = $this->dbo->loadAssoc();
+		$cond_text = (array) $this->dbo->loadAssoc();
+		if ($cond_text) {
 			$this->vbo_tn->translateContents($cond_text, '#__vikbooking_condtexts');
 		}
 
@@ -469,7 +465,7 @@ class VikBookingHelperConditionalRules
 			 * necessary, maybe for sending an SMS message. We allow the use of special strings to
 			 * detect if no HTML should ever be included in the message, like [sms] or [plain text].
 			 * 
-			 * @since 	1.4.3
+			 * @since 	1.14.2 (J) - 1.4.3 (WP)
 			 */
 			$requires_plain_text = false;
 			if (preg_match_all("/(\[sms\]|\[plain_? ?text\])+/i", $cond_texts[$token]['msg'], $plt_matches)) {
@@ -490,7 +486,7 @@ class VikBookingHelperConditionalRules
 			/**
 			 * Make sure any src/href attribute does not contain relative URLs.
 			 * 
-			 * @since 	1.5.0
+			 * @since 	1.15 (J) - 1.5.0 (WP)
 			 */
 			$cond_texts[$token]['msg'] = preg_replace_callback("/\s*(src|href)=([\"'])(.*?)[\"']/i", function($match) {
 				// check if the URL starts with the base domain
@@ -772,6 +768,9 @@ class VikBookingHelperConditionalRules
 
 		// immediately restore the PHP tags that could have been converted to HTML entities
 		$php_code = str_replace(array('&lt;?php', '?&gt;'), array('<?php', '?>'), $php_code);
+
+		// take care of "unsafe" HTML detected for PHP opening and closing tags that may now be HTML comments
+		$php_code = str_replace(array('<!--?php', '?-->'), array('<?php', '?>'), $php_code);
 
 		// remove doctype
 		$php_code = preg_replace("/(^<!DOCTYPE.*\R)/i", '', $php_code);

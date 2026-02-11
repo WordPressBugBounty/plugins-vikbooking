@@ -100,6 +100,10 @@ abstract class JFactory
 	public static function getSession(array $options = array())
 	{
 		JLoader::import('adapter.session.session');
+		JLoader::import('adapter.session.handler');
+
+		// attempt to start the session before using it
+		JSessionHandler::start();
 
 		return JSession::getInstance();
 	}

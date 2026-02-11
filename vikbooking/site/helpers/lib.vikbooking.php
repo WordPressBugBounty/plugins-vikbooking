@@ -2529,7 +2529,8 @@ class VikBooking
 		return false;
 	}
 
-	public static function getHoursMinutes($secs) {
+	public static function getHoursMinutes($secs)
+	{
 		if ($secs >= 3600) {
 			$op = $secs / 3600;
 			$hours = floor($op);
@@ -2542,9 +2543,8 @@ class VikBooking
 			$optwo = $secs / 60;
 			$minutes = floor($optwo);
 		}
-		$x[] = $hours;
-		$x[] = $minutes;
-		return $x;
+
+		return [$hours, $minutes];
 	}
 
 	public static function getClosingDates()
@@ -5887,7 +5887,16 @@ class VikBooking
 				if (self::getTypeDeposit() == "fixed") {
 					$deposit_amount = $percentdeposit;
 				} else {
-					$deposit_amount = $total * $percentdeposit / 100;
+					$baseTotal = $total;
+					if ($order_info['tot_damage_dep'] ?? 0) {
+						// check if the damage deposit will have to be paid later/separately
+						$damage_deposit_payment = VBORoomHelper::getInstance()->getDamageDepositSplitPayment($order_info, $rooms);
+						if (($damage_deposit_payment['damagedep_gross'] ?? 0) && ($damage_deposit_payment['payment_window'] ?? []) && ($damage_deposit_payment['payment_window']['payable'] ?? null) !== true) {
+							// damage deposit is not payable right now
+							$baseTotal -= (float) $order_info['tot_damage_dep'];
+						}
+					}
+					$deposit_amount = $baseTotal * $percentdeposit / 100;
 				}
 				if ($deposit_amount > 0) {
 					$deposit_str = '<div class="deposit"><span>'.JText::translate('VBLEAVEDEPOSIT').'</span><div class="service-amount" style="float: right;"><strong>' . self::formatCurrencyNumber(self::numberFormat($deposit_amount), $currencyname) . '</strong></div></div>';
@@ -13506,12 +13515,6 @@ class VikBooking
 			$vcm_admin_lang_path = '';
 			if (VBOPlatformDetection::isJoomla()) {
 				$vcm_admin_lang_path = JPATH_ADMINISTRATOR;
-				/**
-				 * @joomlaonly  if not defined VCM Software Version constant, include the defines files.
-				 */
-				if (!defined('VIKCHANNELMANAGER_SOFTWARE_VERSION')) {
-					include_once VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'adapter' . DIRECTORY_SEPARATOR . 'defines.php';
-				}
 			} elseif (defined('VIKCHANNELMANAGER_ADMIN_LANG')) {
 				$vcm_admin_lang_path = VIKCHANNELMANAGER_ADMIN_LANG;
 			} elseif (VBOPlatformDetection::isWordPress() && defined('VIKBOOKING_ADMIN_LANG')) {
