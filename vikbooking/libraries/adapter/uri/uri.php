@@ -529,6 +529,21 @@ class JUri
 	}
 
 	/**
+	 * Sets the URI path string.
+	 *
+	 * @param   string  $path  The URI path string.
+	 * 
+	 * @return  void
+	 *
+	 * @since   10.1.72
+	 */
+	public function setPath($path)
+	{
+		// remove duplicate slashes
+		$this->path = preg_replace("/\/{2,}/", '/', $path);
+	}
+
+	/**
 	 * Gets the URI anchor string (everything after the "#").
 	 *
 	 * @return  string  The URI anchor string.

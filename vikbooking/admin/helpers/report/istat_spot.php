@@ -186,6 +186,26 @@ class VikBookingReportIstatSpot extends VikBookingReport
 		);
 		array_push($this->reportFilters, $filter_opt);
 
+		// Listings Filter
+		$filter_opt = array(
+			'label' => '<label for="listingsfilt">' . JText::translate('VBO_LISTINGS') . '</label>',
+			'html' => '<span class="vbo-toolbar-multiselect-wrap">' . VikBooking::getVboApplication()->renderElementsDropDown([
+				'id'              => 'listingsfilt',
+				'elements'        => 'listings',
+				'placeholder'     => JText::translate('VBO_LISTINGS'),
+				'allow_clear'     => 1,
+				'attributes'      => [
+					'name' => 'listings[]',
+					'multiple' => 'multiple',
+				],
+				'selected_values' => (array) (JFactory::getApplication()->input->get('listings', [], 'array') ?: $this->getReportOptions()->get('listings', [])),
+			]) . '</span>',
+			'type' => 'select',
+			'multiple' => true,
+			'name' => 'listings',
+		);
+		array_push($this->reportFilters, $filter_opt);
+
 		// Filtro Numero Letti
 		$pletti = VikRequest::getInt('numletti', 0, 'request');
 		$filter_opt = array(

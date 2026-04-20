@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="COM_VIKBOOKING_QUOTE_VIEW_DEFAULT_TITLE">
+		<message>COM_VIKBOOKING_QUOTE_VIEW_DEFAULT_DESC</message>
+	</layout>
+	<view title="Quote Details" >
+		<message><![CDATA[VikBooking Quote Details]]></message>
+	</view>
+	<state>
+		<name>Quote Details</name>
+		<description>VikBooking Quote Details</description>
+	</state>
+</metadata>

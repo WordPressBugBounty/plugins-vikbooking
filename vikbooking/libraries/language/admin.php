@@ -866,9 +866,6 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 			case 'VBPAYMENTMETHOD':
 				$result = __('Method of Payment', 'vikbooking');
 				break;
-			case 'VBUSEJUTILITY':
-				$result = __('Send emails with JUtility', 'vikbooking');
-				break;
 			case 'VBCONFIGTHREENINE':
 				$result = __('Show Partially Reserved Days', 'vikbooking');
 				break;
@@ -915,52 +912,40 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('To see your booking details, visit the following page', 'vikbooking');
 				break;
 			case 'VBMONTHONE':
-				// @TRANSLATORS: Full month name
-				$result = _x('January', 'Full month name', 'vikbooking');
+				$result = __('January');
 				break;
 			case 'VBMONTHTWO':
-				// @TRANSLATORS: Full month name
-				$result = _x('February', 'Full month name', 'vikbooking');
+				$result = __('February');
 				break;
 			case 'VBMONTHTHREE':
-				// @TRANSLATORS: Full month name
-				$result = _x('March', 'Full month name', 'vikbooking');
+				$result = __('March');
 				break;
 			case 'VBMONTHFOUR':
-				// @TRANSLATORS: Full month name
-				$result = _x('April', 'Full month name', 'vikbooking');
+				$result = __('April');
 				break;
 			case 'VBMONTHFIVE':
-				// @TRANSLATORS: Full month name
-				$result = _x('May', 'Full month name', 'vikbooking');
+				$result = __('May');
 				break;
 			case 'VBMONTHSIX':
-				// @TRANSLATORS: Full month name
-				$result = _x('June', 'Full month name', 'vikbooking');
+				$result = __('June');
 				break;
 			case 'VBMONTHSEVEN':
-				// @TRANSLATORS: Full month name
-				$result = _x('July', 'Full month name', 'vikbooking');
+				$result = __('July');
 				break;
 			case 'VBMONTHEIGHT':
-				// @TRANSLATORS: Full month name
-				$result = _x('August', 'Full month name', 'vikbooking');
+				$result = __('August');
 				break;
 			case 'VBMONTHNINE':
-				// @TRANSLATORS: Full month name
-				$result = _x('September', 'Full month name', 'vikbooking');
+				$result = __('September');
 				break;
 			case 'VBMONTHTEN':
-				// @TRANSLATORS: Full month name
-				$result = _x('October', 'Full month name', 'vikbooking');
+				$result = __('October');
 				break;
 			case 'VBMONTHELEVEN':
-				// @TRANSLATORS: Full month name
-				$result = _x('November', 'Full month name', 'vikbooking');
+				$result = __('November');
 				break;
 			case 'VBMONTHTWELVE':
-				// @TRANSLATORS: Full month name
-				$result = _x('December', 'Full month name', 'vikbooking');
+				$result = __('December');
 				break;
 			case 'VBNOSEASONS':
 				$result = __('No Special Prices found', 'vikbooking');
@@ -1968,7 +1953,7 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Booking Status: Waiting for the payment. Choose one type of price and eventually some of the Options. Then click on Save to complete the Standby - Quick Reservation.', 'vikbooking');
 				break;
 			case 'VBCHANGEPAYLABEL':
-				$result = __('::Change method of payment::', 'vikbooking');
+				$result = __('Change method of payment', 'vikbooking');
 				break;
 			case 'VBCHANGEPAYCONFIRM':
 				$result = __('Change method of payment to ', 'vikbooking');
@@ -2373,52 +2358,52 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				$result = __('Any Room', 'vikbooking');
 				break;
 			case 'VBSHORTMONTHONE':
-				// @TRANSLATORS: Short month name
-				$result = _x('Jan', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: January abbreviation
+				$result = _x('Jan', 'January abbreviation');
 				break;
 			case 'VBSHORTMONTHTWO':
-				// @TRANSLATORS: Short month name
-				$result = _x('Feb', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: February abbreviation
+				$result = _x('Feb', 'February abbreviation');
 				break;
 			case 'VBSHORTMONTHTHREE':
-				// @TRANSLATORS: Short month name
-				$result = _x('Mar', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: March abbreviation
+				$result = _x('Mar', 'March abbreviation');
 				break;
 			case 'VBSHORTMONTHFOUR':
-				// @TRANSLATORS: Short month name
-				$result = _x('Apr', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: April abbreviation
+				$result = _x('Apr', 'April abbreviation');
 				break;
 			case 'VBSHORTMONTHFIVE':
-				// @TRANSLATORS: Short month name
-				$result = _x('May', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: May abbreviation
+				$result = _x('May', 'May abbreviation');
 				break;
 			case 'VBSHORTMONTHSIX':
-				// @TRANSLATORS: Short month name
-				$result = _x('Jun', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: June abbreviation
+				$result = _x('Jun', 'June abbreviation');
 				break;
 			case 'VBSHORTMONTHSEVEN':
-				// @TRANSLATORS: Short month name
-				$result = _x('Jul', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: July abbreviation
+				$result = _x('Jul', 'July abbreviation');
 				break;
 			case 'VBSHORTMONTHEIGHT':
-				// @TRANSLATORS: Short month name
-				$result = _x('Aug', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: August abbreviation
+				$result = _x('Aug', 'August abbreviation');
 				break;
 			case 'VBSHORTMONTHNINE':
-				// @TRANSLATORS: Short month name
-				$result = _x('Sep', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: September abbreviation
+				$result = _x('Sep', 'September abbreviation');
 				break;
 			case 'VBSHORTMONTHTEN':
-				// @TRANSLATORS: Short month name
-				$result = _x('Oct', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: October abbreviation
+				$result = _x('Oct', 'October abbreviation');
 				break;
 			case 'VBSHORTMONTHELEVEN':
-				// @TRANSLATORS: Short month name
-				$result = _x('Nov', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: November abbreviation
+				$result = _x('Nov', 'November abbreviation');
 				break;
 			case 'VBSHORTMONTHTWELVE':
-				// @TRANSLATORS: Short month name
-				$result = _x('Dec', 'Short month name', 'vikbooking');
+				// @TRANSLATORS: December abbreviation
+				$result = _x('Dec', 'December abbreviation');
 				break;
 			case 'VBMDAYFRIST':
 				$result = __('st', 'vikbooking');
@@ -8532,6 +8517,160 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 				break;
 			case 'VBO_INCR_ZERO_RESTR_TIP':
 				$result = __('No rate value entered. To update only the minimum stay, switch to "Increase/Decrease rates" and use 0 as the amount.', 'vikbooking');
+				break;
+			case 'VBO_CHAT_BAN_SESSION':
+				$result = __('Ban session', 'vikbooking');
+				break;
+			case 'VBO_CHAT_UNBAN_SESSION':
+				$result = __('Unban session', 'vikbooking');
+				break;
+			case 'VBO_CHAT_STOP_AI_SESSION':
+				$result = __('Stop AI replies', 'vikbooking');
+				break;
+			case 'VBO_CHAT_RESUME_AI_SESSION':
+				$result = __('Resume AI replies', 'vikbooking');
+				break;
+			case 'VBO_CHAT_QUERY_SUMMARY_TITLE':
+				$result = __('Inquiry Summary', 'vikbooking');
+				break;
+			case 'VBO_CHAT_QUERY_SUMMARY_PREF_ROOMS':
+				$result = __('Preferred Listings', 'vikbooking');
+				break;
+			case 'VBO_CHAT_AI_LOCKED_REPLY':
+				$result = __('An operator has been notified of your request. You will receive a response as soon as possible.', 'vikbooking');
+				break;
+			case 'VBO_CHAT_USER_BANNED_BY_AI':
+				$result = __('I have identified your message as suspicious. The conversation has been locked for security reasons.', 'vikbooking');
+				break;
+			case 'VBO_CHAT_AI_REPLY_DOWNTIME_ERROR':
+				$result = __('An error has occurred. Please wait for an administrator to reply.', 'vikbooking');
+				break;
+			case 'VBO_CHAT_SESSION_QUERY_SEE':
+				$result = __('View Inquiry', 'vikbooking');
+				break;
+			case 'VBO_CHAT_SESSION_SUMMARY':
+				// @TRANSLATORS: i.e. Inquiry - John
+				$result = _x('Inquiry - %s', 'i.e. Inquiry - John', 'vikbooking');
+				break;
+			case 'VBO_CHAT_SUMMARIZE':
+				$result = __('Summarize', 'vikbooking');
+				break;
+			case 'VBO_CHAT_SUMMARIZE_TITLE':
+				$result = __('Summary', 'vikbooking');
+				break;
+			case 'VBO_W_INQUIRIESCHAT_TITLE':
+				$result = __('Inquiries Chat', 'vikbooking');
+				break;
+			case 'VBO_W_INQUIRIESCHAT_DESCR':
+				$result = __('The inquiries chat interface to handle conversations about various contexts.', 'vikbooking');
+				break;
+			case 'VBO_SEND_MESSAGE':
+				$result = __('Send Message', 'vikbooking');
+				break;
+			case 'VBO_MESSAGE_TEMPLATE':
+				$result = __('Message Template', 'vikbooking');
+				break;
+			case 'VBO_MESSAGING_ACCOUNT':
+				$result = __('Messaging Account', 'vikbooking');
+				break;
+			case 'VBO_CRON_MESSAGING_REMINDER_TITLE':
+				$result = __('Reminder - Messaging', 'vikbooking');
+				break;
+			case 'VBO_DAYS_OFFSET':
+				$result = __('Days offset', 'vikbooking');
+				break;
+			case 'VBO_NOTIFS_GROUP_WEBHOOK':
+				$result = __('Webhook', 'vikbooking');
+				break;
+			case 'VBO_QUOTE_MNG_TITLE':
+				$result = __('Vik Booking - Manage Quote', 'vikbooking');
+				break;
+			case 'VBO_QUOTE_OPTIONS':
+				// @TRANSLATORS: Label for "Quote solutions".
+				$result = _x('Solutions', 'Label for "Quote solutions".', 'vikbooking');
+				break;
+			case 'VBO_NEW_OPTION':
+				// @TRANSLATORS: Label for "New quote solution".
+				$result = _x('New Solution', 'Label for "New quote solution".', 'vikbooking');
+				break;
+			case 'VBO_OPTION':
+				// @TRANSLATORS: Label for "Quote solution".
+				$result = _x('Solution', 'Label for "Quote solution".', 'vikbooking');
+				break;
+			case 'VBO_AV_CONFIRMED_DATES':
+				$result = __('Availability confirmed for the selected dates.', 'vikbooking');
+				break;
+			case 'VBO_QUOTE_VALIDITY':
+				$result = __('Quote Valid Until', 'vikbooking');
+				break;
+			case 'VBO_SEND_QUOTE':
+				$result = __('Send Quote', 'vikbooking');
+				break;
+			case 'VBO_AITOOL_WRITER_QUOTE_DEF_PROMPT':
+				$result = __('Write a professional and welcoming email message to a guest presenting a personalized room booking quotation.', 'vikbooking');
+				break;
+			case 'VBO_QUOTE_NAME':
+				$result = __('Internal Quote Name', 'vikbooking');
+				break;
+			case 'VBO_VALIDITY':
+				$result = __('Validity', 'vikbooking');
+				break;
+			case 'VBO_SEND_LATER':
+				$result = __('Send later', 'vikbooking');
+				break;
+			case 'VBO_SAVE_QUOTE':
+				$result = __('Save Quote', 'vikbooking');
+				break;
+			case 'VBO_CHAT_SESSION_SEND_TMPL':
+				$result = __('Send Message Template', 'vikbooking');
+				break;
+			case 'VBO_BTYPE_QUOTE':
+				$result = __('Quote', 'vikbooking');
+				break;
+			case 'VBO_QUOTE_DETAILS':
+				$result = __('Quote Details', 'vikbooking');
+				break;
+			case 'VBO_CREATE_QUOTE':
+				$result = __('Create Quote', 'vikbooking');
+				break;
+			case 'VBO_QUOTES':
+				$result = __('Quotes', 'vikbooking');
+				break;
+			case 'VBO_W_QUOTES_DESCR':
+				$result = __('List all quotes for customers.', 'vikbooking');
+				break;
+			case 'VBO_SENT':
+				$result = __('Sent', 'vikbooking');
+				break;
+			case 'VBO_OPENED':
+				$result = __('Opened', 'vikbooking');
+				break;
+			case 'VBO_QUOTE_DEF_MESS':
+				$result = __('Dear {first_name},\n\nThank you for considering our property for your stay. Please find your personalized quotation below, including a selection of booking options tailored for you.\n\n{quote_link}\n\nIf you have any questions, feel free to get in touch. We will be happy to assist you.', 'vikbooking');
+				break;
+			case 'VBO_EXPIRES':
+				$result = __('Expires', 'vikbooking');
+				break;
+			case 'VBO_NOMORE_RECORDS_DISPLAY':
+				$result = __('No more records to display.', 'vikbooking');
+				break;
+			case 'VBO_SAVE_PREF':
+				$result = __('Save as preferred', 'vikbooking');
+				break;
+			case 'VBO_PREF_MESS_HELP':
+				$result = __('Preferred messages are saved for later use.', 'vikbooking');
+				break;
+			case 'VBO_CHOOSE_SEND_METHOD':
+				$result = __('Choose sending method', 'vikbooking');
+				break;
+			case 'VBO_HOW_SEND_MESSAGE':
+				$result = __('How would you like to send the message?', 'vikbooking');
+				break;
+			case 'VBO_SEL_PREF_MESS':
+				$result = __('Preferred messages', 'vikbooking');
+				break;
+			case 'VBO_QUOTE_NOTES_HELP':
+				$result = __('Notes will be displayed to customer in front-end.', 'vikbooking');
 				break;
 		}
 

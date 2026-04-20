@@ -181,9 +181,9 @@ final class VBOPerformanceCleaner
         $snapshotData = [
             'listing_id'   => null,
             'id_price'     => $options['id_price'] ?? null,
-            'from_date'    => date('Y-m-d'),
-            'to_date'      => date('Y-m-d', strtotime(sprintf('+%d months', (int) ($options['months'] ?? 3)))),
-            'skip_derived' => true,
+            'from_date'    => $options['from_date'] ?? date('Y-m-d'),
+            'to_date'      => $options['to_date'] ?? date('Y-m-d', strtotime(sprintf('+%d months', (int) ($options['months'] ?? 3)))),
+            'skip_derived' => boolval($options['skip_derived'] ?? true),
             'use_cache'    => true,
             'forced'       => true,
         ];

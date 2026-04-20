@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  core
  * @author      E4J s.r.l.
- * @copyright   Copyright (C) 2021 E4J s.r.l. All Rights Reserved.
+ * @copyright   Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * @link        https://vikwp.com
  */
@@ -48,19 +48,22 @@ trait VBOChatNotificationWebpush
         }
 
         try {
+            /** @var VBOChatContext */
+            $context = $message->getContext();
+
             // store the notification record
             VBOFactory::getNotificationCenter()->store([
                 [
-                    'sender' => 'operators',
+                    'sender' => $context->getAlias() === 'session' ? 'website' : 'operators',
                     'type' => 'chat.newmessage',
-                    'title' => JText::sprintf('VBO_CHAT_MESSAGE_WEBPUSH_NOTIFICATION_TITLE', $message->getContext()->getSubject()),
+                    'title' => JText::sprintf('VBO_CHAT_MESSAGE_WEBPUSH_NOTIFICATION_TITLE', $context->getSubject()),
                     'summary' => $summary,
                     'label' => JText::translate('VBO_REPLY'),
                     'avatar' => $user->getAvatar(),
-                    'widget' => 'operators_chat',
+                    'widget' => $context->getAlias() === 'session' ? 'inquiries_chat' : 'operators_chat',
                     'widget_options' => [
-                        'context_alias' => $message->getContext()->getAlias(),
-                        'context_id' => $message->getContext()->getID(),
+                        'context_alias' => $context->getAlias(),
+                        'context_id' => $context->getID(),
                     ],
                     // always skip signature check, so that we can allow a duplicate insert
                     '_signature' => md5(time()),

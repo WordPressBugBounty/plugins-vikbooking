@@ -71,6 +71,8 @@
     width: auto;
 }
 .vik-dots-slider-navbuttons {
+    display: flex;
+    justify-content: space-between;
     opacity: 0;
     position: absolute;
     width: 95%;
@@ -86,9 +88,10 @@
     opacity: 1;
 }
 .vik-dots-slider-navbuttons > span {
+    display: flex;
+    align-content: center;
+    justify-content: center;
     cursor: pointer;
-    display: inline-block;
-    text-align: center;
     background: rgba(255, 255, 255, 0.9);
     width: 32px;
     height: 32px;
@@ -108,9 +111,6 @@
     -webkit-transform: scale(1.04);
     -ms-transform: scale(1.04);
     transform: scale(1.04);
-}
-.vik-dots-slider-navbutton-next {
-    float:right;
 }
 .vik-dots-slider-inner .vik-dots-slider-slide-start {
     left: 0;

@@ -41,6 +41,8 @@ class VBONotificationElements extends JObject
 		'ai',
 		// notifications from Door Access Control
 		'dac',
+		// notifications from any Webhook event
+		'webhook',
 	];
 
 	/**
@@ -148,7 +150,7 @@ class VBONotificationElements extends JObject
 	public function getSummary()
 	{
 		// access the notification summary
-		$summary = (string) $this->get('summary', '');
+		$summary = strip_tags((string) $this->get('summary', ''));
 
 		// normalize the summary, if needed
 		if ($summary && $this->getChannel() && !strcasecmp($this->getType(), 'lvf')) {

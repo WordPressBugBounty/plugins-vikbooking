@@ -71,4 +71,40 @@ class VikBookingControllerListings extends JControllerAdmin
 		// send result to output
 		VBOHttpDocument::getInstance()->json($result);
 	}
+
+	/**
+	 * AJAX endpoint to get the eligible options/extras for a given room party.
+	 * 
+	 * @return 	void
+	 * 
+	 * @since 	1.18.8 (J) - 1.8.8 (WP)
+	 */
+	public function get_eligible_options()
+	{
+		if (!JSession::checkToken()) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
+		$app = JFactory::getApplication();
+
+		// gather request values
+		$listingId = $app->input->getUInt('listing_id', 0);
+		$adults    = $app->input->getUInt('adults', 0);
+		$children  = $app->input->getUInt('children', 0);
+		$rateId    = $app->input->getUInt('rate_id', 0);
+		$checkin   = $app->input->getString('checkin', '');
+		$checkout  = $app->input->getString('checkout', '');
+
+		// get the listing eligible options for the given room party
+		$eligibleOptions = VBORoomHelper::getInstance()->getEligibleOptions($listingId, [
+			'checkin'  => $checkin,
+			'checkout' => $checkout,
+			'adults'   => $adults,
+			'children' => $children,
+			'rate_id'  => $rateId,
+		]);
+
+		// send list to output
+		VBOHttpDocument::getInstance($app)->json($eligibleOptions);
+	}
 }

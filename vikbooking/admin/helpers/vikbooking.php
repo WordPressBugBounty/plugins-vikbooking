@@ -257,7 +257,7 @@ class VikBookingHelper
 								<li>
 									<div class="<?php echo ($highlight == "fares" ? "vmenulinkactive" : "vmenulink"); ?>">
 										<a href="index.php?option=com_vikbooking&amp;task=tariffs">
-											<?php VikBookingIcons::e('toolbox'); ?>
+											<?php VikBookingIcons::e('filter-circle-dollar'); ?>
 											<span class="vbo-submenu-item">
 												<span class="vbo-submenu-item-txt"><?php echo JText::translate('VBMENUPRICESTABLE'); ?></span>
 											</span>
@@ -321,8 +321,18 @@ class VikBookingHelper
 												<span class="vbo-submenu-item-txt"><?php echo JText::translate('VBMENUQUICKRES'); ?></span>
 											</span>
 										</a>
-										</div>
-									</li>
+									</div>
+								</li>
+								<li>
+									<div class="<?php echo ($highlight == "managequote" ? "vmenulinkactive" : "vmenulink"); ?>">
+										<a href="index.php?option=com_vikbooking&amp;view=managequote">
+											<?php VikBookingIcons::e('file-alt'); ?>
+											<span class="vbo-submenu-item">
+												<span class="vbo-submenu-item-txt"><?php echo JText::translate('VBO_CREATE_QUOTE'); ?></span>
+											</span>
+										</a>
+									</div>
+								</li>
 							<?php endif; ?>
 							<?php if ($vbo_auth_availability) : ?>
 								<li>
@@ -505,7 +515,7 @@ class VikBookingHelper
 							<span><?php echo JText::translate('VBOGOTOPROBTN'); ?></span>
 						</button>
 					<?php
-				} else {
+				} elseif ($vbo_auth_global) {
 					?>
 						<button type="button" class="vbo-alreadypro" title="<?php echo addslashes(JText::translate('VBOISPROBTN')); ?>" onclick="document.location.href='admin.php?option=com_vikbooking&view=gotopro';">
 							<?php VikBookingIcons::e('trophy'); ?>
@@ -676,7 +686,7 @@ class VikBookingHelper
 			if ($view != 'dashboard') {
 				?>
 					<button type="button" class="vbo-multitasking-apps" title="<?php echo htmlspecialchars(JText::translate('VBO_MULTITASK_PANEL'), ENT_QUOTES, 'UTF-8'); ?>">
-						<?php VikBookingIcons::e('th'); ?>
+						<?php VikBookingIcons::e('grip'); ?>
 					</button>
 
 					<?php

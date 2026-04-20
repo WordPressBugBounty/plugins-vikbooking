@@ -17,13 +17,15 @@ $pstatename = $app->getUserStateFromRequest("vbo.states.statename", 'statename',
 $vbo_app = VikBooking::getVboApplication();
 $vbo_app->loadSelect2();
 
+JText::script('VBNEWCUSTOMFCOUNTRY');
+
 ?>
 <div class="vbo-list-form-filters vbo-btn-toolbar">
 	<form action="index.php?option=com_vikbooking&amp;view=states" method="post" name="statesform">
 		<div style="width: 100%; display: inline-block;" class="btn-toolbar" id="filter-bar">
 			<div class="btn-group pull-left">
 				<select name="idcountry" id="idcountry" onchange="document.statesform.submit();">
-					<option value=""><?php echo JText::translate('VBNEWCUSTOMFCOUNTRY'); ?></option>
+					<option></option>
 				<?php
 				foreach (VikBooking::getCountriesArray($tn = true, $no_id = false) as $country) {
 					?>
@@ -33,7 +35,7 @@ $vbo_app->loadSelect2();
 				?>
 				</select>
 			</div>
-			<div class="btn-group pull-left input-append">
+			<div class="btn-group pull-left input-append btn-group-right-el">
 				<input type="text" name="statename" id="statename" value="<?php echo JHtml::fetch('esc_attr', $pstatename); ?>" size="40" placeholder="<?php echo JText::translate('VBPVIEWROOMONE'); ?>"/>
 				<button type="button" class="btn btn-secondary" onclick="document.statesform.submit();"><i class="icon-search"></i></button>
 			</div>
@@ -46,10 +48,17 @@ $vbo_app->loadSelect2();
 	</form>
 </div>
 
-<script type="text/javascript">
-jQuery(function() {
-	jQuery('#idcountry').select2();
-});
+<script>
+(function($) {
+	'use strict';
+
+	$(function() {
+		$('#idcountry').select2({
+			allowClear: true,
+			placeholder: Joomla.JText._('VBNEWCUSTOMFCOUNTRY'),
+		});
+	});
+})(jQuery);
 </script>
 
 <?php

@@ -313,7 +313,11 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		foreach ($latest_messages as $ind => $gmessage) {
 			$gmessage_content = $gmessage->content;
 			if (empty($gmessage_content)) {
-				$gmessage_content = '.....';
+				if (!empty($gmessage->attachments)) {
+					$gmessage_content = '<i class="' . VikBookingIcons::i('paperclip') . '"></i> ' . basename($gmessage->attachments[0] ?? '');
+				} else {
+					$gmessage_content = '.....';
+				}
 			} elseif (strlen($gmessage_content) > 90) {
 				if (function_exists('mb_substr')) {
 					$gmessage_content = mb_substr($gmessage_content, 0, 90, 'UTF-8');
@@ -341,7 +345,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				data-idthread="<?php echo !empty($gmessage->id_thread) ? $gmessage->id_thread : ''; ?>"
 				data-idmessage="<?php echo !empty($gmessage->id_message) ? $gmessage->id_message : ''; ?>"
 				data-noreply-needed="<?php echo $gmessage->no_reply_needed ?: 0; ?>"
-				onclick="vboWidgetGuestMessagesOpenChat('<?php echo $gmessage->idorder; ?>');"
+				onclick="vboWidgetGuestMessagesOpenChat('<?php echo $gmessage->idorder; ?>', '<?php echo $gmessage->id_thread ?? 0; ?>');"
 			>
 				<div class="vbo-dashboard-guest-activity-avatar">
 				<?php
@@ -363,6 +367,17 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				} else {
 					// we use an icon as fallback
 					VikBookingIcons::e('user', 'vbo-dashboard-guest-activity-avatar-icon');
+				}
+
+				// attempt to include the thread channel handler
+				if (!empty($gmessage->channel_logo)) {
+					?>
+					<img class="vbo-avatar-subprofile" src="<?php echo $gmessage->channel_logo; ?>" />
+					<?php
+				} else {
+					?>
+					<span class="vbo-avatar-subprofile-txt"><?php VikBookingIcons::e('hotel'); ?></span>
+					<?php
 				}
 
 				// check for AI priority enum
@@ -457,7 +472,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								$str_checkin .= $stay_info_in['mon'] != $stay_info_out['mon'] ? ' ' . VikBooking::sayMonth($stay_info_in['mon'], $short = true) : '';
 								$str_checkout = date('d', $gmessage->b_checkout) . ' ' . VikBooking::sayMonth($stay_info_out['mon'], $short = true);
 								if ($stay_info_in['year'] != $stay_info_out['year'] || $stay_info_in['year'] != $current_y || $stay_info_out['year'] != $current_y) {
-									$str_checkout .= ' ' . $stay_info_in['year'];
+									$str_checkout .= ' ' . $stay_info_out['year'];
 								}
 								?>
 								<span class="vbo-w-guestmessages-message-staydates">
@@ -629,7 +644,10 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 	 */
 	public function renderChat()
 	{
-		$bid = VikRequest::getInt('bid', 0, 'request');
+		$app = JFactory::getApplication();
+
+		$bid = $app->input->getUint('bid', 0);
+		$threadId = $app->input->getUint('threadid', 0);
 
 		$booking = VikBooking::getBookingInfoFromID($bid);
 
@@ -665,6 +683,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		// send content to output
 		echo $messaging->renderChat([
 			'hideThreads' => 1,
+			'preferredThread' => $threadId,
 		], $load_assets = false);
 	}
 
@@ -1113,9 +1132,15 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			/**
 			 * Open the chat for the clicked booking guest message
 			 */
-			function vboWidgetGuestMessagesOpenChat(id) {
+			function vboWidgetGuestMessagesOpenChat(id, threadId) {
 				// clicked message
-				var message_el = jQuery('.vbo-w-guestmessages-message[data-idorder="' + id + '"]').first();
+				let message_el = jQuery('.vbo-w-guestmessages-message[data-idorder="' + id + '"]');
+
+				if (threadId) {
+					message_el = message_el.filter('[data-idthread="' + threadId + '"]');
+				}
+
+				message_el = message_el.first();
 
 				if (message_el.hasClass('vbo-w-guestmessages-message-new')) {
 					// get rid of the "new/unread" status
@@ -1314,6 +1339,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						widget_id: "<?php echo $this->getIdentifier(); ?>",
 						call: call_method,
 						bid: id,
+						threadid: message_el.attr('data-idthread'),
 						tmpl: "component"
 					},
 					(response) => {
@@ -1341,7 +1367,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								chat_inline_container.append(chat_inline_body);
 							}
 
-							// register scroll to bottom with a small delay
+							// register extra callbacks with a small delay to make sure the chat is ready
 							setTimeout(() => {
 								if (typeof VCMChat !== 'undefined') {
 									VCMChat.getInstance().scrollToBottom();

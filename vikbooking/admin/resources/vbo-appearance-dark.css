@@ -328,6 +328,7 @@ input.readonly, input[readonly], textarea.readonly, textarea[readonly], input[ty
 }
 input[type="color"]:focus, input[type="date"]:focus, input[type="datetime-local"]:focus, input[type="datetime"]:focus, input[type="email"]:focus, input[type="month"]:focus, input[type="number"]:focus, input[type="password"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="text"]:focus, input[type="time"]:focus, input[type="url"]:focus, input[type="week"]:focus, select:focus, textarea:focus {
     background: var(--vbo-config-child-bg-color);
+    border-color: var(--vbo-base-color) !important;
 }
 .comment-ays, .feature-filter, .imgedit-group, .popular-tags, .stuffbox, .widgets-holder-wrap, .wp-editor-container, p.popular-tags, table.widefat {
     background: var(--vbo-config-bg-color);
@@ -680,6 +681,41 @@ code, kbd {
 .vbo-chat-interface .vbo-chat-threads .chat-thread[data-read="0"] {
     background: #283d62 !important;
 }
+.chat-message .message-content.received .chat-user-type {
+    background: #3a3a3a;
+    border: 1px solid #222;
+}
+.chat-message .message-content.sent .chat-user-type {
+    background: #003561;
+    border: 1px solid #005297;
+}
+.chat-message .message-content.sent .reactions {
+    background: #003561;
+    border: 1px solid #005297;    
+}
+.chat-message .message-content.received .reactions {
+    background: #3c404c;
+    border: 1px solid #666;    
+}
+.chat-message .chat-user-reactions i {
+    background: #3c404c;
+    border: 1px solid #666;  
+}
+.chat-message .chat-user-reactions i:hover {
+    color: #eee;
+}
+.chat-message .reaction-picker {
+    background: #272727;
+}
+.chat-message .reaction-picker button:hover {
+    background: #4c4c4c;
+}
+.chat-session-toast .query-summary-head {
+    background: #333a64;
+}
+.chat-session-toast .chat-session-toast-message-content {
+    background-color: #222930;
+}
 /* VikBooking Telephone */
 .iti__country-list {
     background: var(--vbo-config-bg-color);
@@ -977,7 +1013,7 @@ body.admin.layout-default #jmodal-vbo-notification-details button.btn-close {
     background: var(--vbo-config-bg-color);
 }
 body.admin.layout-default #jmodal-vbo-notification-details button.btn-close:after {
-    font-family: "Font Awesome 5 Free", FontAwesomes !important;
+    font-family: "Font Awesome 7 Free", FontAwesome !important;
     content: "\f00d";
     font-weight: 900;
     color: #fff;
@@ -1317,6 +1353,20 @@ joomla-toolbar-button .dropdown-menu  {
     border-top: 1px solid #1f232b;
 }
 
+/* Quotations */
+.vbo-quote-option-summary {
+    color: #fff;
+}
+.btn.vbo-quote-option-room-extra-add-btn {
+    background-color: var(--vbo-basic-btn-hover);
+    border-color: var(--vbo-config-border-color);
+    color: var(--vbo-body-text-color);
+}
+.btn.vbo-quote-option-room-extra-add-btn:hover {
+    background-color: var(--vbo-basic-btn);
+    border-color: var(--vbo-config-border-color);
+}
+
 /* Pagination */
 .pagination-links .button:not(.disabled) {
     border: 1px solid var(--vbo-light-color-btn) !important;
@@ -1331,4 +1381,15 @@ joomla-toolbar-button .dropdown-menu  {
     background: var(--vbo-basic-btn) !important;
     color: var(--vbo-config-title-color) !important;
     border-color: var(--vbo-config-border-color) !important;
+}
+
+/* WhatsApp Business */
+.vcm-wa-tpl-prevw-content-inner {
+    background-color: #144d37;
+}
+.vcm-wa-tpl-prevw-content-inner:after {
+    border-color: transparent #144d37 transparent transparent;
+}
+.vcm-wa-tpl-prevw-content {
+    background-color: #161717;
 }

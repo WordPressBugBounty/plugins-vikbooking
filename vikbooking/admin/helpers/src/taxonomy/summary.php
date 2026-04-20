@@ -128,6 +128,36 @@ class VBOTaxonomySummary
 	}
 
 	/**
+	 * Gets the tax record data assigned to the given rate plan ID.
+	 * 
+	 * @param 	int 	$ratep_id	The rate plan ID.
+	 * 
+	 * @return 	array 	Empty array or tax record found.
+	 * 
+	 * @since 	1.18.8 (J) - 1.8.8 (WP)
+	 */
+	public static function getTaxRecordFromRatePlan(int $ratep_id)
+	{
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select([
+					$dbo->qn('p.id'),
+					$dbo->qn('p.idiva'),
+					$dbo->qn('t.name'),
+					$dbo->qn('t.aliq'),
+					$dbo->qn('t.taxcap'),
+				])
+				->from($dbo->qn('#__vikbooking_prices', 'p'))
+				->leftJoin($dbo->qn('#__vikbooking_iva', 't') . ' ON ' . $dbo->qn('p.idiva') . ' = ' . $dbo->qn('t.id'))
+				->where($dbo->qn('p.id') . ' = ' . $ratep_id)
+		);
+
+		return $dbo->loadAssoc() ?: [];
+	}
+
+	/**
 	 * Gets the tax rate assigned to the given tax ID.
 	 * 
 	 * @param 	int 	$tax_id		the tax ID.
@@ -155,17 +185,17 @@ class VBOTaxonomySummary
 	/**
 	 * Returns the whole tax rate record from the given ID.
 	 * 
-	 * @param 	int 	$tax_id 	the tax record ID.
+	 * @param 	?int 	$tax_id 	The tax record ID.
 	 * 
 	 * @return 	array
 	 * 
-	 * @since 	1.16.1 (J) - 1.6.1 (WP)
+	 * @since 	1.18.8 (J) - 1.8.8 (WP) argument is nullable.
 	 */
-	public static function getTaxRateRecord($tax_id)
+	public static function getTaxRateRecord(?int $tax_id)
 	{
 		static $tax_map = [];
 
-		$tax_id = (int)$tax_id;
+		$tax_id = (int) $tax_id;
 
 		if (isset($tax_map[$tax_id])) {
 			return $tax_map[$tax_id];
@@ -175,16 +205,11 @@ class VBOTaxonomySummary
 
 		$q = "SELECT * FROM `#__vikbooking_iva` WHERE `id`=" . $tax_id;
 		$dbo->setQuery($q, 0, 1);
-		$record = $dbo->loadAssoc();
-
-		if (!$record) {
-			$record = [];
-		}
 
 		// cache value and return it
-		$tax_map[$tax_id] = $record;
+		$tax_map[$tax_id] = $dbo->loadAssoc();
 
-		return $record;
+		return $tax_map[$tax_id];
 	}
 
 	/**

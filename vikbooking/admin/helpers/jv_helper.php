@@ -1228,6 +1228,9 @@ templateSelection: (element) => {
 JAVASCRIPT;
 		}
 
+		// choices name data attribute
+		$sel2ChoiceName = preg_replace('/[^a-z0-9\-\_]+/i', '', (string) ($options['attributes']['data-choice'] ?? $options['attributes']['name'] ?? ''));
+
 		// build script declaration
 		$js_decl = <<<JAVASCRIPT
 jQuery(function() {
@@ -1239,13 +1242,13 @@ jQuery(function() {
 		templateResult: (element) => {
 			let isNested = element?._nested;
 			if (element.img) {
-				return jQuery('<span class="vbo-sel2-element-img' + (isNested ? ' vbo-sel2-element-nested' : '') + '"><img src="' + element.img + '" /> <span>' + element.text + '</span></span>');
+				return jQuery('<span data-choice="$sel2ChoiceName" class="vbo-sel2-element-img' + (isNested ? ' vbo-sel2-element-nested' : '') + '"><img src="' + element.img + '" /> <span>' + element.text + '</span></span>');
 			}
 			if (element.html) {
-				return jQuery('<span class="vbo-sel2-element-img' + (isNested ? ' vbo-sel2-element-nested' : '') + '">' + element.html + ' <span>' + element.text + '</span></span>');
+				return jQuery('<span data-choice="$sel2ChoiceName" class="vbo-sel2-element-img' + (isNested ? ' vbo-sel2-element-nested' : '') + '">' + element.html + ' <span>' + element.text + '</span></span>');
 			}
 			if (isNested) {
-				return jQuery('<span class="vbo-sel2-element-nested"><span>' + element.text + '</span></span>');
+				return jQuery('<span data-choice="$sel2ChoiceName" class="vbo-sel2-element-nested"><span>' + element.text + '</span></span>');
 			}
 			return element.text;
 		},
@@ -2760,6 +2763,9 @@ JS
 		} elseif (!$gen_ai_use_prompt && !strcasecmp(($opts['gen_ai']['environment'] ?? ''), 'taskmanager')) {
 			// use default prompt for the task manager
 			$gen_ai_use_prompt = JText::translate('VBO_AITOOL_WRITER_TM_DEF_PROMPT');
+		} elseif (!$gen_ai_use_prompt && !strcasecmp(($opts['gen_ai']['environment'] ?? ''), 'quote')) {
+			// use default prompt for making a quote
+			$gen_ai_use_prompt = JText::translate('VBO_AITOOL_WRITER_QUOTE_DEF_PROMPT');
 		}
 
 		if ($gen_ai_use_prompt && ($opts['gen_ai']['placeholders'] ?? 0) && $btns) {

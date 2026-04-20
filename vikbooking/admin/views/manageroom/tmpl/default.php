@@ -772,7 +772,7 @@ if (count($row)) {
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBO_MIN_ADV_BOOK_NOTICE'); ?></div>
 							<div class="vbo-param-setting">
-								<div>
+								<div class="vbo-toggle-small">
 									<?php
 									echo $vbo_app->printYesNoButtons('min_adv_notice_room', JText::translate('VBYES'), JText::translate('VBNO'), (empty($mindate_val) ? 0 : 1), 1, 0, 'vboToggleMinAdvNotice(this.checked);');
 									?>
@@ -808,7 +808,7 @@ if (count($row)) {
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBO_MAX_ADV_BOOK_NOTICE'); ?></div>
 							<div class="vbo-param-setting">
-								<div>
+								<div class="vbo-toggle-small">
 									<?php
 									echo $vbo_app->printYesNoButtons('max_adv_notice_room', JText::translate('VBYES'), JText::translate('VBNO'), (empty($room_level_max_adv_notice) || empty($maxdate_val) ? 0 : 1), 1, 0, 'vboToggleMaxAdvNotice(this.checked);');
 									?>

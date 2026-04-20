@@ -29,8 +29,8 @@ $recipients = array_filter($context->getRecipients(), function($user) use ($thre
 /** @var VBOChatUser */
 $user = array_shift($recipients) ?: new VBOChatUserNull($thread->getSenderID(), $thread->getSenderName());
 
-// obtain contents of last message
-$message = $thread->getMessage();
+// obtain plain contents of last message
+$message = strip_tags((string) $thread->getMessage());
 
 // stringify attachments
 $attachments = implode(', ', array_map(function($a) {

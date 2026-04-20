@@ -474,7 +474,7 @@ class JApplication
 	 *
 	 * @since 	10.1.19
 	 */
-	public static function getRouter($name = null, array $options = array())
+	public function getRouter($name = null, array $options = array())
 	{
 		try
 		{

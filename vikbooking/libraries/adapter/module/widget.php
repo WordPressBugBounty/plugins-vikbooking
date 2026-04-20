@@ -158,6 +158,22 @@ class JWidget extends WP_Widget
 			return;
 		}
 
+		/**
+		 * If we are under a block preview, prefer a different layout.
+		 * 
+		 * @since 10.1.71
+		 */
+		if ($this->isBlockPreview()) {
+			// check whether the block preview layout is supported by this widget
+			$blockPreviewLayout = ABSPATH . '/wp-content/plugins/' . $this->_option . '/libraries/wordpress/fse/modules/' . $this->_id . '.php';
+
+			if (JFile::exists($blockPreviewLayout))
+			{
+				// block preview layout supported, use it in place of the default one
+				$layout = JPath::clean($blockPreviewLayout);
+			}
+		}
+
 		// include system.js file to support JoomlaCore
 		JHtml::fetch('system.js');
 
@@ -1061,5 +1077,35 @@ JS
 				$this->extractHtmlElements($node, $tag);
 			}
 		}
+	}
+
+	/**
+	 * Checks whether the block is displayed by a block preview.
+	 * 
+	 * @return  bool
+	 * 
+	 * @since   1.10.71
+	 */
+	protected function isBlockPreview()
+	{
+		$app = JFactory::getApplication();
+
+		// check whether we are displaying the widget on the block preview
+		$restPrefix = trailingslashit(rest_get_url_prefix());
+		$isPreview = strpos($app->input->server->getString('REQUEST_URI', ''), $restPrefix) !== false
+			|| JUri::getInstance($app->input->server->getString('REQUEST_URI', ''))->hasVar('rest_route')
+			|| strpos($app->input->server->getString('REQUEST_URI', ''), '/wp-admin/') !== false;
+
+		/**
+		 * This hook can be used to determine at runtime whether we should display
+		 * a preview of the widget for a block editor.
+		 * 
+		 * @param  bool  $isPreview  Whether the preview layout should be preferred.
+		 * 
+		 * @since  1.10.71
+		 */
+		$isPreview = apply_filters('vikwp_widget_block_preview', $isPreview);
+
+		return $isPreview;
 	}
 }

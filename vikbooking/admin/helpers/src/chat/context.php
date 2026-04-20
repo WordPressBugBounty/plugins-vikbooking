@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  core
  * @author      E4J s.r.l.
- * @copyright   Copyright (C) 2021 E4J s.r.l. All Rights Reserved.
+ * @copyright   Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * @link        https://vikwp.com
  */
@@ -42,13 +42,6 @@ interface VBOChatContext
     public function getRecipients();
 
     /**
-     * Forces the pre-loading of the resources to make the context scripts work.
-     * 
-     * @return  void
-     */
-    public function useAssets();
-
-    /**
      * Returns a short description to identify the context.
      * 
      * @return  string
@@ -56,19 +49,51 @@ interface VBOChatContext
     public function getSubject();
 
     /**
-     * Returns an array of supported actions, which will be added to the
-     * contextual menu displayed within the chat interface.
-     * 
-     * @return  array
-     */
-    public function getActions();
-
-    /**
      * Returns the URL that can be used to access the chat interface.
      * 
      * @return  string
      */
     public function getURL();
+
+    /**
+     * Returns an associative array of metadata related to this context.
+     * 
+     * @param   bool  $public  When true, skip sensistive metadata.
+     * 
+     * @return  array
+     */
+    public function getMetadata(bool $public = false);
+
+    /**
+     * Sets or updates the specified metadata into the context.
+     * 
+     * @param   string  $key    The metadata key.
+     * @param   mixed   $value  The metadata value.
+     * 
+     * @return  void
+     */
+    public function setMetadata(string $key, $value);
+
+    /**
+     * Forces the pre-loading of the resources to make the context scripts work.
+     * 
+     * @param   VBOChatUser  $user  Useful to differentiate the scripts to use
+     *                              depending on the authenticated user.
+     * 
+     * @return  void
+     */
+    public function useAssets(VBOChatUser $user);
+
+    /**
+     * Returns an array of supported actions, which will be added to the
+     * contextual menu displayed within the chat interface.
+     * 
+     * @param   VBOChatUser  $user  Useful to differentiate the actions to use
+     *                              depending on the authenticated user.
+     * 
+     * @return  array
+     */
+    public function getActions(VBOChatUser $user);
 
     /**
      * Checks whether the provided user is allowed to perform the given action

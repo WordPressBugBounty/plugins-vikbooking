@@ -33,7 +33,9 @@ class VikBookingController extends JControllerVikBooking
 			case 'tableaux':
 			case 'precheckin':
 			case 'revstay':
+			case 'chat':
 			case 'tinyurl':
+			case 'quote':
 				VikRequest::setVar('view', $view);
 				break;
 			default:
@@ -2147,11 +2149,11 @@ class VikBookingController extends JControllerVikBooking
 		}
 
 		/**
-         * Trigger event to allow third-party plugins to manipulate the transaction data.
-         * 
-         * @since 	1.18.5 (J) - 1.8.5 (WP)
-         */
-        VBOFactory::getPlatform()->getDispatcher()->trigger('onInitPaymentTransaction', [&$row, &$payment['params'], []]);
+		 * Trigger event to allow third-party plugins to manipulate the transaction data.
+		 * 
+		 * @since 	1.18.5 (J) - 1.8.5 (WP)
+		 */
+		VBOFactory::getPlatform()->getDispatcher()->trigger('onInitPaymentTransaction', [&$row, &$payment['params'], []]);
 
 		if (VBOPlatformDetection::isWordPress()) {
 			/**
@@ -2269,14 +2271,17 @@ class VikBookingController extends JControllerVikBooking
 
 			// deposit may be skipped by customer choice
 			$shouldpay_befdep = $shouldpay;
+			$shouldpay_befdep_no_dd = $shouldpay - ($damage_deposit_payment['damagedep_gross'] ?? 0);
 
 			if (!VikBooking::payTotal()) {
 				$percentdeposit = VikBooking::getAccPerCent();
 				if ($percentdeposit > 0) {
 					if (VikBooking::getTypeDeposit() == "fixed") {
 						$shouldpay = $percentdeposit;
+						$shouldpay_befdep_no_dd = $percentdeposit;
 					} else {
 						$shouldpay = $shouldpay * $percentdeposit / 100;
+						$shouldpay_befdep_no_dd = $shouldpay_befdep_no_dd * $percentdeposit / 100;;
 					}
 				}
 			}
@@ -2289,15 +2294,29 @@ class VikBookingController extends JControllerVikBooking
 			if (isset($array_result['tot_paid'])) {
 				$shouldpay = round($shouldpay, 2);
 				$shouldpay_befdep = round($shouldpay_befdep, 2);
+				$shouldpay_befdep_no_dd = round($shouldpay_befdep_no_dd, 2);
 				$shouldpay_less_damagedep = round(($row['total'] - $row['tot_damage_dep']), 2);
 				$totreceived = round($array_result['tot_paid'], 2);
-				if ($shouldpay != $totreceived && $shouldpay_befdep != $totreceived && $shouldpay_befdd != $totreceived && $shouldpay_less_damagedep != $totreceived && $shouldpay_dd != $totreceived && $row['paymcount'] == 0) {
+				if ($shouldpay != $totreceived && $shouldpay_befdep != $totreceived && $shouldpay_befdep_no_dd != $totreceived && $shouldpay_befdd != $totreceived && $shouldpay_less_damagedep != $totreceived && $shouldpay_dd != $totreceived && $row['paymcount'] == 0) {
 					// the amount paid is different than the order total
 					// fares might have changed or the deposit might be different
 					// Sending just an email to the admin that will check
 					$vbo_app = VikBooking::getVboApplication();
 					$adsendermail = VikBooking::getSenderMail();
-					$vbo_app->sendMail($adsendermail, $adsendermail, $recipient_mail, $adsendermail, JText::translate('VBTOTPAYMENTINVALID'), JText::sprintf('VBTOTPAYMENTINVALIDTXT', $row['id'], $totreceived." (".$array_result['tot_paid'].")", $shouldpay), false);
+					$vbo_app->sendMail(
+						$adsendermail,
+						$adsendermail,
+						$recipient_mail,
+						$adsendermail,
+						JText::translate('VBTOTPAYMENTINVALID'),
+						JText::sprintf(
+							'VBTOTPAYMENTINVALIDTXT',
+							$row['id'],
+							$totreceived . " (" . $array_result['tot_paid'] . ")",
+							$shouldpay
+						),
+						false
+					);
 				}
 
 				// amount paid should be stored as exclusive of transaction fees/discounts
@@ -2426,6 +2445,11 @@ class VikBookingController extends JControllerVikBooking
 			$q = "DELETE FROM `#__vikbooking_tmplock` WHERE `idorder`=" . intval($row['id']) . ";";
 			$dbo->setQuery($q);
 			$dbo->execute();
+
+			if (!empty($row['idquote'])) {
+				// let the quote model handle the release of other locked room records (OTAs included), if any
+				VBOMvcModel::getInstance('quote')->releaseUnconfirmedSolutions((int) $row['idquote'], (int) $row['id']);
+			}
 
 			// customer booking
 			$q = "SELECT `idcustomer` FROM `#__vikbooking_customers_orders` WHERE `idorder`=".(int)$row['id'].";";
@@ -2855,11 +2879,11 @@ class VikBookingController extends JControllerVikBooking
 						$order[0]['transaction_currency'] = VikBooking::getCurrencyCodePp();
 
 						/**
-				         * Trigger event to allow third-party plugins to manipulate the transaction data.
-				         * 
-				         * @since 	1.18.5 (J) - 1.8.5 (WP)
-				         */
-				        VBOFactory::getPlatform()->getDispatcher()->trigger('onInitRefundTransaction', [&$order[0], &$payment['params']]);
+						 * Trigger event to allow third-party plugins to manipulate the transaction data.
+						 * 
+						 * @since 	1.18.5 (J) - 1.8.5 (WP)
+						 */
+						VBOFactory::getPlatform()->getDispatcher()->trigger('onInitRefundTransaction', [&$order[0], &$payment['params']]);
 
 						/**
 						 * @wponly 	The payment gateway is loaded 

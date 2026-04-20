@@ -161,6 +161,45 @@ class VikBookingLicense
 	}
 
 	/**
+	 * Returns the installation date of the plugin.
+	 * 
+	 * @return  string|null
+	 * 
+	 * @since   1.8.8
+	 */
+	public static function getInstallDate()
+	{
+		// fetch install date from database
+		$date = get_option('vikbooking_install_date');
+
+		if ($date) {
+			return $date;
+		}
+
+		// Date not registered on database...
+		// We can estimate the installation date fairly accurately by checking the creation
+		// timestamp of the "vikbooking" folder in the WordPress uploads directory.
+		$uploadsDir = wp_upload_dir();
+
+		if (!is_array($uploadsDir) || empty($uploadsDir['basedir'])) {
+			// uploads folder not configured
+			return null;
+		}
+
+		// create path
+		$path = JPath::clean($uploadsDir['basedir'] . '/vikbooking');
+
+		// make sure the folder exists
+		if (!JFolder::exists($path)) {
+			// missing folder
+			return null;
+		}
+
+		// read modify timestamp for uploads folder
+		return date('Y-m-d H:i:s', filemtime($path));
+	}
+
+	/**
 	 * Registers some options upon installation of the plugin.
 	 *
 	 * @return 	void
@@ -171,6 +210,7 @@ class VikBookingLicense
 		update_option('vikbooking_license_expdate', 0);
 		update_option('vikbooking_license_hash', '');
 		update_option('vikbooking_hide_vcmad', 0);
+		update_option('vikbooking_install_date', date('Y-m-d H:i:s'));
 	}
 
 	/**
@@ -184,5 +224,6 @@ class VikBookingLicense
 		delete_option('vikbooking_license_expdate');
 		delete_option('vikbooking_license_hash');
 		delete_option('vikbooking_hide_vcmad');
+		delete_option('vikbooking_install_date');
 	}
 }

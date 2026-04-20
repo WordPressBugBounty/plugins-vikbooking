@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  core
  * @author      E4J s.r.l.
- * @copyright   Copyright (C) 2021 E4J s.r.l. All Rights Reserved.
+ * @copyright   Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * @link        https://vikwp.com
  */
@@ -81,7 +81,23 @@ class VBOChatStorageDatabase implements VBOChatStorage
         if ($search->hasContext()) {
             // filter by context
             $query->where($this->db->qn('m.context') . ' = ' . $this->db->q($search->getContext()->getAlias()));
-            $query->where($this->db->qn('m.id_context') . ' = ' . (int) $search->getContext()->getID());
+
+            // filter by context ID only if provided
+            if ($search->getContext()->getID() > 0) {
+                $query->where($this->db->qn('m.id_context') . ' = ' . (int) $search->getContext()->getID());
+            }
+        }
+
+        if ($search->hasCategories()) {
+            // filter by supported contexts
+            $query->where($this->db->qn('m.context') . ' IN (' . implode(',', array_map([$this->db, 'q'], $search->getCategories())) . ')');
+        }
+
+        if ($search->hasRefId()) {
+            $refId = $search->getRefId();
+
+            // filter by reference ID
+            $query->where($this->db->qn('m.ref_id') . ' = ' . $this->db->q($refId));
         }
 
         if ($search->hasAggregate()) {
@@ -179,6 +195,11 @@ class VBOChatStorageDatabase implements VBOChatStorage
                     continue;
                 }
 
+                if ($recipient->getID() == -2) {
+                    // skip also in case the recipient is the AI
+                    continue;
+                }
+
                 // register unread notification
                 $unreadMessage = new stdClass;
                 $unreadMessage->id_message = $message->getID();
@@ -186,6 +207,28 @@ class VBOChatStorageDatabase implements VBOChatStorage
                 $this->db->insertObject('#__vikbooking_chat_messages_unread', $unreadMessage, 'id');
             }
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function deleteMessage(VBOChatMessage $message)
+    {
+        // delete message record from the database
+        $query = $this->db->getQuery(true)
+            ->delete($this->db->qn('#__vikbooking_chat_messages'))
+            ->where($this->db->qn('id') . ' = ' . (int) $message->getID());
+
+        $this->db->setQuery($query);
+        $this->db->execute();
+
+        // delete notification record from the database
+        $query = $this->db->getQuery(true)
+            ->delete($this->db->qn('#__vikbooking_chat_messages_unread'))
+            ->where($this->db->qn('id_message') . ' = ' . (int) $message->getID());
+
+        $this->db->setQuery($query);
+        $this->db->execute();
     }
 
     /**

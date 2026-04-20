@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  core
  * @author      E4J s.r.l.
- * @copyright   Copyright (C) 2021 E4J s.r.l. All Rights Reserved.
+ * @copyright   Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * @link        https://vikwp.com
  */
@@ -211,6 +211,35 @@ class VBOChatAttachment implements  JsonSerializable
     public function exists()
     {
         return JFile::exists($this->getPath());
+    }
+
+    /**
+     * Returns the blob of the file in base 64 format.
+     * 
+     * @return  string
+     * 
+     * @since   1.8.8
+     */
+    public function getBase64()
+    {
+        if (!$this->exists()) {
+            throw new RuntimeException('Missing [' . $this->getName() . '] attachment.', 404);
+        }
+
+        $blob = '';
+
+        // open file in read mode
+        $fp = fopen($this->getPath(), 'r');
+
+        // read blob chunk by chunk
+        while (!feof($fp)) {
+            $blob .= fgets($fp, 8192);
+        }
+
+        fclose($fp);
+
+        // return base64 encoded version
+        return 'data:' . $this->getMimeType() . ';base64,' . base64_encode($blob);
     }
 
     /**

@@ -156,6 +156,7 @@
 					label: this.label,
 					help: this.description,
 					value: props.attributes[this.name],
+					placeholder: this.hint,
 					onChange: (value) => {
 						let attrs = {};
 						attrs[this.name] = value;
@@ -183,6 +184,7 @@
 					label: this.label,
 					help: this.description,
 					value: props.attributes[this.name],
+					placeholder: this.hint,
 					onChange: (value) => {
 						let attrs = {};
 						attrs[this.name] = value;

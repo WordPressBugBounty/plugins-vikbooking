@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.8.8
+
+*Release date - 20 April 2026*
+
+- Door Access Control: passcodes generation improvements for multi-unit (hotel inventory) room types.
+- New front-end "Chat" module, available as a Gutenberg native block or as a legacy widget.
+- AI Agent (Chatbot) to guide customers through the booking process or answer questions (CM required).
+- New admin-widget "Inquiries Chat" to manage AI Agent conversations with guests and message requests.
+- WhatsApp Business messaging support (Channel Manager required).
+- New cron-job "Messaging Reminder" for scheduling the delivery of WhatsApp message templates to guests.
+- AI powered auto-responder to guest messages received through WhatsApp backed by custom training system.
+- Send custom and interactive WhatsApp message templates to guests (visit E4jConnect.com for more details).
+- Introducing the new Quote system to manage custom quotes with various booking solutions for your customers.
+- New admin-widget Quotes to monitor the status of the existing quotes.
+- Send quote details via email and/or custom and interactive WhatsApp message templates.
+- New front-end View (and Shortcode) "Quote Details" to let your customers see their quotes and proceed to booking.
+- Added support for the latest FontAwesome webfonts version.
+- Several framework improvements and fixes.
+
 ## 1.8.7
 
 *Release date - 11 February 2026*

@@ -255,6 +255,18 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 			case 'COM_VIKBOOKING_TINYURL_VIEW_DEFAULT_DESC':
 				$result = __('Turns long URLs into tiny URLs. Useful to shorten booking details or similar URLs.', 'vikbooking');
 				break;
+			case 'COM_VIKBOOKING_CHAT_VIEW_DEFAULT_TITLE':
+				$result = __('Chat Session', 'vikbooking');
+				break;
+			case 'COM_VIKBOOKING_CHAT_VIEW_DEFAULT_DESC':
+				$result = __('Allows users to start or resume a chat session with an AI agent or administrators.', 'vikbooking');
+				break;
+			case 'COM_VIKBOOKING_QUOTE_VIEW_DEFAULT_TITLE':
+				$result = __('Quote Details', 'vikbooking');
+				break;
+			case 'COM_VIKBOOKING_QUOTE_VIEW_DEFAULT_DESC':
+				$result = __('This type of Shortcode should be used on a hidden Post/Page for the plugin to use the permalink to rewrite the URLs of the quote details page. This Shortcode will produce no content, it is only useful for friendly URL purposes.', 'vikbooking');
+				break;
 
 			/**
 			 * @wponly Definitions for the Views "Gotopro" and "Getpro"
@@ -317,10 +329,10 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 				$result = __('Get your License Key and Upgrade to PRO', 'vikbooking');
 				break;
 			case 'VBOPROWHYRATES':
-				$result = __('Take full control of your pricing with ease!', 'vikbooking');
+				$result = __('Flexible Rates & Smart Restrictions', 'vikbooking');
 				break;
 			case 'VBOPROWHYRATESDESC':
-				$result = __('Seamlessly adjust rates for different seasons, holidays, weekends, or special dates in just a few clicks.<br />Apply booking restrictions: define minimum or maximum stay durations, close availability on certain days, or set arrival and departure limits. <br />Designed to simplify your workflow and maximize revenue.', 'vikbooking');
+				$result = __('Master your revenue strategy. Set seasonal rates, weekend surcharges, or custom prices for holidays in seconds. Apply stay restrictions (Min/Max stay) to optimize your occupancy and maximize profit during peak dates.', 'vikbooking');
 				break;
 			case 'VBOPROWHYBOOKINGS':
 				$result = __('Create and Modify Bookings via back-end', 'vikbooking');
@@ -440,10 +452,10 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 				$result = __('Don\'t show again', 'vikbooking');
 				break;
 			case 'VBOPROWHYEXTRASERVICES':
-				$result = __('Configure optional and mandatory Extra Services', 'vikbooking');
+				$result = __('Service Upsells & Taxes', 'vikbooking');
 				break;
 			case 'VBOPROWHYEXTRASERVICESDESC':
-				$result = __('Enhance your bookings by offering optional services like breakfast, transfers, or parking, which guests can add during the reservation process. <br />Easily configure mandatory fees or taxes, such as cleaning fees or tourist taxes, to be collected at the time of booking.', 'vikbooking');
+				$result = __('Increase your average booking value. Offer optional extras like breakfast, airport transfers, or parking. Easily manage mandatory costs like cleaning fees or tourist taxes, ensuring transparent pricing for your guests.', 'vikbooking');
 				break;
 			case 'VBOPROWHYREPORT':
 				$result = __('Occupancy Ranking report to analyse every detail', 'vikbooking');
@@ -452,10 +464,10 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 				$result = __('Get to monitor your future occupancy through the Occupancy Ranking report. Filter the targets by dates and analyse the data by day, week or month. The report will provide the information about the occupancy, the total number of rooms sold, nights booked, revenues and more.', 'vikbooking');
 				break;
 			case 'VBOPROWHYCRONJOB':
-				$result = __('Automated emails & pre Check-In notifications', 'vikbooking');
+				$result = __('Automated Notifications', 'vikbooking');
 				break;
 			case 'VBOPROWHYCRONJOBDESC':
-				$result = __('<p>Strengthen guest relationships effortlessly with the PRO version of Vik Booking.<br/>Send automatic email and SMS reminders before check-in, request reviews after check-out, and generate invoices instantly.<br />From pre-check-in forms to seamless communication, streamline your workflow and boost efficiency.</p>', 'vikbooking');
+				$result = __('<p>Save hours of manual work. Send professional email and SMS reminders for check-ins, request reviews after checkout, and automate invoice delivery. <br /><strong>Ready for more?</strong> Connect <strong>e4jConnect</strong> to unlock <strong>WhatsApp AI communication.</strong></p>', 'vikbooking');
 				break;
 			case 'VBOPROWHYMOREEXTRA':
 				$result = __('and much more...', 'vikbooking');
@@ -466,24 +478,24 @@ class VikBookingLanguageAdminSys implements JLanguageHandler
 			case 'VBOPROALREADYHAVEPRO':
 				$result = __('Already have Vik Booking PRO? Upgrade to the PRO version <a href="#upgrade">here</a>.', 'vikbooking');
 				break;
-			case 'VBOPROREDUCEOTAFEES':
-				$result = __('Would you like to reduce OTA commissions?', 'vikbooking');
-				break;
 			case 'VBOPROCOLLECTDIRECTBOOK':
-				$result = __('Start collecting direct bookings from your own website', 'vikbooking');
+				$result = __('Stop giving away your margins. Take full control of your property.', 'vikbooking');
 				break;
 			case 'VBOPROBOOKINGENGINEPMS':
-				$result = __('Vik Booking PRO: the Booking Engine and PMS plugin<br />for Hotels and Accommodations on WordPress', 'vikbooking');
+				$result = __('Transform your WordPress site into a professional Booking Engine. Scale your revenue with Vik Booking PRO and sync with the world through e4jConnect.', 'vikbooking');
 				break;
 			case 'VBOPROADVONE':
-				$result = __('Start collecting direct bookings from your website', 'vikbooking');
+				$result = __('<strong>Zero OTA Commissions:</strong> Keep 100% of your room revenue', 'vikbooking');
 				break;
 			case 'VBOPROADVTWO':
-				$result = __('Reduce OTA commissions', 'vikbooking');
+				$result = __('<strong>Total Autonomy:</strong> Own your data, your guests, and your rules', 'vikbooking');
 				break;
 			case 'VBOPROADVTHREE':
-				$result = __('No recurring fees. Become independent', 'vikbooking');
+				$result = __('<strong>Pro Guest Tools:</strong> Built-in Invoicing, Email, and SMS notifications', 'vikbooking');
 				break;
+			case 'VBOPROADVTRUST':
+				$result = __('Trusted by 9,000+ Accommodations Worldwide', 'vikbooking');
+			break;	
 			case 'VBOPROCOLLECTDIRCTBOOKTITLE':
 				$result = __('1<span>.</span> Start collect<br />direct bookings', 'vikbooking');
 				break;

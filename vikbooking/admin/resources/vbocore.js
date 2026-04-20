@@ -1,5 +1,5 @@
 /**
- * VikBooking Core v1.8.7
+ * VikBooking Core v1.8.8
  * Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * https://vikwp.com | https://e4j.com | https://e4jconnect.com
@@ -2609,6 +2609,7 @@
 				escape_dismiss:  true,
 				footer_left:     null,
 				footer_right:    null,
+				footer_center:   null,
 				resize_event:    null,
 				dismiss_event:   null,
 				dismissed_event: 'vbo-modal-dismissed',
@@ -2916,7 +2917,7 @@
 
 			// modal footer
 			let modal_footer = null;
-			if (options.footer_left || options.footer_right) {
+			if (options.footer_left || options.footer_right || options.footer_center) {
 				modal_footer = $('<div></div>').addClass('vbo-modal-overlay-content-footer');
 				if (options.footer_left) {
 					let modal_footer_left = $('<div></div>').addClass('vbo-modal-overlay-content-footer-left').append(options.footer_left);
@@ -2926,7 +2927,10 @@
 					let modal_footer_right = $('<div></div>').addClass('vbo-modal-overlay-content-footer-right').append(options.footer_right);
 					modal_footer.append(modal_footer_right);
 				}
-
+				if (options.footer_center) {
+					let modal_footer_center = $('<div></div>').addClass('vbo-modal-overlay-content-footer-center').append(options.footer_center);
+					modal_footer.append(modal_footer_center);
+				}
 			}
 
 			// finalize modal contents

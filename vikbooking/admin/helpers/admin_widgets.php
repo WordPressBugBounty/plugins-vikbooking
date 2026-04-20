@@ -278,6 +278,7 @@ class VikBookingHelperAdminWidgets
 		$container->size = 'medium';
 		$container->widgets = [
 			'finance',
+			'inquiries_chat',
 			'currency_converter',
 		];
 		// push container
@@ -474,18 +475,18 @@ class VikBookingHelperAdminWidgets
 	 */
 	public function getWidgetsMap()
 	{
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='admin_widgets_map';";
-		$this->dbo->setQuery($q);
-		$map = $this->dbo->loadResult();
+		$config = VBOFactory::getConfig();
+
+		$map = $config->get('admin_widgets_map', null);
+
 		if ($map) {
 			$map = json_decode($map);
 			return is_object($map) && !empty($map->sections) && is_array($map->sections) ? $map : $this->getDefaultWidgetsMap();
 		}
 
 		$default_map = $this->getDefaultWidgetsMap();
-		$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('admin_widgets_map', " . $this->dbo->quote(json_encode($default_map)) . ");";
-		$this->dbo->setQuery($q);
-		$this->dbo->execute();
+
+		$config->set('admin_widgets_map', $default_map);
 
 		return $default_map;
 	}
@@ -507,9 +508,7 @@ class VikBookingHelperAdminWidgets
 		$map = new stdClass;
 		$map->sections = $sections;
 
-		$q = "UPDATE `#__vikbooking_config` SET `setting`=" . $this->dbo->quote(json_encode($map)) . " WHERE `param`='admin_widgets_map';";
-		$this->dbo->setQuery($q);
-		$this->dbo->execute();
+		VBOFactory::getConfig()->set('admin_widgets_map', $map);
 
 		return true;
 	}

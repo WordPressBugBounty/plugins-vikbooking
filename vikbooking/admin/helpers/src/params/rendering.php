@@ -285,6 +285,11 @@ final class VBOParamsRendering
                     }
                 });
             });
+
+            // dispatch delayed change event
+            setTimeout(() => {
+                parent_field.dispatchEvent(new Event('change'));
+            }, 100);
         });
 
     });

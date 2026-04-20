@@ -723,8 +723,13 @@ JS
 		public function printYesNoButtons($name, $label_yes, $label_no, $cur_value = '1', $yes_value = '1', $no_value = '0', $onclick = '', $class_list = [])
 		{
 			$html = '';
-			$id_yes = $name . '-on';
-			$id_no = $name . '-off';
+
+			/**
+			 * Normalize ID attribute for checkbox.
+			 * 
+			 * @since 1.8.8
+			 */
+			$id_yes = preg_replace("/[^a-z0-9_]+/", '-', $name . '-on');
 
 			/**
 			 * New toggle button in iOS style.
@@ -812,6 +817,12 @@ JS
 				 * be set to true when the form does not get submitted.
 				 */
 				'fullNumberOnBlur' => false,
+				/**
+				 * Allow to dispatch an event to transport the selected country data.
+				 * 
+				 * @since 	1.18.8 (J) - 1.8.8 (WP)
+				 */
+				'countryDataEvent' => null,
 			);
 			
 			// merge config object with user's specified properties
@@ -819,7 +830,10 @@ JS
 			$data = json_encode($final_opts);
 
 			// apply set full number on blur
-			$full_number_on_blur = (int)$final_opts['fullNumberOnBlur'];
+			$full_number_on_blur = (int) $final_opts['fullNumberOnBlur'];
+
+			// check if an event should be dispatched with the selected country data
+			$countryDataEvent = $final_opts['countryDataEvent'] ? json_encode($final_opts['countryDataEvent']) : 0;
 
 			$document = JFactory::getDocument();
 
@@ -841,6 +855,12 @@ jQuery(function() {
 			jQuery('#$selector').val(cur_phone);
 		} else {
 			jQuery('#$selector').intlTelInput('setNumber', cur_phone);
+		}
+		if ($countryDataEvent && typeof VBOCore !== 'undefined') {
+			let countryData = jQuery('#$selector').intlTelInput('getSelectedCountryData');
+			if (countryData && countryData?.iso2) {
+				VBOCore.emitEvent($countryDataEvent, countryData);
+			}
 		}
 	});
 	jQuery('#$selector').closest('form').on('submit', function() {

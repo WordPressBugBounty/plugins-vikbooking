@@ -135,6 +135,35 @@ class VikBookingAdminWidgetLatestFromGuests extends VikBookingAdminWidget
 			return null;
 		}
 
+		/**
+		 * Attach window event listener for updating the latest guest message
+		 * ID upon syncing to prevent dispatching notifications for an open chat.
+		 * 
+		 * @since 	1.18.8 (J) - 1.8.8 (WP)
+		 */
+		JFactory::getDocument()->addScriptDeclaration(<<<JS
+			window.addEventListener('chatsync', (e) => {
+				let newMessages = e?.detail?.messages;
+				if (!Array.isArray(newMessages) || !newMessages.length) {
+					return;
+				}
+				let latest = newMessages.shift();
+				newMessages.forEach((newMessage) => {
+					if (newMessage?.id > latest?.id) {
+						latest = newMessage;
+					}
+				});
+				Object.assign(VBOCore.widgets_watch_data.latest_from_guests, {
+					message_id: latest.id,
+					message_bid: e.detail?.thread?.idorder,
+					guest_message: latest.content,
+				});
+				if (VBOCore.broadcast_watch_data) {
+					VBOCore.broadcast_watch_data.postMessage(VBOCore.widgets_watch_data);
+				}
+			});
+		JS);
+
 		// use VCM to load the latest guest activity ids
 		$latest_activities = [];
 		try {

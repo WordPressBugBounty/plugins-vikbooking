@@ -816,7 +816,7 @@ if ($payable && !empty($ord['idorderota']) && !empty($ord['channel']) && $ord['c
 		$payable = true;
 	}
 }
-if ($payable && $isotabooking && stripos($ord['channel'], 'airbnbapi') === 0 && !((float) $ord['payable'])) {
+if ($payable && $isotabooking && !((float) $ord['payable'])) {
 	// access OTA payout events
 	$prev_ota_payments = VikBooking::getBookingHistoryInstance($ord['id'])
 		->getEventsWithData('PO', null, false);
@@ -1006,7 +1006,7 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 		</div>
 	</div>
 		<?php
-		$is_rembal_ota_cmms = $isotabooking && stripos($ord['channel'], 'airbnbapi') === 0 && round($remainingamount, 2) == round($ord['cmms'], 2);
+		$is_rembal_ota_cmms = $isotabooking && round($remainingamount, 2) == round($ord['cmms'], 2);
 		if (!$ota_will_pay && $remainingamount > 0 && !$is_rembal_ota_cmms) {
 			?>
 	<div class="vbo-booking-cost-detail vbo-booking-cost-detail-remainingbalance">
@@ -1321,9 +1321,29 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 		$elapsed_redirect_uri = JRoute::rewrite('index.php?option=com_vikbooking&view=booking&sid='.(!empty($ord['idorderota']) && !empty($ord['channel']) ? $ord['idorderota'] : $ord['sid']).'&ts='.$ord['ts'].(!empty($bestitemid) ? '&Itemid='.$bestitemid : (!empty($pitemid) ? '&Itemid='.$pitemid : '')), false);
 	}
 
-	// booking auto-removal minutes
-	$minautoremove = VikBooking::getMinutesAutoRemove();
+	// count minutes elapsed from booking creation date
 	$mins_elapsed = floor(($now_info[0] - $ord['ts']) / 60);
+
+	/**
+	 * Check if we are dealing with a pending booking solution of a quote.
+	 * 
+	 * @since 	1.18.8 (J) - 1.8.8 (WP)
+	 */
+	if ($this->quoteValidUntilDt) {
+		// get the date interval of difference between valid until date and current date
+		$validityDiff = $this->quoteValidUntilDt->diff(JFactory::getDate('now'));
+		// count the number of minutes still available (expected validity to be in the future)
+		$minautoremove = ($validityDiff->days * 1440) + ($validityDiff->h * 60) + $validityDiff->i;
+		// add up the minutes elapsed to allow an accurate calcilation of the remaining minutes
+		$minautoremove += $mins_elapsed;
+	} else {
+		// global booking auto-removal minutes
+		$minautoremove = VikBooking::getMinutesAutoRemove();
+	}
+
+	// check if we should display a countdown for the automatic booking cancellation
+	$remainmin = $minautoremove - $mins_elapsed;
+	$remainmin = $remainmin < 1 ? 1 : $remainmin;
 	if ($minautoremove > 0 && $minautoremove < 35791) {
 		/**
 		 * Ensure the timeout milliseconds in 32-bit do not exceed
@@ -1333,26 +1353,31 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 		 */
 		$booktime_info = getdate($ord['ts']);
 		$booktime_offset = date('Z', $ord['ts']) / 60;
-		$remainmin = $minautoremove - $mins_elapsed;
-		$remainmin = $remainmin < 1 ? 1 : $remainmin;
 		$remainmilsec = intval($remainmin * 60 * 1000) + 100;
 		$remainmilsec = $remainmilsec < 100 ? 100 : $remainmilsec;
-		//calculate the values for the timer
+		// calculate the values for the timer
+		$days_left = $remainmin > 1440 ? floor($remainmin / 1440) : 0;
+		$remainmin -= $days_left * 1440;
 		$hours_left = $remainmin > 59 ? floor($remainmin / 60) : 0;
 		$minutes_left = $remainmin - ($hours_left * 60);
 		$lbl_hour = strtolower(JText::translate('VBHOUR'));
 		$lbl_hours = strtolower(JText::translate('VBHOURS'));
 		$lbl_minute = strtolower(JText::translate('VBMINUTE'));
 		$lbl_minutes = strtolower(JText::translate('VBMINUTES'));
-		$timer_str = $hours_left > 0 ? '<span id="vbo-timer-hours">'.$hours_left.' '.($hours_left == 1 ? $lbl_hour : $lbl_hours).'</span> ' : '';
-		$timer_str .= '<span id="vbo-timer-minutes">'.$minutes_left.' '.($minutes_left == 1 ? $lbl_minute : $lbl_minutes).'</span>';
+		$lbl_day = strtolower(JText::translate('VBO_DAY'));
+		$lbl_days = strtolower(JText::translate('VBO_DAYS'));
+		$timer_str = $days_left > 0 ? '<span id="vbo-timer-days">' . $days_left . ' ' . ($days_left == 1 ? $lbl_day : $lbl_days) . '</span> ' : '';
+		$timer_str .= $days_left > 0 || $hours_left > 0 ? '<span id="vbo-timer-hours">' . $hours_left . ' ' . ($hours_left == 1 ? $lbl_hour : $lbl_hours) . '</span> ' : '';
+		$timer_str .= '<span id="vbo-timer-minutes">' . $minutes_left . ' ' . ($minutes_left == 1 ? $lbl_minute : $lbl_minutes) . '</span>';
 		?>
 <script type="text/javascript">
 	var vboPayTimerLbl = {
 		"hour": "<?php echo addslashes($lbl_hour); ?>",
 		"hours": "<?php echo addslashes($lbl_hours); ?>",
 		"minute": "<?php echo addslashes($lbl_minute); ?>",
-		"minutes": "<?php echo addslashes($lbl_minutes); ?>"
+		"minutes": "<?php echo addslashes($lbl_minutes); ?>",
+		"day": "<?php echo addslashes($lbl_day); ?>",
+		"days": "<?php echo addslashes($lbl_days); ?>",
 	}
 	var vboPayTimeout = setTimeout(function() {
 		document.location.href = '<?php echo $elapsed_redirect_uri; ?>';
@@ -1364,32 +1389,41 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 		clearTimeout(vboPayTimeout);
 	}
 	function vboRefreshPayTimer() {
-		var vboNow = new Date();
+		const vboNow = new Date();
 		if (!vboPayTimerOffsetSet) {
-			var tzoffset = vboNow.getTimezoneOffset() * -1 - <?php echo $booktime_offset; ?>;
+			let tzoffset = vboNow.getTimezoneOffset() * -1 - <?php echo $booktime_offset; ?>;
 			vboBookInfo.setMinutes(vboBookInfo.getMinutes() + tzoffset);
 			vboPayTimerOffsetSet = true;
 		}
 
-		var mins_elapsed = Math.floor((vboNow - vboBookInfo) / 1000 / 60);
-		var remainmin = <?php echo $minautoremove; ?> - mins_elapsed;
-		var hours_left = remainmin > 59 ? Math.floor(remainmin / 60) : 0;
-		var minutes_left = remainmin - (hours_left * 60);
-		if (hours_left < 1 && minutes_left < 1) {
+		let mins_elapsed = Math.floor((vboNow - vboBookInfo) / 1000 / 60);
+		let remainmin = <?php echo $minautoremove; ?> - mins_elapsed;
+		let days_left = remainmin > 1440 ? Math.floor(remainmin / 1440) : 0;
+		remainmin -= days_left * 1440;
+		let hours_left = remainmin > 59 ? Math.floor(remainmin / 60) : 0;
+		let minutes_left = remainmin - (hours_left * 60);
+		if (days_left < 1 && hours_left < 1 && minutes_left < 1) {
 			clearInterval(vboPayInterval);
 			if (document.getElementById('vbo-timer-payment')) {
 				document.getElementById('vbo-timer-payment').style.display = 'none';
 			}
 			return false;
 		}
+		if (document.getElementById('vbo-timer-days')) {
+			if (days_left < 1) {
+				document.getElementById('vbo-timer-days').style.display = 'none';
+			} else {
+				document.getElementById('vbo-timer-days').textContent = days_left + ' ' + (days_left == 1 ? vboPayTimerLbl['day'] : vboPayTimerLbl['days']);
+			}
+		}
 		if (document.getElementById('vbo-timer-hours')) {
 			if (hours_left < 1) {
 				document.getElementById('vbo-timer-hours').style.display = 'none';
 			} else {
-				document.getElementById('vbo-timer-hours').innerText = hours_left+' '+(hours_left == 1 ? vboPayTimerLbl['hour'] : vboPayTimerLbl['hours']);
+				document.getElementById('vbo-timer-hours').textContent = hours_left + ' ' + (hours_left == 1 ? vboPayTimerLbl['hour'] : vboPayTimerLbl['hours']);
 			}
 		}
-		document.getElementById('vbo-timer-minutes').innerText = minutes_left+' '+(minutes_left == 1 ? vboPayTimerLbl['minute'] : vboPayTimerLbl['minutes']);
+		document.getElementById('vbo-timer-minutes').textContent = minutes_left + ' ' + (minutes_left == 1 ? vboPayTimerLbl['minute'] : vboPayTimerLbl['minutes']);
 	}
 </script>
 
@@ -1399,8 +1433,23 @@ if (is_array($payment) && $ord['status'] == 'standby') {
 	</span>
 </div>
 		<?php
+	} elseif ($minautoremove > 0) {
+		// we expect a very high number of remaining minutes to be expressed in days
+		?>
+<div class="vbo-timer-payment" id="vbo-timer-payment">
+	<span class="vbo-timer-payment-str">
+		<?php
+		$days_left = max(0, floor($remainmin / 1440));
+		echo JText::sprintf('VBOTIMERPAYMENTSTR', sprintf(
+			'~%d %s',
+			$days_left,
+			JText::translate($days_left == 1 ? 'VBO_DAY' : 'VBO_DAYS')
+		));
+		?>
+	</span>
+</div>
+		<?php
 	}
-	//
 
 ?>
 <div class="vbvordpaybutton">

@@ -1,5 +1,34 @@
 # Framework Changelog
 
+### 10.1.72
+
+*Release date - 14 April 2026*
+
+##### ADD
+
+* Implemented `JUri::setPath()` method.
+
+##### CHANGE
+
+* `JApplication::getRouter()` method cannot be called statically any longer.
+
+---
+
+### 10.1.71
+
+*Release date - 27 February 2026*
+
+##### ADD
+
+* Added support to custom previews for certain blocks/widgets.
+
+##### CHANGE
+
+* The text form fields now support the placeholder attribute.
+* The textarea form fields now support translatable placeholders. 
+
+---
+
 ### 10.1.70
 
 *Release date - 9 February 2026*

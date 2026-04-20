@@ -1312,8 +1312,7 @@ class VboBookingHistory
 		$summary = $history_record->descr ?? null;
 		if ($this->prevBooking) {
 			// in case of booking modification, we compose a summary of just what was changed
-			$summary = $this->getBookingModificationSummary($booking_info);
-			$summary = $summary ?: null;
+			$summary = $this->getBookingModificationSummary($booking_info) ?: $summary;
 		}
 
 		// store the notification
@@ -1324,7 +1323,7 @@ class VboBookingHistory
 						'sender'     => $sender,
 						'type'       => $history_record->type,
 						'title'      => $this->validType($history_record->type, true),
-						'summary'    => $history_record->descr ?? null,
+						'summary'    => $summary,
 						'idorder'    => $history_record->idorder,
 						'idorderota' => $booking_info['idorderota'] ?: null,
 						'channel'    => $channel,

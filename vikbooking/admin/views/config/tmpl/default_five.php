@@ -15,7 +15,10 @@ $vbo_app = VikBooking::getVboApplication();
 $current_smsapi = VikBooking::getSMSAPIClass();
 
 $allf = glob(VBO_ADMIN_PATH . DIRECTORY_SEPARATOR . 'smsapi' . DIRECTORY_SEPARATOR . '*.php');
-$allf = is_array($allf) ? $allf : [];
+$allf = array_values(array_filter((array) $allf, function($fPath) {
+	$fPath = basename($fPath);
+	return $fPath && !preg_match('/^whatsapp/i', $fPath);
+}));
 
 $psel = "<select name=\"smsapi\" id=\"smsapifile\" onchange=\"vikLoadSMSParameters(this.value);\">\n<option value=\"\"></option>\n";
 $classfiles = [];

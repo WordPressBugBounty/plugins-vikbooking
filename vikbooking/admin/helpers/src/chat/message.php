@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  core
  * @author      E4J s.r.l.
- * @copyright   Copyright (C) 2021 E4J s.r.l. All Rights Reserved.
+ * @copyright   Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * @link        https://vikwp.com
  */
@@ -74,6 +74,14 @@ class VBOChatMessage implements JsonSerializable
      * @var int
      */
     protected $createdby;
+
+    /**
+     * The ID of the external resource this message is linked to.
+     * 
+     * @var string
+     * @since 1.8.8
+     */
+    protected $ref_id = null;
 
     /**
      * Whether the message has been read by the user.
@@ -287,13 +295,18 @@ class VBOChatMessage implements JsonSerializable
     public function setCreationDate($date)
     {
         try {
-            if (is_string($date)) {
+            if (!$date instanceof DateTime) {
                 // make sure the provided date is correct
-                $date = JFactory::getDate($date);
+                $date = JFactory::getDate($date ?: 'now');
             }
 
             // convert date object into a string
             $date = $date->toSql();
+
+            // make sure the specified date is not in the future
+            if ($date > JFactory::getDate()->toSql()) {
+                throw new UnexpectedValueException('Cannot accept a date in the future.', 400);
+            }
         } catch (Exception $error) {
             // malformed date
             $date = null;
@@ -316,6 +329,34 @@ class VBOChatMessage implements JsonSerializable
         }
 
         return $this->createdby;
+    }
+
+    /**
+     * Returns the ID of the external resource this message is linked to.
+     * 
+     * @return  string|null
+     * 
+     * @since   1.8.8
+     */
+    public function getReferenceID()
+    {
+        return $this->ref_id;
+    }
+
+    /**
+     * Sets the ID of the external resource this message is linked to.
+     * 
+     * @param   string|null  $refId
+     * 
+     * @return  self
+     * 
+     * @since   1.8.8
+     */
+    public function setReferenceID(?string $refId)
+    {
+        $this->ref_id = $refId;
+
+        return $this;
     }
 
     /**
@@ -347,6 +388,7 @@ class VBOChatMessage implements JsonSerializable
             'createdon' => $this->getCreationDate(),
             'createdby' => $this->getAuthor(),
             'read' => $this->isRead(),
+            'ref_id' => $this->ref_id,
         ];
     }
 }

@@ -441,6 +441,108 @@ class VBOBookingRegistry
     }
 
     /**
+     * Returns the booking or customer country code, if any.
+     * 
+     * @return  ?string
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function getCountry()
+    {
+        // give higher priority to booking-level country
+        $countryCode = $this->getProperty('country');
+
+        if (!$countryCode) {
+            // fetch booking customer details
+            $customer = $this->getCustomer();
+
+            // check customer-level country
+            $countryCode = ($customer['country'] ?? '') ?: $countryCode;
+        }
+
+        return $countryCode ?: null;
+    }
+
+    /**
+     * Returns the booking or customer phone number, if any.
+     * Note that the + prefix may not be included.
+     * 
+     * @return  ?string
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function getPhoneNumber()
+    {
+        // give higher priority to booking-level phone number
+        $phoneNumber = $this->getProperty('phone');
+
+        if (!$phoneNumber) {
+            // fetch booking customer details
+            $customer = $this->getCustomer();
+
+            // check customer-level phone number
+            $phoneNumber = ($customer['phone'] ?? '') ?: $phoneNumber;
+        }
+
+        // trim phone number
+        $phoneNumber = (string) $phoneNumber;
+
+        // sanitize number by keeping the + char only if at the beginning of the string
+        $phoneNumber = preg_replace('/(?!^)\+|[^0-9+]/', '', $phoneNumber);
+
+        if (substr($phoneNumber, 0, 2) === '00') {
+            // safely convert 00 to +
+            $phoneNumber = substr_replace($phoneNumber, '+', 0, 2);
+        }
+
+        return $phoneNumber ?: null;
+    }
+
+    /**
+     * Returns the booking or customer email address, if any.
+     * 
+     * @return  ?string
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function getEmailAddress()
+    {
+        // give higher priority to booking-level email address
+        $emailAddr = $this->getProperty('custmail');
+
+        if (!$emailAddr) {
+            // fetch booking customer details
+            $customer = $this->getCustomer();
+
+            // check customer-level email address
+            $emailAddr = ($customer['email'] ?? '') ?: $emailAddr;
+        }
+
+        // trim email address
+        $emailAddr = (string) $emailAddr;
+
+        return $emailAddr ?: null;
+    }
+
+    /**
+     * Returns the booking OTA type-data information, if any.
+     * 
+     * @return  array   Empty or associative array.
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function getOTATypeData()
+    {
+        $typeData = $this->getProperty('ota_type_data');
+
+        if ($typeData && is_scalar($typeData)) {
+            $typeData = (array) json_encode($typeData, true);
+        }
+
+        return $typeData ?: [];
+    }
+
+    /**
      * Returns the previous booking data.
      * 
      * @return  array
@@ -503,7 +605,7 @@ class VBOBookingRegistry
      * 
      * @return  int
      * 
-     * @since   1.18.7 (J) - 1.8.7 (WP) added argument $roomLevel.
+     * @since   1.18.7 (J) - 1.8.7 (WP)
      */
     public function getCurrentRoomID()
     {
@@ -945,5 +1047,188 @@ class VBOBookingRegistry
         }
 
         return (bool) $pre_checkin;
+    }
+
+    /**
+     * Tells if the booking comes from an OTA.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function isFromOTA()
+    {
+        $otaId   = $this->getProperty('idorderota', null);
+        $channel = $this->getProperty('channel', null);
+
+        return !empty($otaId) && !empty($channel);
+    }
+
+    /**
+     * Tells if the booking is fully paid as of now.
+     * Note that OTA payouts may still need to be received,
+     * or an outstanding payment may still be due in case of upselling events.
+     * Do NOT rely on this method alone to determine if payments are needed.
+     * 
+     * @return  bool    Even if true, there could be pending payments.
+     * 
+     * @see     getOutstandingBalance()
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function isFullyPaid()
+    {
+        // get current totals
+        $bookingTotal    = (float) $this->getProperty('total', 0);
+        $otaCompensation = (float) $this->getProperty('cmms', 0);
+        $amountPaid      = (float) $this->getProperty('totpaid', 0);
+
+        if ($this->isFromOTA()) {
+            return ($bookingTotal - $amountPaid - $otaCompensation) < 1;
+        }
+
+        return $amountPaid >= $bookingTotal;
+    }
+
+    /**
+     * Calculates the outstanding balance as of now, if any.
+     * 
+     * @return  ?float
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function getOutstandingBalance()
+    {
+        // get current totals
+        $bookingTotal    = (float) $this->getProperty('total', 0);
+        $otaCompensation = (float) $this->getProperty('cmms', 0);
+        $amountPaid      = (float) $this->getProperty('totpaid', 0);
+        $amountPayable   = (float) $this->getProperty('payable', 0);
+        $paymentCount    = abs((int) $this->getProperty('paymcount', 0));
+        $bookingDamDep   = (float) $this->getProperty('tot_damage_dep', 0);
+
+        // check if the amounts look as fully paid
+        $looksFullyPaid = $this->isFullyPaid();
+
+        if ($looksFullyPaid && !$amountPayable) {
+            // no upselling events involved, nothing is due
+            return null;
+        }
+
+        // obtain damage deposit details
+        $damage_deposit_payment = VBORoomHelper::getInstance()->getDamageDepositSplitPayment($this->getData(), $this->getRooms());
+
+        // obtain previous damage deposit payments, if any
+        $prev_dd_payments = [];
+        if ($damage_deposit_payment['damagedep_gross'] ?? 0) {
+            $prev_dd_payments = VikBooking::getBookingHistoryInstance($this->getID())
+                ->getEventsWithData('PN', function($data) {
+                    return (is_object($data) && !empty($data->damage_deposit));
+                });
+            if (!$prev_dd_payments) {
+                // check also the first payment event in case of OTA bookings
+                $prev_dd_payments = VikBooking::getBookingHistoryInstance($this->getID())
+                    ->getEventsWithData('P0', function($data) {
+                        return (is_object($data) && !empty($data->damage_deposit));
+                    });
+            }
+        }
+
+        // outstanding balance
+        $outstanding = $bookingTotal - $amountPaid;
+        if ($prev_dd_payments && $bookingDamDep) {
+            // deduct previously paid damage deposit
+            $outstanding -= $bookingDamDep;
+        }
+
+        // tell if the booking looks payable
+        $isPayable = (($amountPaid > 0 && ($amountPaid + ($damage_deposit_payment['damagedep_gross'] ?? 0)) < $bookingTotal && $paymentCount) || $amountPayable > 0);
+
+        // additional payment flags
+        $otaWillPay = false;
+        $payableLater = false;
+
+        // determine booking pay-ability
+        if ($isPayable && $this->isConfirmed() && $this->isFromOTA() && $amountPayable > 0 && !$prev_dd_payments) {
+            if (($damage_deposit_payment['damagedep_gross'] ?? 0) == $amountPayable && ($damage_deposit_payment['payment_window']['pay_id'] ?? 0)) {
+                // upselling event must have added the damage deposit to an OTA booking, and this is the only outstanding amount that will be paid separately
+                $isPayable = false;
+                // check if the damage deposit is payable later
+                if (!($damage_deposit_payment['payment_window']['payable'] ?? 0) && ($damage_deposit_payment['payment_window']['payment_from_dt'] ?? null)) {
+                    // will be payable on a date in the future
+                    $payableLater = true;
+                }
+            }
+        }
+        if ($isPayable && $this->isFromOTA() && $otaCompensation && $looksFullyPaid) {
+            // the difference of the amount paid is equal to the OTA commissions amount
+            $isPayable = false;
+            if ($amountPayable > 0 && $bookingTotal > $amountPaid && round(($bookingTotal - $amountPaid), 0) == round($amountPayable, 0)) {
+                // there must have been an upselling event or a payment request with an amount equal to the OTA commissions
+                $isPayable = true;
+            }
+        }
+        if ($isPayable && $this->isFromOTA() && !$amountPayable) {
+            // access OTA payout events
+            $prev_ota_payments = VikBooking::getBookingHistoryInstance($this->getID())
+                ->getEventsWithData('PO', null, false);
+            if (!$prev_ota_payments) {
+                // the OTA will pay the remaining balance
+                $isPayable = false;
+                $otaWillPay = true;
+            }
+        }
+
+        if ($outstanding && !$isPayable && $payableLater) {
+            // deduct the damage deposit amount that will be payable in a future date
+            $outstanding -= $bookingDamDep;
+        }
+
+        if ($outstanding && !$isPayable && $otaWillPay) {
+            // deduct OTA commissions that has not been paid yet
+            $outstanding -= $otaCompensation;
+        }
+
+        return $outstanding > 0 ? $outstanding : null;
+    }
+
+    /**
+     * Returns a unique list of booked listing names.
+     * 
+     * @return  array   Linear array of strings, if any.
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function getListingNames()
+    {
+        $listingIds = $this->getBookedListingIds();
+        $roomNames = VikBooking::getAvailabilityInstance(true)->loadRooms($listingIds);
+
+        return array_map(function($id) use ($roomNames) {
+            return $roomNames[$id]['name'] ?? $id;
+        }, $listingIds);
+    }
+
+    /**
+     * Returns a unique list of booked listing addresses.
+     * 
+     * @return  array   Linear array of strings, if any.
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function getListingAddresses()
+    {
+        if (!class_exists('VCMOtaListing')) {
+            // prevent errors when the CM is not installed
+            return [];
+        }
+
+        $addresses = [];
+
+        foreach ($this->getBookedListingIds() as $listingId) {
+            $addresses[] = VCMOtaListing::getInstance()->getLocation($listingId)['address'] ?? null;
+        }
+
+        return array_values(array_unique($addresses));
     }
 }

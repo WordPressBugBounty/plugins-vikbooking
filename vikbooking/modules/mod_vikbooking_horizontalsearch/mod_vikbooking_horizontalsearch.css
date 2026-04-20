@@ -216,8 +216,9 @@
 }
 .vbo-horizsearch-showcalendar i {
 	vertical-align: top;
-	margin: 5px 15px 0 0;
-	font-size: 22px;
+	margin: 0 15px 0 0;
+	font-size: 18px;
+	align-self: center;
 }
 .vbo-horizsearch-showcalendar > div {
 	display: inline-block;
@@ -247,7 +248,7 @@
 	min-height: 53px;
 }
 .vbo-horizsearch-showcalendar .vbo-horizsearch-placeholder {
-	font-size: 18.7px;
+	font-size: 16px;
 	padding: 9.2px 0;
 	display: inline-block;
 }

@@ -45,7 +45,7 @@ class JFormFieldTextarea extends JFormField
 		$data['readonly']	= $this->readonly === "true" || $this->readonly === true ? true : false;
 		$data['rows']		= $this->rows;
 		$data['cols']		= $this->cols;
-		$data['hint']		= $this->hint;
+		$data['hint'] 		= !empty($this->hint) ? JText::translate($this->hint) : '';
 
 		return $data;
 	}

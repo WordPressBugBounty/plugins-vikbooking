@@ -130,6 +130,11 @@
 
             // register URL content parser
             this.attachContentParser('url', function(content) {
+                // do not prepare URLs in case the content already contains images or tags
+                if (content.match(/<(img|a)\b/)) {
+                    return content;
+                }
+
                 // wrap any plain URLs within a link
                 content = content.replace(/https?:\/\/(www\.)?[a-zA-Z0-9@:%._\+~#=\-]{2,256}\.[a-z]{2,6}\b([a-zA-Z0-9@:%_\+.~#?&\/\/=\-;]*)/gi, function(url) {
                     return '<a href="' + url + '" target="_blank">' + url + '</a>';
@@ -186,6 +191,10 @@
                     }
                 }, 10000)
             );
+
+            this.triggerEvent('chat.prepare', {
+                chat: this,
+            });
 
             return this;
         }
@@ -319,6 +328,27 @@
         }
 
         /**
+         * Scroll the chat conversation to the beginning of specified message.
+         * 
+         * @param   object  msg  The message object.
+         * 
+         * @return  self
+         */
+        scrollToMessage(msg) {
+            const conversation = $(this.data.element.conversation);
+
+            // get unread message DOM element
+            const messageEl = conversation.find('#delivered-' + msg.id);
+
+            if (messageEl.length) {
+                // scroll conversation to the beginning of the first unread message
+                conversation.scrollTop(messageEl[0].offsetTop);
+            }
+
+            return this;
+        }
+
+        /**
          * Checks whether the chat should scroll.
          * If we are reading older messages, the chat should not scroll.
          * Contrarily, if we are keeping an eye on the latest messages,
@@ -417,6 +447,25 @@
         }
 
         /**
+         * Returns a list of messages received that needs to be read.
+         *
+         * @return  object[]   The unread messages.
+         */
+        getUnreadMessages() {
+            let unread = [];
+
+            for (let i = 0; i < this.data.environment.messages.length; i++) {
+                let msg = this.data.environment.messages[i];
+
+                if (!msg.read) {
+                    unread.push(msg);
+                }
+            }
+
+            return unread;
+        }
+
+        /**
          * Returns the latest message received that needs to be read.
          * In this case "latest" means "most recent".
          *
@@ -488,7 +537,10 @@
          * @return  boolean
          */
         isSender(message) {
-            return message.id_sender == this.data.environment.user.id;
+            // in case the message sender is equal to the current user
+            // or in case the message sender is AI (-2) and the current user is an admin (0)
+            return message.id_sender == this.data.environment.user.id
+                || (message.id_sender == -2 && this.data.environment.user.id == 0);
         }
 
         /**
@@ -571,7 +623,7 @@
             // make content HTML-safe
             let content = message.message;
 
-            if (!isFinite(message.id)) {
+            if (!isFinite(message.id) && message.id !== 'msg-ai-typing') {
                 // make content HTML-safe only for new messages
                 content = content.htmlentities();
             }
@@ -612,8 +664,13 @@
                 messageContent.find('.content-author').hide();
             }
 
+            if (!content.match(/<br\s*\/?>/)) {
+                // replace new lines with BR tags in case of plain text
+                content = content.replace(/\n/g, '<br />');
+            }
+
             // add message text
-            messageContent.append($('<div class="content-text"></div>').html(content.replace(/\n/g, '<br />')));
+            messageContent.append($('<div class="content-text"></div>').html(content));
 
             const messageTemplate = $('<div class="chat-message"></div>').attr('id', elem_id).append(
                     $('<div class="speech-user-avatar"></div>').addClass(is_sender ? 'speech-sender-avatar' : 'speech-recipient-avatar').html(avatar)
@@ -675,7 +732,11 @@
                     // ease in message
                     $(selector).find('*.need-animation').removeClass('need-animation');
 
-                    this.scrollToBottom();
+                    if (is_sender) {
+                        // Auto-scroll to bottom only in case the message has been sent by this user.
+                        // Otherwise the scroll will be delegated to the messages synchronization.
+                        this.scrollToBottom();
+                    }
                 }, 32);
             }
 
@@ -726,11 +787,20 @@
                     .attr('title', user.name)
                     .attr('src', user.avatar);
             } else {
-                let names = user.name.split(/\s+/);
+                // find first non-unicode letter in string
+                const firstLetter = (str) => {
+                    return Array.from(str || '').find(c => /\p{L}/u.test(c)) || '';
+                }
+
+                // split name in chunks
+                let names = user.name.trim().split(/\s+/);
+
+                // build initials
+                let initials = firstLetter(names.shift()) + firstLetter(names.pop());
 
                 avatar = $('<span></span>')
                     .attr('title', user.name)
-                    .text(((names.shift() || '').substr(0, 1) + (names.pop() || '').substr(0, 1)).toUpperCase());
+                    .text(initials.toUpperCase());
             }
 
             return avatar;
@@ -859,7 +929,7 @@
             }
 
             // check for playable audio files
-            if (url.match(/\.(aac|m4a|mp3|opus|wave?)$/i)) {
+            if (url.match(/\.(aac|m4a|mp3|ogg|opus|wave?)$/i)) {
                 return '<audio controls onloadeddata="' + onload + '" title="' + file.name + '">\n' +
                     '<source src="' + url + '" />\n' +
                 '</audio>';
@@ -1140,8 +1210,13 @@
                     // remove progress bar
                     this.removeProgressBar(id_progress);
 
+                    // remove attachments bar as well in case there are no files
+                    if (this.data.environment.attachments.length == 0) {
+                        this.clearAttachments();
+                    }
+
                     // raise alert
-                    alert(error.responseText);
+                    this.alert(error.responseText || error.statusText || 'Connection lost!');
                 },
                 // progress callback
                 (progress) => {
@@ -1399,7 +1474,18 @@
                 },
                 // success callback
                 (resp) => {
-                    if (!resp.length) {
+                    if (typeof resp?.metadata === 'object') {
+                        // refresh context metadata
+                        this.data.environment.context.metadata = resp.metadata;
+                    }
+
+                    // trigger event
+                    this.triggerEvent('chat.sync.before', {
+                        chat: this,
+                        messages: resp?.messages || [],
+                    });
+
+                    if (!resp.messages.length) {
                         // do nothing in case the response is empty
                         return;
                     }
@@ -1408,7 +1494,7 @@
                     let should_scroll = this.shouldScroll();
 
                     // update messages
-                    let {newMessages, missedMessages} = this.mergeMessages(resp);
+                    let {newMessages, missedMessages} = this.mergeMessages(resp.messages.reverse());
 
                     if (!newMessages.length && !missedMessages.length) {
                         // stop process in case nothing has changed
@@ -1436,9 +1522,6 @@
                         should_scroll = false;
                     }
 
-                    // flush notifications for active chat
-                    this.readNotifications();
-
                     /**
                      * Use bottom scroll only in case the message is visible
                      * within the scroll. In this way, if we are reading older messages
@@ -1446,10 +1529,13 @@
                      * are keeping an eye on the latest messages, the chat will be scrolled
                      * automatically.
                      */
-                    if (should_scroll) {
-                        // scroll conversation to bottom
-                        this.scrollToBottom();
+                    if (should_scroll && newMessages.length) {
+                        // scroll conversation to the next message
+                        this.scrollToMessage(newMessages[0]);
                     }
+
+                    // flush notifications for active chat
+                    this.readNotifications();
 
                     /**
                      * After registering the messages we
@@ -1519,6 +1605,12 @@
 
             this.input.disable();
 
+            // trigger event
+            this.triggerEvent('chat.send.before', {
+                message: message,
+                chat: this,
+            });
+
             // make request to reply to an existing message (CRITICAL)
             const xhr = VBOChatAjax.do(
                 // end-point URL
@@ -1560,13 +1652,13 @@
                      * Place "re-try" button within the message box so that the user
                      * will be able to resend the message by clicking it.
                      */
-                    $('#' + id).find('.message-content').append('<i class="fas fa-exclamation-circle"></i>')
-                        .append($('<div class="message-error-result"></div>').text(error.responseText));
+                    $('#' + id).find('.message-content').append($('<div class="message-error-result"></div>').text(error.responseText))
+                        .find('.content-text').append('<i class="fas fa-exclamation-circle"></i>');
 
                     // register event to re-send the message after clicking the exclamation triangle
                     $('#' + id).find('.message-content i.fa-exclamation-circle').on('click', function(event) {
                         // remove any possible explanation of the error
-                        $(this).next('.message-error-result').remove();
+                        $(this).closest('.message-content').find('.message-error-result').remove();
 
                         // remove icon from message
                         $(this).off('click').remove();
@@ -1574,6 +1666,9 @@
                         // re-send the message
                         chat.send(data);
                     });
+
+                    // scroll down to make the whole error immediately visible
+                    chat.scrollToBottom();
 
                     // obtain message
                     const tmp = this.getMessage(data.id);
@@ -1585,6 +1680,13 @@
 
                     // always re-enable the textarea in case of success
                     this.input.enable();
+
+                    // trigger event
+                    this.triggerEvent('chat.send.failed', {
+                        message: tmp,
+                        chat: this,
+                        error: error,
+                    });
                 }
             );
         
@@ -1690,6 +1792,20 @@
 
             return this;
         }
+
+        /**
+         * Displays the error message to the user.
+         * A system alert will be used by default.
+         * 
+         * @param   string  error  The error message to display.
+         * 
+         * @return  void
+         */
+        alert(error) {
+            setTimeout(() => {
+                alert(error);            
+            }, 32);
+        }
     }
 
     /**
@@ -1789,7 +1905,18 @@
          * @return  mixed  The source element.
          */
         setValue(val) {
-            return $('#' + this.data.id).val(val);  
+            return $('#' + this.data.id).val(val).trigger('input');
+        }
+
+        /**
+         * Focuses the input.
+         *
+         * @return  self
+         */
+        focus() {
+            $('#' + this.data.id).focus();
+
+            return this;
         }
 
         /**
@@ -1980,6 +2107,16 @@
 
             chat.data.environment.context.actions.forEach((button) => {
                 if (button.namespace) {
+                    if (!button.text) {
+                        button.text = (...args) => {
+                            const event = $.Event('chat.' + button.namespace + '.text');
+                            event.args = args.concat([button, chat]);
+                            event.displayText = null;
+                            $(window).trigger(event);
+                            return event.displayText;
+                        }
+                    }
+
                     if (!button.icon) {
                         button.icon = (...args) => {
                             const event = $.Event('chat.' + button.namespace + '.icon');

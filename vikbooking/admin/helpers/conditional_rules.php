@@ -487,11 +487,12 @@ class VikBookingHelperConditionalRules
 			 * Make sure any src/href attribute does not contain relative URLs.
 			 * 
 			 * @since 	1.15 (J) - 1.5.0 (WP)
+			 * @since 	1.18.8 (J) - 1.8.8 (WP) ignore attributes containing a special tag.
 			 */
 			$cond_texts[$token]['msg'] = preg_replace_callback("/\s*(src|href)=([\"'])(.*?)[\"']/i", function($match) {
 				// check if the URL starts with the base domain
-				if (stripos($match[3], JUri::root()) !== 0 && !preg_match("/^(https?:\/\/|www\.)/i", $match[3])) {
-					// prepend base domain to URL
+				if (stripos($match[3], JUri::root()) !== 0 && !preg_match("/^(https?:\/\/|www\.|{)/i", $match[3])) {
+					// safely prepend base domain to URL
 					$match[0] = ' ' . $match[1] . '=' . $match[2] . JUri::root() . $match[3] . $match[2];
 				}
 				return $match[0];

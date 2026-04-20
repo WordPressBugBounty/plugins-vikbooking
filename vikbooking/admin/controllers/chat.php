@@ -85,12 +85,21 @@ class VikBookingControllerChat extends JControllerAdmin
                     ->withContext($context)
                     ->message($threshold, '>')
             );
+
+            // maintain the user logged in
+            $chat->getUser()->keepAlive($context);
+
+            // obtain the public context metadata
+            $metadata = $context->getMetadata($public = true);
         } catch (Exception $error) {
             VBOHttpDocument::getInstance($app)->close($error->getCode() ?: 500, $error->getMessage());
         }
 
         // output the result content
-        VBOHttpDocument::getInstance($app)->json($messages);
+        VBOHttpDocument::getInstance($app)->json([
+            'messages' => $messages,
+            'metadata' => $metadata,
+        ]);
     }
 
     /**
@@ -319,6 +328,7 @@ class VikBookingControllerChat extends JControllerAdmin
         // fetch request data
         $start = $app->input->getUint('start', 0);
         $limit = $app->input->getUint('limit', 20);
+        $categories = $app->input->getString('categories', []);
         $options = $app->input->get('options', [], 'array');
 
         try {
@@ -328,6 +338,7 @@ class VikBookingControllerChat extends JControllerAdmin
             // obtain all the chats
             $messages = $chat->getMessages(
                 (new VBOChatSearch)
+                    ->forCategories($categories)
                     ->start($start)
                     ->limit($limit)
                     ->aggregate()
@@ -354,5 +365,145 @@ class VikBookingControllerChat extends JControllerAdmin
 
         // output the result content
         VBOHttpDocument::getInstance($app)->json($chats);
+    }
+
+    /**
+     * Updates the metadata for the specified context.
+     * 
+     * @return  void
+     * 
+     * @since   1.8.8
+     */
+    public function update_metadata()
+    {
+        $app = JFactory::getApplication();
+
+        // fetch request data
+        $contextId = $app->input->getUint('id_context', 0);
+        $context = $app->input->get('context', '');
+        $key = $app->input->getString('key');
+        $val = $app->input->getString('val', null);
+
+        try {
+            if (!JSession::checkToken()) {
+                throw new RuntimeException(JText::translate('JINVALID_TOKEN'), 403);
+            }
+
+            /** @var VBOChatMediator */
+            $chat = VBOFactory::getChatMediator();
+
+            /** @var VBOChatContext */
+            $context = $chat->createContext($context, $contextId);
+
+            // update the metadata
+            $context->setMetadata($key, $val);
+        } catch (Exception $error) {
+            VBOHttpDocument::getInstance($app)->close($error->getCode() ?: 500, $error->getMessage());
+        }
+
+        VBOHttpDocument::getInstance($app)->json((new VBOChatSessionModel)->getItem($sessionId));
+
+        $app->close();
+    }
+
+    /**
+     * AJAX endpoint to send a message template to a chat session.
+     * 
+     * NOTE: VikChannelManager and WhatsApp channel are required.
+     * 
+     * @return  void
+     */
+    public function send_template()
+    {
+        $app = JFactory::getApplication();
+
+        try {
+            if (!JSession::checkToken()) {
+                // missing CSRF-proof token
+                throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+            }
+
+            // gather request values
+            $sessionId = $app->input->getUint('session_id', '');
+            $configId  = $app->input->getUInt('config_id', 0);
+
+            // recover session details from ID
+            $session = (new VBOChatSessionModel)->getItem($sessionId);
+
+            if (!$session) {
+                throw new DomainException("Session [$sessionId] not found.", 404);
+            }
+
+            // get WhatsApp business account ID from session metadata
+            $accountId = $session->metadata['waba_id'];
+
+            // account validation
+            if (empty($accountId)) {
+                throw new RuntimeException('Missing account or phone ID.', 400);
+            }
+
+            // find account record
+            $accountRecord = VCMMessagingAccountsModel::getInstance()->getItem([
+                'idchannel'  => VikChannelManagerConfig::WHATSAPP,
+                'account_id' => $accountId,
+            ]);
+
+            if (!$accountRecord) {
+                throw new RuntimeException('Could not find WhatsApp Business Account data.', 404);
+            }
+
+            if (empty($accountRecord->settings['configurations'][$configId])) {
+                throw new RuntimeException('Could not find account configuration data.', 404);
+            }
+
+            if (empty($session->phone)) {
+                throw new RuntimeException('Missing recipient phone number.', 400);
+            }
+
+            // build template decorator
+            if (!empty($session->metadata['quote_id'])) {
+                // use the quote decorator
+                $tplDecorator = new VCMMessagingTemplateDecoratorQuote((int) $session->metadata['quote_id']);
+            } else {
+                // default to chat decorator
+                $tplDecorator = new VCMMessagingTemplateDecoratorChat($session);
+            }
+
+            // send message template
+            $sendResult = (new VCMWhatsappModelService($accountRecord->account_id, $accountRecord->phone_id))
+                ->sendTemplate(
+                    $session->phone,
+                    $accountRecord,
+                    $configId,
+                    [
+                        'decorator' => $tplDecorator,
+                    ]
+                );
+
+            /** @var VBOChatMediator */
+            $chat = VBOFactory::getChatMediator();
+
+            /** @var VBOChatUser */
+            $user = $chat->getUser();
+
+            /** @var VBOChatMessage */
+            $message = $chat->createMessage([
+                'context' => 'session',
+                'id_context' => $sessionId,
+                'sender_name' => $user->getName(),
+                'id_sender' => $user->getID(),
+                'message' => $sendResult->text,
+                'ref_id' => $sendResult->id,
+            ]);
+
+            // collect template message without sending any notification
+            $chat->saveMessage($message);
+
+        } catch (Exception $error) {
+            VBOHttpDocument::getInstance($app)->close($error->getCode() ?: 500, $error->getMessage() ?: 'Error');
+        }
+
+        // output requested message template details
+        VBOHttpDocument::getInstance($app)->json($sendResult);
     }
 }

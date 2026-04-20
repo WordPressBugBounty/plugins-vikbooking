@@ -95,12 +95,21 @@ class VikBookingControllerChat extends JControllerAdmin
                     ->withContext($context)
                     ->message($threshold, '>')
             );
+
+            // maintain the user logged in
+            $chat->getUser()->keepAlive($context);
+
+            // obtain the public context metadata
+            $metadata = $context->getMetadata($public = true);
         } catch (Exception $error) {
             VBOHttpDocument::getInstance($app)->close($error->getCode() ?: 500, $error->getMessage());
         }
 
         // output the result content
-        VBOHttpDocument::getInstance($app)->json($messages);
+        VBOHttpDocument::getInstance($app)->json([
+            'messages' => $messages,
+            'metadata' => $metadata,
+        ]);
     }
 
     /**
@@ -223,6 +232,8 @@ class VikBookingControllerChat extends JControllerAdmin
         }
 
         // fetch request data
+        $contextId = $app->input->getUint('id_context', 0);
+        $context = $app->input->get('context', '');
         $files = $app->input->files->get('attachments', [], 'raw');
 
         if (isset($files['name'])) {
@@ -237,7 +248,10 @@ class VikBookingControllerChat extends JControllerAdmin
             /** @var VBOChatMediator */
             $chat = VBOFactory::getChatMediator();
 
-            if (!$chat->getUser()->can('chat.attachment.add')) {
+            /** @var VBOChatContext */
+            $context = $chat->createContext($context, $contextId);
+
+            if (!$chat->getUser()->can('chat.attachment.add', $context)) {
                 // not authorized
                 throw new RuntimeException(JText::translate('JERROR_ALERTNOAUTHOR'), 403);
             }
@@ -276,13 +290,18 @@ class VikBookingControllerChat extends JControllerAdmin
         }
 
         // fetch request data
+        $contextId = $app->input->getUint('id_context', 0);
+        $context = $app->input->get('context', '');
         $file = $app->input->get('attachment', [], 'array');
 
         try {
             /** @var VBOChatMediator */
             $chat = VBOFactory::getChatMediator();
 
-            if (!$chat->getUser()->can('chat.attachment.remove')) {
+            /** @var VBOChatContext */
+            $context = $chat->createContext($context, $contextId);
+
+            if (!$chat->getUser()->can('chat.attachment.remove', $context)) {
                 // not authorized
                 throw new RuntimeException(JText::translate('JERROR_ALERTNOAUTHOR'), 403);
             }
@@ -339,5 +358,113 @@ class VikBookingControllerChat extends JControllerAdmin
 
         // output the result content
         VBOHttpDocument::getInstance($app)->json($messages);
+    }
+
+    /**
+     * Starts a new chat session as guest.
+     * In case the user already started a session from this browser, the existing
+     * session will be returned instead.
+     * 
+     * @return  void
+     * 
+     * @since   1.8.8
+     */
+    public function start_session()
+    {
+        $app = JFactory::getApplication();
+
+        try {
+            if (!JSession::checkToken()) {
+                throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+            }
+
+            $sessionModel = new VBOChatSessionModel;
+
+            // get session from cookie
+            $session = $sessionModel->getFromCookie();
+
+            $sessionId = $session->id ?? null;
+
+            // check whether a session was already started for this user
+            if (!$sessionId)
+            {
+                $data = [];
+                $data['name'] = $app->input->getString('name');
+                $data['email'] = $app->input->getString('email');
+
+                // start a new session
+                $sessionId = $sessionModel->save($data);
+            }
+
+            // validate session ID one more time
+            if (!$sessionId) {
+                throw new RuntimeException('Failed starting a new session', 400);
+            }
+        } catch (Exception $error) {
+            VBOHttpDocument::getInstance($app)->close($error->getCode() ?: 500, $error->getMessage());
+        }
+
+        // send session ID to the caller
+        VBOHttpDocument::getInstance($app)->json(['id' => $sessionId]);
+    }
+
+    /**
+     * Ends an existing session as guest.
+     * It is possible to immediately start a new session after closing the existing one.
+     * 
+     * @return  void
+     * 
+     * @since   1.8.8
+     */
+    public function end_session()
+    {
+        $app = JFactory::getApplication();
+
+        try {
+            if (!JSession::checkToken()) {
+                throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+            }
+
+            $sessionModel = new VBOChatSessionModel;
+
+            // load existing session first
+            $session = $sessionModel->getFromCookie();
+
+            if (!$session) {
+                throw new Exception('Session not started yet.', 400);
+            }
+
+            if ($session->metadata['banned'] ?? false) {
+                throw new Exception('You cannot close and start a new session because you have been banned.', 403);
+            }
+
+            /** @var VBOChatMediator */
+            $chat = VBOFactory::getChatMediator();
+
+            // make sure the user is allowed to end the session
+            if (!$chat->getUser()->can('chat.session.end', new VBOChatContextSession($session->id))) {
+                // not authorized
+                throw new RuntimeException(JText::translate('JERROR_ALERTNOAUTHOR'), 403);
+            }
+
+            // close session
+            $sessionModel->endSession();
+
+            $sessionId = 0;
+
+            // check if we should restart a new one
+            if ($app->input->getBool('restart')) {
+                // start a new session
+                $sessionId = $sessionModel->save([
+                    'name' => $session->name,
+                    'email' => $session->email,
+                ]);
+            }
+        } catch (Exception $error) {
+            VBOHttpDocument::getInstance($app)->close($error->getCode() ?: 500, $error->getMessage());
+        }
+
+        // send session ID to the caller
+        VBOHttpDocument::getInstance($app)->json(['id' => $sessionId]);
     }
 }

@@ -64,7 +64,7 @@ final class VBONotificationDisplayOperatormessage extends JObject implements VBO
         // compose the notification data to display
         $notif_data = new stdClass;
         $notif_data->title   = $notif_title;
-        $notif_data->message = $this->get('message', '');
+        $notif_data->message = strip_tags($this->get('message', ''));
         $notif_data->icon    = $notif_icon;
         $notif_data->onclick = 'VBOCore.handleDisplayWidgetNotification';
         $notif_data->gotourl = VBOFactory::getPlatform()->getUri()->admin("index.php?option=com_vikbooking&view=taskmanager", false);

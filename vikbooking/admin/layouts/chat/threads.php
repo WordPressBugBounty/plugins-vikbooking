@@ -13,9 +13,10 @@ defined('ABSPATH') or die('No script kiddies please!');
 /**
  * Display data attributes.
  * 
- * @var array   $threads
- * @var array   $options
- * @var string  $id
+ * @var array     $threads
+ * @var string[]  $categories
+ * @var array     $options
+ * @var string    $id
  */
 extract($displayData);
 
@@ -110,8 +111,13 @@ $id = 'vbo-chat-interface-' . ($options['id'] ?? uniqid());
                 thread.find('.last-update-date').text(date.toLocaleDateString());
             }
 
+            // strip HTML tags from message
+            const tmpDiv = document.createElement("div");
+            tmpDiv.innerHTML = lastMessage.message;
+            let plainMessageText = tmpDiv.textContent || tmpDiv.innerText || '';
+
             // refresh message
-            thread.find('.chat-thread-message-body').text(shortenText(lastMessage.message, 80)).attr('data-length', lastMessage.message.length);
+            thread.find('.chat-thread-message-body').text(shortenText(plainMessageText, 80)).attr('data-length', plainMessageText.length);
 
             // refresh attachments
             const attachments = lastMessage.attachments.map(a => a.name).join(', ');
@@ -153,6 +159,9 @@ $id = 'vbo-chat-interface-' . ($options['id'] ?? uniqid());
             $('#<?php echo $id; ?>').find('.chat-thread[data-context][data-id].active').removeClass('active');
             $(this).addClass('active');
 
+            // remove any loading overlay previously appended
+            $('#<?php echo $id; ?>').find('.vbo-chat-target .vbo-chat-loading').remove();
+
             // append loading box to the chat target
             $('#<?php echo $id; ?>').find('.vbo-chat-target').append(
                 $('<div class="vbo-chat-loading"><?php VikBookingIcons::e('circle-notch', 'fa-spin fa-3x'); ?></div>')
@@ -168,7 +177,14 @@ $id = 'vbo-chat-interface-' . ($options['id'] ?? uniqid());
                     $('#<?php echo $id; ?>').find('.vbo-chat-target').html(resp.html);
                 },
                 (err) => {
-                    alert(err.responseText);
+                    // update icon on loading overlay
+                    $('#<?php echo $id; ?>').find('.vbo-chat-target .vbo-chat-loading').html(
+                        '<?php VikBookingIcons::e('exclamation-triangle', 'fa-3x'); ?>'
+                    );
+
+                    setTimeout(() => {
+                        alert(err.responseText || err.statusText || 'Connection lost!');
+                    }, 32);
                 }
             );
         });
@@ -242,6 +258,7 @@ $id = 'vbo-chat-interface-' . ($options['id'] ?? uniqid());
                 {
                     start: totalThreads,
                     limit: threadsLimit,
+                    categories: <?php echo json_encode($categories ?? []); ?>,
                     options: <?php echo json_encode($options ?? []); ?>,
                 },
                 // success callback

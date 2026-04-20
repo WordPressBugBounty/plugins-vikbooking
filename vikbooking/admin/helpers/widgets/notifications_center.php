@@ -416,7 +416,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 		// check whether the widget is being rendered via AJAX when adding it through the customizer
 		$is_ajax = $this->isAjaxRendering();
 
-		// generate a unique ID for the sticky notes wrapper instance
+		// generate a unique ID for the wrapper instance
 		$wrapper_instance = !$is_ajax ? static::$instance_counter : rand();
 		$wrapper_id = 'vbo-widget-notifscenter-' . $wrapper_instance;
 
@@ -1541,6 +1541,8 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 					$group_badge_icon = 'credit-card';
 				} elseif ($notif->type == 'info') {
 					$group_badge_icon = 'bullhorn';
+				} elseif ($notif->type == 'chat.newmessage') {
+					$group_badge_icon = 'comment-dots';
 				}
 				if (in_array($notif->type, ['cr', 'cw', 'ob'])) {
 					$group_badge_cls = 'vbo-badge-group-orange';
@@ -1592,6 +1594,12 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				if (strpos((string) $notif->type, '.nok') !== false) {
 					$group_badge_cls = 'vbo-badge-group-red';
 				}
+			} elseif (!strcasecmp($notif->group, 'webhook')) {
+				$group_badge_icon = 'satellite-dish';
+				$group_badge_cls  = 'vbo-badge-group-lightblue';
+				if (strpos((string) $notif->type, '.nok') !== false || strpos((string) $notif->type, 'error') !== false) {
+					$group_badge_cls = 'vbo-badge-group-red';
+				}
 			}
 
 			?>
@@ -1605,7 +1613,14 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 					<div class="vbo-customer-info-box">
 						<div class="vbo-customer-info-box-avatar vbo-customer-avatar-medium">
 						<?php
-						if (!empty($notif->customer_pic)) {
+						if ($group_guests && !empty($notif->avatar)) {
+							// use notification avatar to support co-hosts, co-traveler and other chat users
+							?>
+							<span class="vbo-widget-notifscenter-cpic-zoom">
+								<img src="<?php echo strpos($notif->avatar, 'http') === 0 ? $notif->avatar : JUri::root() . $notif->avatar; ?>" decoding="async" loading="lazy" />
+							</span>
+							<?php
+						} elseif (!empty($notif->customer_pic)) {
 							// use customer profile picture
 							?>
 							<span class="vbo-widget-notifscenter-cpic-zoom">
@@ -1699,10 +1714,10 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 						<span class="vbo-tooltip vbo-tooltip-<?php echo !$index && !$page_num ? 'bottom' : 'top'; ?>" data-tooltiptext="<?php echo JHtml::fetch('esc_attr', $human_dtime); ?>"><?php echo $relative_dt; ?></span>
 					</div>
 				<?php
-				if ((!$group_website || !strcasecmp($notif->type, 'info')) && $notif->summary) {
+				if ($notif->summary && (!$group_website || !strcasecmp($notif->type, 'info') || strpos($notif->type, 'chat') === 0)) {
 					?>
 					<div class="vbo-widget-notifscenter-notif-summary" data-group-name="<?php echo $notif->group; ?>" data-notif-type="<?php echo $notif->type; ?>">
-						<span><?php echo $notif->summary; ?></span>
+						<span><?php echo htmlspecialchars($notif->summary); ?></span>
 					</div>
 					<?php
 				}

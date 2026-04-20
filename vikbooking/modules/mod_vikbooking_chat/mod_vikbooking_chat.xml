@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="4.0.0" client="site" method="upgrade">
+	<name>MOD_VIKBOOKING_CHAT</name>
+	<author>E4J s.r.l.</author>
+	<creationDate>February 2026</creationDate>
+	<copyright>Copyright (C) 2026 E4J s.r.l. All rights reserved.</copyright>
+	<license>GNU General Public License version 2 or later</license>
+	<authorEmail>tech@extensionsforjoomla.com</authorEmail>
+	<authorUrl>https://vikwp.com</authorUrl>
+	<version>1.0</version>
+	<description>MOD_VIKBOOKING_CHAT_DESC</description>
+	<config>
+		<fields name="params">
+			
+			<fieldset name="basic">
+				<field
+					name="title"
+					type="text"
+					label="MOD_VIKBOOKING_CHAT_TITLE_FIELD_LABEL"
+					hint="MOD_VIKBOOKING_CHAT_TITLE"
+				/>
+
+				<field
+					name="greetings_title"
+					type="textarea"
+					label="MOD_VIKBOOKING_CHAT_GREETINGS_TITLE_FIELD_LABEL"
+					hint="MOD_VIKBOOKING_CHAT_GREETINGS_TITLE"
+				/>
+
+				<field
+					name="greetings_subtitle"
+					type="textarea"
+					label="MOD_VIKBOOKING_CHAT_GREETINGS_SUBTITLE_FIELD_LABEL"
+					hint="MOD_VIKBOOKING_CHAT_GREETINGS_SUBTITLE"
+				/>
+			</fieldset>
+
+			<fieldset name="faq">
+				<field
+					name="faq_1_short" 
+					type="text"
+					label="MOD_VIKBOOKING_CHAT_FAQ_SHORT_FIELD_LABEL"
+					description="MOD_VIKBOOKING_CHAT_FAQ_SHORT_FIELD_DESC"
+					hint="Check-in and check-out times"
+				/>
+
+				<field
+					name="faq_1_long" 
+					type="textarea"
+					label="MOD_VIKBOOKING_CHAT_FAQ_LONG_FIELD_LABEL"
+					description="MOD_VIKBOOKING_CHAT_FAQ_LONG_FIELD_DESC"
+					hint="Hi! I'm considering booking a room at your property and wanted to ask what time check-in starts and what the check-out time is. This will help me plan my trip."
+				/>
+
+				<field
+					name="faq_2_short" 
+					type="text"
+					label="MOD_VIKBOOKING_CHAT_FAQ_SHORT_FIELD_LABEL"
+					description="MOD_VIKBOOKING_CHAT_FAQ_SHORT_FIELD_DESC"
+					hint="Breakfast included"
+				/>
+
+				<field
+					name="faq_2_long" 
+					type="textarea"
+					label="MOD_VIKBOOKING_CHAT_FAQ_LONG_FIELD_LABEL"
+					description="MOD_VIKBOOKING_CHAT_FAQ_LONG_FIELD_DESC"
+					hint="Hello, I'm about to book a room and was wondering if breakfast is included in the room rate or if it comes at an extra charge."
+				/>
+
+				<field
+					name="faq_3_short" 
+					type="text"
+					label="MOD_VIKBOOKING_CHAT_FAQ_SHORT_FIELD_LABEL"
+					description="MOD_VIKBOOKING_CHAT_FAQ_SHORT_FIELD_DESC"
+					hint="Parking availability"
+				/>
+
+				<field
+					name="faq_3_long" 
+					type="textarea"
+					label="MOD_VIKBOOKING_CHAT_FAQ_LONG_FIELD_LABEL"
+					description="MOD_VIKBOOKING_CHAT_FAQ_LONG_FIELD_DESC"
+					hint="Hi, I'm planning to travel by car and would like to know if you offer on-site parking and whether it needs to be reserved in advance. Thank you!"
+				/>
+			</fieldset>
+
+			<fieldset name="appearance">
+				<field
+					name="background" 
+					type="color"
+					default="#2282BD"
+					label="MOD_VIKBOOKING_CHAT_BACKGROUND_FIELD_LABEL"
+				/>
+
+				<field
+					name="color" 
+					type="color"
+					default="#FFFFFF"
+					label="MOD_VIKBOOKING_CHAT_COLOR_FIELD_LABEL"
+				/>
+			</fieldset>
+
+			<fieldset name="advanced">	
+				<field
+					name="layout"
+					type="modulelayout"
+					label="JLAYOUT"
+					description="JLAYOUT_DESC"
+				/>
+			</fieldset>
+
+		</fields>
+	</config>
+</extension>

@@ -216,6 +216,23 @@ $adminPanelForms = $this->onDisplayView('Administration', $adminFormsSetup);
 // extend administration sidebar
 $adminSidebarForms = $this->onDisplayView('AdministrationSidebar');
 
+/**
+ * Check if messaging accounts have been configured through the E4jConnect Channel Manager.
+ * If some messaging API accounts have been configured, SMS fallback will no longer be displayed.
+ * 
+ * @since 	1.18.8 (J) - 1.8.8 (WP)
+ */
+$messagingAccountConfigurations = [];
+if (class_exists('VCMMessagingAccountsModel')) {
+	$registry = VBOBookingRegistry::getInstance($this->row, $this->rooms);
+	$messagingAccountConfigurations = VCMMessagingAccountsModel::getInstance()->getConfigurationsData(
+		new VCMMessagingTemplateDecoratorBooking($registry),
+        [
+            'listings' => $registry->getBookedListingIds(),
+        ]
+	);
+}
+
 //Prepare modal (used for the Registration and for reconstructing the credit card details through the channel manager)
 echo $vbo_app->getJmodalScript();
 //end Prepare modal
@@ -721,7 +738,7 @@ JS
 						(res) => {
 							// parse the JSON response that contains the categories object with all fields for the reporting
 							try {
-								var misconduct_fields_rs = JSON.parse(res);
+								var misconduct_fields_rs = typeof res === 'string' ? JSON.parse(res) : res;
 
 								// make sure the request was successful
 								if (!misconduct_fields_rs.status) {
@@ -908,7 +925,7 @@ JS
 						data: submit_fields
 					}).done(function(res) {
 						try {
-							var misconduct_rs = JSON.parse(res);
+							var misconduct_rs = typeof res === 'string' ? JSON.parse(res) : res;
 							console.log(submit_fields, misconduct_rs);
 
 							// make sure the request was successful
@@ -1048,7 +1065,7 @@ JS
 				?>
 		<div class="vbo-bookdet-container vbo-bookdet-inquiry-alert">
 			<div class="vbo-bookdet-inquiry-alert-dismiss">
-				<button type="button" class="btn btn-warning" onclick="jQuery('.vbo-bookdet-inquiry-alert').remove();"><?php VikBookingIcons::e('times-circle'); ?> <?php echo JText::translate('VBOBTNKEEPREMIND'); ?></button>
+				<button type="button" class="btn btn-small btn-warning" onclick="jQuery('.vbo-bookdet-inquiry-alert').remove();"><?php VikBookingIcons::e('times-circle'); ?> <?php echo JText::translate('VBOBTNKEEPREMIND'); ?></button>
 			</div>
 			<div class="vbo-bookdet-inquiry-alert-message">
 				<div class="vbo-bookdet-inquiry-alert-top">
@@ -1084,6 +1101,41 @@ JS
 				<div class="vbo-bookdet-inquiry-alert-bottom">
 					<span><?php echo JText::translate('VBO_WEB_INQUIRY_SUGG'); ?></span>
 				</div>
+			<?php
+			if (empty($row['idquote'])) {
+				// even if it cannot be a quote, we make sure it's just an inquiry for now
+				$createQuoteUri = 'index.php?option=com_vikbooking&view=managequote&' . http_build_query([
+					'customer' => [
+						'id'         => $customer['id'] ?? null,
+						'first_name' => $customer['first_name'] ?? null,
+						'last_name'  => $customer['last_name'] ?? null,
+						'email'      => $customer['email'] ?? null,
+						'phone'      => $customer['phone'] ?? null,
+						'country'    => $customer['country'] ?? null,
+					],
+					'inquiry' => [
+						'checkin' => date('Y-m-d', $row['checkin']),
+						'checkout' => date('Y-m-d', $row['checkout']),
+						'parties' => array_map(function($or) {
+							return [
+								'adults'   => $or['adults'] ?? 1,
+								'children' => $or['children'] ?? 0,
+							];
+						}, $rooms),
+						'rooms' => array_map(function($or) {
+							return [
+								'id' => $or['idroom'] ?? 0,
+							];
+						}, $rooms),
+					],
+				]);
+				?>
+				<div class="vbo-bookdet-inquiry-alert-bottom">
+					<a class="btn vbo-config-btn" href="<?php echo VBOFactory::getPlatform()->getUri()->admin($createQuoteUri); ?>"><?php VikBookingIcons::e('file-alt'); ?> <?php echo JText::translate('VBO_CREATE_QUOTE'); ?></a>
+				</div>
+				<?php
+			}
+			?>
 			</div>
 		</div>
 				<?php
@@ -1101,14 +1153,21 @@ JS
 				</div>
 				<?php
 			}
+			if (!empty($row['idquote'])) {
+				?>
+				<div class="vbo-bookingdet-command">
+					<button class="btn vbo-config-btn vbo-quote-details-btn" type="button"><?php VikBookingIcons::e('file-alt'); ?> <?php echo JText::translate('VBO_QUOTE_DETAILS'); ?></button>
+				</div>
+				<?php
+			}
 			if ((array_key_exists(1, $tars) && $tars[1]) || ($is_package || $is_cust_cost)) {
 
 				if (VBOPlatformDetection::isWordPress()) {
 					/**
 					 * @wponly 	display warning message if no valid Shortcodes found
 					 */
-					$model 		= JModel::getInstance('vikbooking', 'shortcodes');
-					$itemid 	= $model->best('booking');
+					$model  = JModel::getInstance('vikbooking', 'shortcodes');
+					$itemid = $model->best('booking');
 					if (!$itemid) {
 						VikError::raiseWarning('', 'No Shortcodes found, or no Shortcodes being used in Pages/Posts.');
 					}
@@ -1620,8 +1679,7 @@ JS
 					<!-- {"rule":"customizer","event":"onDisplayViewVikBookingEditorderSidebar","key":"invoice","type":"field"} -->
 
 					<?php	
-					if (isset($bookingSidebarForms['invoice']))
-					{
+					if (isset($bookingSidebarForms['invoice'])) {
 						echo $bookingSidebarForms['invoice'];
 					}
 					?>
@@ -1653,8 +1711,7 @@ JS
 						<!-- {"rule":"customizer","event":"onDisplayViewVikBookingEditorderSidebar","key":"email","type":"field"} -->
 
 						<?php	
-						if (isset($bookingSidebarForms['email']))
-						{
+						if (isset($bookingSidebarForms['email'])) {
 							echo $bookingSidebarForms['email'];
 						}
 						?>
@@ -1668,19 +1725,32 @@ JS
 							<div class="vbo-bookingdet-inpcont">
 								<?php echo $vbo_app->printPhoneInputField(array('name' => 'custphone', 'id' => 'custphone', 'value' => $this->escape($row['phone'])), array('nationalMode' => false, 'fullNumberOnBlur' => true)); ?>
 							</div>
-						<?php if (!empty($row['phone'])) : ?>
+						<?php
+						if (!empty($row['phone'])) {
+							if ($messagingAccountConfigurations) {
+								// send a message to the guest phone number through the messaging API account(s) configured
+								?>
+							<div class="vbo-bookingdet-btncont">
+								<button type="button" class="btn vbo-config-btn vbo-bookingdet-send-tplmessage-btn" style="vertical-align: top;"><?php VikBookingIcons::e('paper-plane'); ?> <?php echo JText::translate('VBO_SEND_MESSAGE'); ?></button>
+							</div>
+								<?php
+							} else {
+								// fallback onto SMS
+								?>
 							<div class="vbo-bookingdet-btncont">
 								<button type="button" class="btn vbo-config-btn" onclick="vboDisplaySendSMS();" style="vertical-align: top;"><?php VikBookingIcons::e('comment-dots'); ?> <?php echo JText::translate('VBSENDSMSACTION'); ?></button>
 							</div>
-						<?php endif; ?>
+								<?php
+							}
+						}
+						?>
 						</div>
 
 						<!-- Define role to detect the supported hook -->
 						<!-- {"rule":"customizer","event":"onDisplayViewVikBookingEditorderSidebar","key":"phone","type":"field"} -->
 
 						<?php	
-						if (isset($bookingSidebarForms['phone']))
-						{
+						if (isset($bookingSidebarForms['phone'])) {
 							echo $bookingSidebarForms['phone'];
 						}
 						?>
@@ -1691,10 +1761,8 @@ JS
 					<!-- {"rule":"customizer","event":"onDisplayViewVikBookingEditorderSidebar","type":"fieldset"} -->
 
 					<?php
-					foreach ($bookingSidebarForms as $legend => $form)
-					{
-						if (in_array($legend, ['userdetails', 'invoice', 'email', 'phone']))
-						{
+					foreach ($bookingSidebarForms as $legend => $form) {
+						if (in_array($legend, ['userdetails', 'invoice', 'email', 'phone'])) {
 							// skip default forms
 							continue;
 						}
@@ -2226,6 +2294,10 @@ JS
 						if ($row['total'] > 0 && !$row['closure']) {
 							$has_paid = ($row['totpaid'] > 0);
 							$diff_to_pay = $has_paid ? ($row['total'] - $row['totpaid']) : 0;
+							if ($diff_to_pay && !empty($row['idorderota']) && !empty($row['channel']) && round($row['cmms'], 2) == round($diff_to_pay, 2)) {
+								// the outstanding balance is equal to the OTA commissions amount
+								$diff_to_pay = 0;
+							}
 							if ($has_paid || $row['status'] != 'standby') {
 							?>
 							<tr class="vbo-bookingdet-summary-totpaid">
@@ -2431,9 +2503,9 @@ JS
 					}
 					$chpayment = '';
 					if ($payments) {
-						$chpayment = '<div><select name="newpayment" id="newpayment" onchange="changePayment();"><option value="">'.JText::translate('VBCHANGEPAYLABEL').'</option>';
+						$chpayment = '<div><select name="newpayment" id="newpayment" onchange="changePayment();"><option value="">- ' . JText::translate('VBCHANGEPAYLABEL') . ' -</option>';
 						foreach ($payments as $pay) {
-							$chpayment .= '<option value="'.$pay['id'].'">'.(is_array($payment) && $payment['id'] == $pay['id'] ? ' ::' : '').$pay['name'].'</option>';
+							$chpayment .= '<option value="' . $pay['id'] . '">' . (is_array($payment) && $payment['id'] == $pay['id'] ? '- ' : '') . $pay['name'] . '</option>';
 						}
 						$chpayment .= '</select></div>';
 					}
@@ -3786,6 +3858,58 @@ foreach ($vbo_modals_html as $modalhtml) {
 	</div>
 </div>
 
+<div class="vbo-bookingdet-send-tplmessage-helper" style="display: none;">
+	<div class="vbo-bookingdet-send-tplmessage-wrap">
+		<div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
+			<div class="vbo-params-wrap">
+				<div class="vbo-params-container">
+					<div class="vbo-params-block">
+						<?php
+						echo VBOParamsRendering::getInstance(
+							[
+								'ma_identifier' => [
+									'type' => 'elements',
+									'label' => JText::translate('VBO_MESSAGE_TEMPLATE'),
+									'asset_options' => [
+										'placeholder' => JText::translate('VBO_MESSAGE_TEMPLATE'),
+										'allowClear'  => false,
+									],
+									'inline' => false,
+									'wrapdivcls' => 'vbo-singleselect-inline-elems-wrap vbo-singleselect-inline-small-icons',
+									'style_selection' => true,
+									'attributes' => [
+										'data-element' => 'message-template',
+									],
+									'elements' => array_map(function($maConfig) {
+										if (!empty($maConfig['channel_logo'])) {
+											$messTplName = sprintf('%s (%s)', $maConfig['name'], $maConfig['lang']);
+										} else {
+											$messTplName = sprintf('%s - %s (%s)', $maConfig['channel_name'], $maConfig['name'], $maConfig['lang']);
+										}
+										return array_filter([
+											'id'      => $maConfig['identifier'],
+											'name'    => $messTplName,
+											'img_uri' => ($maConfig['channel_logo'] ?? '') ?: null,
+										]);
+									}, $messagingAccountConfigurations),
+								],
+							],
+							[]
+						)->setInputName('send_ma_tpl')->getHtml();
+						?>
+						<div class="vbo-param-container">
+							<div class="vbo-param-label"><?php echo JText::translate('VBOPREVIEW'); ?></div>
+							<div class="vbo-param-setting">
+								<div class="vbo-ma-send-tplmessage-preview"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script type="text/javascript">
 var vbo_print_only = false;
 if (typeof jQuery.fn.tooltip === 'function') {
@@ -3893,6 +4017,10 @@ jQuery(function() {
 		}
 		// reload the page to display the new information about the booking just modified
 		location.reload();
+	});
+	// register click event for the button to see the quote details
+	document.querySelector('.vbo-quote-details-btn')?.addEventListener('click', (e) => {
+		VBOCore.handleDisplayWidgetNotification({widget_id: 'quotes'}, {bid: <?php echo $row['id']; ?>});
 	});
 	// remove overbooking flag
 	jQuery('.vbo-label-overbooking').on('click', function() {
@@ -4250,6 +4378,110 @@ jQuery(function() {
 			}).catch((err) => {
 				// do nothing
 			});
+		});
+	}
+
+	// register events for sending a message template through a messaging account configuration
+	const messagingAccountsData = <?php echo json_encode($messagingAccountConfigurations); ?>;
+	const sendTplMessBtn = document.querySelector('.vbo-bookingdet-send-tplmessage-btn');
+	const sendTplMessContWrap = document.querySelector('.vbo-bookingdet-send-tplmessage-wrap');
+	jQuery(sendTplMessContWrap).find('select[data-element="message-template"]').on('change', function() {
+		let maIdentifier = this.value;
+		let previewEl = sendTplMessContWrap.querySelector('.vbo-ma-send-tplmessage-preview');
+		previewEl.innerHTML = '';
+		if (maIdentifier) {
+			messagingAccountsData.forEach((maData) => {
+				if (maData?.identifier == maIdentifier) {
+					// update preview content
+					previewEl.innerHTML = maData?.preview_html || '';
+				}
+			});
+		}
+	});
+	if (sendTplMessBtn) {
+		sendTplMessBtn.addEventListener('click', () => {
+			let cancelBtn = document.createElement('button');
+			cancelBtn.setAttribute('type', 'button');
+			cancelBtn.classList.add('btn');
+			cancelBtn.textContent = <?php echo json_encode(JText::translate('VBANNULLA')); ?>;
+			cancelBtn.addEventListener('click', () => {
+				VBOCore.emitEvent('vbo-send-tplmessage-dismiss');
+			});
+
+			let confirmBtn = document.createElement('button');
+			confirmBtn.setAttribute('type', 'button');
+			confirmBtn.classList.add('btn', 'btn-primary');
+			confirmBtn.innerHTML = '<?php VikBookingIcons::e('paper-plane'); ?> ' + <?php echo json_encode(JText::translate('VBO_SEND_MESSAGE')); ?>;
+			confirmBtn.addEventListener('click', () => {
+				// get message template identifier data
+				let tplIdentifier = sendTplMessContWrap.querySelector('select[data-element="message-template"]')?.value;
+				if (!tplIdentifier) {
+					alert('Invalid message template');
+					return;
+				}
+
+				// obtain selected template details
+				let tplIdentifierParts = tplIdentifier.split(':');
+
+				// start loading
+				VBOCore.emitEvent('vbo-send-tplmessage-loading');
+				confirmBtn.disabled = true;
+
+				// make the request
+				VBOCore.doAjax(
+					"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=messaging.sendMessageTemplate'); ?>",
+					{
+						account_id: tplIdentifierParts[0],
+						phone_id: tplIdentifierParts[1],
+						config_id: tplIdentifierParts[2],
+						booking_id: <?php echo $this->row['id']; ?>,
+					},
+					(resp) => {
+						// dismiss modal on success
+						VBOCore.emitEvent('vbo-send-tplmessage-dismiss');
+
+						// display success message
+						VBOToast.enqueue(new VBOToastMessage({
+							body:   <?php echo json_encode(JText::translate('VBSENDEMAILOK')); ?>,
+							icon:   '<?php echo VikBookingIcons::i('check-circle'); ?>',
+							status: VBOToast.SUCCESS_STATUS,
+							action: () => {
+								VBOToast.dispose(true);
+							},
+						}));
+
+						// reload the page (just for the new history event)
+						location.reload();
+					},
+					(error) => {
+						// display error message
+						alert(error.responseText);
+
+						// stop loading
+						VBOCore.emitEvent('vbo-send-tplmessage-loading');
+						confirmBtn.disabled = false;
+					}
+				);
+			});
+
+			let modalBody = VBOCore.displayModal({
+				suffix: 	   'vbo-send-tplmessage',
+				extra_class:   'vbo-modal-rounded',
+				title:         <?php echo json_encode(JText::translate('VBO_SEND_MESSAGE')); ?>,
+				footer_left:   cancelBtn,
+				footer_right:  confirmBtn,
+				draggable:     true,
+				lock_scroll:   true,
+				dismiss_event: 'vbo-send-tplmessage-dismiss',
+				loading_event: 'vbo-send-tplmessage-loading',
+				onDismiss:     () => {
+					document.querySelector('.vbo-bookingdet-send-tplmessage-helper').append(
+						sendTplMessContWrap
+					);
+				},
+			});
+
+			(modalBody[0] || modalBody).append(sendTplMessContWrap);
 		});
 	}
 

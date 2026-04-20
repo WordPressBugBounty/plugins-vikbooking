@@ -1251,13 +1251,25 @@ $activeAreas = array_values(array_filter(array_map('intval', $tmfilters['area_id
         }
 
         if (rateType === 'fixed' && (isNaN(setrate) || setrate <= 0)) {
-            alert('Invalid rate amount.');
+            if (setminlos && setminlos > 0) {
+                alert(<?php echo json_encode(JText::translate('VBO_INCR_ZERO_RESTR_TIP')); ?>);
+            } else {
+                // incomplete form
+                alert('Invalid rate amount.');
+            }
             return;
         }
 
         if (rateType === 'addsub' && (isNaN(addsub_amount) || addsub_amount <= 0)) {
-            alert('Invalid amount for increasing/decreasing rates.');
-            return;
+            if (!setminlos || setminlos <= 0) {
+                alert('Invalid amount for increasing/decreasing rates.');
+                return;
+            } else {
+                // allow to change just the minimum stay by forcing the operation to increase rates by 0
+                addsub_op = 1;
+                addsub_amount = 0;
+                addsub_value = 0;
+            }
         }
 
         // increase action counter

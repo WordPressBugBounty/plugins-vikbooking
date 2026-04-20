@@ -377,12 +377,14 @@ final class VBODooraccessIntegrationDevice
      * Given a list of listing-subunit pairs, intersects the available connections.
      * 
      * @param   array   $listingSubunits    Linear array of strings as "roomid-subunit".
+     * @param   bool    $unique             True to return unique value-pairs.
      * 
      * @return  array                       List of intersecting listing-subunit pairs.
      * 
      * @since   1.18.7 (J) - 1.8.7 (WP)
+     * @since   1.18.8 (J) - 1.8.8 (WP) added argument $unique.
      */
-    public function intersectListingUnits(array $listingSubunits)
+    public function intersectListingUnits(array $listingSubunits, bool $unique = true)
     {
         $intersections = [];
 
@@ -407,6 +409,27 @@ final class VBODooraccessIntegrationDevice
                 // intersection found for listing
                 $intersections[] = [$listingId, 0];
             }
+        }
+
+        if ($unique && count($intersections) > 1) {
+            /**
+             * Filter out duplicate value-pairs, useful in a multi-room booking context
+             * where a device is assigned to one room-type (no sub-unit) and it's booked
+             * multiple times. This helps reduce the number of passcodes generated.
+             */
+            $intersectStrings = array_map(function($intersect) {
+                // convert the pair into a comparable string for uniquely
+                return implode('-', $intersect);
+            }, $intersections);
+
+            // make the list of strings unique
+            $intersectStrings = array_values(array_unique($intersectStrings));
+
+            // re-convert the list into sub-arrays
+            $intersections = array_map(function($str) {
+                // get the pair of integers back
+                return array_map('intval', explode('-', $str));
+            }, $intersectStrings);
         }
 
         return $intersections;

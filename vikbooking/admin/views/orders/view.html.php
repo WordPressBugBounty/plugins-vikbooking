@@ -83,6 +83,8 @@ class VikBookingViewOrders extends JViewVikBooking
 				$status_filter = "`o`.`type`=" . $dbo->quote($pstatus);
 			} elseif ($pstatus == 'split_stay') {
 				$status_filter = "`o`.`split_stay`=1";
+			} elseif ($pstatus == 'quote') {
+				$status_filter = "`o`.`idquote` IS NOT NULL";
 			}
 		}
 		$pidpayment = $app->getUserStateFromRequest("vbo.orders.idpayment", 'idpayment', 0, 'int');

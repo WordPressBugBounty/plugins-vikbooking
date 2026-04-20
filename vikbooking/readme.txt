@@ -3,7 +3,7 @@ Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
 Tested up to: 6.9
-Stable tag: 1.8.7
+Stable tag: 1.8.8
 Requires PHP: 7.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -24,38 +24,40 @@ The **Pro** version is compatible with *Vik Channel Manager*, the first and only
 
 Vik Booking was born in 2010 for a different web-software (CMS) than WordPress, and that's how it became famous. The same powerful framework is now (since 2018) at the service of all webmasters, designers and web-agencies that work with WordPress. It's definitely the hotel reservation plugin that you, or your client, were looking for.
 
-Visit [VikWP.com](https://vikwp.com/) for more details. Interested in our full solution comprehensive of the Channel Manager? Visit also [E4jConnect](https://e4jconnect.com/).
+Visit [VikWP.com](https://vikwp.com/) for more details. Interested in our full solution inclusive of the Channel Manager? Visit also [E4jConnect](https://e4jconnect.com/).
 
 = Some of the unique features =
 
-* Custom Rate Plans (Refundable, Flexible, Non Refundable rates)
-* Rooms, Room Types and Sub-Units management functions
-* Availability Calendars and Occupancy Overview
-* Bookings Management made right
-* Feature-rich Back-end section
-* Front-end customizable booking process
-* 8 different Views for the front-end (8 Types of Shortcode for your pages)
+* Custom Rate Plans (Refundable, Flexible, Non Refundable rates).
+* Rooms, Room Types, Listings and Sub-Units management functions.
+* Availability & Pricing Calendars + Occupancy Overview.
+* Bookings Management made right.
+* Feature-rich back-end section for your PMS.
+* Front-end customizable and self-hosted booking process.
+* 12 different Views for the front-end (12 types of Shortcode for your pages)
 * Compliant with any Pricing Model: Occupancy, Nightly, LOS, OBP etc..
-* Housekeeping features with Tableaux, festivities and room-day notes
-* Permissions/ACL Management functions for the various WP Users Roles
-* Multi-language support with built-in translation functions
-* Channel Manager compatible. We are a certified Channel Manager provider (e4jConnect).
+* Housekeeping features with Tableaux, festivities and room-day notes.
+* Permissions/ACL Management functions for the various WP Users Roles.
+* Multi-language support with built-in translation functions.
+* Channel Manager compatible. We are a certified Channel Manager provider (E4jConnect).
 * Google Hotel Ads certified for Free Booking Links.
+* Driver-based pre-check-in system for guests data collection.
 
 = Some of Pro version features =
 
-* Seasonal Rates and Rates Calendar with 1-click modification
-* Booking Restrictions: Min, Max LOS, CTA/CTD, Forced Arrival/Departure days
-* Custom Payment Gateways (over 60 available on VikWP.com)
-* SMS Gateways for automated notifications
-* Custom Cron Jobs Scheduling for automated tasks (reminders, invoices)
-* Customers Management functions, sales channels and commissions
-* Graphs and Statistics
-* Custom Options, Extra Services, Extra Fees
-* Add, Remove or Switch rooms from existing bookings
-* PMS Reports with extendable framework (built-in services for various countries)
-* Electronic invoices extendable framework compliant with Italy (Agenzia delle Entrate) and Greece (myDATA ΑΑΔΕ).
-* Registration functions: check-in, check-out, no-show
+* Seasonal Rates and Rates Calendar with 1-click modification.
+* Booking Restrictions: Min, Max LOS, CTA/CTD, forced Arrival/Departure week days.
+* Custom Payment Gateways (over 60 available on VikWP.com).
+* SMS Gateways for automated notifications.
+* Custom Cron Jobs scheduling for automated tasks (reminders, invoices).
+* Customers Management functions, sales channels and commissions.
+* Graphs and Statistics.
+* Custom Options, Extra Services, Extra Fees.
+* Add, Remove or Switch rooms from existing bookings.
+* PMS Reports with extendable framework (built-in services for various countries).
+* Electronic invoices extendable framework compliant with Italy (Agenzia delle Entrate), Greece (myDATA ΑΑΔΕ) etc..
+* Guest registration functions and reporting: check-in, check-out, no-show.
+* WhatsApp Business messaging integration with AI support (Channel Manager required).
 * Our award winning solution of Booking Engine + PMS and Channel Manager is all you need on your WordPress website.
 
 = Interested in, curious about the Pro version? =
@@ -109,7 +111,7 @@ Yes, of course. You are free to install Vik Booking on your website with your ow
 
 = What about Vik Channel Manager or E4JConnect? =
 
-Vik Booking is the Booking Engine and PMS plugin, it can work alone on any existing website. However, if you are looking to establish real-time API connections with OTAs like Booking.com, Airbnb, Expedia, Google Hotel Ads etc.. then you need to use our full solution, which is composed of a one-time fee to purchase the Pro version of Vik Booking as well as the plugin Vik Channel Manager. The only recurring cost, just like any existing (and real) Channel Manager software, is the one to keep the connection active with the various channels. This is the subscription for our certified and award-winning Channel Manager service called "e4jConnect". Please notice that all these services are entirely provided by our company, it's one single company with no third party connections. We are the software developer company as well as the Channel Manager provider. This makes a big difference.
+Vik Booking is the Booking Engine and PMS plugin, it can work alone on any existing website. However, if you are looking to establish real-time API connections with OTAs like Booking.com, Airbnb, Expedia, Google Hotel Ads etc.. then you need to use our full solution, which is composed of a one-time fee to purchase the Pro version of Vik Booking as well as the plugin Vik Channel Manager. The only recurring cost, just like any existing (and real) Channel Manager software, is the one to keep the connection active with the various channels. This is the subscription for our certified and award-winning Channel Manager service called "E4jConnect". Please notice that all these services are entirely provided by our company, it's one single company with no third party connections. We are the software developer company as well as the Channel Manager provider. This makes a big difference.
 
 == Screenshots ==
 
@@ -128,6 +130,24 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 13. Browser (web push) notifications will turn your device into a real-time updated system.
 
 == Changelog ==
+
+= 1.8.8 =
+*Release date - 20 April 2026*
+
+* Door Access Control: passcodes generation improvements for multi-unit (hotel inventory) room types.
+* New front-end "Chat" module, available as a Gutenberg native block or as a legacy widget.
+* AI Agent (Chatbot) to guide customers through the booking process or answer questions (CM required).
+* New admin-widget "Inquiries Chat" to manage AI Agent conversations with guests and message requests.
+* WhatsApp Business messaging support (Channel Manager required).
+* New cron-job "Messaging Reminder" for scheduling the delivery of WhatsApp message templates to guests.
+* AI powered auto-responder to guest messages received through WhatsApp backed by custom training system.
+* Send custom and interactive WhatsApp message templates to guests (visit E4jConnect.com for more details).
+* Introducing the new Quote system to manage custom quotes with various booking solutions for your customers.
+* New admin-widget Quotes to monitor the status of the existing quotes.
+* Send quote details via email and/or custom and interactive WhatsApp message templates.
+* New front-end View (and Shortcode) "Quote Details" to let your customers see their quotes and proceed to booking.
+* Added support for the latest FontAwesome webfonts version.
+* Several framework improvements and fixes.
 
 = 1.8.7 =
 *Release date - 11 February 2026*
@@ -174,43 +194,6 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 * Guest messaging: added support to suspicious messages (phishing) delivered by OTA notifications.
 * Guest messaging: manually generated AI replies can rely on the model's pre-trained knowledge.
 * New backup export type "Reservations - Pricing" to include only time-sensitive operational data.
-
-= 1.8.5 =
-*Release date - 26 November 2025*
-
-* OTA onboarding improvements for new listings (E4jConnect channel manager required).
-* OTA guest messages indexing and faster processing (E4jConnect channel manager required).
-* Split stay bookings calculation improvements.
-* New payment transaction hooks for custom metadata.
-* Database optimization scheduling.
-* Additional caching support to rates calculation.
-* Minor framework improvements.
-
-= 1.8.4 =
-*Release date - 13 November 2025*
-
-* Introducing the new Door Access Control framework (E4jConnect channel manager required).
-* Native support for TTLock - Smart Locks added to Door Access Control framework.
-* Task Manager: AI maintenance tasks from guest requests.
-* OTA bookings expected payout amounts.
-* Airbnb Hosting Quality metrics and dashboard (E4jConnect channel manager required).
-* Minor framework improvements.
-
-= 1.8.3 =
-*Release date - 13 October 2025*
-
-* Search results filtering options (categories, amenities, price range).
-* Search results new interactive map with grid layout and advanced map markers.
-* Custom check-in/out times can be defined and overwritten at listing-level.
-* Minimum advance booking notice can be defined and overwritten at listing-level.
-* Custom currency position (before or after price).
-* Silent notifications within the Notification Center.
-* Added support to new OTA payout notifications (E4jConnect channel manager required).
-* Several new hooks added for the creation and modification of bookings.
-* Various performance improvements with large data-sets.
-* New PMS report "Guest Registration Data".
-* Different format for customers PIN code (8 alphanumeric random characters).
-* Various improvements to the Electronic Invoicing framework and interface.
 
 = Earlier versions =
 

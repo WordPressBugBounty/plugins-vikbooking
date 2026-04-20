@@ -43,6 +43,7 @@ class JFormFieldText extends JFormField
 		$data['value'] 		= is_null($this->value) ? $this->default : $this->value;
 		$data['required']	= $this->required === "true" || $this->required === true ? true : false;
 		$data['readonly']	= $this->readonly === "true" || $this->readonly === true ? true : false;
+		$data['hint'] 		= !empty($this->hint) ? JText::translate($this->hint) : '';
 
 		return $data;
 	}

@@ -505,6 +505,7 @@ final class VBONotificationCenter
 			'type'       => 'guest_message',
 			'title'      => JText::sprintf('VBO_MESSAGE_FROM', $message->sender_name ?? 'guest'),
 			'summary'    => $message->content ?? '',
+			'avatar'     => $message->avatar ?? null,
 			'idorder'    => $thread->idorder ?? null,
 			'idorderota' => $thread->idorderota ?? null,
 			'channel'    => $thread->channel ?? null,

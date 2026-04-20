@@ -375,9 +375,8 @@ function vboAddRoomId(rid) {
 				vbo_can_add_room = true;
 				document.getElementById('add-room-status').style.color = 'green';
 			}
-		}).fail(function() {
-			console.log("isroombookable Request Failed");
-			alert('Generic Error');
+		}).fail(function(err) {
+			alert(err.responseText || 'Generic Error');
 		});
 	} else {
 		vbo_can_add_room = false;
@@ -1447,8 +1446,8 @@ function vboSearchExtraCost(elem) {
 													}
 													$selstatus = '';
 													if (isset($arropt[$o['id']]) && is_array($arropt[$o['id']])) {
-														$ageparts = explode('-', $arropt[$o['id']][($ch - 1)]);
-														if ($kintv == ($ageparts[1] - 1)) {
+														$ageparts = explode('-', $arropt[$o['id']][($ch - 1)] ?? '');
+														if ($kintv == (($ageparts[1] ?? 0) - 1)) {
 															$selstatus = ' selected="selected"';
 														}
 													}
@@ -1813,8 +1812,8 @@ function vboSearchExtraCost(elem) {
 													}
 													$selstatus = '';
 													if (isset($arropt[$o['id']]) && is_array($arropt[$o['id']])) {
-														$ageparts = explode('-', $arropt[$o['id']][($ch - 1)]);
-														if ($kintv == ($ageparts[1] - 1)) {
+														$ageparts = explode('-', $arropt[$o['id']][($ch - 1)] ?? '');
+														if ($kintv == (($ageparts[1] ?? 0) - 1)) {
 															$selstatus = ' selected="selected"';
 														}
 													}

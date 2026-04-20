@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  core
  * @author      E4J s.r.l.
- * @copyright   Copyright (C) 2021 E4J s.r.l. All Rights Reserved.
+ * @copyright   Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * @link        https://vikwp.com
  */
@@ -36,15 +36,17 @@ class VBOChatMediator
      * The path where the attachments are internally stored.
      * 
      * @var string
+     * @since 1.8.8 Changed visibility to public.
      */
-    protected $attachmentsPath;
+    public $attachmentsPath;
 
     /**
      * A string holding all the supported file extensions, separated by a comma.
      * 
      * @var string
+     * @since 1.8.8 Changed visibility to public.
      */
-    protected $supportedFiles;
+    public $supportedFiles;
 
     /**
      * Class constructor.
@@ -65,7 +67,7 @@ class VBOChatMediator
             // videos
             'mp4,mov,ogm,webm,3gp,asf,avi,divx,flv,mkv,mpg,mpeg,wmv,xvid',
             // audios
-            'aac,m4a,mp3,opus,wav,wave,ac3,aiff,flac,mid,midi,wma',
+            'aac,m4a,mp3,ogg,opus,wav,wave,ac3,aiff,flac,mid,midi,wma',
             // archives
             'zip,tar,rar,gz,bzip2',
             // documents
@@ -94,8 +96,16 @@ class VBOChatMediator
                 // authenticate as administrator
                 $user = new VBOChatUserAdmin;
             } else {
-                // authenticate as operator
-                $user = new VBOChatUserOperator;
+                // fetch details of the logged in operator
+                $operator = VikBooking::getOperatorInstance()->getOperatorAccount();
+
+                if ($operator) {
+                    // authenticate as operator
+                    $user = new VBOChatUserOperator($operator);
+                } else {
+                    // authenticate as guest user
+                    $user = new VBOChatUserGuest;
+                }
             }
         }
 
@@ -163,7 +173,7 @@ class VBOChatMediator
         $message->setSender($user->getName(), $user->getID());
 
         // attempt to save the message
-        $this->storage->saveMessage($message);
+        $this->saveMessage($message);
 
         // iterate all the users that should receive a notification
         foreach ($message->getContext()->getRecipients() as $recipient) {
@@ -177,6 +187,40 @@ class VBOChatMediator
                 $recipient->scheduleNotification($message, $user);
             }
         }
+    }
+
+    /**
+     * Saves the provided message.
+     * 
+     * @param   VBOChatMessage  $message  The message to save.
+     * 
+     * @return  void
+     * 
+     * @throws  Exception
+     * 
+     * @since   1.8.8
+     */
+    public function saveMessage(VBOChatMessage $message)
+    {
+        // save the message
+        $this->storage->saveMessage($message);
+    }
+
+    /**
+     * Removes the provided message.
+     * 
+     * @param   VBOChatMessage  $message  The message to delete.
+     * 
+     * @return  void
+     * 
+     * @throws  Exception
+     * 
+     * @since   1.8.8
+     */
+    public function deleteMessage(VBOChatMessage $message)
+    {
+        // delete the message
+        $this->storage->deleteMessage($message);
     }
 
     /**
@@ -235,7 +279,8 @@ class VBOChatMediator
      * 
      * @return  int[]  A list of read message IDs.
      */
-    public function readMessages(VBOChatContext $context, ?string $date = null) {
+    public function readMessages(VBOChatContext $context, ?string $date = null)
+    {
         $search = (new VBOChatSearch)
             // take the latest 50 unread messages
             ->start(0)->limit(50)->unread()
@@ -262,6 +307,23 @@ class VBOChatMediator
         }
 
         return $read;
+    }
+
+    /**
+     * Read the provided message.
+     * 
+     * @param   VBOChatMessage  $message  The message to read.
+     * 
+     * @return  void
+     * 
+     * @throws  Exception
+     * 
+     * @since   1.8.8
+     */
+    public function readMessage(VBOChatMessage $message)
+    {
+        // read the message
+        $this->storage->readMessage($message->getID(), $this->getUser()->getID());
     }
 
     /**
@@ -349,8 +411,12 @@ class VBOChatMediator
         $document->addScript(VBO_SITE_URI . 'resources/chat.js');
         $document->addStyleSheet(VBO_SITE_URI . 'resources/chat.css');
 
+        /** @var VBOChatUser */
+        $user = $this->getUser();
+
         // load assets for each supported context
-        (new VBOChatContextTask(0))->useAssets();
+        (new VBOChatContextTask(0))->useAssets($user);
+        (new VBOChatContextSession(0))->useAssets($user);
 
         return $this;
     }
@@ -371,6 +437,9 @@ class VBOChatMediator
         if ($options['assets'] ?? true) {
             $this->useAssets();
         }
+
+        /** @var VBOChatUser */
+        $user = $this->getUser();
 
         // load the latest 20 messages of the specified context
         $messages = $this->getMessages(
@@ -401,12 +470,13 @@ class VBOChatMediator
             'uri' => $ajaxUri,
             'messages' => $messages,
             'users' => $users,
-            'user' => $this->getUser(),
+            'user' => $user,
             'options' => $options,
             'context' => [
                 'id' => $context->getID(),
                 'alias' => $context->getAlias(),
-                'actions' => $context->getActions(),
+                'actions' => $context->getActions($user),
+                'metadata' => $context->getMetadata(true),
             ],
         ]);
     }

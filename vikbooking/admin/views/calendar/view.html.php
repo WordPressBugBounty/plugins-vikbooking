@@ -57,7 +57,7 @@ class VikBookingViewCalendar extends JViewVikBooking
 		// new reservation ID default status
 		$new_res_id = 0;
 
-		$q = "SELECT `id`,`name`,`img`,`units` FROM `#__vikbooking_rooms` WHERE `id`=".$dbo->quote($aid);
+		$q = "SELECT * FROM `#__vikbooking_rooms` WHERE `id`=".$dbo->quote($aid);
 		$dbo->setQuery($q, 0, 1);
 		$room = $dbo->loadAssoc();
 		if (!$room) {

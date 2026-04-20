@@ -127,16 +127,43 @@ class VikbookingViewBooking extends JViewVikBooking
 				}
 			}
 
-			$today_midnight = mktime(0, 0, 0, date('n'), date('j'), date('Y'));
+			// tell if the booking has been automatically cancelled
 			$autoremove = false;
+
+			// make sure we are not beyond the check-in date and time
+			$today_midnight = mktime(0, 0, 0, date('n'), date('j'), date('Y'));
 			if ($today_midnight > $order['checkin']) {
 				$roomavail = false;
 			}
-			$minautoremove = VikBooking::getMinutesAutoRemove();
-			$mins_elapsed = floor((time() - $order['ts']) / 60);
-			if ($minautoremove > 0 && $mins_elapsed > $minautoremove) {
-				$roomavail = false;
-				$autoremove = true;
+
+			/**
+			 * Check if we are dealing with a pending booking solution of a quote.
+			 * 
+			 * @since 	1.18.8 (J) - 1.8.8 (WP)
+			 */
+			$quoteValidUntilDt = null;
+			if (!empty($order['idquote'])) {
+				// load quote record
+				$quoteRecord = VBOMvcModel::getInstance('quote')->getItem((int) $order['idquote']);
+				if (!empty($quoteRecord->valid_until)) {
+					$quoteValidUntilDt = JFactory::getDate($quoteRecord->valid_until);
+				}
+			}
+
+			if ($quoteValidUntilDt) {
+				// make sure the quote is still valid
+				if (JFactory::getDate('now') > $quoteValidUntilDt) {
+					$roomavail = false;
+					$autoremove = true;
+				}
+			} else {
+				// check global settings for booking auto-cancellation
+				$minautoremove = VikBooking::getMinutesAutoRemove();
+				$mins_elapsed = floor((time() - $order['ts']) / 60);
+				if ($minautoremove > 0 && $mins_elapsed > $minautoremove) {
+					$roomavail = false;
+					$autoremove = true;
+				}
 			}
 
 			/**
@@ -414,6 +441,7 @@ class VikbookingViewBooking extends JViewVikBooking
 		$this->upselling = $upselling;
 		$this->damage_deposit_payment = $damage_deposit_payment;
 		$this->prev_dd_payments = $prev_dd_payments;
+		$this->quoteValidUntilDt = $quoteValidUntilDt ?? null;
 		$this->vbo_tn = $vbo_tn;
 
 		// theme

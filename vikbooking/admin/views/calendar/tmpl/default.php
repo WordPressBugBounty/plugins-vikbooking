@@ -109,6 +109,27 @@ if (is_array($timeopst)) {
 	$hcheckout = 0;
 	$mcheckout = 0;
 }
+
+/**
+ * Check if we have a listing-level check-in/check-out time to apply.
+ * 
+ * @since 	1.18.8 (J) - 1.8.8 (WP)
+ */
+$customCheckin  = VikBooking::getRoomParam('checkin', $room['params'] ?? '');
+$customCheckout = VikBooking::getRoomParam('checkout', $room['params'] ?? '');
+if ($customCheckin) {
+	// use proper check-in time at room-level
+	$parts = explode(':', $customCheckin);
+	$hcheckin = (int) $parts[0];
+	$mcheckin = (int) ($parts[1] ?? 0);
+}
+if ($customCheckout) {
+	// use proper check-out time at room-level
+	$parts = explode(':', $customCheckout);
+	$hcheckout = (int) $parts[0];
+	$mcheckout = (int) ($parts[1] ?? 0);
+}
+
 $formatparts = explode(':', VikBooking::getNumberFormatData());
 $currencysymb = VikBooking::getCurrencySymb();
 $globnumadults = VikBooking::getSearchNumAdults(true);

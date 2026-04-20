@@ -477,6 +477,20 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 						</div>
 						<?php
 					}
+
+					if (!empty($details['idquote'])) {
+						// display button to show the quote details
+						?>
+						<div class="vbo-param-container">
+							<div class="vbo-param-label">&nbsp;</div>
+							<div class="vbo-param-setting">
+								<button type="button" class="btn btn-primary vbo-btn-icon-right" data-quote-details="1">
+									<span><?php echo JText::translate('VBO_QUOTE_DETAILS'); ?> <?php VikBookingIcons::e('file-alt'); ?></span>
+								</button>
+							</div>
+						</div>
+						<?php
+					}
 					?>
 					</div>
 
@@ -1187,6 +1201,22 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 					});
 				});
 
+				jQuery('#<?php echo $wrapper; ?>').find('button[data-quote-details="1"]').on('click', function() {
+					// render the quotes widget by injecting the proper options
+					VBOCore.handleDisplayWidgetNotification({widget_id: 'quotes'}, {
+						bid: <?php echo $details['id']; ?>,
+						modal_options: {
+							/**
+							 * Overwrite modal options for rendering the admin widget.
+							 * We need to use a different suffix in case this current widget was
+							 * also rendered within a modal, or it would get dismissed in favour
+							 * of the newly opened admin widget.
+							 */
+							suffix: 'widget_modal_inner_quotes',
+						},
+					});
+				});
+
 				jQuery('#<?php echo $wrapper; ?>').find('.vbo-widget-bookdets-cpic-zoom').find('img').on('click', function() {
 					// display modal
 					VBOCore.displayModal({
@@ -1611,8 +1641,8 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 			 * Prepares the input search field with the proper type hint.
 			 */
 			function vboWidgetBookDetsSearchType(wrapper, search_hint) {
-				var widget_instance = jQuery('#' + wrapper);
-				if (!widget_instance.length) {
+				const widget_instance = document.getElementById(wrapper);
+				if (!widget_instance) {
 					return false;
 				}
 
@@ -1622,7 +1652,12 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 					search_hint += ': ';
 				}
 
-				widget_instance.find('input[name="booking_key"]').val(search_hint).focus();
+				const inputEl = widget_instance.querySelector('input[name="booking_key"]');
+				inputEl.value = search_hint;
+				setTimeout(() => {
+					inputEl.focus();
+					inputEl.setSelectionRange(search_hint.length, search_hint.length);
+				}, 50);
 			}
 
 			/**

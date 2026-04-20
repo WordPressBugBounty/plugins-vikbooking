@@ -17,8 +17,16 @@
 	  Background: --vbo-input-style-nested-deactive / Border-color: --vbo-input-style-deactive
  * -- Generic btn gray:
 	  Background: --vbo-basic-btn / --vbo-config-border-color
-
  */
+
+ /* Preferred colors variables set up in the Vik Booking Configuration:
+	--vbo-pref-textcolor
+	--vbo-pref-bgcolor
+	--vbo-pref-fontcolor
+	--vbo-pref-bgcolor
+	--vbo-pref-bgcolorhov
+	--vbo-pref-fontcolorhov
+  */
 
  :root {
 	/* Backgrounds */
@@ -108,12 +116,70 @@
 	--vbo-tag-gray-bg: #e5e4e0;
 	--vbo-tag-gray-txt: #3e3e3e;
 	--vbo-tag-gray-border: #d3d3d1;
+
+	/* Font sizes */
+	--vbo-font-start: 16px;
+	--vbo-font-base: 1rem; /* = 16px, based on the font-start */
+	--vbo-font-xsm: .75rem; /* = 12px */
+	--vbo-font-sm: .875rem; /* = 14px */
+	--vbo-font-md: 1.125rem; /* = 18px */
+	--vbo-font-lg: 1.25rem; /* = 20px */
+	--vbo-font-xl: 1.5rem; /* = 24px */
+
+	/* Opacity Color for texts */
+	--vbo-text-opacity-6: .6;
+	--vbo-text-opacity-8: .8;
+
+	/* Transparent Preferred Colors Version */
+	--vbo-pref-bgcolor-op05: color-mix(in srgb, var(--vbo-pref-bgcolor) 5%, transparent);
+	--vbo-pref-bgcolor-op10: color-mix(in srgb, var(--vbo-pref-bgcolor) 10%, transparent);
+	--vbo-pref-bgcolor-op20: color-mix(in srgb, var(--vbo-pref-bgcolor) 20%, transparent);
+	--vbo-pref-bgcolor-op35: color-mix(in srgb, var(--vbo-pref-bgcolor) 35%, transparent);
+	--vbo-pref-bgcolor-op50: color-mix(in srgb, var(--vbo-pref-bgcolor) 50%, transparent);
+	--vbo-pref-bgcolor-op75: color-mix(in srgb, var(--vbo-pref-bgcolor) 75%, transparent);
 }
 
 a:focus {
 	text-decoration: none;
 }
+.vbo-pref-color-btn { 
+	background-color: var(--vbo-pref-bgcolor);
+	color: var(--vbo-pref-fontcolor);
+}
+.vbo-pref-color-btn:hover { 
+	background-color: var(--vbo-pref-bgcolorhov);
+	color: var(--vbo-pref-fontcolorhov);
+}
+.vbo-pref-color-btn-secondary {
+	background-color: var(--vbo-pref-bgcolorhov);
+	color: var(--vbo-pref-fontcolorhov);
+}
+.vbo-pref-color-btn-secondary:hover {
+	background-color: var(--vbo-pref-bgcolor);
+	color: var(--vbo-pref-fontcolor);
+}
+.vbo-pref-color-text {
+	color: var(--vbo-pref-textcolor);
+}
+.vbo-pref-color-element { 
+	background-color: var(--vbo-pref-bgcolor); 
+	color: var(--vbo-pref-fontcolor);
+}
+.vbo-pref-bordercolor {
+	border-color: var(--vbo-pref-bgcolor) !important;
+}
+.vbo-pref-bordertext { color: var(--vbo-pref-textcolor) !important; border-color: var(--vbo-pref-bgcolor) !important; }
+.vbo-pref-background { background: var(--vbo-pref-bgcolor) !important; }
 
+.btn.vbo-success {
+	background-color: var(--vbo-green-color);
+	border: 1px solid var(--vbo-green-color);
+	color: var(--vbo-contrast-text-color);
+}
+.btn.vbo-success:hover {
+	background-color: var(--vbo-green-color-hover);
+	border: 1px solid var(--vbo-green-color-hover);
+}
 .fancybox-opened {
 	height: 80% !important;
 }
@@ -134,7 +200,7 @@ a:focus {
 }
 .vbo-coupon-outer {
 	background: none repeat scroll 0 0 var(--vbo-light-grey-bg-color);
-	border: 1px dashed var(--vbo-blue-color-hover);
+	border: 1px dashed var(--vbo-pref-bgcolorhov);
 	font-size: 1.1em;
 	padding: 15px;
 }
@@ -177,7 +243,7 @@ a:focus {
 }
 .vbo-enterpin-block {
 	background: var(--vbo-light-grey-bg-color) none repeat scroll 0 0;
-	border: 1px solid var(--vbo-blue-color-hover);
+	border: 1px solid var(--vbo-pref-bgcolorhov);
 	padding: 15px;
 	display: inline-block;
 	float: right;
@@ -239,7 +305,7 @@ a:focus {
 	height: 42px;
 }
 .vblocationbox .vbloclistloctimebox {
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vblocationbox .vbloclistlocdescr {
 	margin:10px 0 0 0;
@@ -266,13 +332,18 @@ a:focus {
 	text-transform: capitalize;
 }
 .vbo-results-chdates a {
-	background: transparent;
+	background: var(--vbo-pref-bgcolorhov);
+	color: var(--vbo-pref-fontcolorhov);
 	padding: 8px 12px;
 	font-size: .9em;
 	display: inline-block;
 	margin: 5px 5px 5px 20px;
 	border-radius: 3px;
 	text-decoration: none !important;
+}
+.vbo-results-chdates a:hover {
+	background: var(--vbo-pref-bgcolor);
+	color: var(--vbo-pref-fontcolor);
 }
 .vbpaymentnamediff {
 	font-weight: bold;
@@ -471,7 +542,7 @@ a:focus {
 	max-width: 100%;
 }
 .vbo-booking-details-bookinfo-splitstay {
-	border: 1px solid  var(--vbo-blue-color);
+	border: 1px solid  var(--vbo-pref-textcolor);
 	padding: 10px;
 	border-radius: 6px;
 }
@@ -480,7 +551,7 @@ a:focus {
 }
 .vbo-booking-details-bookinfo-splitstay i {
 	margin-right: 4px;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-booking-splitstay-info {
 	display: block;
@@ -537,7 +608,7 @@ a:focus {
 	font-size: 1.2em;
 }
 .vbo-booking-costs-list .vbo-booking-cost-detail-remainingbalance {
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbvordpaybutton table {
 	margin: 0 auto 15px;
@@ -729,7 +800,7 @@ a:focus {
 }
 .vbvordcosts.vbo-amount-paid-block .vbvordcoststot {
 	font-size: 1.1em;
-	columns: var(--vbo-blue-color);
+	columns: var(--vbo-pref-textcolor);
 }
 .vbvordroominfo .vbvordcosts {
 	box-shadow: none;
@@ -754,7 +825,7 @@ a:focus {
 }
 .vbo-remaining-balance-block .vbvordcoststot {
 	font-size: 1.1em;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-booking-modcanc-container {
 	text-align: center;
@@ -794,7 +865,7 @@ a:focus {
 }
 .vbo-booking-mod-cmd a, .vbo-booking-canc-cmd span {
 	padding: 7px 14px;
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 	display: block;
 	margin-top: 10px;
 	border-radius: 2px;
@@ -806,7 +877,7 @@ a:focus {
 	background-color: var(--vbo-red-color);
 }
 .vbo-booking-mod-cmd a:hover, .vbo-booking-mod-cmd a:active, .vbo-booking-mod-cmd a:focus {
-	background: var(--vbo-blue-color-hover);
+	background: var(--vbo-pref-bgcolorhov);
 	text-decoration: none;
 	color: #fff;
 }
@@ -856,8 +927,8 @@ a:focus {
 	font-weight: normal;
 	padding: 15px;
 	margin: 5px 0 10px;
-	border: 2px solid var(--vbo-blue-color);
-	color: var(--vbo-blue-color);
+	border: 2px solid var(--vbo-pref-textcolor);
+	color: var(--vbo-pref-textcolor);
 	background: var(--vbo-white-bg-color);
 }
 .vbo-booking-modification-helper .vbo-booking-modification-helper-inner {
@@ -994,7 +1065,7 @@ a:focus {
 	max-width: 100%;
 }
 .vbtith3 {
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	margin: 0;
 	font-weight: bold;
 }
@@ -1268,7 +1339,7 @@ a:focus {
 	text-align: right;
 	font-size: 1.2em;
 	font-weight: bold;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	padding-right: 25px;
 }
 .room_prices .room_shpricesdet {
@@ -1397,6 +1468,7 @@ a:focus {
 	-moz-transition: all 400ms ease-in-out 0s;
 }
 .vbo-goback-link {
+	background: transparent;
 	border:2px solid var(--vbo-border-color);
 	border-radius: 2px;
 	color: var(--vbo-text-color);
@@ -1507,7 +1579,7 @@ a:focus {
 	font-size: .8em;
 }
 .vbo-oconfirm-roomname {
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	font-weight: bold;
 }
 .vbo-oconfirm-roomdistfeature {
@@ -1537,7 +1609,7 @@ a:focus {
 	font-size: .9em;
 }
 .vbtableorder .vbordrowtotal .vbtotalord {
-	color:var(--vbo-blue-color);
+	color:var(--vbo-pref-textcolor);
 }
 .vbo-oconfirm-total-block {
 	text-transform: uppercase;
@@ -1623,24 +1695,24 @@ a:focus {
 	position: relative;
 	cursor: pointer;
 }
-.vbo-oconfirm-paymentopts  .vbo-oconfirm-paymethods-list li label:hover {
-	color: var(--vbo-lightblue-color);
+.vbo-oconfirm-paymentopts  .vbo-oconfirm-paymethods-list li:hover {
+	border-color: var(--vbo-pref-bgcolor);
 }
 .vbo-oconfirm-paymentopts .vbo-oconfirm-paymethods-list .vbo-oconfirm-paymethod-item-active {
-	border-color: var(--vbo-lightblue-color);
+	border-color: var(--vbo-pref-bgcolor);
 	background: var(--vbo-light-grey-bg-color);
 }
 .vbo-oconfirm-paymentopts .vbo-oconfirm-paymethods-list .vbo-oconfirm-paymethod-item-active:after {
 	content: "\f00c";
 	width: 21px;
 	height: 21px;
-	color: var(--vbo-contrast-text-color);
+	color: var(--vbo-pref-fontcolor);
 	font-size: 10px;
 	text-align: center;
 	line-height: 19px;
-	font-family: "Font Awesome 5 Free", FontAwesomes !important;
+	font-family: "Font Awesome 7 Free", FontAwesome !important;
 	font-weight: 900;
-	background: var(--vbo-lightblue-color);
+	background: var(--vbo-pref-bgcolor);
 	position: absolute;
 	top: -11px;
 	border-radius: 50%;
@@ -1771,6 +1843,10 @@ a:focus {
 }
 .vbmodalrdetails a i {
 	line-height: 25px;
+}
+.vbo-rdetails-capacity-icn i {
+	background: var(--vbo-pref-bgcolor);
+	color: var(--vbo-pref-fontcolor);
 }
 .vbimglistdiv:hover .vbmodalrdetails a {
 	text-decoration: none;
@@ -2321,7 +2397,7 @@ body.contentpane, #sbox-window {
 	display:block;
 }
 .vblistdivcost {
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	padding: 2px !important;
 }
 .vblistdivcost .vbliststartfrom {
@@ -2480,7 +2556,7 @@ form .vbselectm {
 	margin:0 0 0 5px;
 }
 .vbcaldivcont table .vbcaltrmonth td {
-	border-bottom: 2px solid var(--vbo-blue-color);
+	border-bottom: 2px solid var(--vbo-pref-textcolor);
 	font-weight: normal;
 	font-size: 16px;
 	line-height: 15px;
@@ -2608,6 +2684,7 @@ form .vbselectm {
 }
 .vbdivsearch .vb-search-inner > div .input-group {
 	display: flex;
+	align-items: center;
 }
 .vbdivsearch .vbtsearch {
 	width:100%;
@@ -2818,7 +2895,7 @@ form .vbselectm {
 }
 .vbsearchproominfo .vbsearchroomparty i, .vbo-showprc-room-head .vbo-showprc-staydetails i {
 	font-size: 13px;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	margin-right: 5px;
 }
 .vbo-showprc-staydetails-party {
@@ -2830,9 +2907,8 @@ form .vbselectm {
 	margin: 5px 0 10px 0;
 }
 .vbrowroomcapacity i {
-	font-size: 20px;
-	margin-right: 0.5px;
-	color: var(--vbo-blue-color);
+	font-size: 14px;
+	color: var(--vbo-pref-textcolor);
 }
 .vbrowroomcapacity i.vbo-empty-personicn {
 	color: var(--vbo-light-text-color);
@@ -2860,19 +2936,20 @@ form .vbselectm {
 	-moz-transition: all 400ms ease-in-out 0s;
 	-webkit-transition: all 400ms ease-in-out 0s;
 	-o-transition: all 400ms ease-in-out 0s;
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-bgcolor);
 	cursor: pointer;
 	border-radius:4px;
-	color: var(--vbo-contrast-text-color);
+	color: var(--vbo-pref-fontcolor);
 	margin: 8px 0 0;
 	padding: 8px;
 	width: 100%;
 	text-align: center;
 	display: inline-block;
 	box-sizing: border-box;
+	text-decoration: none;
 }
 .vbselectr a:focus {
-	color: var(--vbo-contrast-text-color);
+	color: var(--vbo-pref-fontcolorhov);
 	text-decoration: none;
 }
 .vbselectr a:hover, .vbselectr-result:hover {
@@ -2880,8 +2957,8 @@ form .vbselectm {
 	-moz-transition:all 400ms ease-in-out 0s;
 	-webkit-transition:all 400ms ease-in-out 0s;
 	-o-transition:all 400ms ease-in-out 0s;
-	color: var(--vbo-contrast-text-color);
-	background: var(--vbo-blue-color-hover);
+	color: var(--vbo-pref-fontcolorhov);
+	background: var(--vbo-pref-bgcolorhov);
 	text-decoration: none;
 }
 .room_selected .vbselectr-result {
@@ -2952,7 +3029,7 @@ form .vbselectm {
 	vertical-align: top;
 	margin: 10px 10px 0 auto;
 	font-size: 16px;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-results-head > div > .vbo-results-head-det {
  	display: inline-block;
@@ -2968,7 +3045,7 @@ form .vbselectm {
 .vbo-stepbar {
 	margin: 0;
 	padding: 0;
-	list-style-type none;
+	list-style-type: none;
 }
 .vbo-stepbar li {
 	display: table;
@@ -2995,7 +3072,7 @@ ol.vbo-stepbar[data-vbosteps-steps="9"] li { width: 11%; }
 ol.vbo-stepbar li.vbo-step-complete,
 ol.vbo-stepbar li.vbo-step-current {
 	color: var(--vbo-text-color);
-	border-bottom: 4px solid var(--vbo-blue-color);
+	border-bottom: 4px solid var(--vbo-pref-bgcolor);
 }
 ol.vbo-stepbar .vbo-step-current {
 	font-weight: bold;
@@ -3017,7 +3094,7 @@ ol.vbo-stepbar li:before {
 ol.vbo-stepbar li.vbo-step-complete:before {
 	content: "";
 	color: var(--vbo-contrast-text-color);
-	background-color: var(--vbo-blue-color);
+	background-color: var(--vbo-pref-bgcolor);
 	height: 1.2em;
 	width: 1.2em;
 	line-height: 1.2em;
@@ -3032,7 +3109,7 @@ ol.vbo-stepbar li.vbo-step-current:before {
 	width: 1.2em;
 	line-height: 1.2em;
 	border-radius: 1.2em;
-	border: 2px solid var(--vbo-blue-color);
+	border: 2px solid var(--vbo-pref-bgcolor);
 }
 ol.vbo-stepbar li.vbo-step-next:before {
 	background-color: var(--vbo-border-color);
@@ -3275,11 +3352,11 @@ ol.vbo-stepbar li.vbo-step-next:before {
 	display: inline-block;
 	width: 80%;
 	background: var(--vbo-white-bg-color);
-	border: 1px solid var(--vbo-blue-color);
+	border: 1px solid var(--vbo-pref-textcolor);
 	border-radius: 4px;
 	font-size: 12px;
 	font-weight: bold;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	line-height: 1.3em;
 }
 .vbpricecalwarning {
@@ -3304,7 +3381,7 @@ ol.vbo-stepbar li.vbo-step-next:before {
 	display: inline-block;
 }
 .vbmaxadultsdet .vbmaximgdet i {
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 }
 .vbmaxminpeopleroom .vbmaximgdet i {
 	float: left;
@@ -3316,7 +3393,7 @@ ol.vbo-stepbar li.vbo-step-next:before {
 	position: relative;
 	line-height: 32px;
 	color: var(--vbo-contrast-text-color);
-	font-size: 20px;
+	font-size: 16px;
 }
 .vbmaxlabeldet, .vbmaxnumberdet {
 	margin: 10px 5px 0 0;
@@ -3330,7 +3407,7 @@ ol.vbo-stepbar li.vbo-step-next:before {
 	font-weight: bold;
 }
 .vbmaxchildrendet .vbmaximgdet i {
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 }
 .vbmaxtotdet {
 	display: inline-block;
@@ -3340,8 +3417,8 @@ ol.vbo-stepbar li.vbo-step-next:before {
 	font-weight: bold;
 }
 .vbmaxtotdet .vbmaximgdet i {
-	background: var(--vbo-blue-color);
-	font-size: 16px;
+	background: var(--vbo-pref-textcolor);
+	font-size: 14px;
 }
 .vbcalprice .vbtdbusy {
 	color: #fff;
@@ -3379,13 +3456,13 @@ ol.vbo-stepbar li.vbo-step-next:before {
 	display: inline-block;
 	padding:5px 10px;
 	border-radius: 3px;
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 	color: #fff;
 	font-weight: 400;
 	transition: all 400ms ease-in-out
 }
 .vbo-reqinfo-opener:hover {
-	background: var(--vbo-blue-color-hover);
+	background: var(--vbo-pref-bgcolorhov);
 	transition: all 400ms ease-in-out;
 	color:#fff;
 }
@@ -3422,7 +3499,7 @@ tr.vbcalnumdays td {
 	border-bottom-right-radius: 0;
 	box-sizing: border-box;
 }
-.vb-search-inner .input-group .fa-calendar-alt {
+.vb-search-inner .input-group .vbo-caltrigger {
 	padding: 0 10px;
 	font-size: 17px;
 	font-weight: 400;
@@ -3434,6 +3511,7 @@ tr.vbcalnumdays td {
 	border-radius: 2px;
 	border-top-left-radius: 0;
 	border-bottom-left-radius: 0;
+	width: 40px;
 	height: 42px;
 	line-height: 42px;
 	float: left;
@@ -3548,10 +3626,14 @@ input[type="time"].task-time-picker {
 }
 .vbo-search-submit .btn {
 	padding: 10px 50px !important;
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-bgcolor);
+	color: var(--vbo-pref-fontcolor);
 	font-size: 16px;
-	color: #fff;
 	position: relative;
+}
+.vbo-search-submit .btn:hover {
+	background: var(--vbo-pref-bgcolorhov);
+	color: var(--vbo-pref-fontcolorhov);
 }
 .vbdivsearch .vbo-search-submit i {
 	position: absolute;
@@ -3693,7 +3775,7 @@ table {
 	color: #fff;
 	padding: 8px 15px;
 	text-align: left;
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 	font-weight: bold;
 	max-width: 200px;
 	border-radius: 8px;
@@ -3762,12 +3844,12 @@ table {
 	width: 100%;
 }
 .vbo-promotion-discount-details {
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	float: right;
 	padding: 5px 18px 5px;
 	border-radius: 8px;
 	margin: 0;
-	border: 2px solid var(--vbo-blue-color);
+	border: 2px solid var(--vbo-pref-textcolor);
 	line-height: initial;
 }
 .vbo-promotion-discount-details .vbo-promotion-discount-percent-amount {
@@ -3895,7 +3977,7 @@ tr.vbo-seasons-calendar-seasonrow td:nth-child(n+2) {
 	display: block;
 	font-weight: bold;
 	font-size: 12px;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-seasons-calendar-restrictions {
 	display: block;
@@ -3922,7 +4004,7 @@ tr.vbo-seasons-calendar-seasonrow td:nth-child(n+2) {
 	border-radius: 50%;
 	text-align: center;
 	margin-left: 5px;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-seasons-calendar-restriction-maxlos {
 	display: inline-block;
@@ -4104,7 +4186,7 @@ a.vbdialog-overlay-close {
 	border-radius: 0;
 }
 .vbdialog-reqinfo button.btn {
-	background:var(--vbo-blue-color);
+	background:var(--vbo-pref-textcolor);
 	color: #fff;
 	border:0;
 	padding: 10px 15px;
@@ -4213,7 +4295,7 @@ a.vbdialog-overlay-close {
 }
 .vbo-availability-month-name {
 	background: var(--vbo-light-grey-bg-color);
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-availability-month-day {
 	text-align: center;
@@ -4276,7 +4358,7 @@ a.vbdialog-overlay-close {
 .vbo-availability-room-details-last-checkin i {
 	width: 28px;
 	height: 28px;
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 	color: #fff;
 	line-height: 28px;
 	border-radius: 50%;
@@ -4304,7 +4386,7 @@ a.vbdialog-overlay-close {
 }
 .vbo-search-suggestions-av-mon {
 	background: var(--vbo-light-grey-bg-color);
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-search-suggestions-av table > tbody > tr > .vbo-search-suggestions-month-day {
 	text-align: center;
@@ -4315,7 +4397,7 @@ a.vbdialog-overlay-close {
 	color: #fff;
 }
 .vbo-search-suggestions-month-day-highlighted {
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 	color: #fff;
 }
 .vbo-suggestion-daynumber {
@@ -4420,7 +4502,7 @@ a.vbdialog-overlay-close {
 	box-shadow: 0 3px 12px rgba(0,0,0,0.1);
 }
 .vbo-search-solution:hover, .vbo-booking-solution:hover {
-	border-color: var(--vbo-blue-color);
+	border-color: var(--vbo-pref-textcolor);
 	background: var(--vbo-white-bg-color);
 	transition: all 200ms ease-in-out 0s;
 	-moz-transition: all 200ms ease-in-out 0s;
@@ -5284,7 +5366,7 @@ a.vbo-booking-print-link img {
   font-size: 10px;
   text-align: center;
   border-radius: 50%;
-  color: var(--vbo-blue-color);
+  color: var(--vbo-pref-textcolor);
 }
 .vbo-closed-date-rm:hover {
 	background: var(--vbo-light-dark-grey-bg-color);
@@ -5634,9 +5716,6 @@ a.vbo-booking-print-link img {
 	font-size: 18px !important;
 	font-weight: 400 !important;
 }
-.ui-datepicker .ui-datepicker-current-day a {
-	color: var(--vbo-text-color);
-}
 .ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
 	border: 1.5px solid var(--vbo-white-bg-color);
 }
@@ -5763,7 +5842,7 @@ a.vbo-booking-print-link img {
 	pointer-events: auto;
 }
 .ui-datepicker .ui-datepicker-today {
-	color: var(--vbo-blue-color) !important;
+	color: var(--vbo-pref-textcolor) !important;
 }
 .ui-datepicker-other-month {
 	background: transparent !important;
@@ -5791,8 +5870,8 @@ a.vbo-booking-print-link img {
 	color: var(--vbo-middle-text-color);
 }
 .ui-datepicker-header .ui-corner-all.ui-state-hover {
-	border-color: var(--vbo-blue-color) !important;
-	color: var(--vbo-blue-color);
+	border-color: var(--vbo-pref-textcolor) !important;
+	color: var(--vbo-pref-textcolor);
 	background: transparent !important;
 }
 .ui-datepicker-header .ui-corner-all.ui-state-disabled {
@@ -5831,7 +5910,7 @@ a.vbo-booking-print-link img {
 	text-align: center;
 }
 .ui-datepicker .ui-datepicker-prev span:after, .ui-datepicker .ui-datepicker-next span:after {
-	font-family: "Font Awesome 5 Free", FontAwesomes !important;
+	font-family: "Font Awesome 7 Free", FontAwesome !important;
 	font-weight: 900;
 	top: 0;
 	position: absolute;
@@ -5888,9 +5967,32 @@ a.vbo-booking-print-link img {
 	font-size: 14px;
 }
 
+.ui-datepicker-calendar td.checkin-date > *, .ui-datepicker-calendar td.checkout-date > *, .ui-datepicker-calendar td.ui-state-highlight > *, .ui-datepicker-calendar td.ui-datepicker-current-day > * {
+	background: var(--vbo-pref-bgcolor) !important;
+	border-color: var(--vbo-pref-bgcolor) !important;
+	color: var(--vbo-pref-fontcolor) !important;
+}
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
+	border-color: var(--vbo-pref-bgcolor) !important;
+}
+.ui-datepicker-header .ui-corner-all.ui-state-hover {
+	border-color: var(--vbo-pref-bgcolor) !important;
+	color: var(--vbo-pref-textcolor) !important;
+}
+.ui-datepicker .ui-datepicker-current-day a {
+	color: var(--vbo-pref-fontcolor) !important;
+}
+.ui-datepicker td:not(.ui-state-highlight):not(.ui-datepicker-unselectable):not(.date-will):not(.ui-datepicker-current-day) > :hover {
+	border-color: var(--vbo-pref-bgcolor) !important;
+	color: var(--vbo-pref-textcolor) !important;
+}
+.ui-datepicker td.checkin-date a:hover, .ui-datepicker td.checkout-date a:hover, .ui-datepicker-calendar td.ui-datepicker-current-day > :hover {
+	color: var(--vbo-pref-fontcolor) !important;
+}
+
 /** Tableaux - Start **/
 .vbo-tableaux-togglefullscreen {
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 	color: #fff;
 	display: inline-block;
 	padding: 5px;
@@ -5899,7 +6001,7 @@ a.vbo-booking-print-link img {
 }
 .vbo-tableaux-togglefullscreen:hover {
 	color: #fff;
-	background: var(--vbo-blue-color-hover);
+	background: var(--vbo-pref-bgcolorhov);
 }
 .vbo-tableaux-outer.vbo-tableaux-fullscreen {
 	background: var(--vbo-white-bg-color);
@@ -5990,6 +6092,18 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
     animation-fill-mode: forwards;
 	visibility: initial;
 }
+.vbo-roomdaynote-empty .vbo-roomdaynote-trigger i { 
+	color: var(--vbo-pref-textcolor); 
+} 
+.vbo-tableaux-roombooks > div:not(.vbo-tableaux-booking-empty), .vbo-tableaux-togglefullscreen { 
+	background-color: var(--vbo-pref-bgcolor); 
+	color: var(--vbo-pref-fontcolor); 
+}
+.vbo-tableaux-togglefullscreen:hover {
+	background-color: var(--vbo-pref-bgcolorhov); 
+	color: var(--vbo-pref-fontcolorhov); 
+}
+
 
 @keyframes fadeIn {
   99% {
@@ -6038,10 +6152,10 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	text-overflow: ellipsis;
 }
 .vbo-roomdaynote-empty .vbo-roomdaynote-trigger i {
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-roomdaynote-empty .vbo-roomdaynote-trigger i:hover {
-	color: var(--vbo-blue-color-hover);
+	color: var(--vbo-pref-bgcolorhov);
 }
 .vbo-roomdaynote-full .vbo-roomdaynote-trigger {
 	color: var(--vbo-darkblue-color);
@@ -6302,7 +6416,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	margin-bottom: 0;
 }
 .vbo-tableaux-roombooks > div {
-    background: var(--vbo-blue-color);
+    background: var(--vbo-pref-textcolor);
     color: #fff;
     font-weight: bold;
     padding: 5px;
@@ -6404,7 +6518,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
     display: block;
 }
 .vbo-tableaux-todaystats > div .vbo-tableaux-month-link-active, .vbo-tableaux-todaystats > div .vbo-tableaux-month-link-active:hover {
-    background: var(--vbo-blue-color);
+    background: var(--vbo-pref-textcolor);
     color: #fff;
 }
 .vbdialog-inner-tableaux {
@@ -6562,13 +6676,13 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 .vbo-booking-chat-control {
 	color: #fff;
 	display: inline-block;
-	border: 1px solid var(--vbo-blue-color);
+	border: 1px solid var(--vbo-pref-textcolor);
 	padding: 20px 0px;
 	border-radius: 50%;
 	box-shadow: 0 0 10px rgba(0,0,0,.1);
 	position: fixed;
 	bottom: 20px;
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 	right: 20px;
 	width: 70px;
 	height: 70px;
@@ -6626,15 +6740,15 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	box-shadow: 0 6px 23px -5px rgba(0,0,0,.1);
 }
 .vbo-booking-chat-inner .chat-threads-list li.active {
-	background-color: var(--vbo-blue-color);
+	background-color: var(--vbo-pref-textcolor);
 	color: #fff;
-	border-left: 1px solid var(--vbo-blue-color);
+	border-left: 1px solid var(--vbo-pref-textcolor);
 }
 .vbo-booking-chat-inner .chat-threads-list li:last-child {
 	margin-bottom: 0;
 }
 .vbo-booking-chat-inner .chat-conversation .chat-message .speech-bubble.sent {
-	background: var(--vbo-blue-color);
+	background: var(--vbo-pref-textcolor);
 	color: #fff;
 }
 .vbo-booking-chat-inner .chat-conversation .chat-message .speech-bubble {
@@ -6653,8 +6767,8 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	flex-direction: column;
 }
 .vbo-booking-chat-inner .chat-input-footer .chat-uploads-tab .chat-attachment {
-	border: 1px solid var(--vbo-blue-color);
-	background: var(--vbo-blue-color);
+	border: 1px solid var(--vbo-pref-textcolor);
+	background: var(--vbo-pref-textcolor);
 	padding: 2px 10px;
 	margin: 5px 2px;
 	font-size: 12px;
@@ -6665,7 +6779,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	width: 15px;
 	height: 15px;
 	background: var(--vbo-white-bg-color);
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	text-align: center;
 	line-height: 15px;
 	border-radius: 50%;
@@ -7168,7 +7282,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 }
 .vbo-geomap-uicontrol-partyguests i {
 	font-size: 13px;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	margin-right: 5px;
 }
 .vbo-geomarker-room-title {
@@ -7182,7 +7296,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	cursor: pointer;
 }
 .vbo-geomarker-room-title i:hover {
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-geomarker-priceinfo {
     margin: 8px 0;
@@ -7349,6 +7463,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 }
 .vbo-results-filtering .vbo-results-filters-wrap button.vbo-results-filters-toggle i {
 	margin-right: 4px;
+	font-size: 12px;
 }
 .vbo-results-filtering .vbo-results-style-wrap {
 	margin-left: auto;
@@ -7481,6 +7596,9 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	border-radius: 50%;
 	cursor: pointer;
 	border: 2px solid var(--vbo-white-bg-color);
+}
+.vbo-dual-slider-wrap input[type="range"]::-webkit-slider-thumb, .vbo-dual-slider-wrap input[type="range"]::-moz-range-thumb {
+background: var(--vbo-pref-bgcolor);
 }
 /* filled track between thumbs */
 .vbo-dual-slider-wrap .vbo-dual-slider-track {
@@ -8136,7 +8254,7 @@ p.info[data-new-messages="1"] {
 }
 p.info[data-new-messages="1"] a {
 	text-decoration: none;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message {
 	display: flex;
@@ -8206,16 +8324,16 @@ p.info[data-new-messages="1"] a {
 	font-weight: 600;
 }
 .vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-details .label.message-unreplied {
-	background: var(--vbo-base-color);
+	background: var(--vbo-pref-bgcolor);
 	font-size: 12px;
 	margin: 0 0 0 5px;
-	color: var(--vbo-contrast-text-color);
+	color: var(--vbo-pref-textcolor);
 	font-weight: 500;
 	padding: 3px 6px;
 	border-radius: 4px;
 }
 .vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-details .label.message-unreplied:hover {
-	background-color: var(--vbo-base-color-hover);
+	background-color: var(--vbo-pref-bgcolorhov);
 }
 .vbo-optool-gmessaging-list-container .vbo-optool-gmessaging-message-content-date {
 	margin-left: auto;
@@ -8508,7 +8626,7 @@ p.info[data-new-messages="1"] a {
 	background-color: var(--vbo-input-style);
 }
 .vbo-tm-toolbar .vbo-tm-areas-ctx .btn:hover {
-	border-color: var(--vbo-base-color);
+	border-color: var(--vbo-pref-bgcolor);
 }
 .vbo-tm-toolbar .vbo-tm-areas-ctx .vbo-context-menu-ico {
 	padding: 8px;
@@ -8597,15 +8715,15 @@ p.info[data-new-messages="1"] a {
 .vbo-tm-toolbar .vbo-tm-toolbar-header .vbo-tm-mode:not(.mode-active) a:hover {
 	border-radius: 6px;
 	background-color: var(--vbo-config-bg-color);
-	border-color: var(--vbo-base-color);
-	color: var(--vbo-base-color);
+	border-color: var(--vbo-pref-bgcolor);
+	color: var(--vbo-pref-fontcolor);
 }
 .vbo-tm-toolbar .vbo-tm-toolbar-header .vbo-tm-mode a i {
 	margin-right: 3px;
 }
 .vbo-tm-toolbar .vbo-tm-toolbar-header .mode-active a {
-	background: var(--vbo-blue-color);
-	border-color: var(--vbo-blue-color);
+	background: var(--vbo-pref-bgcolor);
+	border-color: var(--vbo-pref-bgcolor);
 } 
 .vbo-tm-toolbar .vbo-tm-toolbar-header .mode-active a {
 	color: var(--vbo-contrast-text-color);
@@ -8892,7 +9010,7 @@ p.info[data-new-messages="1"] a {
 	font-size: 18px;
 	width: 26px;
 	display: inline-block;
-	font-family: "Font Awesome 5 Free";
+	font-family: "Font Awesome 7 Free", FontAwesome;
 	cursor: pointer;
 }
 .vbo-tm-calendar-wrap .vbo-tm-task-notes ul[data-checked="true"] {
@@ -8900,7 +9018,7 @@ p.info[data-new-messages="1"] a {
 }
 .vbo-tm-calendar-wrap .vbo-tm-task-notes ul[data-checked="true"] > li:before {
 	content: '\f14a';
-	color: var(--vbo-base-color);
+	color: var(--vbo-pref-textcolor);
 }
 .vbo-tm-calendar-wrap .vbo-tm-task-notes ul[data-checked="false"] > li:before {
 	content: '\f0c8';
@@ -9016,19 +9134,19 @@ p.info[data-new-messages="1"] a {
 	border: 1px solid var(--vbo-white-bg-color);
 }
 .vbo-tm-calendar-month-row:not(.vbo-tm-calendar-month-weekdays) .vbo-tm-calendar-month-day:hover > span {
-	border-color: var(--vbo-base-color);
+	border-color: var(--vbo-pref-bgcolor);
 }
 .vbo-tm-calendar-month-row:not(.vbo-tm-calendar-month-weekdays) .vbo-tm-calendar-month-day:hover > span:hover {
 	background: var(--vbo-body-bg-color);
 }
 .vbo-tm-calendar-month-row:not(.vbo-tm-calendar-month-weekdays) .vbo-tm-calendar-month-day.vbo-tm-calendar-month-today > span {
-	background-color: var(--vbo-base-color);
-	border-color: var(--vbo-base-color);
+	background-color: var(--vbo-pref-bgcolor);
+	border-color: var(--vbo-pref-bgcolor);
 	color: var(--vbo-contrast-text-color);
 }
 .vbo-tm-calendar-month-row:not(.vbo-tm-calendar-month-weekdays) .vbo-tm-calendar-month-day.vbo-tm-calendar-month-today > span:hover {
-	background: var(--vbo-base-color-hover);
-	border-color: var(--vbo-base-color-hover);
+	background: var(--vbo-pref-bgcolorhov);
+	border-color: var(--vbo-pref-bgcolorhov);
 }
 .vbo-tm-calendar-month-day-tasks {
 	margin: 0 10px 5px;	
@@ -9155,8 +9273,8 @@ p.info[data-new-messages="1"] a {
 	background: var(--vbo-grey-bg-color);
 } 
 .vbo-tm-calendar-nav-btn.vbo-tm-calendar-day-timeline-week-today {
-	background: var(--vbo-base-color);
-	color: var(--vbo-contrast-text-color);	
+	background: var(--vbo-pref-bgcolor);
+	color: var(--vbo-pref-textcolor);	
 }
 .vbo-tm-calendar-day-timeline-week-nav-mday {
 	font-size: 18px;
@@ -9248,9 +9366,26 @@ p.info[data-new-messages="1"] a {
 }
 .vik-context-menu li a:not(.disabled):hover {
 	color: #fff;
-	background: var(--vbo-base-color);
+	background: var(--vbo-pref-bgcolor);
 }
 
+/* Start: Chat Session */
+.vbo-chat-session-view-container .vbo-chat-wrapper .chat-messages-panel {
+	border: 1px solid #ddd;
+	border-radius: 20px;
+}
+.vbo-chat-session-view-container .vbo-chat-wrapper .chat-conversation {
+	height: 600px;
+	padding: 0 10px;
+	margin-bottom: 60px;
+	font-size: 14px;
+}
+.vbo-chat-session-view-container .vbo-chat-wrapper .chat-input-footer {
+	padding: 5px 10px 18px 5px;
+	bottom: 0;
+	background: #fff;
+}
+/* End: Chat Session */
 
 /* Start: Toast Message bottom-center positioned */
 .vbo-toast-message {
@@ -9295,6 +9430,376 @@ p.info[data-new-messages="1"] a {
 }
 /* End: Toast Message bottom-center positioned */
 
+/* Quote */
+.vbo-quote-container {
+	font-size: var(--vbo-font-start);
+	padding: 0 10px;
+}
+.vbo-quote-head {
+	.vbo-quote-head-preinfo {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+
+		.vbo-quote-head-id {
+			margin-left: auto;
+			font-size: var(--vbo-font-xsm);
+			background: var(--vbo-tag-black-bg);
+			color: contrast-color(var(--vbo-tag-black-bg));
+			padding: 4px 8px;
+			border-radius: 4px;
+			font-family: 'Courier New', Courier, monospace;
+		}
+	}
+
+	.vbo-quote-head-header {
+		margin: 0 0 8px;
+		font-size: var(--vbo-font-lg);
+		font-weight: 700;
+	}
+
+	.vbo-quote-head-description {
+		margin: 8px 0;
+		line-height: 1.6em;
+		font-size: var(--vbo-font-base);
+		opacity: var(--vbo-text-opacity-8);
+	}
+	
+	.vbo-quote-head-validity {
+		margin-top: 24px;
+		margin-bottom: 0;
+		padding: 12px 16px;
+		border-radius: 12px;
+		font-size: var(--vbo-font-base);
+		border: 1px solid var(--vbo-light-border-color);
+		background: var(--vbo-light-grey-bg-color);
+
+		.vbo-quote-head-validity-label {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+
+			i {
+				color: var(--vbo-pref-bgcolor);
+			}
+		}
+
+		.vbo-quote-head-validity-date {
+			opacity: var(--vbo-text-opacity-8);
+		}
+	}
+}
+.vbo-quote-body {
+	margin-top: 24px;
+
+	.vbo-quote-solution {
+		border: 1px solid var(--vbo-border-color);
+		background: var(--vbo-white-bg-color);
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+
+		&:not(:last-child) {
+			margin-bottom: 24px;
+		}
+
+		.vbo-quote-sol-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			padding: 16px 20px;
+			cursor: pointer;
+
+			@media (max-width: 640px) {
+				padding: 12px;
+			}
+
+			&:hover {
+				background: var(--vbo-pref-bgcolor-op10);
+				transition: background 0.3s ease;
+			}
+		}
+
+		.vbo-quote-sol-body {
+			border-top: 1px solid var(--vbo-border-color);
+			padding: 20px;
+
+			@media (max-width: 640px) {
+				padding: 12px;
+			}
+
+			.vbo-quote-sol-room {
+				display: flex;
+				border: 1px solid var(--vbo-border-color);
+				border-radius: 12px;
+				overflow: hidden;
+
+				&:not(:last-child) {
+					margin-bottom: 12px;
+				}
+				
+				@media (max-width: 640px) {
+					flex-wrap: wrap;
+				}
+
+				.vbo-quote-sol-img {
+					flex-shrink: 0;
+					display: flex;
+					object-fit: cover;
+					height: auto;
+
+					@media only screen and (max-width : 640px) {
+						width: 100%;
+					}
+				}
+
+				.vbo-dots-slider-selector {
+					width: 20rem;
+				}
+			}
+		}
+	}
+}
+
+.vbo-quote-sol-head-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+
+	.vbo-quote-sol-head-title {
+		font-weight: 600;
+	}
+
+	.vbo-quote-sol-head-details {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		font-size: var(--vbo-font-xsm);
+		opacity: var(--vbo-text-opacity-6);
+		margin-top: 2px;
+
+		@media (max-width: 640px) {
+			flex-wrap: wrap;
+			row-gap: 5px;
+		}
+
+		.vbo-quote-sol-dates, .vbo-quote-sol-party {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			white-space: nowrap;
+		}
+	}
+}
+
+.vbo-quote-sol-head-right {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+
+	.vbo-quote-sol-head-price {
+		color: var(--vbo-pref-textcolor);
+		font-size: var(--vbo-font-md);
+		font-weight: 700;
+		white-space: nowrap;
+	}
+
+	i {
+		opacity: var(--vbo-text-opacity-6);
+		font-size: 12px;
+	}
+}	
+
+.vbo-quote-sol-room-desc {
+	padding: 20px;
+	flex: 1 1 0%;
+
+	@media (max-width: 640px) {
+		padding: 12px;
+	}
+
+	.vbo-quote-sol-room-info {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 6px;
+		margin-bottom: 4px;
+
+		@media (max-width: 800px) {
+			flex-wrap: wrap;
+		}
+
+		.vbo-quote-sol-room-title {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-weight: 500;
+			font-size: var(--vbo-font-sm);
+
+			i {
+				color: var(--vbo-pref-bgcolor);
+			}
+		}
+
+		.vbo-quote-sol-room-price-block {
+			text-align: right;
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 6px;
+
+			@media (max-width: 800px) {
+			 flex-basis: 100%;
+			}
+
+			.vbo-quote-sol-room-price {
+				font-weight: 600;
+				color: var(--vbo-pref-textcolor);
+			}
+
+			.vbo-quote-sol-room-price-lbl {
+				opacity: var(--vbo-text-opacity-8);
+				font-size: var(--vbo-font-xsm);
+			}
+
+			.vbo-quote-sol-room-price-disc {
+				opacity: var(--vbo-text-opacity-6);
+				font-size: var(--vbo-font-xsm);
+				text-decoration: line-through;
+			}
+		}
+	}
+
+	.vbo-quote-sol-room-details {
+		display: flex;
+		gap: 12px;
+		opacity: var(--vbo-text-opacity-6);
+		font-size: var(--vbo-font-xsm);
+
+		@media (max-width: 640px) {
+			flex-wrap: wrap;
+		}
+		
+		& > span {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+		}
+	}
+
+	.vbo-quote-sol-room-description {
+		font-size: var(--vbo-font-sm);
+		opacity: var(--vbo-text-opacity-8);
+		margin-top: 6px;
+
+		p:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	.vbo-quote-sol-room-policy-details {
+		font-size: var(--vbo-font-xsm);
+		border-radius: 12px;
+		padding: 10px 12px;
+		margin-top: 10px;
+		background: var(--vbo-pref-bgcolor-op05);
+		border: 1px solid var(--vbo-pref-bgcolor-op50);
+
+		p {
+			margin: 0;
+		}
+	}	
+
+	.vbo-quote-sol-room-extras {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin: 12px 0 0;
+		padding: 0;
+
+		li {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			font-size: var(--vbo-font-xsm);
+			font-weight: 400;
+			padding: 2px 10px;
+			border-radius: 20px;
+			background: var(--vbo-light-grey-bg-color);
+
+			.vbo-quote-sol-room-features-price {
+				opacity: var(--vbo-text-opacity-6);
+			}
+		}
+	}
+}
+
+.vbo-quote-sol-footer {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	justify-content: space-between;
+	margin: 0px 20px 0;
+	padding: 15px 0;
+	border-top: 1px solid var(--vbo-border-color);
+
+	@media (max-width: 580px) {
+		flex-wrap: wrap;			
+	}
+
+	.vbo-quote-sol-total-label, .vbo-quote-sol-total-subtext {
+		opacity: var(--vbo-text-opacity-6);
+		font-size: var(--vbo-font-xsm);
+	}
+
+	.vbo-quote-sol-total-price {
+		color: var(--vbo-pref-textcolor);
+		font-size: var(--vbo-font-xl);
+		font-weight: 700;
+		line-height: 1.3em;
+	}
+	.vbo-quote-sol-footer-actions {
+		text-align: right;
+
+		@media (max-width: 580px) {
+			flex-basis: 100%;
+		}
+
+		.btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			white-space: nowrap;
+			font-weight: 500;
+			text-decoration: none !important;
+
+			&.vbo-accept {
+				background-color: var(--vbo-pref-bgcolor);
+				border: 1px solid var(--vbo-pref-bgcolor);
+				color: var(--vbo-pref-fontcolor);
+
+				&:hover {
+					background: var(--vbo-pref-bgcolorhov);
+					border-color: var(--vbo-pref-bgcolorhov);
+					color: var(--vbo-pref-fontcolorhov);
+				}
+			}
+		}
+
+		.vbo-quote-sol-footer-comment {
+			font-size: var(--vbo-font-xsm);
+			font-style: italic;
+			opacity: var(--vbo-text-opacity-6);
+			margin-top: 4px;
+		}
+	}
+}
+/* End - Quote */
+
+/* Responsive Styles */
 @media screen and (max-width: 750px) {
 	.vbo-booking-chat-inner .chat-input-footer .textarea-input textarea {
 		border: 0;
@@ -9812,7 +10317,7 @@ p.info[data-new-messages="1"] a {
 	.vbdivsearch .input-group input {
 		flex: 1;
 	}
-	.vbdivsearch .input-group .fa-calendar-alt {
+	.vbdivsearch .input-group .vbo-caltrigger {
 		width: 35px;
 	}
 	.vbdivsearch .vb-search-inner > .vbo-search-num-racblock {
@@ -11000,11 +11505,11 @@ p.info[data-new-messages="1"] a {
 .notice-info {
 	background: var(--vbo-white-bg-color) !important;
 	background-image: none !important;
-	border: 2px solid var(--vbo-blue-color) !important;
-	color: var(--vbo-blue-color);
+	border: 2px solid var(--vbo-pref-textcolor) !important;
+	color: var(--vbo-pref-textcolor);
 }
 .notice-info > p {
-	color: var(--vbo-blue-color) !important;
+	color: var(--vbo-pref-textcolor) !important;
 	margin-bottom: 0 !important;
 }
 
@@ -11043,9 +11548,9 @@ p.warn {
 }
 p.info {
 	background: no-repeat scroll 10px center var(--vbo-white-bg-color) !important;
-	border: 1px solid var(--vbo-blue-color) !important;
+	border: 1px solid var(--vbo-pref-textcolor) !important;
 	border-radius: 5px;
-	color: var(--vbo-blue-color);
+	color: var(--vbo-pref-textcolor);
 	font-weight: bold;
 	margin: 15px 0 20px;
 	padding: 20px !important;

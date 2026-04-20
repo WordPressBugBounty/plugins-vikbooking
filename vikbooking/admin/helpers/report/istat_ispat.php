@@ -382,8 +382,8 @@ class VikBookingReportIstatIspat extends VikBookingReport
 		jQuery(function() {
 			//prepare main filters
 			jQuery(".vbo-report-datepicker:input").datepicker({
-				// data massima di generazione movimenti = ieri
-				maxDate: "-1d",
+				// data massima di generazione movimenti = oggi
+				maxDate: "0d",
 				dateFormat: "'.$this->getDateFormat('jui').'",
 			});
 			'.(!empty($pfromdate) ? 'jQuery(".vbo-report-datepicker-from").datepicker("setDate", "'.$pfromdate.'");' : '').'
@@ -1175,6 +1175,13 @@ class VikBookingReportIstatIspat extends VikBookingReport
 				if ($is_italian && !empty($group_key)) {
 					// 2-char province expected
 					$targaNode = '<targa>' . htmlspecialchars(strtoupper($group_key)) . '</targa>' . "\n";
+				} elseif ($is_italian && empty($group_key)) {
+					/**
+					 * ISPAT said the "targa" may be mandatory and so we default to TN for Italian customers.
+					 * 
+					 * @since 	1.18.8 (J) - 1.8.8 (WP)
+					 */
+					$targaNode = '<targa>TN</targa>' . "\n";
 				} elseif (!$is_italian && !empty($group_key) && isset($foreign_countries_map[$group_key])) {
 					// foreign country full name expected
 					$targaNode = '<targa>' . htmlspecialchars(strtoupper($foreign_countries_map[$group_key])) . '</targa>' . "\n";
@@ -1785,7 +1792,7 @@ JS
 				['soap', true, 'Fault'],
 			]);
 
-			if (in_array(@$responseFault->getName(), ['faultcode', 'faultstring'])) {
+			if (is_object($responseFault) && in_array($responseFault->getName(), ['faultcode', 'faultstring'])) {
 				// errors returned
 				$fault_code = $responseFault->faultcode ?? 0;
 				$fault_mess = $responseFault->faultstring ?? '';

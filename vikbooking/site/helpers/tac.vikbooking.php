@@ -299,7 +299,7 @@ class TACVBO
 			$room_ids[$room['id']] = $room;
 		}
 		$rates = [];
-		$q = "SELECT `p`.*, `r`.`id` AS `r_reference_id`, `r`.`name` AS `r_short_desc`, `r`.`img`, `r`.`units`, `r`.`moreimgs`, `r`.`imgcaptions`, `prices`.`id` AS `price_reference_id`, `prices`.`name` AS `pricename`, `prices`.`breakfast_included`, `prices`.`free_cancellation`, `prices`.`canc_deadline`, `prices`.`minlos`, `prices`.`minhadv` FROM `#__vikbooking_dispcost` AS `p`, `#__vikbooking_rooms` AS `r`, `#__vikbooking_prices` AS `prices` WHERE `r`.`id`=`p`.`idroom` AND `p`.`idprice`=`prices`.`id` AND `p`.`days`=".$args['nights']." AND `r`.`id` IN (".implode(',', array_keys($room_ids)).") ORDER BY `p`.`cost` ASC;";
+		$q = "SELECT `p`.*, `r`.`id` AS `r_reference_id`, `r`.`name` AS `r_short_desc`, `r`.`img`, `r`.`units`, `r`.`moreimgs`, `r`.`imgcaptions`, `prices`.`id` AS `price_reference_id`, `prices`.`name` AS `pricename`, `prices`.`breakfast_included`, `prices`.`free_cancellation`, `prices`.`canc_deadline`, `prices`.`canc_policy`, `prices`.`minlos`, `prices`.`minhadv`, `prices`.`meal_plans` FROM `#__vikbooking_dispcost` AS `p`, `#__vikbooking_rooms` AS `r`, `#__vikbooking_prices` AS `prices` WHERE `r`.`id`=`p`.`idroom` AND `p`.`idprice`=`prices`.`id` AND `p`.`days`=".$args['nights']." AND `r`.`id` IN (".implode(',', array_keys($room_ids)).") ORDER BY `p`.`cost` ASC;";
 		$dbo->setQuery($q);
 		$rates = $dbo->loadAssocList();
 		if (!$rates) {
@@ -654,6 +654,9 @@ class TACVBO
 						}
 						$arr_rates[$r][$k]['cost'] = round($realcost, 2);
 						$arr_rates[$r][$k]['taxes'] = round($taxes, 2);
+					} else {
+						// make sure to populate the "taxes" property as an empty value
+						$arr_rates[$r][$k]['taxes'] = round(0, 2);
 					}
 				}
 			}

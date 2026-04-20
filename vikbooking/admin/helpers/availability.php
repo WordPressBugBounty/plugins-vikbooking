@@ -999,7 +999,7 @@ class VikBookingAvailability
 		}
 
 		// count injected rooms, if any
-		$tot_rooms = count($this->room_ids);
+		$tot_rooms = (int) (($params['rooms_count'] ?? 0) ?: count($this->room_ids));
 
 		// build options array for TACVBO
 		$options = [
@@ -1078,12 +1078,24 @@ class VikBookingAvailability
 
 		// optional filter by room IDs will be applied on this flow
 		$found_rids = array_keys($website_rates);
-		$unwanted_rids = $tot_rooms ? array_diff($found_rids, $this->room_ids) : [];
+		$unwanted_rids = $this->room_ids ? array_diff($found_rids, $this->room_ids) : [];
 		foreach ($unwanted_rids as $rid) {
 			unset($website_rates[$rid]);
 		}
 
 		return $website_rates;
+	}
+
+	/**
+	 * Returns the fully booked linear array of room IDs.
+	 * 
+	 * @return 	array
+	 * 
+	 * @since 	1.18.8 (J) - 1.8.8 (WP)
+	 */
+	public function getFullyBooked()
+	{
+		return (array) $this->fully_booked;
 	}
 
 	/**
@@ -1256,7 +1268,7 @@ class VikBookingAvailability
 			}
 		}
 
-		if (!count($avroom_nights)) {
+		if (!$avroom_nights) {
 			// no rooms available at all, there's no way to do anything
 			return [];
 		}
@@ -1474,7 +1486,7 @@ class VikBookingAvailability
 
 		// apply nights/transfers ratio limit (unless disabled)
 		$nights_transfers_ratio = $this->getNightsTransfersRatio();
-		if ($nights_transfers_ratio > 0 && $nights_transfers_ratio < 100) {
+		if ($nights_transfers_ratio > 0 && $nights_transfers_ratio <= 100) {
 			// count and apply limits
 			foreach ($split_stay_sols as $k => $split_stay_sol) {
 				// count nights and transfers
@@ -1496,7 +1508,7 @@ class VikBookingAvailability
 			$split_stay_sols = [];
 		}
 
-		if ($altered_sols && count($split_stay_sols)) {
+		if ($altered_sols && $split_stay_sols) {
 			// restore the array keys
 			$split_stay_sols = array_values($split_stay_sols);
 		}

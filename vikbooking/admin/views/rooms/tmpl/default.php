@@ -24,6 +24,7 @@ JText::script('VBO_OTA_ACCOUNT_ID');
 JText::script('VBO_OTA_LISTING_ID');
 JText::script('VBANNULLA');
 JText::script('VBSAVE');
+JText::script('VBOCATEGORYFILTER');
 
 $rows = $this->rows;
 $lim0 = $this->lim0;
@@ -39,7 +40,7 @@ $pidcat = $app->getUserStateFromRequest("vbo.rooms.idcat", 'idcat', 0, 'int');
 		<div style="width: 100%; display: inline-block;" class="btn-toolbar" id="filter-bar">
 			<div class="btn-group pull-left">
 				<select name="idcat" id="idcat" onchange="document.roomsform.submit();">
-					<option value=""><?php echo JText::translate('VBOCATEGORYFILTER'); ?></option>
+					<option></option>
 				<?php
 				foreach ($this->allcats as $cat) {
 					?>
@@ -50,7 +51,7 @@ $pidcat = $app->getUserStateFromRequest("vbo.rooms.idcat", 'idcat', 0, 'int');
 				</select>
 			</div>
 			<div class="btn-group pull-left input-append btn-group-right-el">
-				<input type="text" name="rname" id="rname" value="<?php echo $prname; ?>" size="40" placeholder="<?php echo JText::translate('VBPVIEWROOMONE'); ?>"/>
+				<input type="text" name="rname" id="rname" value="<?php echo $this->escape($prname); ?>" size="40" placeholder="<?php echo $this->escape(JText::translate('VBPVIEWROOMONE')); ?>"/>
 				<button type="button" class="btn btn-secondary" onclick="document.roomsform.submit();"><i class="icon-search"></i></button>
 			</div>
 			<div class="btn-group pull-left">
@@ -61,10 +62,18 @@ $pidcat = $app->getUserStateFromRequest("vbo.rooms.idcat", 'idcat', 0, 'int');
 		<input type="hidden" name="option" value="com_vikbooking" />
 	</form>
 </div>
-<script type="text/javascript">
-jQuery(function() {
-	jQuery('#idcat').select2();
-});
+<script>
+	(function($) {
+		'use strict';
+
+		$(function() {
+			$('#idcat').select2({
+				allowClear: true,
+				placeholder: Joomla.JText._('VBOCATEGORYFILTER'),
+				width: 200,
+			});
+		});
+	})(jQuery);
 </script>
 <?php
 if (empty($rows)) {

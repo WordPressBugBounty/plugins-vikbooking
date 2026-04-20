@@ -362,7 +362,53 @@ class VikBooking
 		// return the available indexes
 		return $available_indexes;
 	}
-	
+
+	/**
+	 * Generates a random UUID v4.
+	 *
+	 * A UUID is a 16-octet (128-bit) number. In its canonical form, a UUID is represented by 32 
+	 * hexadecimal digits, displayed in five groups separated by hyphens, in the form 8-4-4-4-12
+	 * for a total of 36 characters (32 alphanumeric characters and four hyphens).
+	 *
+	 * @return 	string
+	 *
+	 * @since 	1.18.8 (J) - 1.8.8 (WP)
+	 */
+	public static function uuid()
+	{
+		/*
+		return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+			// 32 bits for "time_low"
+			mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+
+			// 16 bits for "time_mid"
+			mt_rand(0, 0xffff),
+
+			// 16 bits for "time_hi_and_version",
+			// four most significant bits holds version number 4
+			mt_rand(0, 0x0fff) | 0x4000,
+
+			// 16 bits, 8 bits for "clk_seq_hi_res",
+			// 8 bits for "clk_seq_low",
+			// two most significant bits holds zero and one for variant DCE1.1
+			mt_rand(0, 0x3fff) | 0x8000,
+
+			// 48 bits for "node"
+			mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+		);
+		*/
+
+		// generate 16 random bytes through CSPRNG
+		$data = random_bytes(16);
+
+		// four most significant bits holds version number 4
+		$data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
+		// two most significant bits holds zero and one for variant DCE1.1
+		$data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
+
+		return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+	}
+
 	/**
 	 * Load the restrictions applying the given filters to the passed rooms.
 	 * The ordering of the query SHOULD remain unchanged, because it's required
@@ -1221,22 +1267,31 @@ class VikBooking
 		$datemod = $wdays_map[$now_info['wday']].', '.date($df.' H:i', $now_info[0]);
 		$prev_nights = $old_booking['days'].' '.($old_booking['days'] > 1 ? JText::translate('VBDAYS') : JText::translate('VBDAY'));
 		$prev_dates = $prev_nights.' - '.$wdays_map[$checkin_info['wday']].', '.date($df.' H:i', $checkin_info[0]).' - '.$wdays_map[$checkout_info['wday']].', '.date($df.' H:i', $checkout_info[0]);
-		$prev_rooms = '';
 
 		$orooms_map = [];
 		$orooms_arr = [];
-		
-		if (isset($old_booking['rooms_info'])) {
-			foreach ($old_booking['rooms_info'] as $oroom) {
-				$orooms_arr[] = $oroom['name'].', '.JText::translate('VBMAILADULTS').': '.$oroom['adults'].', '.JText::translate('VBMAILCHILDREN').': '.$oroom['children'];
-				if (!empty($oroom['idroom'])) {
-					$orooms_map[$oroom['idroom']] = $oroom['name'];
-				}
+
+		// scan the previously booked room records
+		foreach ((array) ($old_booking['rooms_info'] ?? []) as $oroom) {
+			// determine room name
+			$roomName = $oroom['name'] ?? $oroom['roomnamevb'] ?? $oroom['idroom'] ?? '---';
+			$orooms_arr[] = sprintf(
+				'%s, %s: %d, %s: %d',
+				$roomName,
+				JText::translate('VBMAILADULTS'),
+				(int) ($oroom['adults'] ?? 0),
+				JText::translate('VBMAILCHILDREN'),
+				(int) ($oroom['children'] ?? 0),
+			);
+			if (!empty($oroom['idroom'])) {
+				$orooms_map[$oroom['idroom']] = $roomName;
 			}
-			$prev_rooms = implode("\n", $orooms_arr);
 		}
 
-		if (!empty($old_booking['split_stay']) && !empty($room_stay_dates) && count($orooms_map)) {
+		// build previous rooms booked string
+		$prev_rooms = $orooms_arr ? implode("\n", $orooms_arr) : '';
+
+		if (!empty($old_booking['split_stay']) && !empty($room_stay_dates) && $orooms_map) {
 			$split_stay_prev_infos = [];
 			foreach ($room_stay_dates as $rs_ind => $room_stay) {
 				if (empty($room_stay['idroom']) || !isset($orooms_map[$room_stay['idroom']])) {
@@ -1323,13 +1378,20 @@ class VikBooking
 
 	public static function vcmAutoUpdate()
 	{
-		if (!is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikchannelmanager.php')) {
-			return -1;
+		static $autoUpdate = null;
+
+		if ($autoUpdate !== null) {
+			return $autoUpdate;
 		}
 
-		$vcm_auto_upd = (int)VBOFactory::getConfig()->get('vcmautoupd', 0);
+		if (!is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikchannelmanager.php')) {
+			$autoUpdate = -1;
+			return $autoUpdate;
+		}
 
-		return $vcm_auto_upd ? 1 : 0;
+		$autoUpdate = (int) VBOFactory::getConfig()->getBool('vcmautoupd', false);
+
+		return $autoUpdate;
 	}
 
 	public static function getVcmInvoker()
@@ -1894,6 +1956,7 @@ class VikBooking
 				->where($dbo->qn('ifchildren') . ' = 0')
 				->where($dbo->qn('is_citytax') . ' = 0')
 				->where($dbo->qn('is_fee') . ' = 0')
+				->order($dbo->qn('ordering') . ' ASC')
 		);
 		$records = $dbo->loadAssocList();
 
@@ -3289,10 +3352,25 @@ class VikBooking
 		}
 	}
 
-	public static function dateIsValid($date) {
+	/**
+	 * Tells whether a date string is valid.
+	 * 
+	 * @param 	?string 	$date 	The date to evaluate.
+	 * 
+	 * @return 	bool
+	 * 
+	 * @since 	1.18.8 (J) - 1.8.8 (WP) Military format Y-m-d is always accepted.
+	 */
+	public static function dateIsValid(?string $date)
+	{
+		if (preg_match("/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/", (string) $date)) {
+			// date is in Y-m-d format (with no time)
+			return true;
+		}
+
 		$df = self::getDateFormat();
 		$datesep = self::getDateSeparator();
-		if (strlen($date) != 10) {
+		if (strlen((string) $date) != 10) {
 			return false;
 		}
 		$cur_dsep = "/";
@@ -4491,7 +4569,7 @@ class VikBooking
 			}
 		}
 		if ($fetch) {
-			$q = "SELECT * FROM `#__vikbooking_optionals` WHERE `id` IN (".implode(", ", $fetch).") ORDER BY `#__vikbooking_optionals`.`ordering` ASC;";
+			$q = "SELECT * FROM `#__vikbooking_optionals` WHERE `id` IN (" . implode(', ', array_map('intval', $fetch)) . ") ORDER BY `#__vikbooking_optionals`.`ordering` ASC;";
 			$dbo->setQuery($q);
 			$arr = $dbo->loadAssocList();
 			if ($arr) {
@@ -7094,14 +7172,14 @@ class VikBooking
 		}
 
 		$q = "SELECT * FROM `#__vikbooking_seasons` WHERE (" .
-		 	($sto > $sfrom ? "(`from` <= " . $sfrom . " AND `to` >= " . $sto . ") " : "") .
-		 	($sto > $sfrom ? "OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . ") " : "(`from` <= " . $sfrom . " AND `to` <= " . $sfrom . " AND `from` > `to`) ") .
-		 	($sto > $sfrom ? "OR (`from` <= " . $sto . " AND `to` >= " . $sto . ") " : "OR (`from` >= " . $sto . " AND `to` >= " . $sto . " AND `from` > `to`) ") .
-		 	($sto > $sfrom ? "OR (`from` >= " . $sfrom . " AND `from` <= " . $sto . " AND `to` >= " . $sfrom . " AND `to` <= " . $sto . ")" : "OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` > `to`)") .
-		 	($sto > $sfrom ? " OR (`from` <= " . $sfrom . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`) OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` >= " . $sto . " AND `from` > `to`)" : " OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . " AND `from` >= " . $sto . " AND `to` > " . $sto . " AND `from` < `to`)") .
-		 	($sto > $sfrom ? " OR (`from` >= " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` < " . $sfrom . " AND `to` >= " . $sto . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `from` < `to`)") .
-		 	($sto > $sfrom ? " OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` > " . $sfrom . " AND `to` > " . $sto . " AND `from` < `to`) OR (`from` < " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` < `to`)") . 
-		 	($sto < $sfrom ? " OR (`from` = 0 AND `to` >= " . $sto . " AND `to` >= " . $sfrom . ")" : '') .
+			($sto > $sfrom ? "(`from` <= " . $sfrom . " AND `to` >= " . $sto . ") " : "") .
+			($sto > $sfrom ? "OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . ") " : "(`from` <= " . $sfrom . " AND `to` <= " . $sfrom . " AND `from` > `to`) ") .
+			($sto > $sfrom ? "OR (`from` <= " . $sto . " AND `to` >= " . $sto . ") " : "OR (`from` >= " . $sto . " AND `to` >= " . $sto . " AND `from` > `to`) ") .
+			($sto > $sfrom ? "OR (`from` >= " . $sfrom . " AND `from` <= " . $sto . " AND `to` >= " . $sfrom . " AND `to` <= " . $sto . ")" : "OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` > `to`)") .
+			($sto > $sfrom ? " OR (`from` <= " . $sfrom . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`) OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` >= " . $sto . " AND `from` > `to`)" : " OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . " AND `from` >= " . $sto . " AND `to` > " . $sto . " AND `from` < `to`)") .
+			($sto > $sfrom ? " OR (`from` >= " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` < " . $sfrom . " AND `to` >= " . $sto . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `from` < `to`)") .
+			($sto > $sfrom ? " OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` > " . $sfrom . " AND `to` > " . $sto . " AND `from` < `to`) OR (`from` < " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` < `to`)") . 
+			($sto < $sfrom ? " OR (`from` = 0 AND `to` >= " . $sto . " AND `to` >= " . $sfrom . ")" : '') .
 			") ORDER BY `#__vikbooking_seasons`.`promo` ASC;";
 
 		/**
@@ -7268,14 +7346,14 @@ class VikBooking
 		$totseasons = 0;
 		if (!$seasons_dates) {
 			$q = "SELECT * FROM `#__vikbooking_seasons` WHERE (" .
-		 	($sto > $sfrom ? "(`from` <= " . $sfrom . " AND `to` >= " . $sto . ") " : "") .
-		 	($sto > $sfrom ? "OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . ") " : "(`from` <= " . $sfrom . " AND `to` <= " . $sfrom . " AND `from` > `to`) ") .
-		 	($sto > $sfrom ? "OR (`from` <= " . $sto . " AND `to` >= " . $sto . ") " : "OR (`from` >= " . $sto . " AND `to` >= " . $sto . " AND `from` > `to`) ") .
-		 	($sto > $sfrom ? "OR (`from` >= " . $sfrom . " AND `from` <= " . $sto . " AND `to` >= " . $sfrom . " AND `to` <= " . $sto . ")" : "OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` > `to`)") .
-		 	($sto > $sfrom ? " OR (`from` <= " . $sfrom . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`) OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` >= " . $sto . " AND `from` > `to`)" : " OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . " AND `from` >= " . $sto . " AND `to` > " . $sto . " AND `from` < `to`)") .
-		 	($sto > $sfrom ? " OR (`from` >= " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` < " . $sfrom . " AND `to` >= " . $sto . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `from` < `to`)") .
-		 	($sto > $sfrom ? " OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` > " . $sfrom . " AND `to` > " . $sto . " AND `from` < `to`) OR (`from` < " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` < `to`)") . 
-		 	($sto < $sfrom ? " OR (`from` = 0 AND `to` >= " . $sto . " AND `to` >= " . $sfrom . ")" : '') .
+			($sto > $sfrom ? "(`from` <= " . $sfrom . " AND `to` >= " . $sto . ") " : "") .
+			($sto > $sfrom ? "OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . ") " : "(`from` <= " . $sfrom . " AND `to` <= " . $sfrom . " AND `from` > `to`) ") .
+			($sto > $sfrom ? "OR (`from` <= " . $sto . " AND `to` >= " . $sto . ") " : "OR (`from` >= " . $sto . " AND `to` >= " . $sto . " AND `from` > `to`) ") .
+			($sto > $sfrom ? "OR (`from` >= " . $sfrom . " AND `from` <= " . $sto . " AND `to` >= " . $sfrom . " AND `to` <= " . $sto . ")" : "OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` > `to`)") .
+			($sto > $sfrom ? " OR (`from` <= " . $sfrom . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`) OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` >= " . $sto . " AND `from` > `to`)" : " OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . " AND `from` >= " . $sto . " AND `to` > " . $sto . " AND `from` < `to`)") .
+			($sto > $sfrom ? " OR (`from` >= " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` < " . $sfrom . " AND `to` >= " . $sto . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `from` < `to`)") .
+			($sto > $sfrom ? " OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` > " . $sfrom . " AND `to` > " . $sto . " AND `from` < `to`) OR (`from` < " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` < `to`)") . 
+			($sto < $sfrom ? " OR (`from` = 0 AND `to` >= " . $sto . " AND `to` >= " . $sfrom . ")" : '') .
 			") ORDER BY `#__vikbooking_seasons`.`promo` ASC;";
 
 			// get the season records by running the query
@@ -7347,16 +7425,16 @@ class VikBooking
 						}
 					} elseif ($one['year'] == $s['year'] && $two['year'] > $s['year']) {
 						if (($baseone + $s['to'] + 86399) < $from && $s['from'] < $s['to']) {
-   							/**
+							/**
 							 * Assuming that we are on 2021, and we are booking a 4-night stay from 29/12 to 02/01. This statement involves
 							 * a special price tied to the year 2021 for the night of 01/01 (or near dates), but we are booking the night of
 							 * First of the Year of 2022, and so the old special price for the year before (2021) should be ignored.
 							 * 
 							 * @since 	1.14.3 (J) - 1.4.3 (WP)
 							 */
-   							continue;
-   						}
-   					} elseif ($one['year'] == $s['year'] && $two['year'] == $s['year'] && $s['from'] > $s['to']) {
+							continue;
+						}
+					} elseif ($one['year'] == $s['year'] && $two['year'] == $s['year'] && $s['from'] > $s['to']) {
 						// season tied to the year 2017 accross 2018 and we are parsing dates at the beginning of 2017 due to beginning loop in 2016 (Rates Overview)
 						if (($baseone + $s['from']) > $to) {
 							continue;
@@ -8104,14 +8182,14 @@ class VikBooking
 		$totseasons = 0;
 		if (!$parsed_season && !$seasons_dates) {
 			$q = "SELECT * FROM `#__vikbooking_seasons` WHERE (" .
-		 	($sto > $sfrom ? "(`from` <= " . $sfrom . " AND `to` >= " . $sto . ") " : "") .
-		 	($sto > $sfrom ? "OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . ") " : "(`from` <= " . $sfrom . " AND `to` <= " . $sfrom . " AND `from` > `to`) ") .
-		 	($sto > $sfrom ? "OR (`from` <= " . $sto . " AND `to` >= " . $sto . ") " : "OR (`from` >= " . $sto . " AND `to` >= " . $sto . " AND `from` > `to`) ") .
-		 	($sto > $sfrom ? "OR (`from` >= " . $sfrom . " AND `from` <= " . $sto . " AND `to` >= " . $sfrom . " AND `to` <= " . $sto . ")" : "OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` > `to`)") .
-		 	($sto > $sfrom ? " OR (`from` <= " . $sfrom . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`) OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` >= " . $sto . " AND `from` > `to`)" : " OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . " AND `from` >= " . $sto . " AND `to` > " . $sto . " AND `from` < `to`)") .
-		 	($sto > $sfrom ? " OR (`from` >= " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` < " . $sfrom . " AND `to` >= " . $sto . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `from` < `to`)") .
-		 	($sto > $sfrom ? " OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` > " . $sfrom . " AND `to` > " . $sto . " AND `from` < `to`) OR (`from` < " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` < `to`)") . 
-		 	($sto < $sfrom ? " OR (`from` = 0 AND `to` >= " . $sto . " AND `to` >= " . $sfrom . ")" : '') .
+			($sto > $sfrom ? "(`from` <= " . $sfrom . " AND `to` >= " . $sto . ") " : "") .
+			($sto > $sfrom ? "OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . ") " : "(`from` <= " . $sfrom . " AND `to` <= " . $sfrom . " AND `from` > `to`) ") .
+			($sto > $sfrom ? "OR (`from` <= " . $sto . " AND `to` >= " . $sto . ") " : "OR (`from` >= " . $sto . " AND `to` >= " . $sto . " AND `from` > `to`) ") .
+			($sto > $sfrom ? "OR (`from` >= " . $sfrom . " AND `from` <= " . $sto . " AND `to` >= " . $sfrom . " AND `to` <= " . $sto . ")" : "OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` > `to`)") .
+			($sto > $sfrom ? " OR (`from` <= " . $sfrom . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`) OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` >= " . $sto . " AND `from` > `to`)" : " OR (`from` <= " . $sfrom . " AND `to` >= " . $sfrom . " AND `from` >= " . $sto . " AND `to` > " . $sto . " AND `from` < `to`)") .
+			($sto > $sfrom ? " OR (`from` >= " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` < " . $sfrom . " AND `to` >= " . $sto . " AND `from` <= " . $sto . " AND `to` < " . $sfrom . " AND `from` < `to`)") .
+			($sto > $sfrom ? " OR (`from` > " . $sfrom . " AND `from` > " . $sto . " AND `to` >= " . $sfrom . " AND `to` < " . $sto . " AND `from` > `to`)" : " OR (`from` >= " . $sfrom . " AND `from` > " . $sto . " AND `to` > " . $sfrom . " AND `to` > " . $sto . " AND `from` < `to`) OR (`from` < " . $sfrom . " AND `from` < " . $sto . " AND `to` < " . $sfrom . " AND `to` <= " . $sto . " AND `from` < `to`)") . 
+			($sto < $sfrom ? " OR (`from` = 0 AND `to` >= " . $sto . " AND `to` >= " . $sfrom . ")" : '') .
 			") ORDER BY `#__vikbooking_seasons`.`promo` ASC;";
 
 			if ($cache_signature && isset($cached_seasons[$cache_signature])) {
@@ -8212,16 +8290,16 @@ class VikBooking
 						}
 					} elseif ($one['year'] == $s['year'] && $two['year'] > $s['year']) {
 						if (($baseone + $s['to'] + 86399) < $from && $s['from'] < $s['to']) {
-   							/**
+							/**
 							 * Assuming that we are on 2021, and we are booking a 4-night stay from 29/12 to 02/01. This statement involves
 							 * a special price tied to the year 2021 for the night of 01/01 (or near dates), but we are booking the night of
 							 * First of the Year of 2022, and so the old special price for the year before (2021) should be ignored.
 							 * 
 							 * @since 	1.14.3 (J) - 1.4.3 (WP)
 							 */
-   							continue;
-   						}
-   					} elseif ($one['year'] == $s['year'] && $two['year'] == $s['year'] && $s['from'] > $s['to']) {
+							continue;
+						}
+					} elseif ($one['year'] == $s['year'] && $two['year'] == $s['year'] && $s['from'] > $s['to']) {
 						// season tied to the year 2017 accross 2018 and we are parsing dates at the beginning of 2017 due to beginning loop in 2016 (Rates Overview)
 						if (($baseone + $s['from']) > $to) {
 							continue;
@@ -9586,12 +9664,36 @@ class VikBooking
 
 	public static function getMinutesAutoRemove()
 	{
-		return VBOFactory::getConfig()->getInt('minautoremove', 0);
+		static $minAutoRemove = null;
+
+		if ($minAutoRemove !== null) {
+			return $minAutoRemove;
+		}
+
+		$minAutoRemove = VBOFactory::getConfig()->getInt('minautoremove', 0);
+
+		return $minAutoRemove;
 	}
 
+	/**
+	 * Returns the currently active SMS driver handle.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.18.8 (J) - 1.8.8 (WP) removed support for WhatsApp free-text messages due to Meta
+	 * 									business template requirements - use the apposite E4jConnect
+	 * 									WhatsApp Business Messaging service with Vik Channel Manager.
+	 */
 	public static function getSMSAPIClass()
 	{
-		return VBOFactory::getConfig()->getString('smsapi', '');
+		$smsApiValue = VBOFactory::getConfig()->getString('smsapi', '');
+
+		if (preg_match('/^whatsapp/i', $smsApiValue)) {
+			// no longer supported
+			$smsApiValue = '';
+		}
+
+		return $smsApiValue;
 	}
 
 	public static function autoSendSMSEnabled()
@@ -11595,7 +11697,7 @@ class VikBooking
 		$lines = explode("\n", $str);
 		$new_lines = array();
 		foreach ($lines as $i => $line) {
-		    if (strlen($line)) {
+			if (strlen($line)) {
 				$new_lines[] = trim($line);
 			}
 		}
@@ -13135,17 +13237,7 @@ class VikBooking
 	 */
 	public static function getGoogleMapsKey()
 	{
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='gmapskey';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows()) {
-			return $dbo->loadResult();
-		}
-		$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('gmapskey', '');";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		return '';
+		return VBOFactory::getConfig()->getString('gmapskey', '');
 	}
 
 	/**
@@ -13157,19 +13249,7 @@ class VikBooking
 	 */
 	public static function interactiveMapEnabled()
 	{
-		$dbo = JFactory::getDbo();
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='interactive_map';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows()) {
-			return ((int)$dbo->loadResult() > 0);
-		}
-		
-		$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('interactive_map', '0');";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		
-		return false;
+		return VBOFactory::getConfig()->getBool('interactive_map', false);
 	}
 
 	/**
@@ -13181,29 +13261,21 @@ class VikBooking
 	 */
 	public static function getPreferredColors()
 	{
-		$dbo = JFactory::getDbo();
-		$pref_colors = array(
-			'textcolor' => '',
-			'bgcolor' => '',
-			'fontcolor' => '',
-			'bgcolorhov' => '',
-			'fontcolorhov' => '',
-		);
+		$config = VBOFactory::getConfig();
 
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='pref_colors';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows()) {
-			$colors = json_decode($dbo->loadResult(), true);
-			if (!is_array($colors) || !isset($colors['textcolor'])) {
-				return $pref_colors;
-			}
-			return $colors;
-		}
-		$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('pref_colors', '{}');";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		return $pref_colors;
+		// default colors
+		$pref_colors = [
+			'textcolor'    => '#2282bd',
+			'bgcolor'      => '#2282bd',
+			'fontcolor'    => '#fff',
+			'bgcolorhov'   => '#1890ce',
+			'fontcolorhov' => '#fff',
+		];
+
+		// saved colors
+		$colors = $config->getArray('pref_colors', []);
+
+		return $colors ?: $pref_colors;
 	}
 
 	/**
@@ -13215,91 +13287,20 @@ class VikBooking
 	 */
 	public static function loadPreferredColorStyles()
 	{
-		$view = VikRequest::getString('view', '', 'request');
 		$pref_colors = self::getPreferredColors();
-		
 		$css_classes = [];
-		
-		if (!empty($pref_colors['textcolor'])) {
-			// titles and headings
-			array_push($css_classes, '.vbo-pref-color-text { color: ' . $pref_colors['textcolor'] . ' !important; }');
-			// stepbar, oconfirm
-			array_push($css_classes, 'ol.vbo-stepbar li.vbo-step-complete, ol.vbo-stepbar li.vbo-step-current, ol.vbo-stepbar li.vbo-step-current:before, .vbo-coupon-outer, .vbo-enterpin-block { border-color: ' . $pref_colors['textcolor'] . ' !important; }');
-			// buttons secondary color
-			array_push($css_classes, '.vbo-pref-color-btn-secondary { border: 2px solid ' . $pref_colors['textcolor'] . ' !important; color: ' . $pref_colors['textcolor'] . ' !important; background: transparent !important; }');
-			if (!empty($pref_colors['fontcolor'])) {
-				array_push($css_classes, '.vbo-pref-color-btn-secondary:hover { color: ' . $pref_colors['fontcolor'] . ' !important; background: ' . $pref_colors['textcolor'] . ' !important; }');
-			}
-			// datepicker
-			array_push($css_classes, '.ui-datepicker .ui-datepicker-today {
-				border-color: ' . $pref_colors['textcolor'] . ' !important;
-				color: ' . $pref_colors['textcolor'] . ' !important;
-			}');
-			// operators tableaux
-			if ($view == 'tableaux') {
-				array_push($css_classes, '.vbo-roomdaynote-empty .vbo-roomdaynote-trigger i { color: ' . $pref_colors['textcolor'] . ' !important; }');
-			}
-		}
 
-		if (!empty($pref_colors['bgcolor']) && !empty($pref_colors['fontcolor'])) {
-			// elements with backgrounds
-			array_push($css_classes, '.vbo-pref-color-element { background-color: ' . $pref_colors['bgcolor'] . ' !important; color: ' . $pref_colors['fontcolor'] . ' !important; }');
-			array_push($css_classes, '.vbo-pref-bordercolor { border-color: ' . $pref_colors['bgcolor'] . ' !important; }');
-			array_push($css_classes, '.vbo-pref-bordertext { color: ' . $pref_colors['bgcolor'] . ' !important; border-color: ' . $pref_colors['bgcolor'] . ' !important; }');
-			array_push($css_classes, '.vbo-pref-background { background: ' . $pref_colors['bgcolor'] . ' !important; }');
-			// buttons with backgrounds
-			array_push($css_classes, '.vbo-pref-color-btn { background-color: ' . $pref_colors['bgcolor'] . ' !important; color: ' . $pref_colors['fontcolor'] . ' !important; }');
-			// stepbar
-			array_push($css_classes, 'ol.vbo-stepbar li.vbo-step-complete:before { background-color: ' . $pref_colors['bgcolor'] . ' !important; }');
-			// datepicker
-			array_push($css_classes, '.ui-datepicker-calendar td.checkin-date > *, .ui-datepicker-calendar td.checkout-date > *, .ui-datepicker-calendar td.ui-state-highlight > *, .ui-datepicker-calendar td.ui-datepicker-current-day > * {
-				background: ' . $pref_colors['bgcolor'] . ' !important;
-				border-color: ' . $pref_colors['bgcolor'] . ' !important;
-				color: ' . $pref_colors['fontcolor'] . ' !important;
-			}');
-			array_push($css_classes, '.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
-				border-color: ' . $pref_colors['bgcolor'] . ' !important;
-			}');
-			array_push($css_classes, '.ui-datepicker-header .ui-corner-all.ui-state-hover {
-				border-color: ' . $pref_colors['bgcolor'] . ' !important;
-				color: ' . $pref_colors['bgcolor'] . ' !important;
-			}');
-			array_push($css_classes, '.ui-datepicker .ui-datepicker-current-day a {
-				color: ' . $pref_colors['fontcolor'] . ' !important;
-			}');
-			array_push($css_classes, '.ui-datepicker td:not(.ui-state-highlight):not(.ui-datepicker-unselectable):not(.date-will):not(.ui-datepicker-current-day) > *:hover {
-				border-color: ' . $pref_colors['bgcolor'] . ' !important;
-				color: ' . $pref_colors['bgcolor'] . ' !important;
-			}');
-			array_push($css_classes, '.ui-datepicker td.checkin-date a:hover, .ui-datepicker td.checkout-date a:hover, .ui-datepicker-calendar td.ui-datepicker-current-day > *:hover {
-				color: ' . $pref_colors['fontcolor'] . ' !important;
-			}');
-			// dual slider
-			array_push($css_classes, '.vbo-dual-slider-wrap input[type="range"]::-webkit-slider-thumb, .vbo-dual-slider-wrap input[type="range"]::-moz-range-thumb {
-				background: ' . $pref_colors['bgcolor'] . ' !important;
-			}');
-			// operators tableaux
-			if ($view == 'tableaux') {
-				array_push($css_classes, '.vbo-tableaux-roombooks > div:not(.vbo-tableaux-booking-empty), .vbo-tableaux-togglefullscreen { background-color: ' . $pref_colors['bgcolor'] . ' !important; color: ' . $pref_colors['fontcolor'] . ' !important; }');
-			}
-			// listing capacity room-details
-			array_push($css_classes, '.vbo-rdetails-capacity-icn i {
-				background: ' . $pref_colors['bgcolor'] . ' !important;
-				color: ' . $pref_colors['fontcolor'] . ' !important;
-			}');
-		}
-
-		if (!empty($pref_colors['bgcolorhov']) && !empty($pref_colors['fontcolorhov'])) {
-			// buttons with backgrounds during hover state
-			array_push($css_classes, '.vbo-pref-color-btn:hover { background-color: ' . $pref_colors['bgcolorhov'] . ' !important; color: ' . $pref_colors['fontcolorhov'] . ' !important; }');
-			// operators tableaux
-			if ($view == 'tableaux') {
-				array_push($css_classes, '.vbo-tableaux-togglefullscreen:hover { background-color: ' . $pref_colors['bgcolorhov'] . ' !important; color: ' . $pref_colors['fontcolorhov'] . ' !important; }');
-			}
-		}
-
-		if (!$css_classes) {
-			return;
+		/**
+		 * Register all preferred colors as CSS variables.
+		 * 
+		 * @since 	1.18.8 (J) - 1.8.8 (WP)
+		 */
+		$css_vars = array_filter(array_combine(array_keys($pref_colors), array_values($pref_colors)));
+		if ($css_vars) {
+			$css_vars_decl = array_map(function($k, $v) {
+				return sprintf('--vbo-pref-%s: %s;', preg_replace('/[^a-z0-9]/', '', strtolower($k)), $v);
+			}, array_keys($css_vars), array_values($css_vars));
+			$css_classes[] = ':root {' . "\n" . implode("\n", $css_vars_decl) . "\n" . '}';
 		}
 
 		// add in-line style declaration

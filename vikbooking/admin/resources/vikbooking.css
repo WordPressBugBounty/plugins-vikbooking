@@ -81,8 +81,11 @@
 
 	--vbo-blue-color: #31708f;
 	--vbo-blue-color-hover: #498fb3;
+
+	--vbo-blue-accent: #6385c6;
+	--vbo-blue-accent-hover: #3961aa;
 	
-	--vbo-gold-color: #f0e20e;
+	--vbo-gold-color: #f0d812;
 	--vbo-purple-color: #9b0dce;
 	--vbo-ai-color: #5a16ea;
 	
@@ -171,6 +174,48 @@ legend.adminlegend {
 input[pattern]:invalid {
     border-color: var(--vbo-red-color) !important;
 }
+input[type="checkbox"]:focus, input[type="color"]:focus, input[type="date"]:focus, input[type="datetime-local"]:focus, input[type="datetime"]:focus, input[type="email"]:focus, input[type="month"]:focus, input[type="number"]:focus, input[type="password"]:focus, input[type="radio"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="text"]:focus, input[type="time"]:focus, input[type="url"]:focus, input[type="week"]:focus, select:focus, textarea:focus {
+	border-color: var(--vbo-base-color);
+	box-shadow: none;
+}
+
+/* Icons style */
+.vbo-bg-icon {
+	width: 32px;
+	height: 32px;
+	font-size: 16px;
+	border-radius: 8px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--vbo-light-blue);
+	color: var(--vbo-base-color-hover);
+}
+
+/* Back button style to use in Widgets */
+.vbo-w-list-back {
+	padding: 8px 10px;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	border-radius: var(--vbo-field-radius);
+	font-weight: bold;
+	margin-right: 8px;
+	margin-top: 10px;
+	cursor: pointer;
+	
+	&:hover {
+		background: var(--vbo-light-blue);
+	}
+}
+
+/* Text styles */
+.vbo-bold {
+	font-weight: bold;
+}
+.text-red {
+	color: var(--vbo-red-color) !important;
+}
 
 /*
 * Classes .label and .badge
@@ -192,21 +237,41 @@ input[pattern]:invalid {
 .badge {
 	border-radius: 20px;
 }
-.label.label-success, .badge.badge-success {
+.badge-small {
+	font-size: 11px;
+	display: inline-block;
+	border-radius: 20px;
+	padding: 1px 6px;
+	background-color: var(--vbo-config-border-color);
+}
+.badge-medium {
+	font-size: 12px;
+	display: inline-block;
+	border-radius: 20px;
+	padding: 2px 10px;
+	white-space: nowrap;
+	background-color: var(--vbo-config-border-color);
+}
+.badge-icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+.label.label-success, .badge.badge-success, .badge-success {
 	background-color: var(--vbo-success-bg);
 	color: var(--vbo-success-txt);
 }
 a.label.label-success:hover, a.badge.badge-success:hover {
 	background-color: var(--vbo-green-color-hover);
 }
-.label.label-warning, .badge.badge-warning {
+.label.label-warning, .badge.badge-warning, .badge-warning {
 	background-color: var(--vbo-warning-bg);
 	color: var(--vbo-warning-txt);
 }
 a.label.label-warning:hover, a.badge.badge-warning:hover {
 	background-color: var(--vbo-orange-color-hover);
 }
-.label.label-info, .badge.badge-info {
+.label.label-info, .badge.badge-info, .badge-info {
 	background-color: var(--vbo-info-bg);
 	color: var(--vbo-info-txt);
 }
@@ -216,8 +281,13 @@ a.label.label-info:hover, a.badge.badge-info:hover {
 a.label, a.badge, a.label:hover, a.badge:hover {
 	color: var(--vbo-contrast-text-color);
 }
+.label.label-transp-blue, .badge.badge-transp-blue, .badge-transp-blue {
+	background: transparent;
+	border: 1px solid var(--vbo-blue-color);
+	color: var(--vbo-blue-color);
+}
 /* This info label will have a blue light color */
-.label.label-info-light, .badge.badge-info-light {
+.label.label-info-light, .badge.badge-info-light, .badge-info-light {
 	background-color: var(--vbo-light-blue);
 	color: var(--vbo-base-color);
 	border: 1px solid var(--vbo-info-bg);
@@ -234,16 +304,28 @@ a.label, a.badge, a.label:hover, a.badge:hover {
 .badge-ai, .label-ai {
 	background: var(--vbo-ai-color);
 }
+.btn-large, .btn.btn-large {
+	padding: 14px 24px;
+	font-size: 16px;
+	border-radius: var(--vbo-field-radius);
+}
 .vbo-label-nested {
 	padding: 1px 4px !important;
 	font-weight: 500;
 	line-height: 12px;
 	font-size: 11px;
 }
-.vbo-enabled-icon {
+.vbo-enabled-icon, .vbo-enabled-color {
 	color: var(--vbo-green-color);
 }
+.vbo-orange {
+	color: var(--vbo-orange-color);
+}
+.vbo-yellow {
+	color: var(--vbo-gold-color) !important;
+}
 
+/* Tables */
 .table th.title.left,
 .table th.left,
 .table td.left {
@@ -520,9 +602,10 @@ body #content .btn-warning:hover, body #wpcontent .btn-warning:hover, .vbo-modal
 .vbo-context-menu-btn-group .btn.btn-primary:last-child i, .vbo-context-menu-btn-group .btn.btn-success:last-child i {
 	margin-right: 0;
 }
+/* btn transparent */
 .vbo-btn-transparent {
-	background: transparent;
-	border: 0;
+	background: transparent !important;
+	border: 0 !important;
 }
 
 .select2-container--open .select2-dropdown--below {
@@ -589,6 +672,13 @@ body #content .btn-warning:hover, body #wpcontent .btn-warning:hover, .vbo-modal
 	width: 30px;
 	height: 20px;
 	border-radius: 2px;
+}
+/* To set Select2 circle and smaller images. See as example the Cron Job WhatsApp page. */
+.vbo-sel2-element-img[data-choice="vikcronparamsma_config"] img, .vbo-sel2-element-img[data-choice="send_ma_tplma_identifier"] img {
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	object-fit: cover;
 }
 /*** Chrome Hack for the select ***/
 .selector:not(*:root), select {
@@ -911,7 +1001,7 @@ div.vborderpartot {
 	border: 1px solid var(--vbo-green-color);
 	background-color: var(--vbo-green-color);
 	color: #fff;		
-	border-radius: 3px;
+	border-radius: var(--vbo-field-radius);
 	margin-bottom: 0;
 	font-size: inherit;
 }
@@ -926,7 +1016,7 @@ body.admin #content .container-main .btn.btn-success:hover, body.admin #content 
 .container-main .btn.btn-warning {
 	border: 1px solid var(--vbo-orange-color);
 	background-color: var(--vbo-orange-color);		
-	border-radius: 3px;
+	border-radius: var(--vbo-field-radius);
 	padding: 10px 14px;
 	margin-bottom: 0;
 }
@@ -941,7 +1031,7 @@ body.admin #content .container-main .btn.btn-success:hover, body.admin #content 
 	border: 1px solid var(--vbo-red-color);
 	background-color: var(--vbo-red-color);		
 	color: var(--vbo-contrast-text-color);
-	border-radius: 3px;
+	border-radius: var(--vbo-field-radius);
 	margin-bottom: 0;
 	font-size: inherit;
 }
@@ -1188,7 +1278,7 @@ td.roomname.subroomname {
 	color:var(--vbo-green-color);
 	background:var(--vbo-input-style-nested-deactive);
 }
-.vbo-admin-container .vbo-param-container .vbo-param-label .maxninety {
+.vbo-admin-container .vbo.vcm-params-block .vcm-param-container  .vbo-param-label .maxninety {
 	border-radius: 4px;
 }
 .vbo-admin-widgets-section .vbo-admin-widgets-container-small .vbo-admin-container .vbo-param-container {
@@ -2407,7 +2497,7 @@ p.vbroomparamp span {
 		rgba(255, 255, 255, 0.0) 100%
 	);
 }
-@keyframes shine{
+@keyframes shine {
 	10% {
 	  opacity: 1;
 	  top: -60%;
@@ -2422,7 +2512,7 @@ p.vbroomparamp span {
 	  left: -20%;
 	  transition-property: left, top, opacity;
 	}
-  }
+}
 .vbo-menu-right {
 	flex: 1;
 	background: #22485d;
@@ -2512,8 +2602,9 @@ p.vbroomparamp span {
 	}
 	.vbo-submenu-wrap-multi .vbo-submenu-helper-ul {
 		padding-left: 22px;
+		flex: 1;
 	}
-	.vbo-menu-ul .vbo-menu-parent-li:last-child .vbo-submenu-wrap-multi {
+	.vbo-menu-ul .vbo-menu-parent-li:nth-child(n+3):last-child .vbo-submenu-wrap-multi {
 		right: 0;
 	}
 }
@@ -2592,7 +2683,7 @@ p.vbroomparamp span {
 .vbo-menu-parent-li > span > i {
 	margin-left: -2px;
 	margin-right: 0;
-	font-size: 17px;
+	font-size: 16px;
 }
 .vbo-menu-parent-li > span > a {
 	margin-left: 7px;
@@ -2607,7 +2698,7 @@ p.vbroomparamp span {
 }
 .vbo-submenu-wrap li > div a i {
 	margin-top: 2px;
-	font-size: 16px;
+	font-size: 14px;
 	color: var(--vbo-config-titles-color-light);
 	min-width: 22px;
 }
@@ -2659,11 +2750,11 @@ p.vbroomparamp span {
 }
 .vbo-submenu-helper-ul > li > .vmenulink {
 	display: flex;
+	justify-content: space-between;
 	padding: 8px 0;
 }
 .vbo-submenu-helper-ul > li div a {
 	padding: 0;
-	margin-right: 13px;
 }
 .vbo-submenu-helper-ul > li > .vmenulink .vbo-submenu-item-helper-setpin {
 	align-self: center;
@@ -2952,7 +3043,7 @@ form[name="invoicesform"] .btn-toolbar {
 	padding: 4px 5px;
 	display: inherit;
 }
-.vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear {
+.select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear, .vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear {
 	display: inline-block;
 	margin-left: 3px;
 	margin-right: 0;
@@ -2964,6 +3055,14 @@ form[name="invoicesform"] .btn-toolbar {
 	border-radius: 50%;
 	color: var(--vbo-config-titles-color-light);
 	float: right;
+}
+.vbo-multiselect-inline-elems-wrap .select2-selection--multiple .select2-selection__rendered .select2-selection__clear {
+	position: absolute;
+	top: 50%;
+	transform: translate(0, -50%);
+	right: 4px;
+	margin-top: 0;
+	font-size: 14px;
 }
 .vbo-btn-toolbar .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear:hover, .vbo-pmsperm-entry-val .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear:hover, .vbo-reports-filters-wrap .select2-container--default .select2-selection--multiple .select2-selection__rendered .select2-selection__clear:hover {
 	background: var(--vbo-config-border-color);
@@ -3120,6 +3219,7 @@ form[name="invoicesform"] .btn-toolbar {
 }
 .vbo-bookingslist-table thead th a > i, .vbo-list-table thead th a > i {
 	margin-left: 5px;
+	font-size: 10px;
 }
 .vbo-bookingslist-table thead th .vbo-bookingslist-activesort, 
 .vbo-bookingslist-table thead th a:hover,
@@ -3223,14 +3323,14 @@ span.vbo-label-small, .vbo-label-small {
 	margin-left: 4px;
 }
 .vbo-admin-tipsicon i {
-	font-size: 20px;
+	font-size: 18px;
 	color: var(--vbo-config-titles-color-light);
 }
 .vbo-admin-notes-icn {
 	cursor: pointer;
 }
 .vbo-admin-invoiceicon i {
-	font-size: 20px;
+	font-size: 18px;
 	color: var(--vbo-config-titles-color-light);
 }
 .vbo-timeline-content {
@@ -5804,14 +5904,14 @@ label.vbo-timeline-label {
 	font-size: 60px;
 	opacity: .7;
 }
-.btn.btn-small {
+.btn.btn-small, .container-main .btn.btn-small {
     padding: 2px 10px;
     font-size: 12px;
     -webkit-border-radius: 3px;
     -moz-border-radius: 3px;
     border-radius: 3px;
 }
-.btn.btn-rounded {
+.btn.btn-rounded, .container-main .btn.btn-rounded {
 	border-radius: 20px;
 	padding: 6px 14px;
 }
@@ -5910,8 +6010,9 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 .btn.vbo-context-menu-btn .vbo-context-menu-ico i {
 	margin-right: 0;
 	position: relative;
-	top: -1px;
+	top: -3px;
 	vertical-align: initial;
+	font-size: 10px;
 }
 .btn-primary.vbo-context-menu-btn:hover .vbo-context-menu-ico {
 	background: var(--vbo-base-color-hover);
@@ -5995,7 +6096,7 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	font-size: 12px;
 	min-width: 16px;
 }
-.vik-context-menu.vbo-dropdown-cxmenu li a:hover .button-icon {
+.vik-context-menu.vbo-dropdown-cxmenu li a:not(.disabled):hover .button-icon {
 	color: var(--vbo-contrast-text-color);
 }
 .btn.vbo-context-menu-btn-raw, .btn.vbo-context-menu-btn-raw:hover, .btn.vbo-context-menu-btn-raw:focus {
@@ -6056,6 +6157,7 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	width: 40px;
 	margin-right: 15px;
 	position: relative;
+	text-align: center;
 }
 .vbo-w-guestmessages-message-aipriority {
 	position: absolute;
@@ -6094,13 +6196,38 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	background: var(--vbo-config-child-bg-color);
 	font-size: 16px;
 }
-.vbo-dashboard-guests-latest .vbo-dashboard-guest-activity-avatar img {
+.vbo-dashboard-guests-latest .vbo-dashboard-guest-activity-avatar img:not(.vbo-avatar-subprofile) {
 	max-width: 100%;
 	border-radius: 50%;
 	object-fit: cover;
 	width: 40px;
 	height: 40px;
-} 
+}
+.vbo-dashboard-guests-latest .vbo-dashboard-guest-activity-avatar .vbo-avatar-subprofile-txt {
+	display: inline-flex;
+	justify-content: center;
+	align-items: center;
+	max-width: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+	width: 22px;
+	height: 22px;
+	background: var(--vbo-input-style-deactive);
+	border: 2px solid var(--vbo-input-style-nested-deactive);
+	position: relative;
+	top: -10px;
+	font-size: 10px;
+}
+.vbo-dashboard-guests-latest .vbo-dashboard-guest-activity-avatar img.vbo-avatar-subprofile {
+	max-width: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+	width: 22px;
+	height: 22px;
+	border: 2px solid var(--vbo-body-bg-color);
+	position: relative;
+	top: -10px;
+}
 .vbo-dashboard-guests-latest .vbo-dashboard-guest-activity-content {
 	flex: 1;
 }
@@ -6284,8 +6411,48 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	padding: 10px 4px 8px 10px;
 }
 .vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head .vbo-modal-wguestmessages-chat-guestavatar {
-	margin-right: 10px;
 	display: inline-block;
+	text-align: center;
+	margin-right: 24px;
+}
+.vbo-modal-wguestmessages-chat-guestavatar {
+	position: relative;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head .vbo-modal-wguestmessages-chat-guestavatar img:not(.vbo-avatar-subprofile) {
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+	border-radius: 50%;
+	display: block;
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head .vbo-modal-wguestmessages-chat-guestavatar img.vbo-avatar-subprofile {
+	max-width: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+	width: 22px;
+	height: 22px;
+	border: 2px solid var(--vbo-body-bg-color);
+	position: absolute;
+	top: 50%;
+	right: -17px;
+	transform: translate(0, -50%);
+}
+.vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head .vbo-modal-wguestmessages-chat-guestavatar .vbo-avatar-subprofile-txt {
+	display: inline-flex;
+	justify-content: center;
+	align-items: center;
+	max-width: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+	width: 22px;
+	height: 22px;
+	background: var(--vbo-input-style-deactive);
+	border: 2px solid var(--vbo-input-style-nested-deactive);
+	position: absolute;
+	top: 50%;
+	right: -17px;
+	transform: translate(0, -50%);
+	font-size: 10px;
 }
 .vbo-w-guestmessages-inboxstyle .vbo-w-guestmessages-inboxstyle-chat-head .vbo-modal-wguestmessages-chat-guestavatar img {
 	width: 40px;
@@ -6396,14 +6563,50 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 	font-weight: bold;
 }
 .vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head .vbo-modal-wguestmessages-chat-guestavatar {
-	margin-right: 10px;
+	margin-right: 24px;
 }
 .vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head .vbo-modal-wguestmessages-chat-guestavatar img {
 	width: 40px;
 	height: 40px;
 	object-fit: cover;
 	border-radius: 50%;
-} 
+}
+.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-wguestmessages-chat-guestavatar img:not(.vbo-avatar-subprofile) {
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+	border-radius: 50%;
+	display: block;
+}
+.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-wguestmessages-chat-guestavatar img.vbo-avatar-subprofile {
+	max-width: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+	width: 22px;
+	height: 22px;
+	border: 2px solid var(--vbo-body-bg-color);
+	position: absolute;
+	top: 50%;
+	right: -17px;
+	transform: translate(0, -50%);
+}
+.vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-wguestmessages-chat-guestavatar .vbo-avatar-subprofile-txt {
+	display: inline-flex;
+	justify-content: center;
+	align-items: center;
+	max-width: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+	width: 22px;
+	height: 22px;
+	background: var(--vbo-input-style-deactive);
+	border: 2px solid var(--vbo-input-style-nested-deactive);
+	position: absolute;
+	top: 50%;
+	right: -17px;
+	transform: translate(0, -50%);
+	font-size: 10px;
+}
 .vbo-modal-overlay-content-wguestmessages-chat .vbo-modal-overlay-content-head .vbo-modal-overlay-cmd {
 	margin-left: auto;
 	align-self: center;
@@ -7207,6 +7410,7 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 .vbo-admin-widget-wrapper h4 i {
 	margin-right: 8px;
 	font-size: 17px;
+	color: var(--vbo-config-titles-color-light);
 }
 .vbo-dash-chart-title .vbo-dash-chart-nav i {
 	margin-right: 0;
@@ -7820,6 +8024,13 @@ textarea.vbo-textarea-copyable {
 .vbo-params-block .vbo-param-container {
 	padding: 10px 0px;
 }
+.vbo-params-block .vbo-param-container-legend {
+	border-top: 0;
+}
+.vbo-params-block .vbo-param-container-legend .vbo-param-label {
+	font-weight: bold;
+	margin-bottom: 0;
+}
 .vbo-admin-container .vbo-params-block-nested .vbo-param-nested-nested:first-of-type, .vbo-params-block > .vbo-param-container:first-of-type {
 	border-top: 0;
 }
@@ -7830,6 +8041,35 @@ textarea.vbo-textarea-copyable {
 .vbo-admin-container .vbo-params-block-nested .vbo-param-nested-nested {
 	background: var(--vbo-config-bg-color);
 	border-top: 1px solid var(--vbo-main-bg-color);	
+}
+.vbo-param-container .vbo-param-setting .vbo-param-setting-radio {
+	display: flex;
+	gap: 10px;
+}
+.vbo-param-container .vbo-param-setting .vbo-param-setting-radio > div {
+	flex: 1;
+	padding: 10px;
+	border-radius: var(--vbo-field-radius);
+	border: 1px solid var(--vbo-config-border-color);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.vbo-param-container .vbo-param-setting .vbo-param-setting-radio > div[data-checked="1"] {
+	border-color: var(--vbo-info-border);
+	background: var(--vbo-light-blue);
+}
+.vbo-param-container .vbo-param-setting .vbo-param-setting-radio input {
+	margin: 0;
+}
+.vbo-param-container .vbo-param-setting .vbo-param-setting-radio label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+.vbo-param-container .vbo-param-setting .vbo-param-setting-radio label i {
+	color: var(--vbo-config-text-color-light);
 }
 .vbo-cal-splitstay-details {
 	display: inline-block;
@@ -12725,7 +12965,7 @@ i.vbo-icn-img {
 .ui-datepicker .ui-datepicker-prev, .ui-datepicker .ui-datepicker-next {
 	width: 34px !important;
 	height: 34px !important;
-	border: 1.5px solid var(--vbo-input-style);
+	border: 1.5px solid var(--vbo-input-style) !important;
 	border-radius: 50%;
 }
 .ui-datepicker .ui-datepicker-prev, .ui-datepicker .ui-datepicker-next,
@@ -12752,7 +12992,7 @@ i.vbo-icn-img {
 	text-align: center;
 }
 .ui-datepicker .ui-datepicker-prev span:after, .ui-datepicker .ui-datepicker-next span:after {
-	font-family: "Font Awesome 5 Free", FontAwesomes !important;
+	font-family: "Font Awesome 7 Free", FontAwesome !important;
 	font-weight: 900;
 	top: 0;
 	position: absolute;
@@ -13064,6 +13304,28 @@ i.vbo-icn-img {
 	font-style: italic;
 	color: var(--vbo-config-title-color);
 }
+.vbo-admin-container .vbo-param-container .vbo-param-setting:has(.vbo-param-setting-comment[data-element="message-template-info"]) {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+}
+.vbo-admin-container .vbo-param-container select[data-element="message-template"] {
+	margin-right: 10px;
+	margin-bottom: 2px !important;
+}
+.vbo-admin-container .vbo-param-container .vbo-param-setting-comment[data-element="message-template-info"] {
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-style: normal;
+	margin-top: 2px;
+}
+.vbo-admin-container .vbo-param-container .vbo-param-setting-comment[data-element="message-template-info"] img {
+	width: 24px;
+	height: 24px;
+	object-fit: cover;
+}
 .vbo-params-wrap .vbo-params-legend-comment {
 	display: block;
 	font-size: .9em;
@@ -13274,18 +13536,19 @@ select.vbo-select-small {
 	border-right: 1px solid var(--vbo-config-border-color);
 }
 .iti.iti--allow-dropdown input[type="tel"] {
-	border: 0;
-	border-radius: 0;
+	border: 1px solid transparent;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
 	padding: 5px 10px;
 	margin-bottom: 0;
 	height: auto;
 	flex: 1;
 }
 .iti.iti--allow-dropdown input[type="tel"]:focus, .iti.iti--allow-dropdown input[type="tel"]:hover {
-	background: var(--vbo-config-child-bg-color);
+	border: 1px solid var(--vbo-base-color);
 }
 .vbo-uploaded-files i.fa-file {
-	font-size: 68px !important;
+	font-size: 60px !important;
 }
 .vbo-uploaded-files .file-elem a .file-extension {
 	font-size: 14px !important;
@@ -13590,6 +13853,10 @@ select.vbo-select-small {
   	border: 1px solid var(--vbo-config-titles-color-light);
   	font-size: 12px;
   	text-align: center;
+}
+.select2-container--open.select2-container--default .select2-results__option--highlighted[aria-selected] .vbo-sel2-search-elem-avatar i, .select2-container--open.select2-container--default .select2-results__option--highlighted[aria-selected] .vbo-sel2-selected-search-elem i {
+	color: var(--vbo-contrast-text-color);
+	border-color: var(--vbo-contrast-text-color);
 }
 .vbo-search-elems-wrap .select2-container--default .select2-selection--single .select2-selection__rendered {
 	min-height: 42px;
@@ -14905,19 +15172,19 @@ table.adminform div.input-append {
 	display: inline;
 }
 .icon-vikbooking:before {
-	font-family: "Font Awesome 5 Free", FontAwesome !important;
+	font-family: "Font Awesome 7 Free", FontAwesome !important;
 	font-weight: 900;
 	content: "\f236";
 	background: none !important;
 }
 .icon-vikbookingconfig:before {
-	font-family: "Font Awesome 5 Free", FontAwesome !important;
+	font-family: "Font Awesome 7 Free", FontAwesome !important;
 	font-weight: 900;
 	content: "\f236";
 	background: none !important;
 }
 .icon-vikbookingstats:before {
-	font-family: "Font Awesome 5 Free", FontAwesome !important;
+	font-family: "Font Awesome 7 Free", FontAwesome !important;
 	font-weight: 900;
 	content: "\f236";
 	background: none !important;
@@ -15025,7 +15292,7 @@ table.adminform div.input-append {
 }
 .vbo-report-filter-val:has(.vbo-report-datepicker):after {
 	content: "\f073";
-	font-family: "Font Awesome 5 Free", FontAwesome !important;
+	font-family: "Font Awesome 7 Free", FontAwesome !important;
 	font-weight: 900;
 	position: absolute;
 	right: 10px;
@@ -15269,7 +15536,7 @@ table.adminform div.input-append {
 }
 .vbo-reports-output table thead th i {
 	margin-left: 3px;
-	font-size: .9em;
+	font-size: 10px;
 }
 .vbo-reports-output table tbody td:first-child {
 	width: 150px;
@@ -15675,6 +15942,7 @@ select[multiple][data-will-mutate="1"] {
 }
 .vbo-trackings-table-head-inner > div i {
 	margin-left: 5px;
+	font-size: 10px;
 }
 .vbo-trackings-table-head-inner > div * {
 	text-transform: uppercase;
@@ -16988,8 +17256,123 @@ select[multiple][data-will-mutate="1"] {
 .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-overlay-content-tooltip, .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-prompt {
 	width: 400px;
 	max-width: 70%;
-	height: 270px;
+	height: 180px;
 }
+/*
+ * Modal Choice
+ */
+.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-choice {
+	width: 400px;
+	max-width: 70%;
+	height: 300px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+
+	.vbo-modal-overlay-content-head {
+		display: flex;
+		justify-content: center;
+		padding: 0 20px;
+		background-color: transparent;
+
+		.vbo-modal-overlay-content-head-title {
+			font-size: 18px;
+			font-weight: 600;
+		}
+
+		.vbo-modal-overlay-cmds {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			padding: 1px;
+
+			.vbo-modal-overlay-cmd {
+				font-size: 16px;
+				color: var(--vbo-config-titles-color-light);
+				padding: 0;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				width: 20px;
+				height: 20px;
+				border-radius: 50%;
+				float: none;
+				margin-top: 0;
+
+				&:hover {
+					background: var(--vbo-basic-btn);
+				}
+			}
+		}
+	}
+
+	.vbo-modal-overlay-content-body {
+		font-size: 14px;
+		color: var(--vbo-config-titles-color-light);
+		text-align: center;
+		padding: 4px 20px 24px;
+		border-bottom: 1px solid var(--vbo-config-border-color);
+		height: auto;
+	}
+}
+
+/* Modal Footer Stacked:  The modal is configured to display the actions buttons similar to the common "login" choice in the web. See an example on the "Send" button in the Quote List widget. */
+.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-footer-stacked {
+	.vbo-modal-overlay-content-footer {
+		padding: 0 24px 0;
+		background-color: transparent;
+		border-top: 0;
+		position: initial;
+		width: initial;
+
+		.vbo-modal-overlay-content-footer-center {
+			& > div {
+				display: flex;
+				align-items: center;
+				flex-direction: column;
+				gap: 10px;
+
+				.btn {
+					width: 100%;
+					background: transparent;
+					display: inline-flex;
+					align-items: center;
+					gap: 12px;
+					font-size: 16px;
+					font-weight: 600;
+					padding: 16px;
+					border-radius: 12px;
+
+					&:hover {
+						border-color: var(--vbo-base-color);
+					}
+
+					i {
+						width: 40px;
+						height: 40px;
+						display: inline-flex;
+						align-items: center;
+						justify-content: center;
+						border-radius: 8px;
+						font-size: 18px;
+
+						&.vbo-grey-icon-btn {
+							background: var(--vbo-basic-btn);
+							color: var(--vbo-body-text-color);
+						}
+
+						&.vbo-green-icon-btn {
+							background: var(--vbo-tag-green-bg);
+							color: var(--vbo-green-color);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-fullscreen {
 	width: 98%;
 	height: 96%;
@@ -20345,6 +20728,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 .vbo-admin-container > #vbo-conditrules-wrap {
 	flex-grow: 0;
 }
+.vbo-room-level-min_adv-notice, .vbo-room-level-max_adv-notice {
+	margin-top: 6px;
+}
 .btn.vbo-condtext-specialtag-btn {
 	padding: 8px 14px;
 	background-color: #e2eaee;
@@ -20860,6 +21246,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
   	cursor: pointer;
 	color: var(--vbo-config-titles-color-light);
 	opacity: .8;
+	font-size: 10px;
 	z-index: 1;
 }
 .vbo-sidepanel-colorscheme .vbo-sidepanel-colorscheme-current:hover {
@@ -20939,9 +21326,6 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	padding: 12px 20px;
 	cursor: pointer;
 	display: flex;
-}
-.vbo-admin-widget-wrapper h4 i {
-	color: var(--vbo-config-titles-color-light);
 }
 .vbo-widget-bulkmess-steps .vbo-widget-bulkmess-step.vbo-widget-bulkmess-step-hidden:hover {
 	border-color: var(--vbo-base-color);
@@ -21408,9 +21792,812 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	margin-top: 10px;
 }
 
+/* Quote */
+.vbo-quote-wrapper {
+	max-width: 64rem;
+	margin: 0 auto;	
+}
+.vbo-quote-section:not(.vbo-quote-section-options) {
+	padding: 18px;
+	background: var(--vbo-config-bg-color);
+	border: 1px solid var(--vbo-config-border-color);
+	border-radius: 10px;
+	margin-bottom: 20px;
+}
+.vbo-quote-section-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 20px;
+}
+.vbo-quote-section-head-sb {
+	justify-content: space-between;
+}
+.vbo-quote-section-head-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.vbo-quote-section-head .vbo-quote-section-name {
+	font-size: 20px;
+	font-weight: 500;
+}
+.vbo-quote-customer-fields {
+	margin-top: 20px;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+.vbo-quote-wrapper label {
+	display: block;
+	font-weight: 500;
+	font-size: 14px;
+	margin-bottom: 8px;
+}
+.vbo-quote-wrapper input {
+	width: 100% !important;
+}
+.vbo-quote-section-head-wrap {
+	display: flex;
+	align-items: start;
+	justify-content: space-between;
+	gap: 10px;
+
+	.vbo-quote-section-floating {
+		margin-bottom: 16px;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+
+		label {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			margin-bottom: 0;
+
+			i {
+				color: var(--vbo-config-text-color-light);
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 4px;
+				font-size: 12px;
+			}
+		}
+		select {
+			max-width: 220px;
+		}
+	}
+}
+.vbo-quote-new-option-wrap {
+	background: var(--vbo-config-bg-color);
+	border: 1px solid var(--vbo-config-border-color);
+	border-radius: 10px;
+	margin-bottom: 20px;
+	padding-bottom: 18px;
+	overflow: hidden;
+}
+.vbo-quote-new-option-wrap > div {
+	padding-left: 18px;
+	padding-right: 18px;
+}
+.vbo-quote-option-title {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 18px;
+	font-weight: 500;
+	padding-top: 16px;
+	padding-bottom: 16px;
+	background: var(--vbo-light-blue);
+	margin-bottom: 24px;
+}
+.vbo-quote-option-title h4 {
+	margin: 0;
+}
+.vbo-quote-option-title .vbo-quote-option-delete {
+	margin-left: auto;
+}
+.vbo-quote-option-summary {
+	font-size: 12px;
+	background: var(--vbo-info-bg);
+	border-radius: 16px;
+	padding: 4px 8px;
+	color: var(--vbo-tag-blue-txt);
+	display: inline-flex;
+	align-items: center;
+	gap: 16px;
+}
+.vbo-quote-option-summary > span i {
+	margin-right: 2px;
+}
+.vbo-quote-option-remove-btn, .vbo-quote-option-room-remove-btn {
+	height: 28px;
+}
+.vbo-quote-option-remove-btn i, .vbo-quote-option-room-remove-btn i {
+	color: var(--vbo-red-color);
+}
+.vbo-quote-option-remove-btn:hover, .vbo-quote-option-room-remove-btn:hover {
+	background: var(--vbo-info-bg) !important;
+}
+.vbo-quote-section-options {
+	margin-top: 24px;
+}
+.vbo-quote-section-options .vbo-quote-section-head {
+	margin-bottom: 10px;
+}
+.vbo-quote-option-dates {
+	margin-top: 16px;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+.vbo-quote-option-dates .input-append {
+	width: calc(100% - 33px);
+}
+.vbo-quote-option-new-room-wrap {
+	background: var(--vbo-config-child-bg-color);
+	border: 1px solid var(--vbo-config-border-color);
+	padding: 18px;
+	border-radius: 10px;
+	margin-bottom: 18px;
+}
+.vbo-quote-option-new-room-wrap:last-child {
+	margin-bottom: 0;
+}
+.vbo-quote-option-room-title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.vbo-quote-option-room-title h4 {
+	margin: 0 0 16px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	font-weight: 500;
+}
+.vbo-quote-option-room-title h4 i {
+	color: var(--vbo-base-color);
+}
+.vbo-quote-option-availability {
+	padding: 0px 0 12px;
+	font-weight: 500;
+}
+.vbo-quote-option-availability > span {
+	position: relative;
+	padding-left: 15px;
+}
+.vbo-quote-option-availability > span:after {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	transform: translate(0, -50%);
+	content: "";
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	animation: 2s cubic-bezier(0.4, 0, 0.6, 1) 0s infinite normal none running vikpulse;
+}
+@keyframes vikpulse {
+	50% {
+    	opacity: 0.5;
+	}
+}
+.vbo-quote-option-availability .vbo-message-error {
+	color: var(--vbo-red-color-hover);
+}
+.vbo-quote-option-availability .vbo-message-error:after {
+	background: var(--vbo-red-color-hover);
+}
+.vbo-quote-option-availability .vbo-message-success {
+	color: var(--vbo-green-color-hover);
+}
+.vbo-quote-option-availability .vbo-message-success:after {
+	background: var(--vbo-green-color-hover);
+}
+.vbo-quote-option-room-values {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	gap: 16px;
+}
+.vbo-quote-option-room-values .vbo-quote-option-room-value:nth-child(-n+3) {
+	grid-column: span 2;
+}
+.vbo-quote-option-room-values .vbo-quote-option-room-value:nth-child(n+4) {
+	grid-column: span 3;
+}
+.vbo-quote-option-room-values input, .vbo-quote-option-room-values input[type="number"], .vbo-quote-option-room-values select, .vbo-quote-payment-block select {
+	width: 100% !important;
+	max-width: initial !important;
+}
+.vbo-quote-option-room-values .vbo-quote-option-room-value[data-type="customrate"] {
+	display: flex;
+	gap: 8px;
+}
+.vbo-quote-option-room-values .vbo-quote-option-room-value[data-type="customrate"] .vbo-quote-customrate-value {
+	flex: 1;
+}
+.vbo-quote-option-rooms-add .btn {
+	margin-top: 16px;
+	font-size: 16px;
+	font-weight: 500;	
+	border: 1px dashed var(--vbo-config-border-color);
+	width: 100%;
+}
+.vbo-quote-option-rooms-add .btn:hover {
+	background: var(--vbo-light-blue);
+	border-color: var(--vbo-base-color);
+}
+.vbo-quote-option-rooms-add .btn:focus {
+	background: var(--vbo-config-bg-color);
+}
+.vbo-quote-option-rooms .vbo-editbooking-room-services {
+	margin-top: 26px;
+}
+.vbo-quote-option-rooms .vbo-editbooking-room-services > h4, .vbo-quote-option-room-extras-inner > h4 {
+	margin: 0 0 10px;
+}
+.vbo-quote-option-room-extras-inner .vbo-quote-option-room-extra-add-btn {
+	background: var(--vbo-config-bg-color);
+	padding: 6px 12px;
+}
+.vbo-quote-option-room-extras-inner .vbo-quote-option-room-extra-add-btn:hover {
+	background: var(--vbo-config-bg-color);
+	border: 1px solid var(--vbo-base-color);
+}
+.vbo-quote-option-room-extras-inner .vbo-quote-option-room-extra-add-btn:focus, .vbo-quote-option-room-extras-inner .vbo-quote-option-room-extra-add-btn:active {
+	background-color: var(--vbo-config-child-bg-color);
+}
+.vbo-quote-option-rooms .vbo-editbooking-room-services-wrap {
+	gap: 8px;
+}
+.vbo-quote-option-rooms .vbo-editbooking-room-service {
+	box-shadow: none;
+	margin: 0;
+	border-radius: var(--vbo-field-radius);
+	background: var(--vbo-config-bg-color);
+}
+.vbo-quote-option-rooms .vbo-editbooking-room-service label {
+	font-weight: 500;
+	color: var(--vbo-body-text-color);
+}
+.vbo-quote-option-rooms .vbo-editbooking-room-service .vbo-editbooking-room-service-price {
+	color: var(--vbo-config-titles-color-light);
+	font-size: 14px;
+	font-weight: normal;
+}
+.vbo-quote-option-rooms .vbo-editbooking-room-service[data-child-age="1"] {
+	display: grid;
+	grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+.vbo-quote-option-rooms .vbo-editbooking-room-service[data-child-age="1"] .vbo-editbooking-room-service-check {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 10px;
+}
+.vbo-quote-option-rooms .vbo-editbooking-room-service[data-child-age="1"] .vbo-editbooking-room-service-check select {
+	max-width: 100%;
+	width: 100% !important;
+}
+.vbo-quote-option-room-extras {
+	margin-top: 26px;
+}
+.vbo-quote-option-room-extras-list {
+	margin-top: 10px;
+}
+.vbo-quote-option-room-extras-list .vbo-quote-option-room-new-extra-wrap:not(:last-child) {
+	margin-bottom: 8px;
+}
+.vbo-quote-option-room-extras-list .vbo-editbooking-room-extracost {
+	margin: 0;
+	display: flex;
+	gap: 8px;
+}
+.vbo-quote-option-room-extras-list .vbo-editbooking-room-extracost > div {
+	margin: 0;
+}
+.vbo-quote-option-room-extras-list .vbo-ebusy-extracosts-cellname {
+	flex: 1;
+}
+.vbo-quote-option-room-extras-list .vbo-ebusy-extracosts-cellrm {
+	padding-left: 5px;
+	align-self: center;
+}
+.vbo-quote-mail-subject, .vbo-quote-mail-message, .vbo-quote-notes {
+	margin-bottom: 16px;
+}
+.vbo-quote-mail-message textarea {
+	min-height: 200px;
+	margin-top: 8px;
+}
+.vbo-quote-notes {
+	textarea {
+		min-height: 80px;
+		width: 100%;
+	}
+	.vbo-quote-label-help {
+		font-size: smaller;
+		font-style: italic;
+	}
+}
+.vbo-quote-mail-preferred {
+	margin-top: 16px;
+	
+	.vik-iostoggle-wrap {
+		margin-right: 4px;
+	}
+	.vbo-quote-label-help {
+		display: inline-block;
+		font-size: smaller;
+		font-style: italic;
+	}
+
+}
+.vbo-quote-option-room-extras-list .btn.vbo-quote-option-extra-remove-btn {
+	padding: 0;
+}
+.vbo-quote-option-room-extras-list .btn.vbo-quote-option-extra-remove-btn:hover {
+	color: var(--vbo-red-color);
+}
+.vbo-quote-option-total h4 {
+	font-weight: normal;
+	font-size: 14px;
+	border-top: 1px solid var(--vbo-config-border-color);
+	padding-top: 12px;
+	margin-bottom: 10px;
+	margin-top: 18px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	justify-content: end;
+}
+.vbo-quote-option-total h4 i {
+	color: var(--vbo-base-color);
+}
+.vbo-quote-option-total h4 .vbo-quote-option-total-cost {
+	font-size: 16px;
+	font-weight: 500;	
+}
+.vbo-quote-section-footer {
+	margin-bottom: 20px;
+}
+.vbo-quote-section-footer .vbo-quote-option-add-btn {
+	color: var(--vbo-base-color);
+	border: 1px dashed var(--vbo-base-color);
+	background: transparent;
+	width: 100%;
+	font-weight: 500;
+	font-size: 14px;
+	padding: 10px 16px;
+}
+.vbo-quote-section-footer .vbo-quote-option-add-btn:hover {
+	background: var(--vbo-config-bg-color);
+	border: 1px dashed var(--vbo-base-color-hover);
+}
+.vbo-quote-section-footer .vbo-quote-option-add-btn:focus, .vbo-quote-section-footer .vbo-quote-option-add-btn:active {
+	background: var(--vbo-config-bg-color);
+	border: 1px dashed var(--vbo-base-color);
+}
+.vbo-quote-section-validity .vbo-quote-section-body {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 16px;
+}
+.vbo-quote-section-current .vbo-quote-section-body {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+.vbo-quote-section-buttons {
+	display: flex;
+	gap: 10px;
+	justify-content: end;
+} 
+.vbo-quote-section-send {
+	display: flex;
+	justify-content: end;
+	align-items: center;
+	gap: 10px;
+}
+.vbo-quote-section-send .vbo-quote-send-later {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+.vbo-quote-section-send .vbo-quote-send-later label {
+	margin-bottom: 0;
+}
+.vbo-quote-section-send .vbo-quote-send-later .vik-iostoggle-wrap {
+	margin: 0;
+	padding: 0;
+}
+.vbo-quote-edit-uuid .label {
+	white-space: break-spaces;
+}
+.vbo-quote-customer-choose .vbo-search-elems-wrap .select2-container--default .select2-selection .select2-selection__rendered .vbo-sel2-selected-search-elem {
+	background-color: transparent;
+}
+.vbo-quote-option-edit-booking {
+	margin-top: 20px;
+}
+/* End - Quote */
+
+/* Quote widget */
+.vbo-w-quote-wrapper {
+	margin-top: 20px;
+}
+.vbo-w-quote-items-list {
+	max-height: calc(100vh - 390px);
+	overflow: hidden;
+	overflow-y: scroll;
+}
+.vbo-w-quote-item {
+	border: 1px solid var(--vbo-config-border-color);
+	border-radius: 10px;
+	overflow: hidden;
+	background: var(--vbo-input-style-deactive);
+	margin-top: 14px;
+
+	&:first-child {
+		margin-top: 0;
+	}
+}
+.vbo-w-quote-item .vbo-w-quote-item-head {
+	background: var(--vbo-config-bg-color);
+	border-bottom: 1px solid var(--vbo-config-border-color);
+	padding: 10px 12px;
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+}
+.vbo-w-quote-item .vbo-w-quote-item-head h4 {
+	font-size: 14px;
+	font-weight: 600;
+	margin: 0;
+	display: inline-flex;
+	gap: 6px;
+	align-items: center;
+}
+.vbo-w-quote-item .vbo-w-quote-item-head h4 i {
+	font-size: 10px;
+}
+.vbo-w-quote-item .vbo-w-quote-creation-dt {
+	font-size: 12px;
+	color: var(--vbo-config-titles-color-light);
+	margin-bottom: 4px;
+}
+.vbo-w-quote-item .vbo-w-quote-customer {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	font-size: 12px;
+}
+.vbo-w-quote-item .vbo-w-quote-customer span {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+}
+.vbo-w-quote-item .vbo-w-quote-customer span i {
+	color: var(--vbo-config-titles-color-light);
+	font-size: 10px;
+}
+.vbo-w-quote-item .vbo-w-quote-item-head-right {
+	display: flex;
+	align-items: center;
+	align-self: start;
+	gap: 8px;
+}
+.vbo-w-quote-item .vbo-w-quote-item-head-validity {
+	font-size: 12px;
+	color: var(--vbo-config-titles-color-light);
+}
+.vbo-w-quote-item .vbo-w-quote-item-head-right .vbo-w-quote-send-btn {
+	border-radius: 20px;
+  	padding: 2px 10px;
+}
+.vbo-w-quote-item-head-edit {
+	cursor: pointer;
+}
+.vbo-w-quote-item-head-edit:hover {
+	color: var(--vbo-base-color);
+}
+.vbo-w-quote-solution {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--vbo-config-border-color);
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 10px;
+}
+.vbo-w-quote-solution:last-child {
+	border-bottom: 0;
+}
+.vbo-w-quote-solution-title {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 4px;
+}
+.vbo-w-quote-solution-title h4 {
+	font-size: 14px;
+	font-weight: 600;
+	margin: 0;
+}
+.vbo-w-quote-solution-title .vbo-w-quote-solution-revid {
+	cursor: pointer;
+	color: var(--vbo-base-color);
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	font-size: 11px;
+}
+.vbo-w-quote-solution-title .vbo-w-quote-solution-bookdates {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	color: var(--vbo-config-titles-color-light);
+}
+.vbo-w-quote-solution-infoparty {
+	display: flex;
+	align-items: center;
+	row-gap: 2px;
+	column-gap: 12px;
+	font-size: 12px;
+	margin-bottom: 8px;
+}
+.vbo-w-quote-solution-infoparty span {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+}
+.vbo-w-quote-solution-infoparty i {
+	color: var(--vbo-config-titles-color-light);
+}
+.vbo-w-quote-solution-rooms {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+.vbo-w-quote-solution-rooms span {
+	font-size: 11px;
+	white-space: nowrap;
+}
+.vbo-w-quote-solution-priceinfo-wrap {
+	display: flex;
+	gap: 10px;
+}
+.vbo-w-quote-solution-priceinfo-wrap .vbo-w-quote-solution-price {
+	font-size: 14px;
+	font-weight: 700;
+	margin-bottom: 8px;
+	text-align: right;
+
+}
+.vbo-w-quote-solution-priceinfo-wrap .vbo-w-quote-solution-edit {
+	opacity: .6;
+}
+.vbo-w-quote-solution-priceinfo-wrap .vbo-w-quote-solution-edit:hover {
+	opacity: 1;
+	cursor: pointer;
+	color: var(--vbo-base-color);
+}
+.vbo-widget-quotes-loadmore-info p {
+	text-align: center;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+/* If in the side panel */
+.vbo-sidepanel-wrapper {
+	.vbo-w-quote-wrapper {
+		padding: 0 10px;
+	}
+
+	.vbo-w-quote-item .vbo-w-quote-item-head {
+		flex-wrap: wrap;
+
+		.vbo-w-quote-customer {
+			flex-wrap: wrap;
+		}
+
+		.vbo-w-quote-item-head-right {
+			flex-basis: 100%;
+
+			.vbo-w-quote-item-head-edit {
+				margin-left: auto;
+			}
+		}
+	}
+
+	.vbo-w-quote-solution {
+		flex-wrap: wrap;
+
+		.vbo-w-quote-solution-rooms {
+			flex-wrap: wrap;
+		}
+
+		.vbo-w-quote-solution-priceinfo-wrap {
+			justify-content: space-between;
+			flex-basis: 100%;
+
+			.vbo-w-quote-solution-price {
+				text-align: left;
+			}
+
+			.vbo-w-quote-solution-edit {
+				align-self: end;
+			}
+		}
+	}
+}
+
+/* If in the dashboard */
+.vbo-admin-widgets-wrap {
+	.vbo-w-quote-wrapper {
+		margin-top: 10px;
+		padding: 0 10px;
+	}
+}
+
+/* End - Quote widget */
+
+/* WhatsApp preview message */
+.vcm-wa-tpl-prevw-container-inner {
+	border: 1px solid var(--vbo-basic-btn);
+	box-shadow: 0px 2px 2px rgba(0, 0, 0, .02);
+	border-radius: 6px;
+	overflow: hidden;
+}
+.vcm-wa-tpl-prevw-title {
+	padding: 12px 14px;
+	font-size: 14px;
+	font-weight: bold;	
+}
+.vcm-macc-new-config .vcm-wa-tpl-prevw-container {
+	flex-basis: 30%;
+	max-width: 400px;
+}
+.vcm-wa-tpl-prevw-content {
+	background-color: #f1ebe3;
+	padding: 10px;
+	color: var(--vbo-body-text-color);
+	max-width: 400px;
+}
+.vcm-wa-tpl-prevw-content-inner {
+	padding-top: 6px;	
+	border-radius: 7.5px;
+	border-top-left-radius: 0;
+	background: #fff;
+	box-shadow: 0 1px .5px rgba(11, 20, 26, .13);
+	position: relative;
+}
+.vcm-wa-tpl-prevw-content-body {
+	padding-inline-start: 9px;
+	padding-inline-end: 7px;
+	padding-bottom: 5px;
+}
+.vcm-wa-tpl-prevw-content-inner:after {
+	content: '';
+	position: absolute;
+	top: 0;
+	width: 0;
+	height: 0;
+	border-style: solid;
+	left: -7px;
+	border-color: transparent #ffffff transparent transparent;
+	border-width: 0 9px 9px 0;
+}
+.vcm-wa-tpl-prevw-header {
+	font-size: 14px;
+	font-weight: bold;
+	margin-bottom: 5px;
+}
+.vcm-wa-tpl-prevw-header img {
+	max-width: 100%;
+	border-radius: 4.5px;
+	display: block;
+	margin: 0 auto;
+}
+.vcm-wa-tpl-prevw-header video {
+	max-width: 100%;
+	width: 100%;
+}
+.vcm-wa-tpl-prevw-header .location-preview {
+	position: relative;
+	border-radius: 4.5px;
+}
+.vcm-wa-tpl-prevw-header .location-preview img {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+.vcm-wa-tpl-prevw-header .location-preview .location-details {
+	width: 100%;
+	background: var(--vbo-config-child-bg-color);
+	padding: 8px 6px;
+	box-sizing: border-box;
+	border-bottom-left-radius: 4.5px;
+	border-bottom-right-radius: 4.5px;
+}
+.vcm-wa-tpl-prevw-header .location-preview .location-details small {
+	opacity: .7;
+	font-weight: normal;
+}
+.vcm-wa-tpl-prevw-header .vcm-wa-tpl-prevw-header-doc {
+	padding: 8px;
+	border-radius: 8px;
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	background: var(--vbo-config-child-bg-color);
+	color: var(--vbo-body-text-color);
+	margin-bottom: 10px;
+}
+.vcm-wa-tpl-prevw-header .vcm-wa-tpl-prevw-header-doc > i {
+	font-size: 24px;
+	background: var(--vbo-green-color);
+	padding: 10px 14px;
+	border-radius: 8px;
+	color: var(--vbo-config-bg-color);
+}
+.vcm-wa-tpl-prevw-header .vcm-wa-tpl-prevw-header-doc > strong {
+	flex: 1;
+}
+.vcm-wa-tpl-prevw-header .vcm-wa-tpl-prevw-header-doc > a {
+	font-size: 20px;
+	margin-right: 10px;
+	color: var(--vbo-body-text-color);
+}
+.vcm-wa-tpl-prevw-message pre {
+	white-space-collapse: break-spaces;
+	text-wrap-mode: wrap;
+}
+.vcm-wa-tpl-prevw-message blockquote {
+	margin: 0;
+	padding: 2px 0 2px 1em;
+	border-left: 4px solid #bbb;
+}
+.vcm-wa-tpl-prevw-message ul {
+	margin: 0;
+	padding: 2px 0 2px 1.5em;
+}
+.vcm-wa-tpl-prevw-message ul li {
+	list-style-type: disc;
+	margin: 0 0 6px;
+}
+.vcm-wa-tpl-prevw-message ul li:last-child {
+	margin: 0;
+}
+.vcm-wa-tpl-prevw-footer {
+	font-size: smaller;
+	color: #999;
+	display: flex;
+	justify-content: space-between;
+	margin-top: 6px;
+}
+.vcm-wa-tpl-prevw-action {
+	border-top: 1px solid #ddd;
+	padding: 12px 8px;
+	text-align: center;
+}
+.vcm-wa-tpl-prevw-action a {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	justify-content: center;
+}
+/* End - WhatsApp preview message */
+
 /* @end styles */
 
-/* @start media queries */
+/* Print */
 @media print {
 	.vbo-receipt-numdate-title i, #vbo-amountpaid-edit i, .vbo-receipt-numdate-title i {
 		display: none !important;
@@ -21568,6 +22755,22 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 		font-size: 13px;
 	}
 }
+
+/* Responsive */
+/** max-height */
+@media screen and (max-height: 600px) {
+	.vbo-modal-wguestmessages-chat-wrap .chat-border-layout {
+		max-height: initial;
+	}
+	.vbo-w-quote-items-list {
+		max-height: calc(100vh - 188px);
+	}
+}
+@media screen and (max-height: 430px) {
+	.vbo-w-quote-items-list {
+		max-height: calc(100vh - 238px);
+	}
+}
 @media screen and (min-width: 2400px) {
 	.vbo-sidepanel-active-widgets .vbo-admin-widgets-container-small .vbo-widget-checkav-results .vbo-widget-checkav-result-room-rates .vbo-widget-checkav-result-rate-name {
 		flex-basis: auto;
@@ -21578,6 +22781,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 @media screen and (min-width: 1860px) {
 	.vbo-sidepanel-active-widgets .vbo-admin-widgets-container-small .vbo-widget-checkav-results .vbo-widget-checkav-result-room-rates .vbo-widget-checkav-result-rate-prices > .vbo-widget-checkav-result-rate-price:first-child {
 		margin-left: 0;
+	}
+	.vbo-quote-wrapper {
+		max-width: 74rem;
 	}
 }
 @media screen and (max-width: 2000px) {
@@ -21593,12 +22799,11 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.vbo-menu-updates > button span {
 		display: none;
-
 	}
 }
-@media screen and (max-height: 600px) {
-	.vbo-modal-wguestmessages-chat-wrap .chat-border-layout {
-		max-height: initial;
+@media screen and (max-height: 860px) {
+	.vbo-w-quote-items-list {
+		max-height: calc(100vh - 230px);
 	}
 }
 @media screen and (max-width: 1860px) {
@@ -21898,6 +23103,41 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.vbo-sidepanel-wrapper.vbo-sidepanel-right .vbo-sidepanel-container {
 		width: 35vw;
+	}
+	.vbo-admin-widgets-container-medium {
+		.vbo-w-quote-item {
+			.vbo-w-quote-item-head {
+				flex-wrap: wrap;
+				
+				.vbo-w-quote-item-head-left {
+					flex-basis: 100%;
+				}
+
+				.vbo-w-quote-item-head-right {
+					flex-basis: 100%;
+
+					.vbo-w-quote-item-head-edit {
+						margin-left: auto;
+					}
+				}
+			}
+			.vbo-w-quote-solution {
+				flex-wrap: wrap;
+
+				.vbo-w-quote-solution-roominfo {
+					flex-basis: 100%;
+				}
+
+				.vbo-w-quote-solution-priceinfo-wrap {
+					flex-basis: 100%;
+					justify-content: space-between;
+
+					.vbo-w-quote-solution-price {
+						text-align: left;
+					}
+				}
+			}
+		}
 	}
 }
 @media screen and (max-width: 1400px) and (min-width: 1320px) {
@@ -22611,6 +23851,18 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-reports-subfilters-wrap .vbo-report-layout-type {
 		width: auto;
 	}
+	.vbo-quote-option-room-values {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	.vbo-quote-option-room-values .vbo-quote-option-room-value:nth-child(-n+3) {
+		grid-column: span 1;
+	}
+	.vbo-quote-option-room-values .vbo-quote-option-room-value:nth-child(n+4) {
+		grid-column: span 1;
+	}
+	.vbo-quote-option-room-values .vbo-quote-option-room-value:nth-child(1) {
+  		grid-column: span 2;
+	}
 }
 @media screen and (max-width: 860px) {
 	.vbo-checkin-main-block .vbo-roomsdet-container .vbo-roomdet-wrap {
@@ -22672,6 +23924,12 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.vbo-report-chartonly .vbo-report-chart-meta {
 		flex-basis: 25%;
+	}
+	.vbo-quote-option-rooms .vbo-editbooking-room-service[data-child-age="1"] .vbo-editbooking-room-service-check {
+		grid-template-columns: repeat(1, minmax(0, 1fr));
+	}
+	.vbo-w-quote-solution-rooms {
+		flex-wrap: wrap;
 	}
 }
 @media screen and (max-width: 780px) {
@@ -22744,6 +24002,12 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.vbo-ratesoverview-period-box-cals-inner {
 		flex-wrap: wrap;
+	}
+	.vbo-quote-section-current .vbo-quote-section-body {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.vbo-quote-section-current .vbo-quote-edit-uuid {
+		grid-column: span 2;
 	}
 }
 @media screen and (max-width: 767px) {
@@ -22852,6 +24116,21 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	}
 	.vbo-room-reassignment-move-record .vbo-room-reassignment-move-exclude {
 		margin-left: auto;
+	}
+	.vbo-quote-section-head-wrap {
+		flex-wrap: wrap;
+		
+		.vbo-quote-section-head {
+			margin-bottom: 10px;
+		}
+
+		.vbo-quote-section-floating {
+			flex-wrap: wrap;
+
+    		& select {
+				max-width: 100%;
+			}
+		}
 	}
 }
 @media screen and (max-width : 680px) {
@@ -23220,6 +24499,29 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 		overflow-y: hidden;
 		min-height: 0.01%;
 	}
+	.vbo-quote-option-room-extras-list .vbo-editbooking-room-extracost input {
+		max-width: 100%;
+	}
+	.vbo-quote-section-validity .vbo-quote-section-body {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.vbo-w-quote-solution {
+		flex-wrap: wrap;
+
+		.vbo-w-quote-solution-roominfo {
+			flex-basis: 100%;		
+		}
+
+		.vbo-w-quote-solution-priceinfo-wrap {
+			flex-basis: 100%;
+			margin-top: 6px;
+			justify-content: space-between;
+
+			.vbo-w-quote-solution-price {
+				text-align: left;
+			}
+		}
+	}
 }
 @media screen and (max-width : 640px) {
 	.vbo-reportwidget-dashboard .vbo-reportwidget-chart-meta {
@@ -23326,6 +24628,11 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-report-chartonly .vbo-report-chart-meta {
 		flex-basis: 50%;
 	}
+}
+@media screen and (max-width : 600px) {
+	.vbo-quote-option-rooms .vbo-editbooking-room-service[data-child-age="1"] .vbo-editbooking-room-service-check {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+  	}
 }
 @media screen and (max-width : 580px) {
 	.vbo-calendar-cfields-search {
@@ -23669,6 +24976,15 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-room-reassignment-head .vbo-room-reassignment-move-record .vbo-room-reassignment-move-room {
 		flex-basis: 100%;
 	}
+	.vbo-quote-new-option-wrap .vbo-quote-option-title {
+		flex-wrap: wrap;
+	}
+	.vbo-quote-new-option-wrap .vbo-quote-option-title > h4 {
+		flex-basis: 100%;
+	}
+	.vbo-quote-section-validity .vbo-quote-section-body {
+		grid-template-columns: repeat(1, minmax(0, 1fr));
+	}
 }
 @media screen and (max-width : 550px) {
 	.vbo-editbooking-room-services .vbo-editbooking-room-service, .vbo-editbooking-room-pricetypes .vbo-editbooking-room-pricetype {
@@ -23740,6 +25056,13 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	.vbo-report-chartonly .vbo-report-chart-meta {
 		flex-basis: 100%;
 	}
+	.vbo-quote-customer-fields {
+		grid-template-columns: repeat(1, minmax(0, 1fr));
+  		gap: 12px;
+	}
+	.vbo-quote-option-room-values .vbo-quote-option-room-value:nth-child(n+4) {
+		grid-column: span 2;
+	}	
 }
 @media screen and (max-width : 500px) {
 	.vbo-translation-tab.vbo-translation-tab-ini {
@@ -24123,6 +25446,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
     align-items: center;
     justify-content: center;
     color: var(--vbo-contrast-text-color);
+	z-index: 1;
 }
 .vbo-chat-interface .vbo-chat-blank-pane {
     opacity: 0.5;

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="COM_VIKBOOKING_CHAT_VIEW_DEFAULT_TITLE">
+		<message>COM_VIKBOOKING_CHAT_VIEW_DEFAULT_DESC</message>
+	</layout>
+	<view title="Chat Session" >
+		<message><![CDATA[VikBooking Chat Session]]></message>
+	</view>
+	<state>
+		<name>Chat Session</name>
+		<description>VikBooking Chat Session</description>
+	</state>
+</metadata>

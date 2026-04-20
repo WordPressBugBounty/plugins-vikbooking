@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  core
  * @author      E4J s.r.l.
- * @copyright   Copyright (C) 2021 E4J s.r.l. All Rights Reserved.
+ * @copyright   Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * @link        https://vikwp.com
  */
@@ -38,6 +38,14 @@ class VBOChatSearch
      * @var VBOChatContext|null
      */
     protected $context = null;
+
+    /**
+     * Searches the messages under the specified context aliases.
+     * 
+     * @var string[]
+     * @since 1.8.8
+     */
+    protected $categories = [];
 
     /**
      * Searches the messages by ID.
@@ -83,6 +91,14 @@ class VBOChatSearch
      * @var bool
      */
     protected $aggregate = false;
+
+    /**
+     * The ID of the external resource the message is linked to.
+     * 
+     * @var string|null
+     * @since 1.8.8
+     */
+    protected $refId = null;
 
     /**
      * Sets the specified pagination offset.
@@ -184,6 +200,46 @@ class VBOChatSearch
     public function getContext()
     {
         return $this->context;
+    }
+
+    /**
+     * Sets the supported categories.
+     * 
+     * @param   string[]  $categories
+     * 
+     * @return  self
+     * 
+     * @since   1.8.8
+     */
+    public function forCategories(array $categories)
+    {
+        $this->categories = $categories;
+
+        return $this;
+    }
+
+    /**
+     * Checks whether custom categories have been specified.
+     * 
+     * @return  bool
+     * 
+     * @since   1.8.8
+     */
+    public function hasCategories()
+    {
+        return (bool) $this->categories;
+    }
+
+    /**
+     * Returns the specified categories, if any.
+     * 
+     * @return  string[]
+     * 
+     * @since   1.8.8
+     */
+    public function getCategories()
+    {
+        return $this->categories;
     }
 
     /**
@@ -322,7 +378,7 @@ class VBOChatSearch
      */
     public function reader(?int $readerId)
     {
-        $this->readerId = is_null($readerId) ? null : abs($readerId);
+        $this->readerId = $readerId;
 
         return $this;
     }
@@ -393,5 +449,45 @@ class VBOChatSearch
     public function hasAggregate()
     {
         return $this->aggregate;
+    }
+
+    /**
+     * Sets the specified message reference ID.
+     * 
+     * @param   string|null  $refId
+     * 
+     * @return  self
+     * 
+     * @since   1.8.8
+     */
+    public function refId(?string $refId)
+    {
+        $this->refId = $refId;
+
+        return $this;
+    }
+
+    /**
+     * Checks whether a custom reference ID has been specified.
+     * 
+     * @return  bool
+     * 
+     * @since   1.8.8
+     */
+    public function hasRefId()
+    {
+        return $this->refId !== null;
+    }
+
+    /**
+     * Returns the specified reference ID.
+     * 
+     * @return  string|null
+     * 
+     * @since   1.8.8
+     */
+    public function getRefId()
+    {
+        return $this->refId;
     }
 }

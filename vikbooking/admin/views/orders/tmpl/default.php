@@ -50,7 +50,8 @@ $juidf = $nowdf == "%d/%m/%Y" ? 'dd/mm/yy' : ($nowdf == "%m/%d/%Y" ? 'mm/dd/yy' 
 $cid = VikRequest::getVar('cid', array());
 $pcust_id = $app->getUserStateFromRequest("vbo.orders.cust_id", 'cust_id', 0, 'int');
 $pconfirmnumber = VikRequest::getString('confirmnumber', '', 'request');
-//Color tags
+
+// color tags
 $colortags = VikBooking::loadBookingsColorTags();
 $bctags_tip = '';
 if (count($colortags) > 0) {
@@ -60,7 +61,6 @@ if (count($colortags) > 0) {
 	}
 	$bctags_tip .= '</div>';
 }
-//
 
 if (empty($rows)) {
 	$rows = array();
@@ -264,8 +264,8 @@ $filters_set = false;
 				$rsel .= '<option value="'.$room['id'].'"'.(!empty($pidroom) && $pidroom == $room['id'] ? ' selected="selected"' : '').'>'.$room['name'].'</option>';
 			}
 			$rsel .= '</select>';
+			echo $rsel;
 		}
-		echo $rsel;
 		?>
 		</div>
 	<?php
@@ -317,17 +317,20 @@ $filters_set = false;
 			$filters_set = !empty($pstatus) || $filters_set;
 			$status_filter = !empty($pstatus) ? '&amp;status='.$pstatus : '';
 			?>
-				<optgroup label="<?php echo JText::translate('VBSTATUS'); ?>">
+				<optgroup label="<?php echo JHtml::fetch('esc_attr', JText::translate('VBSTATUS')); ?>">
 					<option value="confirmed"<?php echo $pstatus == 'confirmed' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBCONFIRMED'); ?></option>
 					<option value="standby"<?php echo $pstatus == 'standby' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBSTANDBY'); ?></option>
 					<option value="cancelled"<?php echo $pstatus == 'cancelled' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBCANCELLED'); ?></option>
-					<option value="closure"<?php echo $pstatus == 'closure' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBDBTEXTROOMCLOSED'); ?></option>
+				</optgroup>
+				<optgroup label="<?php echo JHtml::fetch('esc_attr', JText::translate('VBPSHOWSEASONSTHREE')); ?>">
 					<option value="inquiry"<?php echo $pstatus == 'inquiry' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_BTYPE_INQUIRY'); ?></option>
 					<option value="request"<?php echo $pstatus == 'request' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_BTYPE_REQUEST'); ?></option>
-					<option value="split_stay"<?php echo $pstatus == 'split_stay' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_SPLIT_STAY'); ?></option>
+					<option value="quote"<?php echo $pstatus == 'quote' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_BTYPE_QUOTE'); ?></option>
 					<option value="overbooking"<?php echo $pstatus == 'overbooking' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_BTYPE_OVERBOOKING'); ?></option>
+					<option value="split_stay"<?php echo $pstatus == 'split_stay' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBO_SPLIT_STAY'); ?></option>
+					<option value="closure"<?php echo $pstatus == 'closure' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBDBTEXTROOMCLOSED'); ?></option>
 				</optgroup>
-				<optgroup label="<?php echo JText::translate('VBOCHECKEDSTATUS'); ?>">
+				<optgroup label="<?php echo JHtml::fetch('esc_attr', JText::translate('VBOCHECKEDSTATUS')); ?>">
 					<option value="checkedin"<?php echo $pstatus == 'checkedin' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBOCHECKEDSTATUSIN'); ?></option>
 					<option value="checkedout"<?php echo $pstatus == 'checkedout' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBOCHECKEDSTATUSOUT'); ?></option>
 					<option value="noshow"<?php echo $pstatus == 'noshow' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBOCHECKEDSTATUSNOS'); ?></option>

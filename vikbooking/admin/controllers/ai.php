@@ -143,4 +143,37 @@ class VikBookingControllerAi extends JControllerAdmin
         // output the result tags
         VBOHttpDocument::getInstance($app)->json(['tags' => $tags]);
     }
+
+    /**
+     * Task used to summarize the provided conversation for the administrator.
+     *
+     * @return  void
+     * 
+     * @since   1.18.8 (J) - 1.8.8 (WP)
+     */
+    public function summarize()
+    {
+        $app = JFactory::getApplication();
+
+        $messages = $app->input->get('messages', [], 'array');
+
+        try {
+            if (!JSession::checkToken()) {
+                // missing CSRF-proof token
+                throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+            }
+
+            // validate AI service capabilities
+            $this->auditServiceCapabilities();
+
+            $summary = (new VCMAiModelService)->summarizeThread($messages);
+        } catch (Exception $error) {
+            // something went wrong
+            VCMHttpDocument::getInstance($app)->close($error->getCode() ?: 500, $error->getMessage());
+        }
+
+        VCMHttpDocument::getInstance($app)->json([
+            'result' => $summary,
+        ]);
+    }
 }

@@ -3,7 +3,7 @@
  * @package     VikBooking
  * @subpackage  core
  * @author      E4J s.r.l.
- * @copyright   Copyright (C) 2021 E4J s.r.l. All Rights Reserved.
+ * @copyright   Copyright (C) 2026 E4J s.r.l. All Rights Reserved.
  * @license     http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  * @link        https://vikwp.com
  */
@@ -59,7 +59,27 @@ class VBOChatContextTask extends VBOChatContextaware
     /**
      * @inheritDoc
      */
-    public function useAssets()
+    public function getSubject()
+    {
+        if ($task = $this->getTask()) {
+            return $task->getTitle();
+        }
+
+        return sprintf('<em>Task #%d (deleted)</em>', $this->getID());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getURL()
+    {
+        return VBOFactory::getPlatform()->getUri()->route('index.php?option=com_vikbooking&view=operators&tool=task_manager&filters[calendar_type]=taskdetails&filters[task_id]=' . $this->getID());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function useAssets(VBOChatUser $user)
     {
         $document = JFactory::getDocument();
         $document->addScript(VBO_SITE_URI . 'resources/chat/task.js');
@@ -73,23 +93,12 @@ class VBOChatContextTask extends VBOChatContextaware
     /**
      * @inheritDoc
      */
-    public function getSubject()
-    {
-        if ($task = $this->getTask()) {
-            return $task->getTitle();
-        }
-
-        return sprintf('<em>Task #%d (deleted)</em>', $this->getID());
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getActions()
+    public function getActions(VBOChatUser $user)
     {
         $actions = [];
 
-        if (JFactory::getApplication()->isClient('site')) {
+        // proceed only if the authenticated user is an administrator
+        if ($user->getID() != 0) {
             return $actions;
         }
 
@@ -152,14 +161,6 @@ class VBOChatContextTask extends VBOChatContextaware
                 'separator' => true,
             ],
         ]);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getURL()
-    {
-        return VBOFactory::getPlatform()->getUri()->route('index.php?option=com_vikbooking&view=operators&tool=task_manager&filters[calendar_type]=taskdetails&filters[task_id]=' . $this->getID());
     }
 
     /**
