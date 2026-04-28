@@ -150,6 +150,11 @@ $rate_plan_meals_map = [
             $totalRooms    = count($quoteSolution->rooms);
             // tell if we should "hide" this quote solution by default
             $isHid = $isConfirmed && $quoteSolution->status != 'confirmed';
+            // rate components collector
+            $rateComponents = [
+                'applied'  => 0,
+                'original' => 0,
+            ];
             ?>
             <div class="vbo-quote-solution">
                 
@@ -248,6 +253,9 @@ $rate_plan_meals_map = [
                                 // fallback onto the last room rate obtained
                                 $origRoomRateData = end($roomRates[$bookingRoom->id]) ?: null;
                             }
+                            // increase rate components
+                            $rateComponents['applied']  += $bookingRoom->cust_cost;
+                            $rateComponents['original'] += $origRoomRateData['cost'];
                         }
                     }
                     ?>
@@ -417,7 +425,23 @@ $rate_plan_meals_map = [
                 <div class="vbo-quote-sol-footer" style="<?php echo $isHid ? 'display: none;' : ''; ?>">
                     <div class="vbo-quote-sol-total">
                         <div class="vbo-quote-sol-total-label"><?php echo JText::translate('VBTOTAL'); ?></div>
-                        <div class="vbo-quote-sol-total-price"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($quoteSolution->total), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></div>
+                        <div class="vbo-quote-sol-total-price">
+                        <?php
+                        if ($rateComponents['applied'] && $rateComponents['original'] > $rateComponents['applied']) {
+                            // calculate the total cost without the custom discounted rate
+                            $originalTotal = $quoteSolution->total - $rateComponents['applied'] + $rateComponents['original'];
+                            // display striked-through amount
+                            ?>
+                            <span class="vbo-quote-sol-total-price-disc"><?php
+                            echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($originalTotal), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']);
+                            ?></span>
+                            <?php
+                        }
+
+                        // display quote solution total amount
+                        echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($quoteSolution->total), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']);
+                        ?>
+                        </div>
                         <div class="vbo-quote-sol-total-subtext"><?php
                         echo implode(', ', [
                             sprintf('%d %s', $totalRooms, JText::translate($totalRooms === 1 ? 'VBSEARCHRESROOM' : 'VBSEARCHRESROOMS')),

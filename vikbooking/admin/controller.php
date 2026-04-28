@@ -2519,10 +2519,45 @@ class VikBookingController extends JControllerVikBooking
 					$q = "SELECT `b`.`id`,`b`.`idroom` FROM `#__vikbooking_busy` AS `b`,`#__vikbooking_ordersbusy` AS `ob` WHERE `b`.`id`=`ob`.`idbusy` AND `ob`.`idorder`=" . $ord['id'] . ";";
 					$dbo->setQuery($q);
 					$allbusy = $dbo->loadAssocList();
+
 					foreach ($allbusy as $bb) {
 						$q = "UPDATE `#__vikbooking_busy` SET `checkin`=" . $first . ", `checkout`=" . $second . ", `realback`=" . $realback . " WHERE `id`=" . $bb['id'] . ";";
 						$dbo->setQuery($q);
 						$dbo->execute();
+					}
+
+					if (!$allbusy) {
+						/**
+						 * If no existing busy records were fetched, it means we have some missing or broken
+						 * records in the database. Proceed with restoring them to occupy the room(s).
+						 * 
+						 * @since 	1.8.19 (J) - 1.8.9 (WP)
+						 */
+						$dbo->setQuery(
+							$dbo->getQuery(true)
+								->delete($dbo->qn('#__vikbooking_ordersbusy'))
+								->where($dbo->qn('idorder') . ' = ' . (int) $ord['id'])
+						);
+						$dbo->execute();
+						foreach ($ordersrooms as $or) {
+							if ($room_removed !== false && $or['id'] == $prm_room_oid) {
+								continue;
+							}
+							$restoreBusyRecord = (object) [
+								'idroom'   => $or['idroom'],
+								'checkin'  => $first,
+								'checkout' => $second,
+								'realback' => $realback,
+							];
+							$dbo->insertObject('#__vikbooking_busy', $restoreBusyRecord, 'id');
+							if (!empty($restoreBusyRecord->id)) {
+								$restoreBusyRelation = (object) [
+									'idorder' => $ord['id'],
+									'idbusy'  => $restoreBusyRecord->id,
+								];
+								$dbo->insertObject('#__vikbooking_ordersbusy', $restoreBusyRelation, 'id');
+							}
+						}
 					}
 				}
 
@@ -11170,7 +11205,7 @@ class VikBookingController extends JControllerVikBooking
 		$cust_old_fields = array();
 		$cstring_search = '<div class="vbo-custsearchres-inner">' . "\n";
 		foreach ($customers as $k => $v) {
-			$cstring_search .= '<div class="' . $selector . '" data-custid="'.$v['id'].'" data-email="'.$v['email'].'" data-phone="'.htmlspecialchars($v['phone']).'" data-country="'.$v['country'].'" data-pin="'.$v['pin'].'" data-firstname="'.htmlspecialchars($v['first_name']).'" data-lastname="'.htmlspecialchars($v['last_name']).'">'."\n";
+			$cstring_search .= '<div class="' . $selector . '" data-custid="' . (int) $v['id'] . '" data-email="' . htmlspecialchars($v['email']) . '" data-phone="' . htmlspecialchars($v['phone']) . '" data-country="' . htmlspecialchars($v['country']) . '" data-pin="' . htmlspecialchars($v['pin']) . '" data-firstname="' . htmlspecialchars($v['first_name']) . '" data-lastname="' . htmlspecialchars($v['last_name']) . '">'."\n";
 			$cstring_search .= '<span class="vbo-custsearchres-cflag">';
 			if (!empty($v['pic'])) {
 				$cstring_search .= '<img src="' . (strpos($v['pic'], 'http') === 0 ? $v['pic'] : VBO_SITE_URI . 'resources/uploads/' . $v['pic']) . '" class="vbo-country-flag vbo-customer-avatar-flag"/>'."\n";

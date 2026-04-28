@@ -304,6 +304,10 @@ class VikBookingController extends JControllerVikBooking
 				$user_inp_val = VikRequest::getString('vbf' . $cf['id'], '', 'request');
 				if (intval($cf['isemail']) == 1 && $emailwasfound == false) {
 					$useremail = trim($user_inp_val);
+					if (!preg_match('/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/', $useremail)) {
+						showSelectVb('Invalid email address provided.');
+						return;
+					}
 					$emailwasfound = true;
 				}
 				if ($cf['isnominative'] == 1) {
@@ -4576,9 +4580,9 @@ class VikBookingController extends JControllerVikBooking
 		$checkout_m  = $input->getInt('checkoutm', 0);
 		$categories  = $input->getString('categories', '');
 		$roomsnum  	 = $input->getInt('roomsnum', 1);
-		$adults 	 = $input->get('adults', array(), 'int');
-		$children 	 = $input->get('children', array(), 'int');
-		$inquiry 	 = $input->get('inquiry', array(), 'raw');
+		$adults 	 = $input->get('adults', [], 'int');
+		$children 	 = $input->get('children', [], 'int');
+		$inquiry 	 = $input->get('inquiry', [], 'array');
 		$ulang 		 = $input->getString('ulang', '');
 
 		$timeopst = VikBooking::getTimeOpenStore();
@@ -4625,6 +4629,8 @@ class VikBookingController extends JControllerVikBooking
 					// empty or invalid field
 					continue;
 				}
+				// accept only text from submitted value
+				$info_val = strip_tags($info_val);
 				if ($info_type == 'nominative') {
 					if (empty($t_first_name)) {
 						$t_first_name = $info_val;

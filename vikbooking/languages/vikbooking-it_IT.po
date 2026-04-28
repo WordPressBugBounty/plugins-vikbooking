@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2026-04-20 17:47+0200\n"
-"PO-Revision-Date: 2026-04-20 17:57+0200\n"
+"POT-Creation-Date: 2026-04-28 00:10+0200\n"
+"PO-Revision-Date: 2026-04-28 00:10+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: it_IT\n"
@@ -10,21 +10,22 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.5\n"
+"X-Generator: Poedit 3.6\n"
 "X-Poedit-Basepath: ..\n"
 "X-Poedit-KeywordsList: __;_e;_x:1,2c\n"
 "X-Poedit-SearchPath-0: libraries/language\n"
-"X-Poedit-SearchPath-1: modules/mod_vikbooking_channelrates/language/handler."
-"php\n"
+"X-Poedit-SearchPath-1: modules/mod_vikbooking_channelrates/language/"
+"handler.php\n"
 "X-Poedit-SearchPath-2: modules/mod_vikbooking_currencyconverter/language/"
 "handler.php\n"
 "X-Poedit-SearchPath-3: modules/mod_vikbooking_horizontalsearch/language/"
 "handler.php\n"
 "X-Poedit-SearchPath-4: modules/mod_vikbooking_rooms/language/handler.php\n"
-"X-Poedit-SearchPath-5: modules/mod_vikbooking_otareviews/language/handler."
-"php\n"
+"X-Poedit-SearchPath-5: modules/mod_vikbooking_otareviews/language/"
+"handler.php\n"
 "X-Poedit-SearchPath-6: libraries/html\n"
 "X-Poedit-SearchPath-7: libraries/lite/manager.php\n"
+"X-Poedit-SearchPath-8: modules/mod_vikbooking_chat/language/handler.php\n"
 "X-Poedit-SearchPathExcluded-0: libraries/html/license/lite.php\n"
 "X-Poedit-SearchPathExcluded-1: libraries/html/managetos/modal.php\n"
 "X-Poedit-SearchPathExcluded-2: libraries/html/managetos/script.php\n"
@@ -1221,6 +1222,7 @@ msgstr "Ogni camera selezionata sarà rimossa con i suoi contenuti. Confermi"
 #: libraries/language/admin.php:1623 libraries/language/site.php:258
 #: libraries/language/site.php:423 libraries/language/site.php:504
 #: libraries/language/system.php:307
+#: modules/mod_vikbooking_chat/language/handler.php:118
 msgid "Name"
 msgstr "Nome"
 
@@ -5924,9 +5926,9 @@ msgstr ""
 "trasmetterà le tariffe seguendo le regole che sono state precedentemente "
 "configurate nel sistema. Le regole sono prese dalle precedenti esecuzioni "
 "della funzione ‘Azioni di Massa - Carica Tariffe’. Per esempio, se hai "
-"precedentemente inviato i prezzi incrementati del n% a canali come Booking."
-"com o Expedia, il Channel Manager invierà i prezzi seguendo le stesse regole "
-"che hai già usato."
+"precedentemente inviato i prezzi incrementati del n% a canali come "
+"Booking.com o Expedia, il Channel Manager invierà i prezzi seguendo le "
+"stesse regole che hai già usato."
 
 #: libraries/language/admin.php:4161
 msgid "Channel Manager Update Response"
@@ -6003,9 +6005,9 @@ msgstr ""
 "quindi può essere vuoto. Un esempio di attributo potrebbe essere &quot;costi "
 "di cancellazione&quot;. Dalla pagina tariffario, potrai specificare il "
 "valore dell’attributo per ogni numero di notti di soggiorno. Per esempio, da "
-"1 a 7 notti: &quot;acconto non rimborsato&quot;. Da 8 a 14 notti: &quot;"
-"rimborso 50% deposito (acconto)&quot;. L’attributo sarà visibile ai clienti "
-"durante il processo di prenotazione."
+"1 a 7 notti: &quot;acconto non rimborsato&quot;. Da 8 a 14 notti: "
+"&quot;rimborso 50% deposito (acconto)&quot;. L’attributo sarà visibile ai "
+"clienti durante il processo di prenotazione."
 
 #: libraries/language/admin.php:4209
 msgid "Cancellation Policy"
@@ -8400,6 +8402,7 @@ msgid "Font Color"
 msgstr "Colore font"
 
 #: libraries/language/admin.php:5580
+#: modules/mod_vikbooking_chat/language/handler.php:82
 msgid "Background Color"
 msgstr "Colore sfondo"
 
@@ -9022,6 +9025,7 @@ msgid "Filter by check-in or check-out week day."
 msgstr "Filtra per giorno di arrivo o partenza."
 
 #: libraries/language/admin.php:6000
+#: modules/mod_vikbooking_chat/language/handler.php:90
 msgid "Appearance"
 msgstr "Aspetto"
 
@@ -13331,6 +13335,14 @@ msgstr "Messaggi preferiti"
 msgid "Notes will be displayed to customer in front-end."
 msgstr "Le note verranno mostrate al cliente nel front-end."
 
+#: libraries/language/admin.php:8676
+msgid ""
+"Set a date to temporarily lock the selected rooms. Leave blank to keep "
+"availability open."
+msgstr ""
+"Imposta una data per bloccare temporaneamente le camere selezionate. Lascia "
+"vuoto per non bloccare la disponibilità."
+
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
 msgstr "Vik Booking"
@@ -13610,6 +13622,7 @@ msgid "Chat Session"
 msgstr "Sessione di chat"
 
 #: libraries/language/adminsys.php:262
+#: modules/mod_vikbooking_chat/language/handler.php:50
 msgid ""
 "Allows users to start or resume a chat session with an AI agent or "
 "administrators."
@@ -13893,8 +13906,8 @@ msgstr "Preoccupato per gli overbooking?"
 #: libraries/language/adminsys.php:431
 msgid ""
 "Vik Booking + Vik Channel Manager is the only native WordPress suite "
-"officially certified as a <strong>Premier Connectivity Partner of Booking."
-"com and Airbnb.</strong>"
+"officially certified as a <strong>Premier Connectivity Partner of "
+"Booking.com and Airbnb.</strong>"
 msgstr ""
 "La suite di plugin Vik Booking + Vik Channel Manager è la prima ed unica "
 "soluzione nativa per WordPress ad essere ufficialmente certificata come "
@@ -16209,6 +16222,7 @@ msgid "Analyzing documents"
 msgstr "Analisi dei documenti in corso"
 
 #: libraries/language/site.php:2519
+#: modules/mod_vikbooking_chat/language/handler.php:134
 msgid "Start Session"
 msgstr "Avvia sessione"
 
@@ -16857,6 +16871,80 @@ msgid ""
 msgstr ""
 "Seleziona una pagina dalla quale cominciare il processo di prenotazione. La "
 "pagina deve usare uno shortcode di VikBooking."
+
+#: modules/mod_vikbooking_chat/language/handler.php:46
+msgid "VikBooking Chat"
+msgstr "VikBooking Chat"
+
+#: modules/mod_vikbooking_chat/language/handler.php:54
+msgid "Heading Title"
+msgstr "Titolo intestazione"
+
+#: modules/mod_vikbooking_chat/language/handler.php:58
+msgid "Greetings Title"
+msgstr "Titolo di benvenuto"
+
+#: modules/mod_vikbooking_chat/language/handler.php:62
+msgid "Greetings Subtitle"
+msgstr "Sottotitolo di benvenuto"
+
+#: modules/mod_vikbooking_chat/language/handler.php:66
+msgid "Question Summary"
+msgstr "Riepilogo domanda"
+
+#: modules/mod_vikbooking_chat/language/handler.php:70
+msgid "A short summary of the frequent question."
+msgstr "Un breve riepilogo della domanda frequente."
+
+#: modules/mod_vikbooking_chat/language/handler.php:74
+msgid "Question Text"
+msgstr "Testo della domanda"
+
+#: modules/mod_vikbooking_chat/language/handler.php:78
+msgid "The actual question that will be submitted."
+msgstr "La domanda effettiva che verrà inviata."
+
+#: modules/mod_vikbooking_chat/language/handler.php:86
+msgid "Text Color"
+msgstr "Colore del testo"
+
+#: modules/mod_vikbooking_chat/language/handler.php:94
+msgid "Frequent Questions"
+msgstr "Domande frequenti"
+
+#: modules/mod_vikbooking_chat/language/handler.php:102
+msgid "Chat with us"
+msgstr "Chatta con noi"
+
+#: modules/mod_vikbooking_chat/language/handler.php:106
+msgid "Hello 👋"
+msgstr "Ciao 👋"
+
+#: modules/mod_vikbooking_chat/language/handler.php:110
+msgid "How can I help you today?"
+msgstr "Come posso aiutarti oggi?"
+
+#: modules/mod_vikbooking_chat/language/handler.php:114
+msgid "Before we begin, tell us a little about yourself."
+msgstr "Prima di iniziare, dicci qualcosa su di te."
+
+#: modules/mod_vikbooking_chat/language/handler.php:122
+msgid "Tell us how you prefer to be addressed."
+msgstr "Dicci come preferisci essere chiamato."
+
+#: modules/mod_vikbooking_chat/language/handler.php:126
+msgid "Email"
+msgstr "Email"
+
+#: modules/mod_vikbooking_chat/language/handler.php:130
+msgid ""
+"The email address is only used to notify messages that are sent after you "
+"leave the page or close the browser. You are not required to provide an "
+"email address."
+msgstr ""
+"L'indirizzo email viene utilizzato solo per notificare i messaggi inviati "
+"dopo aver lasciato la pagina o chiuso il browser. Non è obbligatorio fornire "
+"un indirizzo email."
 
 #: modules/mod_vikbooking_currencyconverter/language/handler.php:38
 msgid "VikBooking Currency Converter"

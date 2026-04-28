@@ -1339,7 +1339,7 @@ if (!empty($payments) && !count($this->mod_booking)) {
 	$dep_amount = VikBooking::calcDepositOverride($dep_amount, $days);
 	$dep_type = VikBooking::getTypeDeposit();
 	$dep_nonrefund_allowed = VikBooking::allowDepositFromRates($tars);
-	if (!(count($this->mod_booking) > 0) && !VikBooking::payTotal() && VikBooking::depositAllowedDaysAdv($second) && VikBooking::depositCustomerChoice() && $dep_amount > 0 && $dep_nonrefund_allowed && ($dep_type == "fixed" || ($dep_type != "fixed" && $dep_amount < 100))) {
+	if (!(count($this->mod_booking) > 0) && !VikBooking::payTotal() && VikBooking::depositAllowedDaysAdv($first) && VikBooking::depositCustomerChoice() && $dep_amount > 0 && $dep_nonrefund_allowed && ($dep_type == "fixed" || ($dep_type != "fixed" && $dep_amount < 100))) {
 		$dep_amount = ($dep_amount - abs($dep_amount)) > 0.00 ? VikBooking::numberFormat($dep_amount) : $dep_amount;
 		$dep_string = $dep_type == "fixed" ? VikBooking::formatCurrencyNumber($dep_amount, $currencysymb) : $dep_amount . '%';
 		?>

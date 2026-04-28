@@ -100,6 +100,7 @@ final class VikBookingIcons
         'cog'                  => 'fas fa-gear',
         'cogs'                 => 'fas fa-gears',
         'user-cog'             => 'fas fa-user-gear',
+        'circle-question'      => 'far fa-circle-question',
 
         /**
          * Resolving map used until the older FA v5.12.1.

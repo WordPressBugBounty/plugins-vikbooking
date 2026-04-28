@@ -46,7 +46,7 @@ class VikBookingControllerPayschedules extends JControllerAdmin
 		}
 
 		// current date object
-		$now_dt = JFactory::getdate('now');
+		$now_dt = JFactory::getDate('now');
 
 		// access the time with hours and minutes
 		$time_parts = explode(':', $time);

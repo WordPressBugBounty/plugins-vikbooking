@@ -8672,6 +8672,9 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 			case 'VBO_QUOTE_NOTES_HELP':
 				$result = __('Notes will be displayed to customer in front-end.', 'vikbooking');
 				break;
+			case 'VBO_LOCK_UNTIL_HELP':
+				$result = __('Set a date to temporarily lock the selected rooms. Leave blank to keep availability open.', 'vikbooking');
+				break;
 		}
 
 		return $result;

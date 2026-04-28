@@ -766,7 +766,7 @@ $filters_set = false;
 				if (!empty($row['adminnotes'])) {
 					?>
 				<span class="vbo-admin-tipsicon vbo-admin-notes-icn" data-bid="<?php echo $row['id']; ?>"><?php VikBookingIcons::e('sticky-note'); ?></span>&nbsp;
-				<div class="vbo-order-admin-notes-cnt" data-bid="<?php echo $row['id']; ?>" style="display: none;"><?php echo nl2br($row['adminnotes']); ?></div>
+				<div class="vbo-order-admin-notes-cnt" data-bid="<?php echo $row['id']; ?>" style="display: none;"><?php echo nl2br(htmlspecialchars($row['adminnotes'])); ?></div>
 					<?php
 				}
 

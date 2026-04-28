@@ -2714,7 +2714,7 @@ JS
 					</div>
 					<div class="vbo-bookingdet-noteslogs-cont">
 						<div id="vbadminnotesdiv" class="vbo-extra-panel" style="display: block;">
-							<textarea name="adminnotes" class="vbadminnotestarea"><?php echo strip_tags((string)$row['adminnotes']); ?></textarea>
+							<textarea name="adminnotes" class="vbadminnotestarea"><?php echo JHtml::fetch('esc_textarea', (string) $row['adminnotes']); ?></textarea>
 							<input type="submit" name="updadmnotes" value="<?php echo JText::translate('VBADMINNOTESUPD'); ?>" class="btn btn-success" />
 						</div>
 					<?php

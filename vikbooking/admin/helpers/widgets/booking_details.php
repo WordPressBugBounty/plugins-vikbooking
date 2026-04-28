@@ -681,7 +681,7 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 						<div class="vbo-params-block">
 							<div class="vbo-param-container">
 								<div class="vbo-param-setting">
-									<blockquote class="vbo-booking-admin-notes"><?php echo nl2br($details['adminnotes']); ?></blockquote>
+									<blockquote class="vbo-booking-admin-notes"><?php echo nl2br(htmlspecialchars($details['adminnotes'])); ?></blockquote>
 								</div>
 							</div>
 						</div>

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.9
+
+*Release date - 28 April 2026*
+
+- Quote framework general improvements and bug fixes.
+- Quote lock/do-not-lock option.
+- Automatic payment collection scheduling for VCC and CC of additional OTAs.
+- Language translation strings updated.
+- Multiple low-severity security fixes for XSS prevention.
+
 ## 1.8.8
 
 *Release date - 20 April 2026*

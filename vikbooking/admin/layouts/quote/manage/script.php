@@ -517,6 +517,18 @@ list($currency_digits, $currency_decimals, $currency_thousands) = explode(':', V
         });
 
         /**
+         * Register event listener for the valid until help icon.
+         */
+        document.querySelector('.vbo-quote-validity-date-help')?.addEventListener('click', (e) => {
+            VBOCore.displayModal({
+                extra_class: 'vbo-modal-rounded vbo-modal-tooltip',
+                body:        <?php echo json_encode(JText::translate('VBO_LOCK_UNTIL_HELP')); ?>,
+                lock_scroll: true,
+                draggable:   false,
+            });
+        });
+
+        /**
          * Register event listener for the quote submit (save new) button.
          */
         document.querySelector('.vbo-quote-submit-btn')?.addEventListener('click', (e) => {

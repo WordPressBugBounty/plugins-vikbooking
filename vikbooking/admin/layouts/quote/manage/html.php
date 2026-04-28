@@ -84,6 +84,12 @@ HTML;
 
     <?php
     if ($quote) {
+        // route quote URI
+        $quoteUri = VikBooking::externalroute(
+            "index.php?option=com_vikbooking&view=quote&ref={$quote->uuid}",
+            false,
+            (VikBooking::findProperItemIdType(['quote'], $quote->solutions[0]->lang ?? null) ?: null)
+        );
         ?>
         <div class="vbo-quote-section vbo-quote-section-current" data-quote-id="<?php echo $quote->id; ?>">
             <div class="vbo-quote-section-head vbo-quote-section-head-sb">
@@ -92,7 +98,7 @@ HTML;
                     <span class="vbo-quote-section-name"><?php echo sprintf('%s #%d', JText::translate('VBO_BTYPE_QUOTE'), $quote->id); ?></span>
                 </div>
                 <div class="vbo-quote-edit-link">
-                    <a class="btn btn-small vbo-config-btn" target="_blank" href="<?php echo VikBooking::externalroute('index.php?option=com_vikbooking&view=quote&ref=' . $quote->uuid); ?>"><?php VikBookingIcons::e('external-link'); ?> <?php echo JText::translate('VBVIEWORDFRONT'); ?></a>
+                    <a class="btn btn-small vbo-config-btn" target="_blank" href="<?php echo $quoteUri; ?>"><?php VikBookingIcons::e('external-link'); ?> <?php echo JText::translate('VBVIEWORDFRONT'); ?></a>
                 </div>
             </div>
             <div class="vbo-quote-section-body">
@@ -402,7 +408,7 @@ HTML;
             </div>
             <div class="vbo-quote-section-body">
                 <div class="vbo-quote-validity-date">
-                    <label for="vbo-quote-valid-until"><?php echo JText::translate('VBO_QUOTE_VALIDITY'); ?></label>
+                    <label for="vbo-quote-valid-until"><?php echo JText::translate('VBO_QUOTE_VALIDITY'); ?> <span class="vbo-quote-validity-date-help"><?php VikBookingIcons::e('circle-question', 'icn-nomargin'); ?></span></label>
                     <?php
                     $validUntilVal = JFactory::getDate('+2 days 23:59')->format('Y-m-d H:i');
                     if ($quote) {

@@ -2597,6 +2597,7 @@ class VBOModelReservation extends JObject
         $num_rooms        = $this->isMultiRoom() ? count($rooms_pool) : $this->get('num_rooms', 1);
         $default_checkin  = $this->get('checkin', 0);
         $default_checkout = $this->get('checkout', 0);
+        $check_locked     = (bool) $this->get('check_locked', 0);
 
         // determine availability
         $rooms_available = true;
@@ -2624,8 +2625,13 @@ class VBOModelReservation extends JObject
                     // check the remaining availability for the number of room units booked
                     $unitsBooked = $roomUnitsUse[$roomStay['idroom']];
                     $check_units = $roomStay['units'] - $unitsBooked + 1;
-                    // check if the room is available
-                    $rooms_available = VikBooking::roomBookable($roomStay['idroom'], $check_units, $roomStay['checkin'], $roomStay['checkout']);
+                    if ($check_locked) {
+                        // check if the room is available and not temporarily locked
+                        $rooms_available = VikBooking::roomNotLocked($roomStay['idroom'], $check_units, $roomStay['checkin'], $roomStay['checkout'], true);
+                    } else {
+                        // check if the room is available
+                        $rooms_available = VikBooking::roomBookable($roomStay['idroom'], $check_units, $roomStay['checkin'], $roomStay['checkout']);
+                    }
                     if (!$rooms_available) {
                         // set an error and abort
                         $this->setError(sprintf(
@@ -2646,8 +2652,13 @@ class VBOModelReservation extends JObject
                     // only when non closing the room we check the availability for the units requested for booking
                     $check_units = $check_units - $num_rooms + 1;
                 }
-                // check if the room is available
-                $rooms_available = VikBooking::roomBookable($rooms_pool[0]['id'], $check_units, $default_checkin, $default_checkout);
+                if ($check_locked) {
+                    // check if the room is available and not temporarily locked
+                    $rooms_available = VikBooking::roomNotLocked($rooms_pool[0]['id'], $check_units, $default_checkin, $default_checkout, true);
+                } else {
+                    // check if the room is available
+                    $rooms_available = VikBooking::roomBookable($rooms_pool[0]['id'], $check_units, $default_checkin, $default_checkout);
+                }
             }
         } else {
             $all_rooms = $this->loadAllRoomsData();
@@ -3490,21 +3501,24 @@ class VBOModelReservation extends JObject
                 } elseif ($status == 'standby' && empty($split_stay_data)) {
                     // lock room for pending status when NO split-stay data by supporting room-level dates
                     $lockUntil = VikBooking::getMinutesLock(true);
+
                     if ($this->get('lock_until')) {
                         // convert expected date-time string into a timestamp for custom lock until date
                         $lockUntil = strtotime((string) $this->get('lock_until')) ?: $lockUntil;
                     }
 
-                    // store room lock record
-                    $tmplock_record = new stdClass;
-                    $tmplock_record->idroom   = (int) $nowroom['id'];
-                    $tmplock_record->checkin  = $room_stay_checkin;
-                    $tmplock_record->checkout = $room_stay_checkout;
-                    $tmplock_record->until    = $lockUntil;
-                    $tmplock_record->realback = $room_stay_realback;
-                    $tmplock_record->idorder  = (int) $newoid;
+                    if ($lockUntil && $this->get('dont_lock') !== true) {
+                        // store room lock record
+                        $tmplock_record = new stdClass;
+                        $tmplock_record->idroom   = (int) $nowroom['id'];
+                        $tmplock_record->checkin  = $room_stay_checkin;
+                        $tmplock_record->checkout = $room_stay_checkout;
+                        $tmplock_record->until    = $lockUntil;
+                        $tmplock_record->realback = $room_stay_realback;
+                        $tmplock_record->idorder  = (int) $newoid;
 
-                    $dbo->insertObject('#__vikbooking_tmplock', $tmplock_record, 'id');
+                        $dbo->insertObject('#__vikbooking_tmplock', $tmplock_record, 'id');
+                    }
                 }
             }
         }

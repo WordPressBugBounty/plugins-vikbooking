@@ -201,13 +201,17 @@ class VBOTaxonomySummary
 			return $tax_map[$tax_id];
 		}
 
+		if (empty($tax_id)) {
+			return [];
+		}
+
 		$dbo = JFactory::getDbo();
 
 		$q = "SELECT * FROM `#__vikbooking_iva` WHERE `id`=" . $tax_id;
 		$dbo->setQuery($q, 0, 1);
 
 		// cache value and return it
-		$tax_map[$tax_id] = $dbo->loadAssoc();
+		$tax_map[$tax_id] = (array) $dbo->loadAssoc();
 
 		return $tax_map[$tax_id];
 	}

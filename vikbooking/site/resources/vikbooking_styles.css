@@ -9755,10 +9755,18 @@ p.info[data-new-messages="1"] a {
 	}
 
 	.vbo-quote-sol-total-price {
-		color: var(--vbo-pref-textcolor);
-		font-size: var(--vbo-font-xl);
-		font-weight: 700;
-		line-height: 1.3em;
+		& > span:not(.vbo-quote-sol-total-price-disc) {
+			color: var(--vbo-pref-textcolor);
+			font-size: var(--vbo-font-xl);
+			font-weight: 700;
+			line-height: 1.3em;	
+		}
+
+		.vbo-quote-sol-total-price-disc {
+			font-size: var(--vbo-font-base);
+			text-decoration: line-through;
+			margin-right: 4px;
+		}
 	}
 	.vbo-quote-sol-footer-actions {
 		text-align: right;

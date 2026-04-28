@@ -2038,21 +2038,16 @@ class VikBooking
 	 * 			This was made to return the proper number of days in advance
 	 * 			in case the property is currently closed.
 	 */
-	public static function getMinDaysAdvance($no_closing_dates = false) {
+	public static function getMinDaysAdvance($no_closing_dates = false)
+	{
 		// cache value in static var
 		static $getMinDaysAdvance = null;
 
 		if ($getMinDaysAdvance) {
 			return $getMinDaysAdvance;
 		}
-		//
 
-		$dbo = JFactory::getDbo();
-		
-		$q = "SELECT `setting` FROM `#__vikbooking_config` WHERE `param`='mindaysadvance';";
-		$dbo->setQuery($q);
-		$dbo->execute();
-		$mind = $dbo->getNumRows() ? (int)$dbo->loadResult() : 0;
+		$mind = VBOFactory::getConfig()->getInt('mindaysadvance', 0);
 
 		// update cached var
 		$getMinDaysAdvance = $mind;
@@ -5185,7 +5180,7 @@ class VikBooking
 			return $cost;
 		}
 
-		$tax_rate = VBOTaxonomySummary::getTaxRateRecord($idiva);
+		$tax_rate = VBOTaxonomySummary::getTaxRateRecord((int) $idiva);
 		if (!$tax_rate) {
 			return $cost;
 		}
@@ -5232,7 +5227,7 @@ class VikBooking
 			return $cost;
 		}
 
-		$tax_rate = VBOTaxonomySummary::getTaxRateRecord($idiva);
+		$tax_rate = VBOTaxonomySummary::getTaxRateRecord((int) $idiva);
 		if (!$tax_rate) {
 			return $cost;
 		}
@@ -5278,7 +5273,7 @@ class VikBooking
 			return $cost;
 		}
 
-		$tax_rate = VBOTaxonomySummary::getTaxRateRecord($idiva);
+		$tax_rate = VBOTaxonomySummary::getTaxRateRecord((int) $idiva);
 		if (!$tax_rate) {
 			return $cost;
 		}
@@ -5322,7 +5317,7 @@ class VikBooking
 			return $cost;
 		}
 
-		$tax_rate = VBOTaxonomySummary::getTaxRateRecord($idiva);
+		$tax_rate = VBOTaxonomySummary::getTaxRateRecord((int) $idiva);
 		if (!$tax_rate) {
 			return $cost;
 		}

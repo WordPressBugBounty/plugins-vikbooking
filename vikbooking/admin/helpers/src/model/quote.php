@@ -137,6 +137,7 @@ class VBOModelQuote extends VBOMvcModel
                         $dbo->qn('o.idpayment'),
                         $dbo->qn('o.roomsnum'),
                         $dbo->qn('o.total'),
+                        $dbo->qn('o.lang'),
                         $dbo->qn('o.idquote'),
                         $dbo->qn('or.idroom'),
                         $dbo->qn('or.adults'),
@@ -214,6 +215,7 @@ class VBOModelQuote extends VBOMvcModel
                         'nights'    => $bookingRoomsData[0]->days,
                         'status'    => $bookingRoomsData[0]->status,
                         'total'     => $bookingRoomsData[0]->total,
+                        'lang'      => $bookingRoomsData[0]->lang,
                         'idpayment' => $bookingRoomsData[0]->idpayment,
                         'sid'       => $bookingRoomsData[0]->sid,
                         'ts'        => $bookingRoomsData[0]->ts,
@@ -390,6 +392,13 @@ class VBOModelQuote extends VBOMvcModel
         // access booking registry for the first related booking (if any)
         $bookingRegistry = $bookingIds ? VBOBookingRegistry::getInstance(['id' => $bookingIds[0] ?? 0]) : null;
 
+        // route quote URI
+        $quoteUri = VikBooking::externalroute(
+            "index.php?option=com_vikbooking&view=quote&ref={$quote->uuid}",
+            false,
+            (VikBooking::findProperItemIdType(['quote'], $bookingRegistry->getProperty('lang') ?: null) ?: null)
+        );
+
         // build the list of known tag parameters
         $tagParameters = [
             '{first_name}'    => $quote->first_name ?? '',
@@ -400,7 +409,7 @@ class VBOModelQuote extends VBOMvcModel
             '{tot_adults}'    => $bookingRegistry ? $bookingRegistry->countTotalAdults() : 0,
             '{tot_children}'  => $bookingRegistry ? $bookingRegistry->countTotalChildren() : 0,
             '{tot_guests}'    => $bookingRegistry ? $bookingRegistry->countTotalGuests() : 0,
-            '{quote_link}'    => VikBooking::externalroute("index.php?option=com_vikbooking&view=quote&ref={$quote->uuid}", false),
+            '{quote_link}'    => $quoteUri,
         ];
 
         /**

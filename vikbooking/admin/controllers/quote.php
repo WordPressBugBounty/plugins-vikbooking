@@ -135,6 +135,7 @@ class VikBookingControllerQuote extends JControllerAdmin
                 'children'   => array_sum(array_column($solution['rooms'], 'children')),
                 'id_payment' => $quote['id_payment'] ?? null,
                 'lock_until' => $quote['validity'] ?? null,
+                'dont_lock'  => empty($quote['validity']),
                 'idquote'    => $quoteId,
             ], true);
 

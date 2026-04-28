@@ -156,6 +156,54 @@ class VBOModelPayschedules
     }
 
     /**
+     * Method to delete one or more records.
+     *
+     * @param   mixed    $pks  An array of record primary keys, or a single one.
+     *
+     * @return  bool     True if successful, false if an error occurs.
+     * 
+     * @since   1.8.19 (J) - 1.8.9 (WP)
+     */
+    public function delete($pks)
+    {
+        $dbo = JFactory::getDbo();
+
+        if (!$pks) {
+            // nothing to delete
+            return false;
+        }
+
+        if (!is_array($pks)) {
+            // wrap into an array
+            $pks = [$pks];
+        }
+
+        $deleted = 0;
+
+        foreach ($pks as $pk) {
+            // ensure the item exists
+            $item = $this->getItem($pk);
+
+            if (!$item) {
+                continue;
+            }
+
+            $dbo->setQuery(
+                $dbo->getQuery(true)
+                    ->delete($dbo->qn('#__vikbooking_payschedules'))
+                    ->where($dbo->qn('id') . ' = ' . (int) $item->id)
+            );
+            $dbo->execute();
+
+            if ((bool) $dbo->getAffectedRows()) {
+                $deleted++;
+            }
+        }
+
+        return (bool) $deleted;
+    }
+
+    /**
      * Watches and eventually processes the automatic payment collections scheduled.
      * 
      * @param   int     $lim    the limit of payments to process, defaults to 5 per execution.

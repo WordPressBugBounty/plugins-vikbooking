@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2026-04-20 17:46+0200\n"
-"PO-Revision-Date: 2026-04-20 17:47+0200\n"
+"POT-Creation-Date: 2026-04-28 00:09+0200\n"
+"PO-Revision-Date: 2026-04-28 00:09+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: en_US\n"
@@ -10,21 +10,22 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.5\n"
+"X-Generator: Poedit 3.6\n"
 "X-Poedit-Basepath: ..\n"
 "X-Poedit-KeywordsList: __;_e;_x:1,2c\n"
 "X-Poedit-SearchPath-0: libraries/language\n"
-"X-Poedit-SearchPath-1: modules/mod_vikbooking_channelrates/language/handler."
-"php\n"
+"X-Poedit-SearchPath-1: modules/mod_vikbooking_channelrates/language/"
+"handler.php\n"
 "X-Poedit-SearchPath-2: modules/mod_vikbooking_currencyconverter/language/"
 "handler.php\n"
 "X-Poedit-SearchPath-3: modules/mod_vikbooking_horizontalsearch/language/"
 "handler.php\n"
 "X-Poedit-SearchPath-4: modules/mod_vikbooking_rooms/language/handler.php\n"
-"X-Poedit-SearchPath-5: modules/mod_vikbooking_otareviews/language/handler."
-"php\n"
+"X-Poedit-SearchPath-5: modules/mod_vikbooking_otareviews/language/"
+"handler.php\n"
 "X-Poedit-SearchPath-6: libraries/html\n"
 "X-Poedit-SearchPath-7: libraries/lite/manager.php\n"
+"X-Poedit-SearchPath-8: modules/mod_vikbooking_chat/language/handler.php\n"
 "X-Poedit-SearchPathExcluded-0: libraries/html/license/lite.php\n"
 "X-Poedit-SearchPathExcluded-1: libraries/html/managetos/modal.php\n"
 "X-Poedit-SearchPathExcluded-2: libraries/html/managetos/script.php\n"
@@ -407,11 +408,6 @@ msgstr ""
 "website."
 
 #: libraries/html/license/adv/vikchannelmanager.php:32
-#| msgid ""
-#| "With Vik Channel Manager and an active e4jConnect subscription, you can "
-#| "instantly sync availability, rates, and restrictions across all your "
-#| "channels.<br><strong>Forget manual updates and overbookings</strong> — "
-#| "the Channel Manager saves you time and gives you full control."
 msgid ""
 "With Vik Channel Manager and an active e4jConnect subscription, you can "
 "instantly sync availability, rates, and restrictions across all your "
@@ -1214,6 +1210,7 @@ msgstr "Every selected Room will be removed with its own contents. Confirm"
 #: libraries/language/admin.php:1623 libraries/language/site.php:258
 #: libraries/language/site.php:423 libraries/language/site.php:504
 #: libraries/language/system.php:307
+#: modules/mod_vikbooking_chat/language/handler.php:118
 msgid "Name"
 msgstr "Name"
 
@@ -8356,6 +8353,7 @@ msgid "Font Color"
 msgstr "Font Color"
 
 #: libraries/language/admin.php:5580
+#: modules/mod_vikbooking_chat/language/handler.php:82
 msgid "Background Color"
 msgstr "Background Color"
 
@@ -8974,6 +8972,7 @@ msgid "Filter by check-in or check-out week day."
 msgstr "Filter by check-in or check-out week day."
 
 #: libraries/language/admin.php:6000
+#: modules/mod_vikbooking_chat/language/handler.php:90
 msgid "Appearance"
 msgstr "Appearance"
 
@@ -13238,6 +13237,14 @@ msgstr "Preferred messages"
 msgid "Notes will be displayed to customer in front-end."
 msgstr "Notes will be displayed to customer in front-end."
 
+#: libraries/language/admin.php:8676
+msgid ""
+"Set a date to temporarily lock the selected rooms. Leave blank to keep "
+"availability open."
+msgstr ""
+"Set a date to temporarily lock the selected rooms. Leave blank to keep "
+"availability open."
+
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
 msgstr "Vik Booking"
@@ -13515,6 +13522,7 @@ msgid "Chat Session"
 msgstr "Chat Session"
 
 #: libraries/language/adminsys.php:262
+#: modules/mod_vikbooking_chat/language/handler.php:50
 msgid ""
 "Allows users to start or resume a chat session with an AI agent or "
 "administrators."
@@ -13625,7 +13633,6 @@ msgid "Get your License Key and Upgrade to PRO"
 msgstr "Get your License Key and Upgrade to PRO"
 
 #: libraries/language/adminsys.php:332
-#| msgid "Rates and restrictions"
 msgid "Flexible Rates & Smart Restrictions"
 msgstr "Flexible Rates & Smart Restrictions"
 
@@ -13796,12 +13803,12 @@ msgstr "Worried about overbookings?"
 #: libraries/language/adminsys.php:431
 msgid ""
 "Vik Booking + Vik Channel Manager is the only native WordPress suite "
-"officially certified as a <strong>Premier Connectivity Partner of Booking."
-"com and Airbnb.</strong>"
+"officially certified as a <strong>Premier Connectivity Partner of "
+"Booking.com and Airbnb.</strong>"
 msgstr ""
 "Vik Booking + Vik Channel Manager is the only native WordPress suite "
-"officially certified as a <strong>Premier Connectivity Partner of Booking."
-"com and Airbnb.</strong>"
+"officially certified as a <strong>Premier Connectivity Partner of "
+"Booking.com and Airbnb.</strong>"
 
 #: libraries/language/adminsys.php:434
 msgid "More information"
@@ -13862,8 +13869,6 @@ msgstr ""
 "rooms sold, nights booked, revenues and more."
 
 #: libraries/language/adminsys.php:467
-#| msgctxt "Section \"discover the AI capabilities\""
-#| msgid "Customer Notifications"
 msgid "Automated Notifications"
 msgstr "Automated Notifications"
 
@@ -16081,6 +16086,7 @@ msgid "Analyzing documents"
 msgstr "Analyzing documents"
 
 #: libraries/language/site.php:2519
+#: modules/mod_vikbooking_chat/language/handler.php:134
 msgid "Start Session"
 msgstr "Start Session"
 
@@ -16724,6 +16730,80 @@ msgid ""
 msgstr ""
 "Select a page to start the booking process. The page must use a VikBooking "
 "shortcode."
+
+#: modules/mod_vikbooking_chat/language/handler.php:46
+msgid "VikBooking Chat"
+msgstr "VikBooking Chat"
+
+#: modules/mod_vikbooking_chat/language/handler.php:54
+msgid "Heading Title"
+msgstr "Heading Title"
+
+#: modules/mod_vikbooking_chat/language/handler.php:58
+msgid "Greetings Title"
+msgstr "Greetings Title"
+
+#: modules/mod_vikbooking_chat/language/handler.php:62
+msgid "Greetings Subtitle"
+msgstr "Greetings Subtitle"
+
+#: modules/mod_vikbooking_chat/language/handler.php:66
+msgid "Question Summary"
+msgstr "Question Summary"
+
+#: modules/mod_vikbooking_chat/language/handler.php:70
+msgid "A short summary of the frequent question."
+msgstr "A short summary of the frequent question."
+
+#: modules/mod_vikbooking_chat/language/handler.php:74
+msgid "Question Text"
+msgstr "Question Text"
+
+#: modules/mod_vikbooking_chat/language/handler.php:78
+msgid "The actual question that will be submitted."
+msgstr "The actual question that will be submitted."
+
+#: modules/mod_vikbooking_chat/language/handler.php:86
+msgid "Text Color"
+msgstr "Text Color"
+
+#: modules/mod_vikbooking_chat/language/handler.php:94
+msgid "Frequent Questions"
+msgstr "Frequent Questions"
+
+#: modules/mod_vikbooking_chat/language/handler.php:102
+msgid "Chat with us"
+msgstr "Chat with us"
+
+#: modules/mod_vikbooking_chat/language/handler.php:106
+msgid "Hello 👋"
+msgstr "Hello 👋"
+
+#: modules/mod_vikbooking_chat/language/handler.php:110
+msgid "How can I help you today?"
+msgstr "How can I help you today?"
+
+#: modules/mod_vikbooking_chat/language/handler.php:114
+msgid "Before we begin, tell us a little about yourself."
+msgstr "Before we begin, tell us a little about yourself."
+
+#: modules/mod_vikbooking_chat/language/handler.php:122
+msgid "Tell us how you prefer to be addressed."
+msgstr "Tell us how you prefer to be addressed."
+
+#: modules/mod_vikbooking_chat/language/handler.php:126
+msgid "Email"
+msgstr "Email"
+
+#: modules/mod_vikbooking_chat/language/handler.php:130
+msgid ""
+"The email address is only used to notify messages that are sent after you "
+"leave the page or close the browser. You are not required to provide an "
+"email address."
+msgstr ""
+"The email address is only used to notify messages that are sent after you "
+"leave the page or close the browser. You are not required to provide an "
+"email address."
 
 #: modules/mod_vikbooking_currencyconverter/language/handler.php:38
 msgid "VikBooking Currency Converter"

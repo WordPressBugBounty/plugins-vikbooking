@@ -405,7 +405,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					<div class="vbo-dashboard-guest-activity-content-head">
 						<div class="vbo-dashboard-guest-activity-content-info-details">
 							<h4 class="vbo-w-guestmessages-message-gtitle"><span><?php
-							if (!$gmessage->first_name && !$gmessage->last_name) {
+							if (empty($gmessage->first_name) && empty($gmessage->last_name)) {
 								echo JText::translate('VBO_GUEST');
 							} else {
 								echo $gmessage->first_name . (!empty($gmessage->last_name) ? ' ' . $gmessage->last_name : '');

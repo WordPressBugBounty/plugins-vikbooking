@@ -22185,6 +22185,14 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 16px;
+
+	.vbo-quote-validity-date-help {
+		cursor: pointer;
+
+		&:hover {
+			color: var(--vbo-base-color);
+		}
+	}
 }
 .vbo-quote-section-current .vbo-quote-section-body {
 	display: grid;
