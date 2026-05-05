@@ -15,8 +15,9 @@ defined('ABSPATH') or die('No script kiddies please!');
  * Helper class to support the default pax fields data collection.
  * 
  * @since 	1.15.0 (J) - 1.5.0 (WP)
+ * @since 	1.18.10 (J) - 1.8.10 (WP) class is no longer final to allow inheritance.
  */
-final class VBOCheckinPaxfieldsBasic extends VBOCheckinAdapter
+class VBOCheckinPaxfieldsBasic extends VBOCheckinAdapter
 {
 	/**
 	 * The ID of this pax data collector class.

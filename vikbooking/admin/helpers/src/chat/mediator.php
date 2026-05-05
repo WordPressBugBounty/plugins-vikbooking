@@ -267,7 +267,19 @@ class VBOChatMediator
             return false;
         }
 
-        return JFile::delete($attachment->getPath());
+        $filePath = $attachment->getPath();
+
+        /**
+         * Make sure the file is located under the registered attachments path
+         * to prevent arbitrary file deletion.
+         * 
+         * @since 1.18.10 (J) - 1.8.10 (WP)
+         */
+        if (strpos($filePath, $this->attachmentsPath) !== 0) {
+            return false;
+        }
+
+        return JFile::delete($filePath);
     }
 
     /**

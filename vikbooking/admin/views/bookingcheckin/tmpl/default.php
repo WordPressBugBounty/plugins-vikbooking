@@ -689,6 +689,8 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 						// display any other information collected through the pre check-in
 						if (count($pax_data) && isset($pax_data[$ind]) && isset($pax_data[$ind][$g])) {
 							foreach ($pax_data[$ind][$g] as $extrak => $extrav) {
+								// sanitize pax field key
+								$extrak = htmlspecialchars($extrak);
 								if (isset($pax_fields[$extrak]) || (is_scalar($extrav) && !strlen($extrav))) {
 									// this is a default pax field, we skip it
 									continue;

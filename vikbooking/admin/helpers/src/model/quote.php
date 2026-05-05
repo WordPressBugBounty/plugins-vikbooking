@@ -58,6 +58,9 @@ class VBOModelQuote extends VBOMvcModel
         if (!empty($data['valid_until'])) {
             // convert the provided date-time string into UTC
             $data['valid_until'] = JFactory::getDate($data['valid_until'], JFactory::getApplication()->get('offset'))->toSql();
+        } else {
+            // force the value to be null
+            $data['valid_until'] = null;
         }
 
         if (!empty($data['country_3_code']) && strlen($data['country_3_code']) !== 3) {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.10
+
+*Release date - 05 May 2026*
+
+- Quote framework minor improvements and fixes.
+- Inquiries framework (and Chatbot) fixes.
+- Security fixes mainly for XSS prevention or data filtering.
+
 ## 1.8.9
 
 *Release date - 28 April 2026*

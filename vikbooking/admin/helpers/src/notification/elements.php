@@ -125,7 +125,7 @@ class VBONotificationElements extends JObject
 	public function getTitle()
 	{
 		// access the notification title
-		$title = (string) $this->get('title', '');
+		$title = strip_tags((string) $this->get('title', ''));
 
 		// try to guess the title
 		if (!$title) {

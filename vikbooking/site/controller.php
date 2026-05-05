@@ -3269,6 +3269,11 @@ class VikBookingController extends JControllerVikBooking
 		foreach ($pguests as $ind => $adults) {
 			foreach ($adults as $aduind => $details) {
 				foreach ($details as $detkey => $detval) {
+					// accept no raw HTML tags as keys
+					$detkey = htmlspecialchars(strip_tags($detkey));
+					if (!$detkey) {
+						continue;
+					}
 					if (!in_array($detkey, $front_keys)) {
 						// push the key of the guest details for later comparison
 						array_push($front_keys, $detkey);
@@ -3304,6 +3309,11 @@ class VikBookingController extends JControllerVikBooking
 						$guests_details[$ind][$aduind] = $details;
 					}
 					foreach ($details as $detkey => $detval) {
+						// accept no raw HTML tags as keys
+						$detkey = htmlspecialchars(strip_tags($detkey));
+						if (!$detkey) {
+							continue;
+						}
 						if (!in_array($detkey, $front_keys)) {
 							// merge this key probably reserved to the back-end
 							$guests_details[$ind][$aduind][$detkey] = $detval;
