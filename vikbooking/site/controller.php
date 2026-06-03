@@ -1886,7 +1886,10 @@ class VikBookingController extends JControllerVikBooking
 
 		if ($row['status'] == 'confirmed' && !(VikBooking::multiplePayments() && $row['paymcount'] > 0)) {
 			// booking can be paid only if not confirmed or if multiple payments are enabled and payment counter for booking greater than zero
-			VBOHttpDocument::getInstance()->close(409, 'Conflicting and unexpected payment validation for this reservation');
+			if (empty($row['idorderota']) || !empty($row['totpaid'])) {
+				// accept only the first payment for an OTA reservation
+				VBOHttpDocument::getInstance()->close(409, 'Conflicting and unexpected payment validation for this reservation');
+			}
 		}
 
 		/**

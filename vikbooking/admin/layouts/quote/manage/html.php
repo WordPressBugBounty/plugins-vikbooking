@@ -86,9 +86,8 @@ HTML;
     if ($quote) {
         // route quote URI
         $quoteUri = VikBooking::externalroute(
-            "index.php?option=com_vikbooking&view=quote&ref={$quote->uuid}",
-            false,
-            (VikBooking::findProperItemIdType(['quote'], $quote->solutions[0]->lang ?? null) ?: null)
+            "index.php?option=com_vikbooking&view=quote&ref={$quote->uuid}" . (($quote->solutions[0]->lang ?? null) ? '&lang=' . $quote->solutions[0]->lang : ''),
+            false
         );
         ?>
         <div class="vbo-quote-section vbo-quote-section-current" data-quote-id="<?php echo $quote->id; ?>">

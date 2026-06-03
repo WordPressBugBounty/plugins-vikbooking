@@ -553,6 +553,22 @@ class VBOBookingRegistry
     }
 
     /**
+     * Sets the previous booking data.
+     * 
+     * @param   array   $previous   Previous booking assoc data.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.11 (J) - 1.8.11 (WP)
+     */
+    public function setPrevious(array $previous)
+    {
+        $this->previousBooking = $previous;
+
+        return $this;
+    }
+
+    /**
      * Gets the current room index.
      * 
      * @return  int

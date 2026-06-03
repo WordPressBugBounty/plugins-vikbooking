@@ -66,7 +66,7 @@
     --vbo-light-green-color: #4e754c;
 	--vbo-light-green-color-hover: #365335;
     
-    --vbo-blue-color: #2f6f8e;
+    --vbo-blue-color: #3984aa;
     --vbo-blue-color-hover: #498fb3;
     
     --vbo-gold-color: #ccc450;
@@ -357,6 +357,10 @@ input[type="color"]:focus, input[type="date"]:focus, input[type="datetime-local"
     border-top: 1px solid var(--vbo-light-color-btn) !important;
     border-right: 1px solid var(--vbo-light-color-btn) !important;
     border-bottom: 1px solid var(--vbo-light-color-btn) !important;
+
+    p, .notice-dismiss:before {
+		color: #fff;
+	}
 }
 .select2-container.select2-container--default .select2-selection--single .select2-selection__rendered {
     color: var(--vbo-config-titles-color-light);

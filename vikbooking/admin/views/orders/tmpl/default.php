@@ -1177,7 +1177,7 @@ function vcmCountGuestMessages() {
 			id_order: all_bids
 		},
 		(res) => {
-			var counters = JSON.parse(res);
+			var counters = typeof res === 'object' ? res : JSON.parse(res);
 			for (var bid in all_bids) {
 				if (!all_bids.hasOwnProperty(bid)) {
 					continue;

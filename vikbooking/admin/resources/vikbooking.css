@@ -1868,10 +1868,11 @@ p.vbpfiltconfnumb {
 	font-size: 12px;
 	margin: 0 3px;
 }
-.vbo-perms-operators:hover {
+.vbo-perms-operators:hover, .vbo-perms-operators:active, .vbo-perms-operators:focus {
 	text-decoration: none;
 	background: var(--vbo-blue-color);
 	color: var(--vbo-contrast-text-color);
+	border-radius: 20px;
 }
 .vbo-perms-operators > i {
 	color: var(--vbo-blue-color);
@@ -3119,10 +3120,10 @@ form[name="invoicesform"] .btn-toolbar {
 	flex-wrap: wrap;
 	gap: 2px;
 	padding: 4px 5px;
-	/* height: 38px; */
 }
 .vbo-toolbar-multiselect-wrap .select2-selection--multiple .select2-selection__rendered li .select2-search__field {
 	margin-bottom: 0 !important;
+	min-height: initial;
 }
 .vbo-toolbar-multiselect-wrap .select2-container .select2-search--inline {
 	padding-top: 0;
@@ -3225,7 +3226,7 @@ form[name="invoicesform"] .btn-toolbar {
 .vbo-bookingslist-table thead th a:hover,
 .vbo-list-table thead th .vbo-list-activesort, 
 .vbo-list-table thead th a:hover {
-	color: var(--vbo-base-color);
+	color: var(--vbo-blue-color);
 	text-decoration: none;
 }
 .vbo-bookingslist-viewdet, .vbo-bookingslist-booktime-date {
@@ -10684,6 +10685,9 @@ table.vboverviewtable td.vbo-cell-selected-middle-row-up {
 	display: inline-block;
 	vertical-align: middle;
 }
+.vbo-customer-info-box .vbo-customer-info-box-name a {
+	color: var(--vbo-base-color);
+}
 .vbo-bookdet-foot .btn-primary {
 	border: var(--vbo-base-color);
 	padding: 3px 12px;
@@ -11303,6 +11307,9 @@ table.vboverviewtable td.vbo-cell-selected-middle-row-up {
 }
 .vbo-bookingdet-summary-totpaid .vbo-amount-payable-lbl, .vbo-bookingdet-summary-totpaid #vbo-amountpayable-edit {
 	color: var(--vbo-blue-color);
+}
+.vbo-bookingdet-summary-totpaid.vbo-bookingdet-summary-totpayable td {
+	vertical-align: middle;
 }
 .vbo-bookingdet-summary-totrefunded .vbo-amount-refunded-lbl {
 	color: var(--vbo-red-color);
@@ -13043,7 +13050,7 @@ i.vbo-icn-img {
 
 .vbo-link-add {
 	font-size: 13px;
-	border-radius: 3px;
+	border-radius: var(--vbo-field-radius);
 }
 .vbo-link-add i {
 	margin-right: 5px;
@@ -14565,6 +14572,9 @@ input[type="text"].vbo-param-setting-tm-task-title-inp:focus {
 }
 .vbo-tm-list-task-row .edit-trigger {
     cursor: pointer;
+}
+.vbo-tm-list-task-row .edit-trigger:hover {
+	color: var(--vbo-blue-color);
 }
 .order-summary-flex .see-booking-details {
     position: relative;
@@ -22078,6 +22088,9 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 10px;
 }
+.vbo-quote-option-rooms .vbo-editbooking-room-service[data-child-age="1"] .vbo-editbooking-room-service-check .vbo-quote-child-age-wrap:only-child {
+	grid-column: 1 / -1;
+}
 .vbo-quote-option-rooms .vbo-editbooking-room-service[data-child-age="1"] .vbo-editbooking-room-service-check select {
 	max-width: 100%;
 	width: 100% !important;
@@ -25202,6 +25215,7 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
 }
 .vbo-uploaded-files .file-elem a {
 	position: relative;
+	color: var(--vbo-blue-color);
 }
 .vbo-uploaded-files .file-elem.uploading a,
 .vbo-uploaded-files .file-elem.removing a {
@@ -25532,6 +25546,12 @@ div[id^="vbo-widget-reminders"] .vbo-reportwidget-filters .vbo-reportwidget-filt
     right: 0;
     transform: translateY(-50%);
     font-size: 40px;
+}
+.tm-switch-main-panel a {
+	color: var(--vbo-blue-color);
+}
+.tm-switch-main-panel a:hover {
+	color: var(--vbo-blue-color-hover);
 }
 .tm-switch-main-panel:before {
     content: attr(data-unread);

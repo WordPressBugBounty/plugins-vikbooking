@@ -32,6 +32,30 @@ class VBOPlatformOrgWordpressUri extends VBOPlatformUriAware
 	{
 		$app = JFactory::getApplication();
 
+		/**
+		 * If a post ID is provided, and if the query does not contain any language,
+		 * access the shortcode details and eventually append the proper language.
+		 * This is because the WP router will use the post ID only as a fallback,
+		 * by always giving higher priority to view and lang query arguments.
+		 * 
+		 * @since 	1.8.11
+		 */
+		if ($itemid && !preg_match('/(&|\?)lang=/', $query))
+		{
+			// access the shortcode model
+			$model = JModel::getInstance('vikbooking', 'shortcode', 'admin');
+
+			// get shortcode record by post ID, or eventually get an empty object
+			$shortcode = $model->getItem(['post_id' => $itemid], true);
+
+			// make sure the shortcode is not using "any" language (default value also for empty object)
+			if ($shortcode->lang != '*')
+			{
+				// append shortcode language to query to ensure obtaining a properly rewritten URL
+				$query .= '&lang=' . $shortcode->lang;
+			}
+		}
+
 		if (is_array($query))
 		{
 			// make sure the array is not empty

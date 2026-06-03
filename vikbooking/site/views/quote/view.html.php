@@ -17,6 +17,7 @@ class VikbookingViewQuote extends JViewVikBooking
 	public function display($tpl = null)
 	{
 		$app = JFactory::getApplication();
+		$vbo_tn = VikBooking::getTranslator();
 
 		// set noindex instruction for robots
 		JFactory::getDocument()->setMetaData('robots', 'noindex, nofollow');
@@ -60,6 +61,8 @@ class VikbookingViewQuote extends JViewVikBooking
 			$roomsData = array_map(function($roomId) {
 				return VikBooking::getRoomInfo($roomId, [], true);
 			}, $involvedRoomIds);
+			// translate records
+			$vbo_tn->translateContents($roomsData, '#__vikbooking_rooms');
 			// turn the list into associative
 			$roomsData = array_combine(array_column($roomsData, 'id'), array_values($roomsData));
 		}
@@ -67,6 +70,7 @@ class VikbookingViewQuote extends JViewVikBooking
 		// set template properties
 		$this->quoteData = $quoteData;
 		$this->roomsData = $roomsData;
+		$this->vbo_tn    = $vbo_tn;
 
 		// display template
 		parent::display($tpl);

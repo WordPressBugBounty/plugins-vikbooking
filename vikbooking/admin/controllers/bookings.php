@@ -1232,6 +1232,7 @@ class VikBookingControllerBookings extends JControllerAdmin
      * @return  void
      * 
      * @since   1.18.7 (J) - 1.8.7 (WP)
+     * @since   1.18.11 (J) - 1.8.11 (WP) operation is performed through a VBOBookingRelocator object.
      */
     public function apply_room_assignment()
     {
@@ -1250,11 +1251,8 @@ class VikBookingControllerBookings extends JControllerAdmin
             VBOHttpDocument::getInstance($app)->close(400, 'Missing reassignment moveset.');
         }
 
-        // room details empty container
-        $roomDetails = [];
-
-        // confirm the integrity of the operations to execute
-        $confirmedOperations = [];
+        // identify booking ID
+        $bookingId = null;
 
         // scan operation steps
         $operationSteps = explode('-', $moveset);
@@ -1265,70 +1263,25 @@ class VikBookingControllerBookings extends JControllerAdmin
                 VBOHttpDocument::getInstance($app)->close(400, 'Invalid moveset operation.');
             }
 
-            // fetch requested room record
-            $dbo->setQuery(
-                $dbo->getQuery(true)
-                    ->select('*')
-                    ->from($dbo->qn('#__vikbooking_ordersrooms'))
-                    ->where($dbo->qn('id') . ' = ' . (int) ($moveData[1] ?? 0))
-                    ->where($dbo->qn('idorder') . ' = ' . (int) ($moveData[0] ?? 0))
-            );
-            $roomRecord = $dbo->loadAssoc();
-
-            if (!$roomRecord) {
-                VBOHttpDocument::getInstance($app)->close(404, 'Could not find moveset operation.');
-            }
-
-            // confirm operation
-            $confirmedOperations[] = $moveData;
-
-            if (!$roomDetails) {
-                // load the first and only room details
-                $roomDetails = VikBooking::getRoomInfo((int) $roomRecord['idroom'], ['id', 'name'], true);
-            }
+            // keep setting booking ID until last moveset operation
+            $bookingId = (int) ($moveData[0] ?? 0);
         }
 
-        if (!$confirmedOperations) {
+        if (!$bookingId) {
             VBOHttpDocument::getInstance($app)->close(400, 'No valid moveset operations.');
         }
 
-        // get current CMS user and name
-        $user = JFactory::getUser();
-        $userName = $user->name;
+        try {
+            // access booking relocator object
+            $relocator = VBOBookingRelocator::getInstance([
+                'id' => $bookingId,
+            ]);
 
-        // determine action name
-        $actionName = $undo ? JText::translate('VBO_UNDO_CHANGES') : JText::translate('VBO_RESOLVE_ROOM_ASSIGNMENT');
-
-        // apply all moves
-        foreach ($confirmedOperations as $moveData) {
-            // determine the room index to apply
-            $prev_room_index = $undo ? (int) ($moveData[3] ?? 0) : (int) ($moveData[2] ?? 0);
-            $new_room_index = $undo ? (int) ($moveData[2] ?? 0) : (int) ($moveData[3] ?? 0);
-            // update current room record
-            $dbo->setQuery(
-                $dbo->getQuery(true)
-                    ->update($dbo->qn('#__vikbooking_ordersrooms'))
-                    ->set($dbo->qn('roomindex') . ' = ' . ($new_room_index ?: 'NULL'))
-                    ->where($dbo->qn('id') . ' = ' . (int) ($moveData[1] ?? 0))
-                    ->where($dbo->qn('idorder') . ' = ' . (int) ($moveData[0] ?? 0))
-            );
-            $dbo->execute();
-
-            // Booking History
-            VikBooking::getBookingHistoryInstance((int) ($moveData[0] ?? 0))
-                ->setExtraData([
-                    'action' => 'resolve_room_assignment',
-                    'type'   => $undo ? 'undo' : 'apply',
-                ])
-                ->store(
-                    'MB',
-                    sprintf(
-                        '(%s) %s: %s',
-                        (string) $userName,
-                        $actionName,
-                        JText::sprintf('VBOROOMSUBUNITCHANGEFT', $roomDetails['name'], $prev_room_index, $new_room_index)
-                    )
-                );
+            // execute given relocation moveset
+            $relocator->execMovesetSignature($moveset, $undo);
+        } catch (Exception $e) {
+            // raise error
+            VBOHttpDocument::getInstance($app)->close($e->getCode(), $e->getMessage());
         }
 
         // process completed

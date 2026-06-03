@@ -270,12 +270,20 @@ class VBOChatMediator
         $filePath = $attachment->getPath();
 
         /**
+         * Resolve traversal segments before comparing the received path
+         * against the allowed folder.
+         * 
+         * @since 1.18.11 (J) - 1.8.11 (WP)
+         */
+        $filePath = realpath($filePath);
+
+        /**
          * Make sure the file is located under the registered attachments path
          * to prevent arbitrary file deletion.
          * 
          * @since 1.18.10 (J) - 1.8.10 (WP)
          */
-        if (strpos($filePath, $this->attachmentsPath) !== 0) {
+        if (!$filePath || strpos($filePath, $this->attachmentsPath) !== 0) {
             return false;
         }
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.8.11
+
+*Release date - 03 June 2026*
+
+- Fixed "arbitrary file deletion" vulnerability through Chatbot (AI or administrator reply to first message was required to use the exploit).
+- Booking color tags improvements to support any future OTA payout notification.
+- Unified AJAX response parsing for guest messaging controllers.
+- Styling improvements for compatibility with WordPress >= 7.0.
+- Content translations applied to front-end Quote Details page.
+- Quote URI routing improvements.
+- Various booking and registry libraries updates.
+- First payment detection improvements for OTA reservations.
+
 ## 1.8.10
 
 *Release date - 05 May 2026*

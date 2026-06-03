@@ -125,6 +125,127 @@ final class VBOBookingRelocator
     }
 
     /**
+     * Applies (or undoes) the relocation moveset to complete the room re-assignment operation.
+     * 
+     * @param   VBOBookingSubunitMoveset    $moveset    The moveset to process and apply.
+     * @param   bool                        $undo       True to undo the applied moveset.
+     * 
+     * @return  true
+     * 
+     * @throws  Exception
+     * 
+     * @since   1.18.11 (J) - 1.8.11 (WP)
+     */
+    public function applyMoveset(VBOBookingSubunitMoveset $moveset, bool $undo = false)
+    {
+        // obtain moveset signature
+        $signature = $moveset->getSignature();
+
+        return $this->execMovesetSignature($signature, $undo);
+    }
+
+    /**
+     * Executes the relocation moveset signature to complete the room re-assignment operation.
+     * 
+     * @param   string  $signature  The moveset signature to execute.
+     * @param   bool    $undo       True to undo the applied moveset.
+     * 
+     * @return  true
+     * 
+     * @throws  Exception
+     * 
+     * @since   1.18.11 (J) - 1.8.11 (WP)
+     */
+    public function execMovesetSignature(string $signature, bool $undo = false)
+    {
+        $dbo = JFactory::getDbo();
+
+        // room details empty container
+        $roomDetails = [];
+
+        // confirm the integrity of the operations to execute
+        $confirmedOperations = [];
+
+        // scan operation steps
+        $operationSteps = explode('-', $signature);
+        foreach ($operationSteps as $operationStep) {
+            // obtain move details
+            $moveData = explode('.', $operationStep);
+            if (count($moveData) < 4) {
+                throw new Exception('Invalid moveset operation.', 400);
+            }
+
+            // fetch requested room record
+            $dbo->setQuery(
+                $dbo->getQuery(true)
+                    ->select('*')
+                    ->from($dbo->qn('#__vikbooking_ordersrooms'))
+                    ->where($dbo->qn('id') . ' = ' . (int) ($moveData[1] ?? 0))
+                    ->where($dbo->qn('idorder') . ' = ' . (int) ($moveData[0] ?? 0))
+            );
+            $roomRecord = $dbo->loadAssoc();
+
+            if (!$roomRecord) {
+                throw new Exception('Could not find moveset operation.', 404);
+            }
+
+            // confirm operation
+            $confirmedOperations[] = $moveData;
+
+            if (!$roomDetails) {
+                // load the first and only room details
+                $roomDetails = VikBooking::getRoomInfo((int) $roomRecord['idroom'], ['id', 'name'], true);
+            }
+        }
+
+        if (!$confirmedOperations) {
+            throw new Exception('No valid moveset operations.', 400);
+        }
+
+        // get current CMS user and name
+        $user = JFactory::getUser();
+        $userName = $user->name;
+
+        // determine action name
+        $actionName = $undo ? JText::translate('VBO_UNDO_CHANGES') : JText::translate('VBO_RESOLVE_ROOM_ASSIGNMENT');
+
+        // apply all moves
+        foreach ($confirmedOperations as $moveData) {
+            // determine the room index to apply
+            $prev_room_index = $undo ? (int) ($moveData[3] ?? 0) : (int) ($moveData[2] ?? 0);
+            $new_room_index = $undo ? (int) ($moveData[2] ?? 0) : (int) ($moveData[3] ?? 0);
+
+            // update current room record
+            $dbo->setQuery(
+                $dbo->getQuery(true)
+                    ->update($dbo->qn('#__vikbooking_ordersrooms'))
+                    ->set($dbo->qn('roomindex') . ' = ' . ($new_room_index ?: 'NULL'))
+                    ->where($dbo->qn('id') . ' = ' . (int) ($moveData[1] ?? 0))
+                    ->where($dbo->qn('idorder') . ' = ' . (int) ($moveData[0] ?? 0))
+            );
+            $dbo->execute();
+
+            // Booking History
+            VikBooking::getBookingHistoryInstance((int) ($moveData[0] ?? 0))
+                ->setExtraData([
+                    'action' => 'resolve_room_assignment',
+                    'type'   => $undo ? 'undo' : 'apply',
+                ])
+                ->store(
+                    'MB',
+                    sprintf(
+                        '(%s) %s: %s',
+                        (string) $userName,
+                        $actionName,
+                        JText::sprintf('VBOROOMSUBUNITCHANGEFT', $roomDetails['name'], $prev_room_index, $new_room_index)
+                    )
+                );
+        }
+
+        return true;
+    }
+
+    /**
      * Builds and returns the room booking records matrix.
      * 
      * @param   ?array  $relocateRoomRecord     Optional room booking record to relocate.

@@ -395,11 +395,13 @@ class VBOModelQuote extends VBOMvcModel
         // access booking registry for the first related booking (if any)
         $bookingRegistry = $bookingIds ? VBOBookingRegistry::getInstance(['id' => $bookingIds[0] ?? 0]) : null;
 
+        // get booking language
+        $lang = $bookingRegistry->getProperty('lang');
+
         // route quote URI
         $quoteUri = VikBooking::externalroute(
-            "index.php?option=com_vikbooking&view=quote&ref={$quote->uuid}",
-            false,
-            (VikBooking::findProperItemIdType(['quote'], $bookingRegistry->getProperty('lang') ?: null) ?: null)
+            "index.php?option=com_vikbooking&view=quote&ref={$quote->uuid}" . ($lang ? "&lang={$lang}" : ''),
+            false
         );
 
         // build the list of known tag parameters

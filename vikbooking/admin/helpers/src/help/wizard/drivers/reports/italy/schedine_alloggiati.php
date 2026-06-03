@@ -106,8 +106,8 @@ class VBOHelpWizardDriverReportsItalySchedineAlloggiati extends VBOHelpWizardIns
     {
         // schedule first "test transmit cards"
         $payload = $this->autoExportPayload;
-        $payload['fromdate'] = '{Y-m-d +1 day}';
-        $payload['todate'] = '{Y-m-d +1 day}';
+        $payload['fromdate'] = '{Y-m-d}';
+        $payload['todate'] = '{Y-m-d}';
         $payload['_reportAction'] = 'testTransmitCards';
 
         $this->saveAutoExport($payload['_reportAction'], $payload);

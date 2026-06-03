@@ -62,6 +62,33 @@ input[type="date"], input[type="datetime-local"], input[type="datetime"], input[
 	padding: 0;
 }
 
+/*** WP 7 - We apply CSS that will not bother other WP version ***/
+.notice, div.error, div.updated {
+	border-top: 1px solid #c3c4c7;
+	border-bottom: 1px solid #c3c4c7;	
+	border-right: 1px solid #c3c4c7;
+}
+.vbo-list-table a {
+	color: var(--vbo-blue-color);
+}
+.vbo-list-table a:hover {
+	color: var(--vbo-blue-color-hover);
+}
+a.btn, a.btn:focus, a.btn:active, a.btn:hover {
+	text-decoration: none;
+	border-radius: var(--vbo-field-radius);
+}
+a.btn:focus {
+	color: var(--vbo-contrast-text-color);
+}
+.vbo-link-add:hover, .vbo-link-add:focus, .vbo-link-add:active {
+	border-radius: var(--vbo-field-radius);
+	color: var(--vbo-contrast-text-color);	
+}
+.vbo-coupon-use-count a, .vbo-coupon-use-count a:hover, .vbo-coupon-use-count a:focus, .vbo-coupon-use-count a:active {
+	color: var(--vbo-contrast-text-color);
+}
+/*** End: WP 7 **/
 /*** Menu ***/
 .vbo-menu-container {
 	margin-bottom: 20px;
@@ -137,6 +164,8 @@ select {
 	outline: none;
 	width: 100px !important;
 	border: 0 !important;
+	box-shadow: none;
+	background: transparent;
 }
 .wp-calendar-box input:focus {
 	outline: none;
@@ -391,11 +420,6 @@ i.icon-image:before {
 	color: var(--vbo-config-title-color);
 	background-color: var(--vbo-basic-btn-hover);
 }
-
-a.btn {
-	text-decoration: none;
-}
-
 /**
  * control
  */
@@ -721,7 +745,7 @@ input[type="number"], #vbo-addnumnight, #vbo-numnights, #vbo-numadults, #vbo-num
 	vertical-align: bottom;
 }
 .vbo-reports-filters-outer .vbo-reports-filters-report .vbo-report-filter-wrap {
-	vertical-align: top;
+	vertical-align: bottom;
 }
 .vbo-report-layout-type {
 	margin-top: 20px;

@@ -38,6 +38,11 @@ class VBOModelReservation extends JObject
     protected $allRooms = [];
 
     /**
+     * @var ?VBOBookingRegistry
+     */
+    protected ?VBOBookingRegistry $prevBookingRegistry = null;
+
+    /**
      * Proxy for immediately getting the object and bind data.
      * 
      * @param   array|object  $data  optional data to bind.
@@ -445,16 +450,27 @@ class VBOModelReservation extends JObject
     }
 
     /**
-     * Creates a new reservation record after having constructed the
-     * object by properly injecting all the necessary booking information.
+     * Runs before a reservation is created or updated.
+     * 
+     * @param   ?int    $bookingId  Optional reservation ID being updated.
      * 
      * @return  bool
+     * 
+     * @since   1.18.11 (J) - 1.8.11 (WP)
      */
-    public function create()
+    protected function preflight(?int $bookingId = null)
     {
-        if (!$this->canCreate()) {
-            $this->setError('Forbidden');
+        // if updating a reservation, fetch the previous details
+        try {
+            $prevBookingRegistry = $bookingId ? VBOBookingRegistry::getInstance(['id' => $bookingId]) : null;
+        } catch (Exception $e) {
+            $this->setError($e->getMessage());
             return false;
+        }
+
+        if ($prevBookingRegistry) {
+            // set booking registry snapshot prior to update
+            $this->prevBookingRegistry = $prevBookingRegistry;
         }
 
         // availability helper
@@ -535,6 +551,31 @@ class VBOModelReservation extends JObject
         // fetch and apply turnover time before doing anything else
         $this->applyTurnover();
 
+        return true;
+    }
+
+    /**
+     * Creates a new reservation record after having constructed the
+     * object by properly injecting all the necessary booking information.
+     * 
+     * @return  bool
+     */
+    public function create()
+    {
+        if (!$this->canCreate()) {
+            $this->setError('Forbidden');
+            return false;
+        }
+
+        /**
+         * Run preflight to ensure data integrity.
+         * 
+         * @since   1.18.11 (J) - 1.8.11 (WP)
+         */
+        if (!$this->preflight()) {
+            return false;
+        }
+
         // get pool of rooms involved
         $rooms_pool = $this->getRoomsPool();
         if (!$rooms_pool) {
@@ -569,6 +610,78 @@ class VBOModelReservation extends JObject
             if ($this->getError() === false) {
                 // set generic error if not set already
                 $this->setError('Could not create the reservation');
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Updates a reservation record after having constructed the
+     * object by properly injecting all the necessary booking information.
+     * Unlike the modify() method, this method follows the create() pattern.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.11 (J) - 1.8.11 (WP)
+     */
+    public function update()
+    {
+        // access booking ID
+        $bookingId = (int) $this->get('booking_id', 0);
+
+        if (!$bookingId) {
+            $this->setError('Missing booking ID to update.');
+            return false;
+        }
+
+        /**
+         * Run preflight to ensure data integrity.
+         */
+        if (!$this->preflight($bookingId)) {
+            return false;
+        }
+
+        // get pool of rooms involved
+        $rooms_pool = $this->getRoomsPool();
+        if (!$rooms_pool) {
+            if ($this->getError() === false) {
+                // set generic error if not set already
+                $this->setError('No rooms involved in the reservation');
+            }
+            return false;
+        }
+
+        try {
+            // check if the rooms are available for modification
+            $rooms_available = $this->bookingModifiable($bookingId, $this->get('checkin'), $this->get('checkout'));
+            if (!$rooms_available && !$this->get('force_booking', 0) && !$this->get('set_closed', 0)) {
+                // no forcing, no closure and room(s) fully booked means we have an error
+                if (!$this->getError()) {
+                    $this->setError(JText::translate('VBBOOKNOTMADE'));
+                }
+                return false;
+            }
+        } catch (Exception $e) {
+            $this->setError($e->getMessage());
+            return false;
+        }
+
+        // detect if we are forcing the reservation
+        $this->detectForcedReason($rooms_available);
+
+        // store or update the customer information
+        $this->storeCustomer();
+
+        // calculate total amount and total tax
+        $this->calculateTotal();
+
+        // update booking and room-booking records
+        if (!$this->storeReservationRecords($rooms_pool, $bookingId)) {
+            if ($this->getError() === false) {
+                // set generic error if not set already
+                $this->setError('Could not update the reservation');
             }
             return false;
         }
@@ -956,6 +1069,7 @@ class VBOModelReservation extends JObject
      * This method does not support all rate plan options like for the creation of a
      * new booking. This is a method for making quick updates concerning a room switch,
      * a change of stay dates, new booking total amount, guests, add extra services etc..
+     * For modifying a reservation with the same data as for the creation, see update().
      * 
      * @param   array   $options    List of details to perform the modification.
      * 
@@ -1401,15 +1515,17 @@ class VBOModelReservation extends JObject
     }
 
     /**
-     * Deletes the requested booking ID.
+     * Deletes the requested booking ID and related records.
      * 
-     * @param   array   $options    List of details to perform the cancellation.
+     * @param   array   $options     List of details to perform the cancellation.
+     * @param   bool    $reCreating  True if the booking is being re-created (updated).
      * 
      * @return  bool
      * 
      * @since   1.16.10 (J) - 1.6.10 (WP)
+     * @since   1.18.11 (J) - 1.8.11 (WP) added argument $reCreating.
      */
-    public function delete(array $options)
+    public function delete(array $options, bool $reCreating = false)
     {
         $dbo = JFactory::getDbo();
 
@@ -1417,19 +1533,23 @@ class VBOModelReservation extends JObject
         $canc_reason  = $options['cancellation_reason'] ?? '';
         $purge_remove = $options['purge_remove'] ?? false;
 
-        $booking = VikBooking::getBookingInfoFromID($booking_id);
+        if ($reCreating && $this->prevBookingRegistry && $this->prevBookingRegistry->getID() == $booking_id) {
+            $booking = $this->prevBookingRegistry->getData();
+        } else {
+            $booking = VikBooking::getBookingInfoFromID($booking_id);
+        }
 
         if (!$booking) {
             $this->setError('Booking not found.');
             return false;
         }
 
-        if ($booking['status'] === 'cancelled' && !$purge_remove) {
+        if (!$reCreating && $booking['status'] === 'cancelled' && !$purge_remove) {
             $this->setError(sprintf('Booking ID %d is already cancelled.', $booking['id']));
             return false;
         }
 
-        if (class_exists('VCMFeesCancellation')) {
+        if (!$reCreating && class_exists('VCMFeesCancellation')) {
             // let VCM detect if there are any constraints for the cancellation
             $canc_denied = VCMFeesCancellation::getInstance($booking, $anew = true)->isBookingConstrained();
             if ($canc_denied) {
@@ -1447,17 +1567,19 @@ class VBOModelReservation extends JObject
         $notify_otas = false;
 
         if ($booking['status'] != 'cancelled') {
-            // update status to cancelled
-            $q = $dbo->getQuery(true)
-                ->update($dbo->qn('#__vikbooking_orders'))
-                ->set($dbo->qn('status') . ' = ' . $dbo->q('cancelled'))
-                ->where($dbo->qn('id') . ' = ' . (int) $booking['id']);
-            if (!empty($canc_reason)) {
-                $set_canc_reason = (!empty($booking['adminnotes']) ? $booking['adminnotes'] . "\n" : '') . $canc_reason;
-                $q->set($dbo->qn('adminnotes') . ' = ' . $dbo->q($set_canc_reason));
+            if (!$reCreating) {
+                // update status to cancelled
+                $q = $dbo->getQuery(true)
+                    ->update($dbo->qn('#__vikbooking_orders'))
+                    ->set($dbo->qn('status') . ' = ' . $dbo->q('cancelled'))
+                    ->where($dbo->qn('id') . ' = ' . (int) $booking['id']);
+                if (!empty($canc_reason)) {
+                    $set_canc_reason = (!empty($booking['adminnotes']) ? $booking['adminnotes'] . "\n" : '') . $canc_reason;
+                    $q->set($dbo->qn('adminnotes') . ' = ' . $dbo->q($set_canc_reason));
+                }
+                $dbo->setQuery($q);
+                $dbo->execute();
             }
-            $dbo->setQuery($q);
-            $dbo->execute();
 
             // delete temporarily locked records, if any
             $dbo->setQuery(
@@ -1467,24 +1589,26 @@ class VBOModelReservation extends JObject
             );
             $dbo->execute();
 
-            if ($booking['status'] == 'confirmed') {
+            if (!$reCreating && $booking['status'] == 'confirmed') {
                 // turn flag on
                 $notify_otas = true;
             }
 
-            // access history object
-            $history_obj = VikBooking::getBookingHistoryInstance($booking['id']);
+            if (!$reCreating) {
+                // access history object
+                $history_obj = VikBooking::getBookingHistoryInstance($booking['id']);
 
-            $caller_id = $now_user->name ? "({$now_user->name})" : '';
-            if ($this->getCaller()) {
-                $caller_id = '(' . $this->getCaller() . ')';
-                if ($this->getHistoryData()) {
-                    $history_obj->setExtraData($this->getHistoryData());
+                $caller_id = $now_user->name ? "({$now_user->name})" : '';
+                if ($this->getCaller()) {
+                    $caller_id = '(' . $this->getCaller() . ')';
+                    if ($this->getHistoryData()) {
+                        $history_obj->setExtraData($this->getHistoryData());
+                    }
                 }
-            }
 
-            // update Booking History
-            $history_obj->store('CB', $caller_id);
+                // update Booking History
+                $history_obj->store('CB', $caller_id);
+            }
         }
 
         /**
@@ -1523,7 +1647,7 @@ class VBOModelReservation extends JObject
         $dbo->execute();
 
         // check for purge removal
-        if ($booking['status'] === 'cancelled' && $purge_remove) {
+        if (!$reCreating && $booking['status'] === 'cancelled' && $purge_remove) {
             // delete booking-customer relation
             $dbo->setQuery(
                 $dbo->getQuery(true)
@@ -1562,7 +1686,24 @@ class VBOModelReservation extends JObject
             }
         }
 
-        if ($notify_otas) {
+        if ($reCreating === true) {
+            // when updating a booking record, get rid of all rooms previously assigned
+
+            // delete booking-room relations
+            $dbo->setQuery(
+                $dbo->getQuery(true)
+                    ->delete($dbo->qn('#__vikbooking_ordersrooms'))
+                    ->where($dbo->qn('idorder') . ' = ' . (int) $booking['id'])
+            );
+            $dbo->execute();
+
+            // in case of split stay booking, remove the transient
+            if ($booking['split_stay']) {
+                VBOFactory::getConfig()->remove('split_stay_' . $booking['id']);
+            }
+        }
+
+        if (!$reCreating && $notify_otas) {
             $vcm_autosync = VikBooking::vcmAutoUpdate();
             if ($vcm_autosync > 0) {
                 $vcm_obj = VikBooking::getVcmInvoker();
@@ -1972,8 +2113,13 @@ class VBOModelReservation extends JObject
      */
     public function bookingModifiable(int $booking_id, $new_checkin, $new_checkout)
     {
-        // load all booking rooms
-        $booking_rooms = VikBooking::loadOrdersRoomsData($booking_id);
+        // attempt to access previous booking registry to reduce queries
+        if ($this->prevBookingRegistry && $this->prevBookingRegistry->getID() == $booking_id) {
+            $booking_rooms = $this->prevBookingRegistry->getRooms();
+        } else {
+            // load all booking rooms
+            $booking_rooms = VikBooking::loadOrdersRoomsData($booking_id);
+        }
 
         if (!$booking_rooms) {
             throw new Exception('Could not find any rooms booked within the reservation.', 500);
@@ -3036,15 +3182,23 @@ class VBOModelReservation extends JObject
     }
 
     /**
-     * Stores the booking and room-booking records.
-     * If no errors, the newly generated booking id is set.
+     * Stores (or updates) the booking and room-booking records.
+     * If no errors, the newly generated or updated booking id is set.
      * 
-     * @param   array   $rooms_pool     list of rooms involved.
+     * @param   array   $rooms_pool     List of rooms involved.
+     * @param   ?int    $bookingId      The booking ID being updated, if any.
      * 
      * @return  bool
+     * 
+     * @since   1.18.11 (J) - 1.8.11 (WP) added $bookingId argument to support updates.
      */
-    protected function storeReservationRecords(array $rooms_pool)
+    protected function storeReservationRecords(array $rooms_pool, ?int $bookingId = null)
     {
+        if ($bookingId && !$this->prevBookingRegistry) {
+            $this->setError('Missing previous booking registry for update.');
+            return false;
+        }
+
         $dbo = JFactory::getDbo();
 
         // access properties
@@ -3081,15 +3235,20 @@ class VBOModelReservation extends JObject
         $set_city_tax   = (float) $this->get('_total_city_tax', 0);
         $set_fees       = (float) $this->get('_total_fees', 0);
 
-        // booking creation date
-        $now_ts = time();
-        if ($created_on = $this->get('created_on')) {
-            if (is_int($created_on)) {
-                // timestamp expected
-                $now_ts = $created_on;
-            } elseif (preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}/', (string) $created_on)) {
-                // date in military format expected, with or without the time
-                $now_ts = strtotime($created_on);
+        if ($bookingId) {
+            // updating a booking should not change the creation date
+            $now_ts = $this->prevBookingRegistry->getProperty('ts', time());
+        } else {
+            // booking creation date
+            $now_ts = time();
+            if ($created_on = $this->get('created_on')) {
+                if (is_int($created_on)) {
+                    // timestamp expected
+                    $now_ts = $created_on;
+                } elseif (preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}/', (string) $created_on)) {
+                    // date in military format expected, with or without the time
+                    $now_ts = strtotime($created_on);
+                }
             }
         }
 
@@ -3152,8 +3311,8 @@ class VBOModelReservation extends JObject
             $country_code = '';
         }
 
-        // generate booking SID
-        $sid = VikBooking::getSecretLink();
+        // generate booking SID, unless we are updating
+        $sid = !$bookingId ? VikBooking::getSecretLink() : null;
 
         // assign room specific unit
         $set_room_indexes = !$set_closed ? VikBooking::autoRoomUnit() : false;
@@ -3208,8 +3367,21 @@ class VBOModelReservation extends JObject
             $paymentmeth = $this->getDefaultPaymentMethod($auto_paymeth);
         }
 
+        if ($bookingId) {
+            // when updating, delete all room booking records involved
+            // to allow the re-generation of the updated records
+            $this->delete(['booking_id' => $bookingId], $reCreating = true);
+        }
+
         // prepare booking record
         $booking = new stdClass;
+
+        if ($bookingId) {
+            // inject current booking ID for update
+            $booking->id = $bookingId;
+        }
+
+        // set booking record properties
         $booking->custdata   = $customer_data;
         $booking->ts         = $now_ts;
         $booking->status     = $status;
@@ -3295,15 +3467,20 @@ class VBOModelReservation extends JObject
             }
         }
 
-        // store booking record
-        $dbo->insertObject('#__vikbooking_orders', $booking, 'id');
+        if ($bookingId) {
+            // update booking record
+            $dbo->updateObject('#__vikbooking_orders', $booking, 'id');
+        } else {
+            // store booking record
+            $dbo->insertObject('#__vikbooking_orders', $booking, 'id');
+        }
 
         if (empty($booking->id)) {
-            $this->setError('Could not store the reservation record');
+            $this->setError('Could not save reservation record.');
             return false;
         }
 
-        // get the newly generated booking ID
+        // get the newly generated (or just updated) booking ID
         $newoid = $booking->id;
 
         // set the new booking ID
@@ -3318,8 +3495,10 @@ class VBOModelReservation extends JObject
             // check if some of the rooms booked have shared calendars
             VikBooking::updateSharedCalendars($newoid, [$room['id']], $checkin_ts, $checkout_ts);
 
-            // generate and set confirmation number
-            $confirmnumber = VikBooking::generateConfirmNumber($newoid, true);
+            if (!$bookingId) {
+                // generate and set confirmation number for the newly created confirmed reservation
+                $confirmnumber = VikBooking::generateConfirmNumber($newoid, true);
+            }
 
             // store busy record-booking relations
             foreach ($insertedbusy as $lid) {
@@ -3545,8 +3724,9 @@ class VBOModelReservation extends JObject
         }
         $cpin->saveCustomerBooking($newoid);
 
-        // Booking History
+        // handle booking history
         $history_obj = VikBooking::getBookingHistoryInstance($newoid);
+
         $forced_reason = !empty($forced_reason) ? " {$forced_reason}" : $forced_reason;
         $caller_id = $now_user->name ? "({$now_user->name})" : '';
         if ($this->getCaller()) {
@@ -3559,25 +3739,60 @@ class VBOModelReservation extends JObject
             // mention the quote ID in the history description
             $forced_reason .= sprintf(' %s #%d', JText::translate('VBO_BTYPE_QUOTE'), (int) $this->get('idquote'));
         }
-        $history_obj->store('NB', trim($caller_id . $forced_reason));
+
+        // tell whether alterations were detected, in case of booking update
+        $alterationsDetected = false;
+
+        if ($bookingId) {
+            // booking updated event
+            $historyPrevBooking = $this->prevBookingRegistry->getData();
+            $historyPrevBooking['rooms_info'] = $this->prevBookingRegistry->getRooms();
+            $history_obj
+                ->setPrevBooking($historyPrevBooking)
+                ->store('MB', trim($caller_id . $forced_reason) . ' ' . VikBooking::getLogBookingModification($historyPrevBooking));
+
+            // construct a new booking registry, and inject the booking snapshot prior updating
+            $currentRegistry = VBOBookingRegistry::getInstance(['id' => $bookingId], [], $historyPrevBooking);
+            // detect alterations (include room-level)
+            $alterationsDetected = $currentRegistry->detectAlterations(true);
+        } else {
+            // new booking event
+            $history_obj->store('NB', trim($caller_id . $forced_reason));
+        }
 
         if ($status == 'confirmed' || ($status == 'standby' && class_exists('VCMRequestAvailability'))) {
             // Invoke Channel Manager
             $vcm_autosync = VikBooking::vcmAutoUpdate();
             if ($vcm_autosync > 0) {
                 $vcm_obj = VikBooking::getVcmInvoker();
-                $vcm_obj->setOids([$newoid])->setSyncType('new');
-                $sync_result = $vcm_obj->doSync();
-                if ($sync_result === false) {
-                    // set error message
-                    $vcm_err = $vcm_obj->getError();
-                    $this->setError(JText::translate('VBCHANNELMANAGERRESULTKO') . (!empty($vcm_err) ? ' - ' . $vcm_err : ''));
 
-                    // return true because the booking was actually stored
-                    return true;
+                // tell if sync is actually needed
+                $sync_needed = true;
+                if ($bookingId && $alterationsDetected === false) {
+                    // do not waste connections when nothing sensitive was updated
+                    $sync_needed = false;
                 }
-            } elseif (is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'synch.vikbooking.php')) {
-                // set the necessary action to invoke VCM
+
+                if ($sync_needed) {
+                    if ($bookingId) {
+                        // sync for an updated booking, after something was truly modified
+                        $vcm_obj->setOids([$bookingId])->setSyncType('modify')->setOriginalBooking($historyPrevBooking ?? []);
+                    } else {
+                        // always sync for a new booking
+                        $vcm_obj->setOids([$newoid])->setSyncType('new');
+                    }
+
+                    // run operation
+                    $sync_result = $vcm_obj->doSync();
+
+                    if ($sync_result === false) {
+                        // set error message, but do NOT return false at this point
+                        $vcm_err = $vcm_obj->getError();
+                        $this->setError(JText::translate('VBCHANNELMANAGERRESULTKO') . (!empty($vcm_err) ? ' - ' . $vcm_err : ''));
+                    }
+                }
+            } elseif (!$bookingId && is_file(VCM_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'synch.vikbooking.php')) {
+                // set the necessary action to invoke VCM (only when creating a new booking)
                 $vcm_sync_url = 'index.php?option=com_vikbooking&task=invoke_vcm&stype=new&cid[]=' . $newoid . '&returl=' . urlencode('index.php?option=com_vikbooking&task=calendar&cid[]=' . $room['id']);
 
                 $this->setChannelManagerAction(JText::translate('VBCHANNELMANAGERINVOKEASK') . ' <button type="button" class="btn btn-primary" onclick="document.location.href=\'' . $vcm_sync_url . '\';">' . JText::translate('VBCHANNELMANAGERSENDRQ') . '</button>');
@@ -3586,11 +3801,11 @@ class VBOModelReservation extends JObject
 
         if (VikBooking::isAdmin()) {
             /**
-             * Trigger event to allow third party plugins to intercept the admin new booking event.
+             * Trigger event to allow third party plugins to intercept the admin new/updated booking event.
              * 
              * @since   1.16.8 (J) - 1.6.8 (WP)
              */
-            VBOFactory::getPlatform()->getDispatcher()->trigger('onAfterCreateNewBookingAdmin', [$newoid]);
+            VBOFactory::getPlatform()->getDispatcher()->trigger($bookingId ? 'onAfterUpdateBookingAdmin' : 'onAfterCreateNewBookingAdmin', [$newoid]);
         }
 
         return true;

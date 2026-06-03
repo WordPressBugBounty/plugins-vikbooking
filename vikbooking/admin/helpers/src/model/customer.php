@@ -52,8 +52,22 @@ class VBOModelCustomer extends VBOMvcModel
                     $data['id'] = $customer->id;
                 }
             }
+
+            /**
+             * Make sure the customer PIN code does not default to an empty value of 0.
+             * 
+             * @since   1.18.11 (J) - 1.8.11 (WP)
+             */
+            if (empty($data['pin'])) {
+                do {
+                    // always generate a unique PIN code for new records
+                    $data['pin'] = VikBooking::getCPinInstance()->generateSerialCode(8);
+                    // repeat in case a record with the same PIN already exists
+                } while ($this->getItem(['pin' => $data['pin']]));
+            }
         }
 
+        // always take care of the customer country
         if (!empty($data['country']) && strlen($data['country']) !== 3) {
             // attempt to convert a country iso2 code or name into the corresponding iso3 char code
             $data['country'] = VikBooking::getCPinInstance()->get3CharCountry($data['country']);

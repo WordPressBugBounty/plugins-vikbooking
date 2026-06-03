@@ -855,7 +855,7 @@ jQuery(function() {
 			$childrenparts = explode('-', $globnumchildren);
 			$childrensel = "<select name=\"children[]\">";
 			for($c = $childrenparts[0]; $c <= $childrenparts[1]; $c++) {
-				$childrensel .= "<option value=\"".$c."\"".($oldarrpeople[$i]['children'] == $c ? " selected=\"selected\"" : "").">".$c."</option>";
+				$childrensel .= "<option value=\"".$c."\"".(($oldarrpeople[$i]['children'] == $c ?? null) ? " selected=\"selected\"" : "").">".$c."</option>";
 			}
 			$childrensel .= "</select>";
 			$oldroomscountchildren[$i] = $childrensel;

@@ -144,14 +144,18 @@
 	margin: 0;
 }
 .vbsearchinputmodhors {
-	background: #365868;
+	background: var(--vbo-pref-bgcolor);
 	border-radius: 4px;
-	color: #fff;
+	color: var(--vbo-pref-fontcolor);
 	cursor: pointer;
 	font-weight: bold;
 	margin: 23px 0 0 15px;
 	padding: 7px 20px;
 	border:0;
+}
+.vbsearchinputmodhors:hover {
+	background-color: var(--vbo-pref-bgcolorhov);
+	color: var(--vbo-pref-fontcolorhov); 
 }
 .vbmodhorsearchroomdentrfirst .horsrnum {
 	display: inline-block;

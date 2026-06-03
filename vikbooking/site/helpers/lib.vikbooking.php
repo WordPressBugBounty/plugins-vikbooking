@@ -9539,13 +9539,16 @@ class VikBooking
 				case 'conf4':
 					// Confirmed (Total > 0 && Total Paid > 0 && Total Paid < Total)
 					if ($booking['status'] == 'confirmed' && $booking['total'] > 0 && $booking['totpaid'] > 0 && $booking['totpaid'] < $booking['total'] && !$ota_collected_booking) {
-						$tval['fontcolor'] = self::getBestColorContrast($tval['color']);
-						return $tval;
+						// make sure the commissions are not making the difference
+						if ($booking['totpaid'] + ($booking['cmms'] ?? 0) < $booking['total']) {
+							$tval['fontcolor'] = self::getBestColorContrast($tval['color']);
+							return $tval;
+						}
 					}
 					break;
 				case 'conf5':
 					// Confirmed (Total > 0 && Total Paid >= Total)
-					if ($booking['status'] == 'confirmed' && $booking['total'] > 0 && $booking['totpaid'] > 0 && ($booking['totpaid'] >= $booking['total'] || $ota_collected_booking) && !$hotel_collect_vcc_unpaid) {
+					if ($booking['status'] == 'confirmed' && $booking['total'] > 0 && $booking['totpaid'] > 0 && ($booking['totpaid'] >= $booking['total'] || ($booking['totpaid'] + ($booking['cmms'] ?? 0) >= $booking['total']) || $ota_collected_booking) && !$hotel_collect_vcc_unpaid) {
 						$tval['fontcolor'] = self::getBestColorContrast($tval['color']);
 						return $tval;
 					}
@@ -13269,6 +13272,11 @@ class VikBooking
 
 		// saved colors
 		$colors = $config->getArray('pref_colors', []);
+
+		if (!array_filter($colors)) {
+			// unset the list to fallback onto the default ones
+			$colors = [];
+		}
 
 		return $colors ?: $pref_colors;
 	}

@@ -217,10 +217,10 @@ $rate_plan_meals_map = [
                     $ratePlanData = null;
                     if (!empty($bookingRoom->cust_cost) && !empty($bookingRoom->cust_cpolicy_id)) {
                         // we have a custom rate with a cancellation policy selected
-                        $ratePlanData = VikBooking::getPriceInfo($bookingRoom->cust_cpolicy_id);
+                        $ratePlanData = VikBooking::getPriceInfo($bookingRoom->cust_cpolicy_id, $this->vbo_tn);
                     } elseif (!empty($bookingRoom->idtar) && !empty($tariffData['idprice'])) {
                         // use a system rate plan
-                        $ratePlanData = VikBooking::getPriceInfo($tariffData['idprice']);
+                        $ratePlanData = VikBooking::getPriceInfo($tariffData['idprice'], $this->vbo_tn);
                     }
 
                     // handle original room rate in case of custom rate
@@ -279,7 +279,7 @@ $rate_plan_meals_map = [
                                 class="vbo-quote-sol-roomlink"
                                 data-gallery="<?php echo $gallery_data ? JHtml::fetch('esc_attr', implode('|', $gallery_data)) : ''; ?>"
                             >
-                                <img class="vbo-quote-sol-img" src="<?php echo VBO_SITE_URI; ?>resources/uploads/<?php echo $this->roomsData[$bookingRoom->id]['img']; ?>" alt="<?php echo JHtml::fetch('esc_attr', $bookingRoom->name); ?>" />
+                                <img class="vbo-quote-sol-img" src="<?php echo VBO_SITE_URI; ?>resources/uploads/<?php echo $this->roomsData[$bookingRoom->id]['img']; ?>" alt="<?php echo JHtml::fetch('esc_attr', ($this->roomsData[$bookingRoom->id]['name'] ?? $bookingRoom->name)); ?>" />
                             </a>
                         </div>
                         <?php
@@ -287,7 +287,7 @@ $rate_plan_meals_map = [
                     ?>
                         <div class="vbo-quote-sol-room-desc">
                             <div class="vbo-quote-sol-room-info">
-                                <span class="vbo-quote-sol-room-title"><?php VikBookingIcons::e('bed'); ?> <a href="<?php echo $roomRoutedUris[$bookingRoom->id] ?? '#'; ?>" target="_blank"><?php echo $bookingRoom->name; ?></a></span>
+                                <span class="vbo-quote-sol-room-title"><?php VikBookingIcons::e('bed'); ?> <a href="<?php echo $roomRoutedUris[$bookingRoom->id] ?? '#'; ?>" target="_blank"><?php echo ($this->roomsData[$bookingRoom->id]['name'] ?? $bookingRoom->name); ?></a></span>
                             <?php
                             if ($roomNightlyRate) {
                                 ?>
@@ -399,6 +399,11 @@ $rate_plan_meals_map = [
                             <?php
                             // obtain the list of computed room booking options
                             $roomOptsData = !empty($bookingRoom->optionals) ? VBORoomHelper::getInstance()->computeBookingOptions((array) $bookingRoom, $eligibleOptions) : [];
+
+                            // translate booking option records, if any
+                            $this->vbo_tn->translateContents($roomOptsData, '#__vikbooking_optionals');
+
+                            // scan computed room booking options, if any
                             foreach ($roomOptsData as $roomOptData) {
                                 ?>
                                 <li><?php VikBookingIcons::e('toolbox'); ?> <?php echo $roomOptData['name']; ?> <span class="vbo-quote-sol-room-features-price"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($roomOptData['cost']), $currencysymb, ['<span class="vbo_currency">%s</span>', '<span class="vbo_price">%s</span>']); ?></span></li>
