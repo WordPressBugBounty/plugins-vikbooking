@@ -4395,12 +4395,14 @@ class VikBooking
 	 * @param 	int 	$idroom 	The room ID to fetch.
 	 * @param 	array 	$columns 	The optional room columns to fetch.
 	 * @param 	bool 	$no_cache 	Whether to ignore a previously cached record.
+	 * @param 	bool 	$translate 	Whether to translate the record.
 	 * 
 	 * @return 	array
 	 * 
 	 * @since 	1.16.10 (J) - 1.6.10 (WP) added argument $no_cache.
+	 * @since 	1.18.12 (J) - 1.8.12 (WP) added argument $translate.
 	 */
-	public static function getRoomInfo($idroom, $columns = [], $no_cache = false)
+	public static function getRoomInfo($idroom, $columns = [], $no_cache = false, $translate = false)
 	{
 		static $room_infos = [];
 
@@ -4421,6 +4423,17 @@ class VikBooking
 
 		$dbo->setQuery($q);
 		$room = $dbo->loadAssoc();
+
+		if ($translate && $room) {
+			// apply translation
+			if ($columns && !in_array('id', $columns)) {
+				// force the record identifier
+				$room['id'] = $idroom;
+			}
+			$records = [$room];
+			VikBooking::getTranslator()->translateContents($records, '#__vikbooking_rooms');
+			$room = $records[0];
+		}
 
 		if ($no_cache) {
 			return $room ?: [];

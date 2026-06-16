@@ -9,7 +9,7 @@
 		<Column name="name" type="text" reference="1">VBNEWROOMFIVE</Column>
 		<Column name="info" type="html">VBNEWROOMSEVEN</Column>
 		<Column name="smalldesc" type="textarea">VBNEWROOMSMALLDESC</Column>
-		<Column name="params" type="json" keys="custpricetxt,custpricesubtxt,custptitle,metakeywords,metadescription">VBNEWROOMPARAMS</Column>
+		<Column name="params" type="json" keys="custpricetxt,custpricesubtxt,custptitle,metakeywords,metadescription,instructions">VBNEWROOMPARAMS</Column>
 		<Column name="imgcaptions" type="json" keys="">VBIMGCAPTION</Column>
 	</Translation>
 	<Translation table="#__vikbooking_categories" name="VBOXMLTRANSLATECATEGORIES">

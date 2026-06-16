@@ -486,6 +486,8 @@ class VboBookingHistory
 	public function setBookingRooms(array $booking_rooms)
 	{
 		$this->bookingRooms = $booking_rooms;
+
+		return $this;
 	}
 
 	/**
@@ -505,6 +507,8 @@ class VboBookingHistory
 			// booking room records may be available within the booking record itself
 			$this->setBookingRooms($booking['rooms_info']);
 		}
+
+		return $this;
 	}
 
 	/**

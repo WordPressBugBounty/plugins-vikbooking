@@ -28,7 +28,7 @@ spl_autoload_register(function($class)
 	$vcm_exists = is_file(implode(DIRECTORY_SEPARATOR, [VCM_SITE_PATH, 'helpers', 'lib.vikchannelmanager.php']));
 
 	// handle base VCM library
-	if ($class === 'VikChannelManager')
+	if ($class === 'VikChannelManager' || $class === 'E4jConnectRequest')
 	{
 		return $vcm_exists && include_once implode(DIRECTORY_SEPARATOR, [VCM_SITE_PATH, 'helpers', 'lib.vikchannelmanager.php']);
 	}

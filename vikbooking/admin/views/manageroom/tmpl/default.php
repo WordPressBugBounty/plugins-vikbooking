@@ -765,19 +765,20 @@ if (count($row)) {
 						 */
 						if ($row) {
 							// only in edit mode, not when creating a new room
-							$room_level_min_adv_notice = VBOFactory::getConfig()->getInt("room_{$row['id']}_min_adv_notice", 0);
-							// build default or current value (always an integer expressed in hours)
-							$mindate_val = $room_level_min_adv_notice ?: 0;
+							$room_level_min_adv_notice = VBOFactory::getConfig()->get("room_{$row['id']}_min_adv_notice", null);
+							$room_level_min_adv_notice = $room_level_min_adv_notice === '' ? null : $room_level_min_adv_notice;
+							// build default or current value (always an integer expressed in hours, or null)
+							$mindate_val = is_null($room_level_min_adv_notice) ? null : (int) $room_level_min_adv_notice;
 							?>
 						<div class="vbo-param-container">
 							<div class="vbo-param-label"><?php echo JText::translate('VBO_MIN_ADV_BOOK_NOTICE'); ?></div>
 							<div class="vbo-param-setting">
 								<div class="vbo-toggle-small">
 									<?php
-									echo $vbo_app->printYesNoButtons('min_adv_notice_room', JText::translate('VBYES'), JText::translate('VBNO'), (empty($mindate_val) ? 0 : 1), 1, 0, 'vboToggleMinAdvNotice(this.checked);');
+									echo $vbo_app->printYesNoButtons('min_adv_notice_room', JText::translate('VBYES'), JText::translate('VBNO'), (is_null($mindate_val) ? 0 : 1), 1, 0, 'vboToggleMinAdvNotice(this.checked);');
 									?>
 								</div>
-								<div class="vbo-room-level-min_adv-notice" style="<?php echo empty($mindate_val) ? 'display: none;' : ''; ?>">
+								<div class="vbo-room-level-min_adv-notice" style="<?php echo is_null($mindate_val) ? 'display: none;' : ''; ?>">
 									<input type="number" name="mindate" value="<?php echo $mindate_val; ?>" min="0"/>
 									<select name="mindateinterval">
 										<option value="h"><?php echo ucfirst(JText::translate('VBCONFIGONETENEIGHT')); ?></option>
@@ -879,6 +880,22 @@ if (count($row)) {
 									</optgroup>
 								</select>
 								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_TURNOVER_TIME_WARNING'); ?></span>
+							</div>
+						</div>
+
+						<?php
+						/**
+						 * Room-level check-in instructions.
+						 * 
+						 * @since 	1.18.12 (J) - 1.8.12 (WP)
+						 */
+						$instructions = $row ? VikBooking::getRoomParam('instructions', $row['params']) : '';
+						?>
+						<div class="vbo-param-container">
+							<div class="vbo-param-label"><label for="listing_instructions"><?php echo JText::translate('VBO_CHECKIN_INSTRUCTIONS'); ?></label></div>
+							<div class="vbo-param-setting">
+								<textarea id="listing_instructions" name="listing_instructions" rows="5"><?php echo JHtml::fetch('esc_textarea', $instructions); ?></textarea>
+								<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_CHECKIN_INSTRUCTIONS_HELP'); ?></span>
 							</div>
 						</div>
 					</div>

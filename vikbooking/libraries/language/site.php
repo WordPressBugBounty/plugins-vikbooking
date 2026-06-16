@@ -2581,6 +2581,12 @@ class VikBookingLanguageSite implements JLanguageHandler
 			case 'VBO_PAY_TO_CONFIRM':
 				$result = __('Proceed to payment to confirm your booking.', 'vikbooking');
 				break;
+			case 'VBO_CHECKIN_INSTRUCTIONS':
+				$result = __('Check-in instructions', 'vikbooking');
+				break;
+			case 'VBO_ACCESS_CODE':
+				$result = __('Access Code', 'vikbooking');
+				break;
 		}
 
 		return $result;

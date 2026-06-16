@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.12
+
+*Release date - 16 June 2026*
+
+- Added support to listing-level check-in instructions.
+- Door Access Control passcodes available in front-end booking details page.
+- Improved room-level minimum advance booking notice (empty notice allowed).
+- Fixed URL routing issue for meta-search landing pages.
+
 ## 1.8.11
 
 *Release date - 03 June 2026*

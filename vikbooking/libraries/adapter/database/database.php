@@ -254,6 +254,13 @@ class JDatabase
 		{
 			// result should contain an array
 			$this->result = $this->db->get_results($sql);
+
+			/**
+			 * Flush result after executing the query to free disk space.
+			 * 
+			 * @since 10.1.73
+			 */
+			$this->db->flush();
 		}
 		// otherwise we can launch a generic query
 		else
@@ -324,7 +331,15 @@ class JDatabase
 
 		if (is_array($this->result))
 		{
-			return $this->result;
+			/**
+			 * Copy result on a local variable and flush the cached value.
+			 * 
+			 * @since 10.1.73
+			 */
+			$result = $this->result;
+			$this->result = null;
+
+			return $result;
 		}
 
 		return array();

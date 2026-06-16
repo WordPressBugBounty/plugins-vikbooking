@@ -1,5 +1,15 @@
 # Framework Changelog
 
+### 10.1.73
+
+*Release date - 9 June 2026*
+
+##### CHANGE
+
+* The `JDatabaseDriver` instance now immediately flushes the results obtained with the last query to free disk space.
+
+---
+
 ### 10.1.72
 
 *Release date - 14 April 2026*

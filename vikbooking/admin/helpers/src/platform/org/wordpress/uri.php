@@ -32,6 +32,22 @@ class VBOPlatformOrgWordpressUri extends VBOPlatformUriAware
 	{
 		$app = JFactory::getApplication();
 
+		if (is_array($query))
+		{
+			// make sure the array is not empty
+			if ($query)
+			{
+				$query = '?' . http_build_query($query);
+			}
+			else
+			{
+				$query = '';
+			}
+
+			// the query is an array, build the query string
+			$query = 'index.php' . $query;
+		}
+
 		/**
 		 * If a post ID is provided, and if the query does not contain any language,
 		 * access the shortcode details and eventually append the proper language.
@@ -54,22 +70,6 @@ class VBOPlatformOrgWordpressUri extends VBOPlatformUriAware
 				// append shortcode language to query to ensure obtaining a properly rewritten URL
 				$query .= '&lang=' . $shortcode->lang;
 			}
-		}
-
-		if (is_array($query))
-		{
-			// make sure the array is not empty
-			if ($query)
-			{
-				$query = '?' . http_build_query($query);
-			}
-			else
-			{
-				$query = '';
-			}
-
-			// the query is an array, build the query string
-			$query = 'index.php' . $query;
 		}
 
 		if (is_null($itemid) && $app->isClient('site'))

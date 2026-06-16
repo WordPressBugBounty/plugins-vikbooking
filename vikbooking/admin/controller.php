@@ -1036,6 +1036,7 @@ class VikBookingController extends JControllerVikBooking
 			'layout_style' 	   => VikRequest::getString('layout_style', 'default', 'request'),
 			'checkin'          => VikRequest::getString('listing_checkin', '', 'request'),
 			'checkout'         => VikRequest::getString('listing_checkout', '', 'request'),
+			'instructions'     => VikRequest::getString('listing_instructions', '', 'request', VIKREQUEST_ALLOWRAW),
 		];
 		//distinctive features
 		$roomparams['features'] = array();
@@ -1405,6 +1406,7 @@ class VikBookingController extends JControllerVikBooking
 			'layout_style' 	   => VikRequest::getString('layout_style', 'default', 'request'),
 			'checkin'          => VikRequest::getString('listing_checkin', '', 'request'),
 			'checkout'         => VikRequest::getString('listing_checkout', '', 'request'),
+			'instructions'     => VikRequest::getString('listing_instructions', '', 'request', VIKREQUEST_ALLOWRAW),
 		];
 		//distinctive features
 		$roomparams['features'] = array();
@@ -1788,7 +1790,7 @@ class VikBookingController extends JControllerVikBooking
 			 */
 			$pmin_adv_notice_room = VikRequest::getInt('min_adv_notice_room', 0, 'request');
 			$pmindate = VikRequest::getInt('mindate', 0, 'request');
-			if ($pmin_adv_notice_room && $pmindate > 0) {
+			if ($pmin_adv_notice_room && $pmindate >= 0) {
 				// set value
 				$config->set("room_{$pwhereup}_min_adv_notice", $pmindate);
 			} else {
@@ -9195,11 +9197,18 @@ class VikBookingController extends JControllerVikBooking
 		foreach ($ids as $d) {
 			$q = "SELECT * FROM `#__vikbooking_invoices` WHERE `id`=".(int)$d.";";
 			$dbo->setQuery($q);
-			$dbo->execute();
-			if ($dbo->getNumRows() == 1) {
-				$cur_invoice = $dbo->loadAssoc();
-				if (file_exists(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'helpers'.DIRECTORY_SEPARATOR.'invoices'.DIRECTORY_SEPARATOR.'generated'.DIRECTORY_SEPARATOR.$cur_invoice['file_name'])) {
-					unlink(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'helpers'.DIRECTORY_SEPARATOR.'invoices'.DIRECTORY_SEPARATOR.'generated'.DIRECTORY_SEPARATOR.$cur_invoice['file_name']);
+			$cur_invoice = $dbo->loadAssoc();
+			if ($cur_invoice) {
+				$invoice_fpath = VBO_SITE_PATH.DIRECTORY_SEPARATOR.'helpers'.DIRECTORY_SEPARATOR.'invoices'.DIRECTORY_SEPARATOR.'generated'.DIRECTORY_SEPARATOR.$cur_invoice['file_name'];
+				if (is_file($invoice_fpath)) {
+					unlink($invoice_fpath);
+				}
+				if (VBOPlatformDetection::isWordPress()) {
+					/**
+					 * @wponly - trigger files mirroring for deletion
+					 */
+					VikBookingLoader::import('update.manager');
+					VikBookingUpdateManager::triggerDeletionBackup($invoice_fpath);
 				}
 				$q = "DELETE FROM `#__vikbooking_invoices` WHERE `id`=".(int)$d.";";
 				$dbo->setQuery($q);

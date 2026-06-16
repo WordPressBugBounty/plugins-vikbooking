@@ -34,6 +34,14 @@ if ($ord['split_stay']) {
 	}
 }
 
+// construct booking registry
+try {
+	$registry = VBOBookingRegistry::getInstance($this->ord, $this->orderrooms);
+} catch (Exception $e) {
+	// do nothing
+	$registry = null;
+}
+
 $currencysymb = VikBooking::getCurrencySymb();
 $nowdf = VikBooking::getDateFormat();
 if ($nowdf == "%d/%m/%Y") {
@@ -235,10 +243,11 @@ $checkout_info = getdate($ord['checkout']);
  * 
  * @since 	1.18.3 (J) - 1.8.3 (WP)
  */
+$listing_params = '';
 $listing_custom_checkin = '';
 $listing_custom_checkout = '';
 if (($ord['roomsnum'] ?? 0) == 1) {
-	$listing_params = VikBooking::getRoomInfo(($orderrooms[(key($orderrooms))]['idroom'] ?? 0), ['params'], true)['params'] ?? '';
+	$listing_params = VikBooking::getRoomInfo(($orderrooms[(key($orderrooms))]['idroom'] ?? 0), ['params'], true, true)['params'] ?? '';
 	$listing_custom_checkin = VikBooking::getRoomParam('checkin', $listing_params);
 	$listing_custom_checkout = VikBooking::getRoomParam('checkout', $listing_params);
 }
@@ -540,7 +549,14 @@ if ($ord['status'] == 'confirmed') {
 <div class="vbo-booking-rooms-wrapper">
 <?php
 foreach ($orderrooms as $kor => $or) {
+	// 1-based index
 	$num = $kor + 1;
+
+	// access current listing parameters
+	if (($ord['roomsnum'] ?? 0) > 1 || !$listing_params) {
+		// load parameters
+		$listing_params = VikBooking::getRoomInfo($or['idroom'], ['params'], true, true)['params'] ?? '';
+	}
 	?>
 	<div class="vbvordroominfo<?php echo count($orderrooms) > 1 ? ' vbvordroominfo-multi' : ''; ?>">
 		<?php
@@ -669,8 +685,67 @@ foreach ($orderrooms as $kor => $or) {
 		</div>
 	<?php
 	}
+
+	/**
+	 * Access room-level check-in instructions, required to eventually
+	 * display any previously created passcode through Door Access Control.
+	 * 
+	 * @since 	1.18.12 (J) - 1.8.12 (WP)
+	 */
+	$listing_checkin_instructions = VikBooking::getRoomParam('instructions', $listing_params);
+	if ($listing_checkin_instructions && $registry && $ord['status'] == 'confirmed' && $ord['checkout'] > time()) {
+		// attempt to obtain the door access control passcode details
+		try {
+            // obtain the passcode details for this booking
+            $passcodeDetails = VBOFactory::getDoorAccessControl()->getBookingDevicePasscodes($registry);
+        } catch (Exception $e) {
+            // do nothing on error
+            $passcodeDetails = null;
+        }
+		?>
+		<div class="vbo-booking-room-checkin-instr">
+			<div class="vbo-booking-room-instructions">
+				<h4><?php echo JText::translate('VBO_CHECKIN_INSTRUCTIONS'); ?></h4>
+				<div><?php echo strpos($listing_checkin_instructions, '<') === false ? nl2br($listing_checkin_instructions) : $listing_checkin_instructions; ?></div>
+			</div>
+		<?php
+		if ($passcodeDetails) {
+			// count passcodes
+			$totPasscodes = count($passcodeDetails);
+			?>
+			<div class="vbo-booking-room-dac">
+				<h4><?php echo JText::translate('VBO_ACCESS_CODE'); ?></h4>
+				<div class="vbo-booking-room-dac-list">
+				<?php
+				if ($totPasscodes === 1) {
+					// just one passcode
+					?>
+					<div class="vbo-booking-room-dac-code-wrap">
+						<div class="vbo-booking-room-dac-code-val"><?php echo $passcodeDetails[0]['passcode'] ?? ''; ?></div>
+					</div>
+					<?php
+				} else {
+					// display all passcodes
+					foreach ($passcodeDetails as $passcodeDetail) {
+						?>
+					<div class="vbo-booking-room-dac-code-wrap">
+						<div class="vbo-booking-room-dac-code-lock"><?php echo $passcodeDetail['deviceName'] ?? ''; ?></div>
+						<div class="vbo-booking-room-dac-code-val"><?php echo $passcodeDetail['passcode'] ?? ''; ?></div>
+					</div>
+						<?php
+					}
+				}
+				?>
+				</div>
+			</div>
+			<?php
+		}
+		?>
+		</div>
+		<?php
+	}
 	?>
-		
+
 	</div>
 	<?php
 }
@@ -2062,6 +2137,13 @@ jQuery(function() {
 		var currentMessages  = parseInt(jQuery('.vbo-booking-chat-control').attr('data-message-count'));
 		jQuery('.vbo-booking-chat-control').attr('data-message-count', (newNotifications + currentMessages));
 	});
+
+	if (window.location.hash == '#messaging') {
+		const trigger = document.querySelector('.vbo-booking-chat-control');
+		if (trigger) {
+			trigger.click();
+		}
+	}
 });
 </script>
 	<?php

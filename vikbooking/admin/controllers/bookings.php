@@ -1203,7 +1203,7 @@ class VikBookingControllerBookings extends JControllerAdmin
             // let the room re-assignment operations start
             $moveset = VBOBookingRelocator::getInstance($options)
                 ->findRelocation();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             // propagate the error
             VBOHttpDocument::getInstance($app)->close($e->getCode(), $e->getMessage());
         }

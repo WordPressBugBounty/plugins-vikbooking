@@ -541,6 +541,65 @@ a:focus {
 .vbvordroominfo-multi .vbo-booking-roomphoto {
 	max-width: 100%;
 }
+/* Check-in instruction */
+.vbvordroominfo .vbo-booking-room-checkin-instr {
+	margin-top: 20px;
+	border-radius: 8px;
+	border: 1px solid var(--vbo-pref-bgcolor);
+	border-left: 3px solid var(--vbo-pref-bgcolor);
+	background: var(--vbo-pref-bgcolor-op10);
+	padding: 20px;
+	font-size: var(--vbo-font-base);
+
+	h4 {
+		margin-top: 0;
+		margin-bottom: 4px;
+		text-transform: uppercase;
+		font-weight: 600;
+		opacity: 0.7;
+		font-size: var(--vbo-font-base);
+	}
+}
+.vbvordroominfo .vbo-booking-room-instructions {
+	margin-bottom: 10px;
+}
+.vbvordroominfo .vbo-booking-room-dac {
+	padding-top: 10px;
+	border-top: 2px dashed var(--vbo-pref-bgcolor-op20);
+}
+.vbvordroominfo .vbo-booking-room-dac-list {
+	display: grid;
+	grid-template-columns: max-content max-content;
+	gap: 7px 10px;
+	align-items: center;
+
+	.vbo-booking-room-dac-code-wrap {
+		display: contents;
+		font-size: var(--vbo-font-sm);
+
+		.vbo-booking-room-dac-code-lock {
+			font-weight: 600;
+		}
+		.vbo-booking-room-dac-code-val {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			background: var(--vbo-pref-bgcolor);
+			color: var(--vbo-pref-textcolor);
+			border-radius: 5px;
+			padding: 5px 14px;
+			font-weight: 700;
+			letter-spacing: 3px;
+			line-height: 1em;
+			font-family: 'Courier New', monospace;		
+		}
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+}
+/* End: Check-in instruction */
 .vbo-booking-details-bookinfo-splitstay {
 	border: 1px solid  var(--vbo-pref-textcolor);
 	padding: 10px;
@@ -7524,6 +7583,7 @@ td.vbo-roomdaynote-full span.vbo-roomdaynote-trigger, td.vbo-roomdaynote-empty s
 	position: relative;
 	min-height: 40px;
 	margin-bottom: 10px;
+	display: inline-block;
 }
 .vbo-results-filter-entries .vbo-results-filter-entry .vbo-results-filter-entry-name .vbo-results-filter-amenity {
 	display: flex;

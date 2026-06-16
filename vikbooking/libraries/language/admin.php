@@ -8675,6 +8675,12 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 			case 'VBO_LOCK_UNTIL_HELP':
 				$result = __('Set a date to temporarily lock the selected rooms. Leave blank to keep availability open.', 'vikbooking');
 				break;
+			case 'VBO_CHECKIN_INSTRUCTIONS':
+				$result = __('Check-in instructions', 'vikbooking');
+				break;
+			case 'VBO_CHECKIN_INSTRUCTIONS_HELP':
+				$result = __('If set, the instructions will be displayed to the guest in the front-end (confirmed) booking details page along with the door access code(s), if any.', 'vikbooking');
+				break;
 		}
 
 		return $result;

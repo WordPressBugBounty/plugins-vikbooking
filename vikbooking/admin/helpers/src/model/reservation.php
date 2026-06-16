@@ -3067,7 +3067,7 @@ class VBOModelReservation extends JObject
                 if ($set_closed) {
                     $roomTotalValue *= $roomDetails['units'];
                     $roomTotalTax   *= $roomDetails['units'];
-                } elseif ($num_rooms > 1 && $num_rooms <= $roomDetails['units']) {
+                } elseif (!$this->isMultiRoom() && $num_rooms > 1 && $num_rooms <= $roomDetails['units']) {
                     $roomTotalValue *= $num_rooms;
                     $roomTotalTax   *= $num_rooms;
                 }
@@ -3570,8 +3570,8 @@ class VBOModelReservation extends JObject
                 }
 
                 // room guests
-                $room_adults      = (int) (isset($adults_map[$r]) && empty($split_stay_data) ? $adults_map[$r] : ($roomsData[$rind]['adults'] ?? $adults));
-                $room_children    = (int) (isset($children_map[$r]) && empty($split_stay_data) ? $children_map[$r] : ($roomsData[$rind]['children'] ?? $children));
+                $room_adults      = (int) ($roomsData[$rind]['adults'] ?? (isset($adults_map[$r]) && empty($split_stay_data) ? $adults_map[$r] : $adults));
+                $room_children    = (int) ($roomsData[$rind]['children'] ?? (isset($children_map[$r]) && empty($split_stay_data) ? $children_map[$r] : $children));
                 $use_children_age = (array) ($roomsData[$rind]['children_age'] ?? $children_age);
 
                 // number of pets per room
