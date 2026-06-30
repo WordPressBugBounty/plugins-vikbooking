@@ -842,6 +842,13 @@ JAVASCRIPT;
                 'label' => JText::translate('VBO_VARIATION'),
                 'center' => 1,
             ],
+            // Room Revenue
+            [
+                'key' => 'roomrev',
+                'label' => JText::translate('VBO_ROOM_REVENUE'),
+                'sortable' => $sortingAllowed,
+                'center' => 1,
+            ],
             // Gross Booking Revenue
             [
                 'key' => 'grossrev',
@@ -1098,6 +1105,15 @@ JAVASCRIPT;
                             $paceData['pace'][$targetIndex][$parseIndex]['ratevrminus'],
                         ],
                         'center' => 1,
+                    ],
+                    // Room Revenue
+                    [
+                        'key' => 'roomrev',
+                        'value' => array_sum((array) ($paceData['pace'][$targetIndex][$parseIndex]['roomrev'] ?? [])),
+                        'center' => 1,
+                        'callback' => function($metric) {
+                            return VikBooking::formatCurrencyNumber($metric);
+                        },
                     ],
                     // Gross Booking Revenue
                     [

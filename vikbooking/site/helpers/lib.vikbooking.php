@@ -1425,7 +1425,7 @@ class VikBooking
 	 * Returns an instance of the VCMChatHandler class to handle
 	 * the messaging/chat for the given reservation ID.
 	 * 
-	 * @param 	int 	$oid 		the ID of the booking in VBO
+	 * @param 	mixed  	$oid  		VBO booking ID or a linear array containing ID and secret key (timestamp).
 	 * @param 	string 	$channel 	the name of the source channel
 	 * 
 	 * @return 	mixed 	null if VCM is not available, VCMChatHandler instance otherwise
@@ -1434,6 +1434,7 @@ class VikBooking
 	 * @since 	1.16.0 (J) - 1.6.0 (WP) the method can also be used to require the chat handler.
 	 * @since 	1.16.4 (J) - 1.6.4 (WP) preloading widgets on WP when VCM is inactive is prevented.
 	 * @since 	1.17.6 (J) - 1.7.6 (WP) empty signature arguments will only require the dependencies.
+	 * @since 	1.18.13 (J) - 1.8.13 (WP) added support to $oid argument as either int or array.
 	 */
 	public static function getVcmChatInstance($oid, $channel = null)
 	{

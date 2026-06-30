@@ -2587,6 +2587,9 @@ class VikBookingLanguageSite implements JLanguageHandler
 			case 'VBO_ACCESS_CODE':
 				$result = __('Access Code', 'vikbooking');
 				break;
+			case 'VBOERRMINBOOKNOTICE':
+				$result = __('Minimum advance booking notice is %s', 'vikbooking');
+				break;
 		}
 
 		return $result;

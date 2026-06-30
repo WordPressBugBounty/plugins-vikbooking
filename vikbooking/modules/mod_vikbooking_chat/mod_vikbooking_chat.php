@@ -21,7 +21,7 @@ if ($app->input->get('option') === 'com_vikbooking' && $app->input->get('view') 
 
 require_once VBO_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikbooking.php';
 
-$document->addStyleSheet(VBO_SITE_URI . 'vikbooking_styles.css', ['version' => VIKBOOKING_SOFTWARE_VERSION]);
+$document->addStyleSheet(VIKBOOKING_SITE_ASSETS_URI . 'vikbooking_styles.css', ['version' => VIKBOOKING_SOFTWARE_VERSION]);
 VikBooking::loadPreferredColorStyles();
 VikBooking::loadFontAwesome();
 

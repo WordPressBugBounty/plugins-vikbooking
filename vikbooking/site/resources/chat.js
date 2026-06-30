@@ -121,7 +121,7 @@
             // register phone content parser
             this.attachContentParser('phone', function(content) {
                 // wrap any potential phone numbers within a "tel" link
-                content = content.replace(/(^|\s)(?:\+[\d]{1,5})?[\d][\d \-]{3,}[\d](\s|$)/gm, function(phone) {
+                content = content.replace(/(^|\s)(?:\+[\d]{1,5})?[\d][\d \-]{6,}[\d](\s|$)/gm, function(phone) {
                     return '<a href="tel:' + phone + '">' + phone + '</a>';
                 });
 
@@ -2082,6 +2082,16 @@
             target.on('input', function () {
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight - padding) + 'px';
+            });
+
+            // ENTER shortcut to send a message
+            target.on('keydown', (event) => {
+                // check if ENTER was pressed without any other modifiers
+                if (event.keyCode == 13 && !event.altKey && !event.ctrlKey && !event.shiftKey) {
+                    $('#' + this.data.idManualSend).trigger('click');
+
+                    return false;
+                }
             });
 
             // init manual send message listener

@@ -8681,6 +8681,9 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 			case 'VBO_CHECKIN_INSTRUCTIONS_HELP':
 				$result = __('If set, the instructions will be displayed to the guest in the front-end (confirmed) booking details page along with the door access code(s), if any.', 'vikbooking');
 				break;
+			case 'VBO_ROOM_REVENUE':
+				$result = __('Room Revenue', 'vikbooking');
+				break;
 		}
 
 		return $result;

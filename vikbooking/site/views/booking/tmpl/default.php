@@ -149,8 +149,8 @@ foreach ($orderrooms as $kor => $or) {
 					}
 				}
 				$actopt['chageintv'] = $chvar;
-				$actopt['name'] .= ' ('.$optagenames[($chvar - 1)].')';
-				$realcost = (intval($actopt['perday']) == 1 ? (floatval($optagecosts[($chvar - 1)]) * $room_stay_nights * $stept[1]) : (floatval($optagecosts[($chvar - 1)]) * $stept[1]));
+				$actopt['name'] .= ' (' . ($optagenames[($chvar - 1)] ?? '') . ')';
+				$realcost = (intval($actopt['perday']) == 1 ? (floatval($optagecosts[($chvar - 1)] ?? 0) * $room_stay_nights * $stept[1]) : (floatval($optagecosts[($chvar - 1)] ?? 0) * $stept[1]));
 			} else {
 				// VBO 1.11 - options percentage cost of the room total fee
 				if ($is_package === true || (!empty($or['cust_cost']) && $or['cust_cost'] > 0.00)) {
@@ -2103,7 +2103,7 @@ if (VikBooking::chatEnabled() > 0) {
 	}
 	if ($chat_available) {
 		// attempt to get the class instance
-		$messaging = VikBooking::getVcmChatInstance($ord['id'], 'vikbooking');
+		$messaging = VikBooking::getVcmChatInstance([$ord['id'], $ord['ts']], 'vikbooking');
 	}
 }
 if (!is_null($messaging)) {

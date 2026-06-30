@@ -3,7 +3,7 @@
 Plugin Name:  VikBooking
 Plugin URI:   https://vikwp.com/plugin/vikbooking
 Description:  Certified Booking Engine for Hotels and Accommodations.
-Version:      1.8.12
+Version:      1.8.13
 Author:       E4J s.r.l.
 Author URI:   https://vikwp.com
 License:      GPL2
@@ -869,6 +869,44 @@ add_action('admin_notices', function()
 		</div>
 	</div>
 	<?php
+});
+
+/**
+ * Detect outdated VCM versions.
+ * 
+ * @since 	1.8.13
+ */
+add_action('admin_notices', function()
+{
+	global $pagenow;
+
+	if (wp_doing_ajax())
+	{
+		// nothing to check
+		return;
+	}
+
+	$option = JFactory::getApplication()->input->get('option');
+	$inPlugins = in_array($option, ['com_vikbooking', 'com_vikchannelmanager']);
+
+	if (!$inPlugins && $pagenow != 'plugins.php')
+	{
+		// nothing to check
+		return;
+	}
+
+	if (!defined('VIKCHANNELMANAGER_SOFTWARE_VERSION') || version_compare(VIKCHANNELMANAGER_SOFTWARE_VERSION, VIKCHANNELMANAGER_MINIMUM_VERSION, '>='))
+	{
+		// check passed
+		return;
+	}
+
+	echo JLayoutHelper::render(
+		'html.vcm.version',
+		['page' => $inPlugins ? preg_replace('/^com_/', '', $option) : $pagenow],
+		null,
+		['component' => 'com_vikbooking']
+	);
 });
 
 /**

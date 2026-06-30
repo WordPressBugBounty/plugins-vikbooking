@@ -303,7 +303,7 @@ if ($caller === 'view') {
 			data: vboDropFilesFormData,
 			success: function(resp) {
 				try {
-					resp = JSON.parse(resp);
+					resp = typeof resp === 'string' ? JSON.parse(resp) : resp;
 
 					if (resp.status == 1) {
 						status.complete(resp);

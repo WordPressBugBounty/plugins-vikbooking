@@ -2,12 +2,12 @@
 <extension type="module" version="4.0.0" client="site" method="upgrade">
 	<name>MOD_VIKBOOKING_CHAT</name>
 	<author>E4J s.r.l.</author>
-	<creationDate>February 2026</creationDate>
+	<creationDate>June 2026</creationDate>
 	<copyright>Copyright (C) 2026 E4J s.r.l. All rights reserved.</copyright>
 	<license>GNU General Public License version 2 or later</license>
 	<authorEmail>tech@extensionsforjoomla.com</authorEmail>
 	<authorUrl>https://vikwp.com</authorUrl>
-	<version>1.0</version>
+	<version>1.0.1</version>
 	<description>MOD_VIKBOOKING_CHAT_DESC</description>
 	<config>
 		<fields name="params">

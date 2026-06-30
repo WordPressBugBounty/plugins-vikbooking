@@ -1247,4 +1247,56 @@ class VBOBookingRegistry
 
         return array_values(array_unique($addresses));
     }
+
+    /**
+     * Returns the booking routed URI, either in its regular or shorten forms.
+     * 
+     * @return  string
+     * 
+     * @since   1.18.13 (J) - 1.8.13 (WP)
+     */
+    public function getBookingLink(bool $shorten = false)
+    {
+        // construct booking link
+        $useSid = !$this->getProperty('sid') && $this->getProperty('idorderota') ? $this->getProperty('idorderota') : $this->getProperty('sid');
+        $bestItemid = VikBooking::findProperItemIdType(['booking'], ($this->getProperty('lang') ?: null));
+        $langSuffix = $bestItemid && $this->getProperty('lang') ? '&lang=' . $this->getProperty('lang') : '';
+
+        $bookingLink = VikBooking::externalroute("index.php?option=com_vikbooking&view=booking&sid=" . $useSid . "&ts=" . $this->getProperty('ts') . $langSuffix, false, ($bestItemid ?: null));
+
+        if (!$shorten) {
+            return $bookingLink;
+        }
+
+        // access the model for shortening URLs
+        $model = VBOModelShortenurl::getInstance($onlyRouted = false)->setBooking($this->getData());
+
+        return $model->getShortUrl($bookingLink);
+    }
+
+    /**
+     * Returns the booking pre-check-in routed URI, either in its regular or shorten forms.
+     * 
+     * @return  string
+     * 
+     * @since   1.18.13 (J) - 1.8.13 (WP)
+     */
+    public function getPrecheckinLink(bool $shorten = false)
+    {
+        // obtain booking link
+        $useSid = !$this->getProperty('sid') && $this->getProperty('idorderota') ? $this->getProperty('idorderota') : $this->getProperty('sid');
+        $bestItemid = VikBooking::findProperItemIdType(['booking'], ($this->getProperty('lang') ?: null));
+        $langSuffix = $bestItemid && $this->getProperty('lang') ? '&lang=' . $this->getProperty('lang') : '';
+
+        $precheckinLink = VikBooking::externalroute("index.php?option=com_vikbooking&view=precheckin&sid=" . $useSid . "&ts=" . $this->getProperty('ts') . $langSuffix, false, ($bestItemid ?: null));
+
+        if (!$shorten) {
+            return $precheckinLink;
+        }
+
+        // access the model for shortening URLs
+        $model = VBOModelShortenurl::getInstance($onlyRouted = false)->setBooking($this->getData());
+
+        return $model->getShortUrl($precheckinLink);
+    }
 }

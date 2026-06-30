@@ -13957,8 +13957,15 @@ jQuery(".' . $selector . '").hover(function() {
 	 */
 	public function upload_customer_document()
 	{
-		$input = JFactory::getApplication()->input;
+		$app = JFactory::getApplication();
+
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		$dbo   = JFactory::getDbo();
+		$input = $app->input;
 
 		$customer_id = $input->getUint('customer', 0);
 
@@ -13979,14 +13986,12 @@ jQuery(".' . $selector . '").hover(function() {
 				->where($dbo->qn('id') . ' = ' . $customer_id);
 
 			$dbo->setQuery($q, 0, 1);
-			$dbo->execute();
+			$customer = $dbo->loadObject();
 
-			if (!$dbo->getNumRows())
+			if (!$customer)
 			{
 				throw new Exception(sprintf('Customer [%d] not found', $customer_id), 404);
 			}
-
-			$customer = $dbo->loadObject();
 
 			// fetch documents folder path
 			$dirpath = VBO_CUSTOMERS_PATH . DIRECTORY_SEPARATOR;
@@ -14044,8 +14049,7 @@ jQuery(".' . $selector . '").hover(function() {
 			$result->code  = $e->getCode();
 		}
 
-		echo json_encode($result);
-		exit;
+		VBOHttpDocument::getInstance($app)->json($result);
 	}
 
 	/**
@@ -14057,8 +14061,19 @@ jQuery(".' . $selector . '").hover(function() {
 	 */
 	public function delete_customer_document()
 	{
-		$input = JFactory::getApplication()->input;
+		$app = JFactory::getApplication();
+
+		if (!JSession::checkToken()) {
+			// missing CSRF-proof token
+			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
+		if (!JFactory::getUser()->authorise('core.delete', 'com_vikbooking')) {
+			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
+		}
+
 		$dbo   = JFactory::getDbo();
+		$input = $app->input;
 
 		$customer_id = $input->getUint('customer', 0);
 
@@ -14075,36 +14090,45 @@ jQuery(".' . $selector . '").hover(function() {
 
 		if (!$dbo->getNumRows())
 		{
-			throw new Exception(sprintf('Customer [%d] not found', $customer_id), 404);
+			VBOHttpDocument::getInstance($app)->close(404, sprintf('Customer [%d] not found', $customer_id));
 		}
 
 		$folder = $dbo->loadResult();
 
 		if (!$folder)
 		{
-			throw new Exception('The customer does not have any documents', 500);
+			VBOHttpDocument::getInstance($app)->close(500, 'The customer does not have any documents');
 		}
 
 		$file = $input->getString('file');
 
 		if (!$file)
 		{
-			throw new Exception('File to remove not specified', 400);
+			VBOHttpDocument::getInstance($app)->close(400, 'File to remove not specified');
 		}
 
 		$path = implode(DIRECTORY_SEPARATOR, array(VBO_CUSTOMERS_PATH, $folder, $file));
 
 		if (!is_file($path)) 
 		{
-			throw new Exception(sprintf('File [%s] not found', $path), 404);
+			VBOHttpDocument::getInstance($app)->close(404, sprintf('File [%s] not found', $path));
 		}
 
-		jimport('joomla.filesystem.file');
+		/**
+		 * Accept only non-traversal paths under the customer docs folder.
+		 * 
+		 * @since 	1.18.13 (J) - 1.8.13 (WP)
+		 */
+		$path = realpath($path);
+
+		if (!$path || strpos($path, VBO_CUSTOMERS_PATH) !== 0)
+		{
+			VBOHttpDocument::getInstance($app)->close(403, 'Path not allowed for file deletion.');
+		}
 
 		$removed = JFile::delete($path);
 
-		echo json_encode(array('status' => (int) $removed));
-		exit;
+		VBOHttpDocument::getInstance($app)->json(array('status' => (int) $removed));
 	}
 
 	/**

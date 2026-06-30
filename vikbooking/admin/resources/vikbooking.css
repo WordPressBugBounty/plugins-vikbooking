@@ -325,6 +325,14 @@ a.label, a.badge, a.label:hover, a.badge:hover {
 	color: var(--vbo-gold-color) !important;
 }
 
+/* Text styles */
+.text-center {
+	text-align: center;
+}
+.cursor {
+	cursor: pointer;
+}
+
 /* Tables */
 .table th.title.left,
 .table th.left,
@@ -468,6 +476,9 @@ div.modal .close {
 }
 a:focus, a:hover {
 	text-decoration: none !important;
+}
+a.btn { 
+	text-decoration: none !important; 
 }
 .btn, .btn-group .btn, .btn-wrapper .btn, .vbo-param-setting .btn {
 	padding: 10px 10px;
@@ -9791,7 +9802,7 @@ table.vboverviewtable td:last-child {
 	background: repeating-linear-gradient( -45deg, var(--vbo-body-bg-color), var(--vbo-body-bg-color) 10px, var(--vbo-basic-btn) 10px, var(--vbo-basic-btn) 20px) !important;
 	cursor: not-allowed;
 }
-.vbo-overv-row-snake td:not(.busy-closure) {
+.vbo-overv-row-snake td:not(.busy-closure), .vbo-overv-row-snake td.busy-closure:has(div.vbo-tableaux-booking) {
 	padding-bottom: 16px;
 	vertical-align: bottom;
 }
@@ -17260,13 +17271,23 @@ select[multiple][data-will-mutate="1"] {
 .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-footerpad {
 	padding-bottom: 30px;
 }
-/* 
- * Modal Prompt: The modal is configured to accept only a few parameters. See an example on the "Save" > "Repeat" button in the Task Manager's Past Task view.
- */
-.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-overlay-content-tooltip, .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-prompt {
+.vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-overlay-content-tooltip {
 	width: 400px;
 	max-width: 70%;
 	height: 180px;
+}
+/* 
+ * Modal Prompt: The modal is configured to accept only a few parameters. See an example on the "Save" > "Repeat" button in the Task Manager's Past Task view.
+ */
+ .vbo-modal-overlay-block .vbo-modal-overlay-content.vbo-modal-prompt {
+	width: 400px;
+	max-width: 70%;
+	height: 200px;
+	
+	.vbo-modal-overlay-content-body-scroll {
+		padding: 20px;
+		height: calc(100% - 120px);
+	}
 }
 /*
  * Modal Choice

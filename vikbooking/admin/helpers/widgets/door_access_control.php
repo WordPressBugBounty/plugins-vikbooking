@@ -152,31 +152,20 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
             <div class="vbo-widget-door-access-control-wrap"></div>
             <div class="vbo-widget-dac-add-listing-helper" style="display: none;">
                 <div class="vbo-widget-dac-add-listing-wrap">
-                    <div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
-                        <div class="vbo-params-wrap">
-                            <div class="vbo-params-container">
-                                <div class="vbo-params-block">
-                                    <div class="vbo-param-container">
-                                        <div class="vbo-param-setting">
-                                        <?php
-                                        echo VikBooking::getVboApplication()->renderElementsDropDown([
-                                            'elements'    => 'listings',
-                                            'subunits'    => [
-                                                'entire_listing' => true,
-                                                'value_format'   => '%d-%d',
-                                            ],
-                                            'placeholder' => JText::translate('VBO_LISTING'),
-                                            'attributes'  => [
-                                                'class' => 'vbo-door-access-control-add-listing-id',
-                                            ],
-                                        ]);
-                                        ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <?php
+                    echo VikBooking::getVboApplication()->renderElementsDropDown([
+                        'elements'    => 'listings',
+                        'subunits'    => [
+                            'entire_listing' => true,
+                            'value_format'   => '%d-%d',
+                        ],
+                        'placeholder' => JText::translate('VBO_LISTING'),
+                        'width'       => '100%',
+                        'attributes'  => [
+                            'class' => 'vbo-door-access-control-add-listing-id',
+                        ],
+                    ]);
+                    ?>
                 </div>
             </div>
             <div class="vbo-widget-dac-cap-params-helper" style="display: none;">

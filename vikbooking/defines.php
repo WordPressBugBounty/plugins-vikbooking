@@ -12,7 +12,7 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 // Software version
-define('VIKBOOKING_SOFTWARE_VERSION', '1.8.12');
+define('VIKBOOKING_SOFTWARE_VERSION', '1.8.13');
 
 // Base path
 define('VIKBOOKING_BASE', dirname(__FILE__));
@@ -53,6 +53,13 @@ defined('VBO_ADMIN_PATH') or define('VBO_ADMIN_PATH', dirname(__FILE__) . DIRECT
 defined('VBO_SITE_PATH') or define('VBO_SITE_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR . 'site');
 defined('VCM_ADMIN_PATH') or define('VCM_ADMIN_PATH', str_replace('vikbooking' . DIRECTORY_SEPARATOR . 'admin', 'vikchannelmanager' . DIRECTORY_SEPARATOR . 'admin', VBO_ADMIN_PATH));
 defined('VCM_SITE_PATH') or define('VCM_SITE_PATH', str_replace('vikbooking' . DIRECTORY_SEPARATOR . 'site', 'vikchannelmanager' . DIRECTORY_SEPARATOR . 'site', VBO_SITE_PATH));
+
+/**
+ * Minimum version required for VCM to detect outdated/stucked versions.
+ * 
+ * @since 	1.8.13
+ */
+define('VIKCHANNELMANAGER_MINIMUM_VERSION', '1.9.21');
 
 // Other Constants that may not be available in the framework
 defined('DS') or define('DS', DIRECTORY_SEPARATOR);

@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2026-06-16 16:19+0200\n"
-"PO-Revision-Date: 2026-06-16 16:20+0200\n"
+"POT-Creation-Date: 2026-06-30 16:58+0200\n"
+"PO-Revision-Date: 2026-06-30 17:00+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: it_IT\n"
@@ -649,6 +649,18 @@ msgid ""
 msgstr ""
 "Clicca sul tasto <b>Salva</b> per confermare la tua scelta e chiudere questa "
 "finestra."
+
+#: libraries/html/vcm/version.php:31
+msgid ""
+"Your Channel Manager version is outdated. Please update it to not lose "
+"functionalities."
+msgstr ""
+"La versione del tuo Channel Manager è obsoleta. Ti invitiamo ad aggiornarla "
+"per non perdere funzionalità."
+
+#: libraries/html/vcm/version.php:32 libraries/language/admin.php:1917
+msgid "Update"
+msgstr "Aggiorna"
 
 #: libraries/html/wpdash/rss/widget.php:117
 msgid ""
@@ -3015,10 +3027,6 @@ msgstr "Num. min. di adulti + bambini"
 #: libraries/language/admin.php:1914
 msgid "Administrator Notes"
 msgstr "Note amministratore"
-
-#: libraries/language/admin.php:1917
-msgid "Update"
-msgstr "Aggiorna"
 
 #: libraries/language/admin.php:1920
 msgid "Days in Advance for bookings"
@@ -13356,6 +13364,10 @@ msgstr ""
 "dettaglio prenotazione (confermata), insieme ai codici di accesso, se "
 "disponibili."
 
+#: libraries/language/admin.php:8685
+msgid "Room Revenue"
+msgstr "Produzione camere"
+
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
 msgstr "Vik Booking"
@@ -16313,6 +16325,11 @@ msgstr "Procedi al pagamento per confermare la tua prenotazione."
 #: libraries/language/site.php:2588
 msgid "Access Code"
 msgstr "Codice di accesso"
+
+#: libraries/language/site.php:2591
+#, php-format
+msgid "Minimum advance booking notice is %s"
+msgstr "Il preavviso minimo per le prenotazioni è di %s"
 
 #: libraries/language/system.php:46
 msgid "Error"

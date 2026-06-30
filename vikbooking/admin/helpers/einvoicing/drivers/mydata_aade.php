@@ -1954,6 +1954,9 @@ class VikBookingEInvoicingMydataAade extends VikBookingEInvoicing
 		$inv_tot_paid = empty($data[0]['totpaid']) ? $data[0]['total'] : $data[0]['totpaid'];
 		if ($correlated) {
 			$inv_tot_paid = $this->environmental_fee_details['fee_cost'];
+		} elseif (!$correlated && $inv_tot_paid > $data[0]['total']) {
+			// use the calculated booking total amount minus the environmental fees
+			$inv_tot_paid = $data[0]['total'];
 		}
 
 		// invoice payment method

@@ -708,7 +708,7 @@ class VikbookingViewSearch extends JViewVikBooking
 				unset($arrtar[$kk]);
 				if (is_float($err_mindaysadv_room)) {
 					// number of minimum hours in advance not met
-					$restrictionerrmsg = JText::sprintf('VBOERRMINDAYSADV', JText::sprintf('VBO_N_HOURS', intval($err_mindaysadv_room * 24)));
+					$restrictionerrmsg = JText::sprintf('VBOERRMINBOOKNOTICE', JText::sprintf('VBO_N_HOURS', intval($err_mindaysadv_room * 24)));
 				} else {
 					// integer expected
 					$restrictionerrmsg = JText::sprintf('VBOERRMINDAYSADV', $err_mindaysadv_room);

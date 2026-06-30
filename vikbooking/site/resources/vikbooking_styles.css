@@ -10992,6 +10992,13 @@ p.info[data-new-messages="1"] a {
 	.vbo-results-content .vblistcontainer-grid .vbo-searchresults-party-content {
 		grid-template-columns: repeat(1, minmax(0, 1fr));
 	}
+	.vbvordroominfo .vbo-booking-room-checkin-instr .vbo-booking-room-dac-list {
+		display: block;
+	}
+	.vbvordroominfo .vbo-booking-room-checkin-instr .vbo-booking-room-dac-list .vbo-booking-room-dac-code-wrap {
+		display: block;
+		margin-bottom: 10px;
+	}
 }
 @media only screen and (max-width : 550px) {
 	#ui-datepicker-div {

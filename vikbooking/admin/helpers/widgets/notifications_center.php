@@ -1590,7 +1590,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				}
 			} elseif (!strcasecmp($notif->group, 'dac')) {
 				$group_badge_icon = 'fingerprint';
-				$group_badge_cls  = 'vbo-badge-group-orange';
+				$group_badge_cls  = 'vbo-badge-group-green';
 				if (strpos((string) $notif->type, '.nok') !== false) {
 					$group_badge_cls = 'vbo-badge-group-red';
 				}
@@ -1599,6 +1599,10 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				$group_badge_cls  = 'vbo-badge-group-lightblue';
 				if (strpos((string) $notif->type, '.nok') !== false || strpos((string) $notif->type, 'error') !== false) {
 					$group_badge_cls = 'vbo-badge-group-red';
+				}
+				if (strpos($notif->type, 'mfa') !== false) {
+					$group_badge_icon = 'shield';
+					$group_badge_cls = 'vbo-badge-group-orange';
 				}
 			}
 

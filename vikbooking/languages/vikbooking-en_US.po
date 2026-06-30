@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2026-06-16 16:19+0200\n"
-"PO-Revision-Date: 2026-06-16 16:19+0200\n"
+"POT-Creation-Date: 2026-06-30 16:58+0200\n"
+"PO-Revision-Date: 2026-06-30 16:58+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: en_US\n"
@@ -638,6 +638,18 @@ msgid ""
 msgstr ""
 "Hit the <b>Save</b> button to confirm your choice and close this modal "
 "window."
+
+#: libraries/html/vcm/version.php:31
+msgid ""
+"Your Channel Manager version is outdated. Please update it to not lose "
+"functionalities."
+msgstr ""
+"Your Channel Manager version is outdated. Please update it to not lose "
+"functionalities."
+
+#: libraries/html/vcm/version.php:32 libraries/language/admin.php:1917
+msgid "Update"
+msgstr "Update"
 
 #: libraries/html/wpdash/rss/widget.php:117
 msgid ""
@@ -3002,10 +3014,6 @@ msgstr "Min. Numb. of Adults + Children"
 #: libraries/language/admin.php:1914
 msgid "Administrator Notes"
 msgstr "Administrator Notes"
-
-#: libraries/language/admin.php:1917
-msgid "Update"
-msgstr "Update"
 
 #: libraries/language/admin.php:1920
 msgid "Days in Advance for bookings"
@@ -13246,7 +13254,6 @@ msgstr ""
 "availability open."
 
 #: libraries/language/admin.php:8679 libraries/language/site.php:2585
-#| msgid "Check-in on %s"
 msgid "Check-in instructions"
 msgstr "Check-in instructions"
 
@@ -13257,6 +13264,11 @@ msgid ""
 msgstr ""
 "If set, the instructions will be displayed to the guest in the front-end "
 "(confirmed) booking details page along with the door access code(s), if any."
+
+#: libraries/language/admin.php:8685
+#| msgid "Revenue"
+msgid "Room Revenue"
+msgstr "Room Revenue"
 
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
@@ -16175,9 +16187,14 @@ msgid "Proceed to payment to confirm your booking."
 msgstr "Proceed to payment to confirm your booking."
 
 #: libraries/language/site.php:2588
-#| msgid "Access Control"
 msgid "Access Code"
 msgstr "Access Code"
+
+#: libraries/language/site.php:2591
+#, php-format
+#| msgid "Minimum advance booking notice"
+msgid "Minimum advance booking notice is %s"
+msgstr "Minimum advance booking notice is %s"
 
 #: libraries/language/system.php:46
 msgid "Error"

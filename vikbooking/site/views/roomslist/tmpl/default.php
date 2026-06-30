@@ -43,7 +43,7 @@ if (is_array($category)) {
 	}
 }
 ?>
-<div class="vblistcontainer vblistcontainer-<?php echo $playoutstyle; ?>">
+<div class="vblistcontainer vblistcontainer-<?php echo JHtml::fetch('esc_attr', $playoutstyle); ?>">
 <ul class="vblist">
 <?php
 foreach ($rooms as $r) {

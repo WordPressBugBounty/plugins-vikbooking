@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.13
+
+*Release date - 30 June 2026*
+
+- New PMS Report "Bookings".
+- Improvements to RMS Occupancy Pace report data collection.
+- Outdated Channel Manager versions detection.
+- Multiple low-severity security fixes for CSRF and XSS prevention.
+
 ## 1.8.12
 
 *Release date - 16 June 2026*

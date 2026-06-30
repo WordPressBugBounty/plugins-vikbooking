@@ -2,14 +2,14 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: VikBooking 1.8.12\n"
+"Project-Id-Version: VikBooking 1.8.13\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/VikBooking\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-16T14:21:17+00:00\n"
+"POT-Creation-Date: 2026-06-30T15:01:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: vikbooking\n"
@@ -442,6 +442,15 @@ msgstr ""
 
 #: libraries/html/rss/optin/modal.php:107
 msgid "Hit the <b>Save</b> button to confirm your choice and close this modal window."
+msgstr ""
+
+#: libraries/html/vcm/version.php:31
+msgid "Your Channel Manager version is outdated. Please update it to not lose functionalities."
+msgstr ""
+
+#: libraries/html/vcm/version.php:32
+#: libraries/language/admin.php:1917
+msgid "Update"
 msgstr ""
 
 #: libraries/html/wpdash/rss/widget.php:117
@@ -2831,10 +2840,6 @@ msgstr ""
 
 #: libraries/language/admin.php:1914
 msgid "Administrator Notes"
-msgstr ""
-
-#: libraries/language/admin.php:1917
-msgid "Update"
 msgstr ""
 
 #: libraries/language/admin.php:1920
@@ -11557,6 +11562,10 @@ msgstr ""
 msgid "If set, the instructions will be displayed to the guest in the front-end (confirmed) booking details page along with the door access code(s), if any."
 msgstr ""
 
+#: libraries/language/admin.php:8685
+msgid "Room Revenue"
+msgstr ""
+
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
 msgstr ""
@@ -13989,6 +13998,11 @@ msgstr ""
 
 #: libraries/language/site.php:2588
 msgid "Access Code"
+msgstr ""
+
+#: libraries/language/site.php:2591
+#, php-format
+msgid "Minimum advance booking notice is %s"
 msgstr ""
 
 #: libraries/language/system.php:46
