@@ -873,7 +873,7 @@ function vboSearchExtraCost(elem) {
 							<?php echo JText::translate('VBEDITORDERTWO'); ?>
 						</div>
 						<div class="vbo-editbooking-custarea">
-							<textarea name="custdata"><?php echo htmlspecialchars($ord['custdata']); ?></textarea>
+							<textarea name="custdata"><?php echo JHtml::fetch('esc_textarea', $ord['custdata']); ?></textarea>
 						</div>
 					</div>
 					<div class="vbo-bookingdet-detcont">

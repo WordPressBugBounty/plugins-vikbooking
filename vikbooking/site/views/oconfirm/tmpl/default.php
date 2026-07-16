@@ -1042,11 +1042,11 @@ if (count($cfields)) {
 				<div class="vbo-oconfirm-cfield-input">
 				<?php
 				if ($cf['isphone'] == 1) {
-					echo $vbo_app->printPhoneInputField(array('name' => 'vbf' . $cf['id'], 'id' => 'vbf-inp' . $cf['id'], 'value' => $def_textval, 'class' => 'vbinput vbf-phoneinp', 'size' => '40'));
+					echo $vbo_app->printPhoneInputField(array('name' => 'vbf' . $cf['id'], 'id' => 'vbf-inp' . $cf['id'], 'value' => JHtml::fetch('esc_attr', $def_textval), 'class' => 'vbinput vbf-phoneinp', 'size' => '40'));
 				} else {
 					$input_type = $cf['isemail'] == 1 ? 'email' : 'text';
 					?>
-					<input type="<?php echo $input_type; ?>" name="vbf<?php echo $cf['id']; ?>" id="vbf-inp<?php echo $cf['id']; ?>" value="<?php echo $def_textval; ?>" size="40" class="vbinput"/>
+					<input type="<?php echo $input_type; ?>" name="vbf<?php echo $cf['id']; ?>" id="vbf-inp<?php echo $cf['id']; ?>" value="<?php echo JHtml::fetch('esc_attr', $def_textval); ?>" size="40" class="vbinput"/>
 					<?php
 				}
 				?>
@@ -1065,7 +1065,7 @@ if (count($cfields)) {
 					<?php echo $fname; ?>
 				</div>
 				<div class="vbo-oconfirm-cfield-input">
-					<textarea name="vbf<?php echo $cf['id']; ?>" id="vbf-inp<?php echo $cf['id']; ?>" rows="5" cols="30" class="vbtextarea"><?php echo $def_textval; ?></textarea>
+					<textarea name="vbf<?php echo $cf['id']; ?>" id="vbf-inp<?php echo $cf['id']; ?>" rows="5" cols="30" class="vbtextarea"><?php echo JHtml::fetch('esc_textarea', $def_textval); ?></textarea>
 				</div>
 			</div>
 			<?php

@@ -44,9 +44,13 @@ $pcategory_id = VikRequest::getString('category_id', '', 'request');
 // single category filter
 $pcategories = VikRequest::getString('categories', '', 'request');
 // multiple category filters
-$pcategory_ids = VikRequest::getVar('category_ids', array());
+$pcategory_ids = (array) VikRequest::getVar('category_ids', []);
 // current menu item ID or page
 $pitemid = VikRequest::getInt('Itemid', 0, 'request');
+
+// sanitize category values
+$pcategory_id = $pcategory_id === 'all' ? $pcategory_id : (int) $pcategory_id;
+$pcategories  = $pcategories === 'all' ? $pcategories : (int) $pcategories;
 
 $totadults = 0;
 $totchildren = 0;
@@ -57,7 +61,7 @@ foreach ($this->arrpeople as $aduchild) {
 }
 
 // change dates URI
-$use_category_filter = !$pcategory_id && $pcategories ? $pcategories : $pcategory_id;
+$use_category_filter = (!$pcategory_id && $pcategories ? $pcategories : $pcategory_id) ?: '';
 $change_dates_uri = JRoute::rewrite('index.php?option=com_vikbooking&view=vikbooking&checkin='.$this->checkin.'&checkout='.$this->checkout.'&category_id='.$use_category_filter.(!empty($pitemid) ? '&Itemid='.$pitemid : ''));
 
 ?>
@@ -406,15 +410,13 @@ if (count($this->mod_booking)) {
 	<input type="hidden" name="days" value="<?php echo $this->days; ?>"/>
 	<input type="hidden" name="checkin" value="<?php echo $this->checkin; ?>"/>
 	<input type="hidden" name="checkout" value="<?php echo $this->checkout; ?>"/>
-	<input type="hidden" name="category_id" value="<?php echo $pcategory_id; ?>"/>
-	<input type="hidden" name="categories" value="<?php echo $pcategories; ?>"/>
+	<input type="hidden" name="category_id" value="<?php echo JHtml::fetch('esc_attr', $pcategory_id); ?>"/>
+	<input type="hidden" name="categories" value="<?php echo JHtml::fetch('esc_attr', $pcategories); ?>"/>
 	<?php
-	if (is_array($pcategory_ids) && count($pcategory_ids)) {
-		foreach ($pcategory_ids as $pcid) {
-			?>
-	<input type="hidden" name="category_ids[]" value="<?php echo $pcid; ?>"/>
-			<?php
-		}
+	foreach ($pcategory_ids as $pcid) {
+		?>
+	<input type="hidden" name="category_ids[]" value="<?php echo JHtml::fetch('esc_attr', $pcid); ?>"/>
+		<?php
 	}
 	if (!empty ($pitemid)) {
 	?>

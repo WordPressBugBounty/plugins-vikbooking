@@ -106,7 +106,10 @@ trait VBOTaskDriverParamsScheduling
             return;
         }
 
-        if (!$booking->detectAlterations()) {
+        // check if we are dealing with a RtB where previous booking was "pending"
+        $changedToConfirmed = $booking->getPrevious() && $booking->getPreviousProperty('status') === 'standby';
+
+        if (!$booking->detectAlterations() && !$changedToConfirmed) {
             // do nothing when no significant changes were made to the booking
             return;
         }

@@ -1402,9 +1402,9 @@ JS
 								unset($custdet_parts[0]);
 								if ((!strcasecmp(trim($custdet_parts[1]), 'http') || !strcasecmp(trim($custdet_parts[1]), 'https')) && !empty($custdet_parts[2]) && strpos($custdet_parts[2], '//') !== false) {
 									// this is a URI
-									$custd_val = '<a href="' . trim(implode(':', $custdet_parts)) . '" target="_blank"><i class="' . VikBookingIcons::i('external-link') . '"></i></a>';
+									$custd_val = '<a href="' . htmlspecialchars(trim(implode(':', $custdet_parts))) . '" target="_blank"><i class="' . VikBookingIcons::i('external-link') . '"></i></a>';
 								} else {
-									$custd_val = trim(implode(':', $custdet_parts));
+									$custd_val = htmlspecialchars(trim(implode(':', $custdet_parts)));
 								}
 							}
 							?>

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.14
+
+*Release date - 16 July 2026*
+
+- Minor task manager improvements for OTA booking alterations.
+- Multiple low-severity security fixes for CSRF and XSS prevention.
+
 ## 1.8.13
 
 *Release date - 30 June 2026*
