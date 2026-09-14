@@ -226,6 +226,9 @@ foreach ($langs as $ltag => $lang) {
 				}
 				$tn_value = '';
 				$tn_class = ' vbo-missing-translation';
+				if (!isset($lang_record_tn[$reference_id])) {
+					$lang_record_tn[$reference_id] = [];
+				}
 				if (array_key_exists($reference_id, ($lang_record_tn ?? [])) && array_key_exists($field, ($lang_record_tn[$reference_id]['content'] ?? [])) && strlen($lang_record_tn[$reference_id]['content'][$field])) {
 					if (in_array($type, array('text', 'textarea', 'html'))) {
 						$tn_class = ' vbo-field-translated';
@@ -239,21 +242,21 @@ foreach ($langs as $ltag => $lang) {
 								<div class="vbo-translations-element-val">
 						<?php
 						if ($type == 'text') {
-							if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, $lang_record_tn[$reference_id]['content'])) {
+							if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, ($lang_record_tn[$reference_id]['content'] ?? []))) {
 								$tn_value = $lang_record_tn[$reference_id]['content'][$field];
 							}
 							?>
 									<input type="text" name="tn[<?php echo $ltag; ?>][<?php echo $reference_id; ?>][<?php echo $field; ?>]" value="<?php echo htmlspecialchars($tn_value); ?>" size="40" placeholder="<?php echo htmlspecialchars($def_value); ?>"/>
 							<?php
 						} elseif ($type == 'textarea') {
-							if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, $lang_record_tn[$reference_id]['content'])) {
+							if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, ($lang_record_tn[$reference_id]['content'] ?? []))) {
 								$tn_value = $lang_record_tn[$reference_id]['content'][$field];
 							}
 							?>
 									<textarea name="tn[<?php echo $ltag; ?>][<?php echo $reference_id; ?>][<?php echo $field; ?>]" rows="7" cols="170" placeholder="<?php echo htmlspecialchars($def_value); ?>"><?php echo $tn_value; ?></textarea>
 							<?php
 						} elseif ($type == 'html') {
-							if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, $lang_record_tn[$reference_id]['content'])) {
+							if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, ($lang_record_tn[$reference_id]['content'] ?? []))) {
 								$tn_value = $lang_record_tn[$reference_id]['content'][$field];
 							}
 							if (VBOPlatformDetection::isWordPress() && interface_exists('Throwable')) {
@@ -284,7 +287,7 @@ foreach ($langs as $ltag => $lang) {
 					$json_def_values = json_decode($def_value, true);
 					if ($json_def_values) {
 						$tn_json_value = [];
-						if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, $lang_record_tn[$reference_id]['content'])) {
+						if (array_key_exists($reference_id, $lang_record_tn) && array_key_exists($field, ($lang_record_tn[$reference_id]['content'] ?? []))) {
 							$tn_json_value = json_decode($lang_record_tn[$reference_id]['content'][$field], true);
 						}
 						foreach ($json_def_values as $jkey => $jval) {

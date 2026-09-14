@@ -9131,6 +9131,9 @@ p.info[data-new-messages="1"] a {
 	width: 50px;
 	text-align: center;
 }
+.vbo-tm-calendar-wrap .vbo-tm-task-reservation-details .task-res-box .box-icon i {
+	font-size: 18px;
+}
 .vbo-tm-calendar-wrap .vbo-tm-task-reservation-details .task-res-box .box-label {
 	font-weight: 600;
 	font-size: small;

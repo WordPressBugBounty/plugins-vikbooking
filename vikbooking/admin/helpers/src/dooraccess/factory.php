@@ -28,9 +28,9 @@ final class VBODooraccessFactory
     /**
      * List of door access integration objects loaded.
      *
-     * @var  VBODooraccessFactory
+     * @var  VBODooraccessIntegrationAware[]
      */
-    protected $integrations = [];
+    protected array $integrations = [];
 
     /**
      * Class constructor is protected.
@@ -1130,6 +1130,9 @@ final class VBODooraccessFactory
                                             'avatar'  => preg_match('/^http/', (string) $integration->getIcon()) ? $integration->getIcon() : null,
                                         ],
                                     ]);
+
+                                // update booking registration status to "checked-in"
+                                (new VBOModelReservation)->updateRegistration(1, $registry->getID());
                             }
                         } catch (Exception $e) {
                             // do nothing
@@ -1831,5 +1834,22 @@ final class VBODooraccessFactory
                 // do nothing but skip the current integration
             }
         }
+
+        /**
+         * Sort the integrations by name and by offline status.
+         * 
+         * @since   1.18.15 (J) - 1.8.15 (WP)
+         */
+        usort($this->integrations, function($a, $b) {
+            if (($a->isOffline ?? null) && !($b->isOffline ?? null)) {
+                return 1;
+            }
+
+            if (($b->isOffline ?? null) && !($a->isOffline ?? null)) {
+                return -1;
+            }
+
+            return strcasecmp($a->getShortName(), $b->getShortName());
+        });
     }
 }

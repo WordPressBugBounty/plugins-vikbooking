@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.8.15
+
+*Release date - 14 September 2026*
+
+- Reservation model improvements for payment method detection.
+- Chat mediator support for dispatching mobile App Push notifications (Task Manager).
+- Task Manager framework improvements.
+- New Door Access Control driver for "offline/fixed" access codes.
+- Automatic checked-in registration for first-access detection in Door Access Control.
+- Introducing Events Observer for platform dispatcher.
+- Dropped support for SVG files in Chat Mediator to improve security (thanks, anhdung1329 and WPScan).
+- Multiple low-severity security fixes for CSRF and XSS prevention.
+
 ## 1.8.14
 
 *Release date - 16 July 2026*

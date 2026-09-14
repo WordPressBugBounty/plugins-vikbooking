@@ -19,6 +19,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 class VBOChatUserOperator extends VBOChatUseraware implements VBOChatNotifiable
 {
     use VBOChatNotificationEmail;
+    use VBOChatNotificationApp;
 
     /** @var object */
     protected $operator;
@@ -110,9 +111,17 @@ class VBOChatUserOperator extends VBOChatUseraware implements VBOChatNotifiable
             /**
              * If the e-mail address exists, send a notification to this operator.
              * 
-             * @see VBOChatNotificationWebpush
+             * @see VBOChatNotificationEmail
              */
             $this->sendEmailNotification($message, $this->operator->email, $this->getName());
+
+            /**
+             * Send notification to the mobile APP as well.
+             * 
+             * @since 1.8.15
+             * @see VBOChatNotificationApp
+             */
+            $this->scheduleAppNotification($message, $this->operator->email);
         }
     }
 }

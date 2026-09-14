@@ -1081,7 +1081,7 @@ if ($ord['status'] == 'confirmed' && is_array($payment) && VikBooking::multipleP
 		</div>
 	</div>
 		<?php
-		$is_rembal_ota_cmms = $isotabooking && round($remainingamount, 2) == round($ord['cmms'], 2);
+		$is_rembal_ota_cmms = $isotabooking && (round($remainingamount, 2) == round($ord['cmms'], 2) || (!VikBooking::ivaInclusa() && round($remainingamount, 2) == round($ord['cmms'] + $ord['tot_taxes'], 2)));
 		if (!$ota_will_pay && $remainingamount > 0 && !$is_rembal_ota_cmms) {
 			?>
 	<div class="vbo-booking-cost-detail vbo-booking-cost-detail-remainingbalance">

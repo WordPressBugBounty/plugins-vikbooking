@@ -181,6 +181,7 @@ if (!empty($data['task_id'])) {
                             ?>
                                 <span class="badge badge"><?php echo $task->getAreaName($task->getAreaID()); ?></span>
                             </div>
+                            <?php echo $taskDriver->onManageTask('sidebar.details', $task, $taskArea); ?>
                         </div>
                         <?php
                     }
@@ -375,6 +376,8 @@ if (!empty($data['task_id'])) {
                                 </div>
                             </div>
                         </div>
+
+                        <?php echo $taskDriver->onManageTask('sidebar.bottom', $task, $taskArea); ?>
 
                     </div>
 

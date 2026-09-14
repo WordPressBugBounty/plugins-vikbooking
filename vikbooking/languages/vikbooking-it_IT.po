@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2026-06-30 16:58+0200\n"
-"PO-Revision-Date: 2026-06-30 17:00+0200\n"
+"POT-Creation-Date: 2026-09-14 12:01+0200\n"
+"PO-Revision-Date: 2026-09-14 12:02+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: it_IT\n"
@@ -13367,6 +13367,26 @@ msgstr ""
 #: libraries/language/admin.php:8685
 msgid "Room Revenue"
 msgstr "Produzione camere"
+
+#: libraries/language/admin.php:8688
+msgid "Lock name"
+msgstr "Nome lucchetto"
+
+#: libraries/language/admin.php:8691
+msgid "Fixed access code"
+msgstr "Codice di accesso fisso"
+
+#: libraries/language/admin.php:8694
+msgid "Optional instructions for unlocking the device."
+msgstr "Istruzioni opzionali su come sbloccare il dispositivo."
+
+#: libraries/language/admin.php:8697
+msgid ""
+"This driver creates one virtual device per profile, with no API connection, "
+"using a fixed access code."
+msgstr ""
+"Questo driver crea un dispositivo virtuale per ogni profilo, senza "
+"connessione API, utilizzando un codice di accesso fisso."
 
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"

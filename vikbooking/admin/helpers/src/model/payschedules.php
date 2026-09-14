@@ -250,10 +250,15 @@ class VBOModelPayschedules
                 }
             } catch (Exception $e) {
                 // append failure execution log and update status (2 = error)
-                 $dbo->setQuery(
+                $maxBytes = 65000;
+                $recordLog = ltrim($payschedule->logs . "\n" . $e->getMessage(), "\n");
+                if (strlen($recordLog) > $maxBytes) {
+                    $recordLog = function_exists('mb_strcut') ? mb_strcut($recordLog, -$maxBytes, $maxBytes, 'UTF-8') : substr($recordLog, -$maxBytes, $maxBytes);
+                }
+                $dbo->setQuery(
                     $dbo->getQuery(true)
                         ->update($dbo->qn('#__vikbooking_payschedules'))
-                        ->set($dbo->qn('logs') . ' = ' . $dbo->q(ltrim($payschedule->logs . "\n" . $e->getMessage(), "\n")))
+                        ->set($dbo->qn('logs') . ' = ' . $dbo->q($recordLog))
                         ->set($dbo->qn('status') . ' = 2')
                         ->where($dbo->qn('id') . ' = ' . (int) $payschedule->id)
                 );

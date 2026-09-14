@@ -7245,7 +7245,7 @@ class VikBooking
 
 		$dbo = JFactory::getDbo();
 
-		$dbo->setQuery("SELECT * FROM `#__vikbooking_seasons` WHERE ((`from` = 0 AND `to` = 0) OR (`from` IS NULL AND `to` IS NULL));");
+		$dbo->setQuery("SELECT * FROM `#__vikbooking_seasons` WHERE ((`from` = 0 AND `to` = 0) OR (`from` IS NULL AND `to` IS NULL)) ORDER BY `promo` ASC;");
 		$cached_wdayseasons = $dbo->loadAssocList();
 
 		return $cached_wdayseasons;
@@ -7632,6 +7632,7 @@ class VikBooking
 					// apply the rule
 					$applyseasons = true;
 					$dailyprice = $a[0]['cost'] / $a[0]['days'];
+					$arr[$k][0]['calcdailycost'] = $dailyprice;
 
 					// modification factor object
 					$factor = new stdClass;
@@ -7794,6 +7795,15 @@ class VikBooking
 							 * @since 	1.13.5
 							 */
 							if (in_array($sum_index, $v['trans_keys']) && $v['diffs']) {
+								/**
+								 * Attempt to calculate the effective room rate before the first promo was applied.
+								 * 
+								 * @since 	1.18.15 (J) - 1.8.15 (WP)
+								 */
+								if (isset($v['promotion']) && !isset($arr[$k][0]['before_promo'])) {
+									$arr[$k][0]['before_promo'] = $newprice + ($arr[$k][0]['calcdailycost'] ?? 0);
+								}
+
 								/**
 								 * This progressive price difference must be applied on the room final cost, so we need to
 								 * apply the transliteration over the other differences applied by other special prices.
@@ -7981,6 +7991,7 @@ class VikBooking
 					// apply the rule
 					$applyseasons = true;
 					$dailyprice = $a[0]['cost'] / $a[0]['days'];
+					$arr[$k][0]['calcdailycost'] = $dailyprice;
 					
 					if (intval($s['val_pcent']) == 2) {
 						// percentage value
@@ -8688,6 +8699,15 @@ class VikBooking
 							 * @since 	1.13.5
 							 */
 							if (in_array($sum_index, $v['trans_keys']) && $v['diffs']) {
+								/**
+								 * Attempt to calculate the effective room rate before the first promo was applied.
+								 * 
+								 * @since 	1.18.15 (J) - 1.8.15 (WP)
+								 */
+								if (isset($v['promotion']) && !isset($arr[$k]['before_promo'])) {
+									$arr[$k]['before_promo'] = $newprice + ($arr[$k]['origdailycost'] ?? 0);
+								}
+
 								/**
 								 * This progressive price difference must be applied on the room final cost, so we need to
 								 * apply the transliteration over the other differences applied by other special prices.

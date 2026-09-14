@@ -18,6 +18,8 @@ defined('ABSPATH') or die('No script kiddies please!');
  */
 class VBOPlatformOrgJoomlaDispatcher implements VBOPlatformDispatcherInterface
 {
+	use VBOEventObserver;
+
 	/**
 	 * Make sure to load all the plugins attached to Vik Booking or E4J.
 	 * This is necessary with Joomla in order to let plugins work.
@@ -53,6 +55,21 @@ class VBOPlatformOrgJoomlaDispatcher implements VBOPlatformDispatcherInterface
 	 */
 	public function filter($event, array $args = [])
 	{
-		return JFactory::getApplication()->triggerEvent($event, $args);
+		return array_merge(
+			/** @see Observer::notify() */
+			$this->notify($event, ...$args),
+			JFactory::getApplication()->triggerEvent($event, $args)
+		);
+	}
+
+	/**
+	 * @inheritDoc
+	 * 
+	 * @since 1.18.15 (J) - 1.8.15 (WP)
+	 */
+	public function observe(string $event, $handler)
+	{
+		/** @see VBOEventObserver::subscribe() */
+		$this->subscribe($event, $handler);
 	}
 }

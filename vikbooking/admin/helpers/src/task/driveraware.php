@@ -102,6 +102,27 @@ abstract class VBOTaskDriveraware implements VBOTaskDriverinterface
     /**
      * @inheritDoc
      */
+    public function onManageTask(string $position, VBOTaskTaskregistry $task, VBOTaskArea $area)
+    {
+        /**
+         * Trigger event to inject custom HTML within the "taskmanager.tasks.managetask" layout.
+         * 
+         * @param   string               $position  The position where the output will be displayed.
+         * @param   VBOTaskTaskregistry  $task      The task we are updating.
+         * @param   VBOTaskArea          $area      The area this task belongs to.
+         * 
+         * @return  string  The HTML to output.
+         * 
+         * @since 1.18.15 (J) - 1.8.15 (WP) 
+         */
+        $results = \VBOFactory::getPlatform()->getDispatcher()->filter('onDisplayManageTask', [$position, $task, $area]);
+
+        return implode("\n", $results);
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function scheduleBookingConfirmation(VBOTaskBooking $booking)
     {
         // no automatic scheduling supported upon booking confirmation

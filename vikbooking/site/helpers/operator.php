@@ -135,6 +135,31 @@ final class VikBookingOperator
 	}
 
 	/**
+	 * Fetches the information and permissions of one operator by email.
+	 * 
+	 * @param 	string 	$email 	The operator email address.
+	 * 
+	 * @return 	array 	Operator record or empty array.
+	 * 
+	 * @since 	1.18.15 (J) - 1.8.15 (WP)
+	 */
+	public function getByEmail(string $email)
+	{
+		$dbo = JFactory::getDbo();
+
+		$dbo->setQuery(
+			$dbo->getQuery(true)
+				->select('*')
+				->from($dbo->qn('#__vikbooking_operators'))
+				->where($dbo->qn('email') . ' = ' . $dbo->q($email))
+		);
+
+		$operator = $dbo->loadAssoc();
+
+		return $operator ? $this->getOne($operator['id']) : [];
+	}
+
+	/**
 	 * Returns a list of operators compatible for rendering them as elements.
 	 * 
 	 * @param 	array 	$ids 	Optional list of IDs to filter.

@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2026-06-30 16:58+0200\n"
-"PO-Revision-Date: 2026-06-30 16:58+0200\n"
+"POT-Creation-Date: 2026-09-14 12:01+0200\n"
+"PO-Revision-Date: 2026-09-14 12:01+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: en_US\n"
@@ -13266,9 +13266,30 @@ msgstr ""
 "(confirmed) booking details page along with the door access code(s), if any."
 
 #: libraries/language/admin.php:8685
-#| msgid "Revenue"
 msgid "Room Revenue"
 msgstr "Room Revenue"
+
+#: libraries/language/admin.php:8688
+#| msgid "Lock"
+msgid "Lock name"
+msgstr "Lock name"
+
+#: libraries/language/admin.php:8691
+#| msgid "Access Code"
+msgid "Fixed access code"
+msgstr "Fixed access code"
+
+#: libraries/language/admin.php:8694
+msgid "Optional instructions for unlocking the device."
+msgstr "Optional instructions for unlocking the device."
+
+#: libraries/language/admin.php:8697
+msgid ""
+"This driver creates one virtual device per profile, with no API connection, "
+"using a fixed access code."
+msgstr ""
+"This driver creates one virtual device per profile, with no API connection, "
+"using a fixed access code."
 
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
@@ -16192,7 +16213,6 @@ msgstr "Access Code"
 
 #: libraries/language/site.php:2591
 #, php-format
-#| msgid "Minimum advance booking notice"
 msgid "Minimum advance booking notice is %s"
 msgstr "Minimum advance booking notice is %s"
 

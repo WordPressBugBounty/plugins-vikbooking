@@ -19,6 +19,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 class VBOChatUserAdmin extends VBOChatUseraware implements VBOChatNotifiable
 {
     use VBOChatNotificationWebpush;
+    use VBOChatNotificationApp;
 
     /** @var JUser */
     protected $user;
@@ -128,5 +129,13 @@ class VBOChatUserAdmin extends VBOChatUseraware implements VBOChatNotifiable
          * @see VBOChatNotificationWebpush
          */
         $this->sendWebPushNotification($message, $user);
+
+        /**
+         * Send notification to the mobile APP as well.
+         * 
+         * @since 1.8.15
+         * @see VBOChatNotificationApp
+         */
+        $this->scheduleAppNotification($message, 'admin');
     }
 }

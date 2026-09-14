@@ -18,6 +18,8 @@ defined('ABSPATH') or die('No script kiddies please!');
  */
 class VBOPlatformOrgWordpressDispatcher implements VBOPlatformDispatcherInterface
 {
+	use VBOEventObserver;
+
 	/**
 	 * Triggers the specified event by passing the given argument.
 	 * No return value is expected here.
@@ -29,6 +31,9 @@ class VBOPlatformOrgWordpressDispatcher implements VBOPlatformDispatcherInterfac
 	 */
 	public function trigger($event, array $args = [])
 	{
+		/** @see Observer::notify() */
+		$this->notify($event, ...$args);
+
 		do_action_ref_array($this->getHook($event), $args);
 	}
 
@@ -43,6 +48,9 @@ class VBOPlatformOrgWordpressDispatcher implements VBOPlatformDispatcherInterfac
 	 */
 	public function filter($event, array $args = [])
 	{
+		/** @see Observer::notify() */
+		$internal = $this->notify($event, ...$args);
+
 		// inject argument at the beginning of the list, which will be
 		// used as return value by the WordPress filtering technique
 		array_unshift($args, null);
@@ -52,11 +60,27 @@ class VBOPlatformOrgWordpressDispatcher implements VBOPlatformDispatcherInterfac
 		if (is_null($return))
 		{
 			// no attached hooks
-			return [];
+			$return = [];
+		}
+		else
+		{
+			// wrap returned value into an array
+			$return = [$return];
 		}
 
 		// wrap returned value into an array
-		return [$return];
+		return array_merge($internal, $return);
+	}
+
+	/**
+	 * @inheritDoc
+	 * 
+	 * @since 1.18.15 (J) - 1.8.15 (WP)
+	 */
+	public function observe(string $event, $handler)
+	{
+		/** @see VBOEventObserver::subscribe() */
+		$this->subscribe($event, $handler);
 	}
 
 	/**

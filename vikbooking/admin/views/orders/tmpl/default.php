@@ -247,7 +247,7 @@ $filters_set = false;
 			<?php
 			foreach ($all_channels as $o_channel) {
 				?>
-				<option value="<?php echo $o_channel; ?>"<?php echo $pchannel == $o_channel ? ' selected="selected"' : ''; ?>>- <?php echo ucwords($o_channel); ?></option>
+				<option value="<?php echo JHtml::fetch('esc_attr', $o_channel); ?>"<?php echo $pchannel == $o_channel ? ' selected="selected"' : ''; ?>>- <?php echo ucwords($o_channel); ?></option>
 				<?php
 			}
 		}
@@ -279,7 +279,7 @@ $filters_set = false;
 			<?php
 			foreach ($this->categories as $catid => $catname) {
 				?>
-				<option value="<?php echo $catid; ?>"<?php echo $catid == $pcategory_id ? ' selected="selected"' : ''; ?>><?php echo $catname; ?></option>
+				<option value="<?php echo JHtml::fetch('esc_attr', $catid); ?>"<?php echo $catid == $pcategory_id ? ' selected="selected"' : ''; ?>><?php echo $catname; ?></option>
 				<?php
 			}
 			?>
@@ -303,7 +303,7 @@ $filters_set = false;
 			$allpayments = $dbo->loadAssocList();
 			foreach ($allpayments as $paym) {
 				?>
-				<option value="<?php echo $paym['id']; ?>"<?php echo $paym['id'] == $pidpayment ? ' selected="selected"' : ''; ?>><?php echo $paym['name']; ?></option>
+				<option value="<?php echo (int) $paym['id']; ?>"<?php echo $paym['id'] == $pidpayment ? ' selected="selected"' : ''; ?>><?php echo $paym['name']; ?></option>
 				<?php
 			}
 			?>
@@ -346,7 +346,7 @@ $filters_set = false;
 		$pdatefiltto = $app->getUserStateFromRequest("vbo.orders.datefiltto", 'datefiltto', '', 'string');
 		if (!empty($pdatefilt) && (!empty($pdatefiltfrom) || !empty($pdatefiltto))) {
 			$filters_set = true;
-			$dates_filter = '&amp;datefilt='.$pdatefilt.(!empty($pdatefiltfrom) ? '&amp;datefiltfrom='.$pdatefiltfrom : '').(!empty($pdatefiltto) ? '&amp;datefiltto='.$pdatefiltto : '');
+			$dates_filter = JHtml::fetch('esc_attr', '&amp;datefilt='.$pdatefilt.(!empty($pdatefiltfrom) ? '&amp;datefiltfrom='.$pdatefiltfrom : '').(!empty($pdatefiltto) ? '&amp;datefiltto='.$pdatefiltto : ''));
 		}
 		$datesel = '<select name="datefilt" onchange="vboToggleDateFilt(this.value);"><option value="">'.JText::translate('VBOFILTERBYDATES').'</option>';
 		$datesel .= '<option value="1"'.(!empty($pdatefilt) && $pdatefilt == 1 ? ' selected="selected"' : '').'>'.JText::translate('VBOFILTERDATEBOOK').'</option>';
@@ -357,7 +357,7 @@ $filters_set = false;
 		?>
 		</div>
 		<div class="btn-group pull-left" id="vbo-dates-cont" style="display: <?php echo (!empty($pdatefilt) && (!empty($pdatefiltfrom) || !empty($pdatefiltto)) ? 'inline-block' : 'none'); ?>;">
-			<input type="text" id="vbo-date-from" placeholder="<?php echo JText::translate('VBNEWSEASONONE'); ?>" value="<?php echo $pdatefiltfrom; ?>" size="10" name="datefiltfrom" autocomplete="off" />&nbsp;-&nbsp;<input type="text" id="vbo-date-to" placeholder="<?php echo JText::translate('VBNEWSEASONTWO'); ?>" value="<?php echo $pdatefiltto; ?>" size="10" name="datefiltto" autocomplete="off" />
+			<input type="text" id="vbo-date-from" placeholder="<?php echo JText::translate('VBNEWSEASONONE'); ?>" value="<?php echo JHtml::fetch('esc_attr', $pdatefiltfrom); ?>" size="10" name="datefiltfrom" autocomplete="off" />&nbsp;-&nbsp;<input type="text" id="vbo-date-to" placeholder="<?php echo JText::translate('VBNEWSEASONTWO'); ?>" value="<?php echo JHtml::fetch('esc_attr', $pdatefiltto); ?>" size="10" name="datefiltto" autocomplete="off" />
 		</div>
 		<div class="btn-group pull-left">
 			<button type="submit" class="btn btn-primary"><i class="icon-search"></i> <?php echo JText::translate('VBPVIEWORDERSSEARCHSUBM'); ?></button>
@@ -820,7 +820,7 @@ $filters_set = false;
 </table>
 </div>
 <input type="hidden" name="option" value="com_vikbooking" />
-<input type="hidden" name="cust_id" id="cust_id" value="<?php echo !empty($pcust_id) ? $pcust_id : ''; ?>" />
+<input type="hidden" name="cust_id" id="cust_id" value="<?php echo !empty($pcust_id) ? JHtml::fetch('esc_attr', $pcust_id) : ''; ?>" />
 <input type="hidden" name="task" value="orders" />
 <input type="hidden" name="boxchecked" value="0" />
 <?php echo JHtml::fetch('form.token'); ?>
@@ -1246,11 +1246,11 @@ if (count($cid) > 0 && !empty($cid[0])) {
 	<form action="index.php?option=com_vikbooking" method="post" id="vbo-geninv-form">
 		<div class="vbo-calendar-cfield-entry">
 			<label for="invoice_num"><?php echo JText::translate('VBINVSTARTNUM'); ?></label>
-			<span><input type="number" min="1" size="4" value="<?php echo $nextinvnum; ?>" id="invoice_num" name="invoice_num" /></span>
+			<span><input type="number" min="1" size="4" value="<?php echo JHtml::fetch('esc_attr', $nextinvnum); ?>" id="invoice_num" name="invoice_num" /></span>
 		</div>
 		<div class="vbo-calendar-cfield-entry">
 			<label for="invoice_suff"><?php echo JText::translate('VBINVNUMSUFFIX'); ?></label>
-			<span><input type="text" size="7" value="<?php echo $invsuff; ?>" id="invoice_suff" name="invoice_suff" /></span>
+			<span><input type="text" size="7" value="<?php echo JHtml::fetch('esc_attr', $invsuff); ?>" id="invoice_suff" name="invoice_suff" /></span>
 		</div>
 		<div class="vbo-calendar-cfield-entry">
 			<label for="invoice_date"><?php echo JText::translate('VBINVUSEDATE'); ?></label>
@@ -1259,7 +1259,7 @@ if (count($cid) > 0 && !empty($cid[0])) {
 				<?php
 				if (!empty($oldinvdate)) {
 					?>
-					<option value="<?php echo date($df, $oldinvdate); ?>"><?php echo date($df, $oldinvdate); ?></option>
+					<option value="<?php echo JHtml::fetch('esc_attr', date($df, $oldinvdate)); ?>"><?php echo date($df, $oldinvdate); ?></option>
 					<?php
 				}
 				?>
@@ -1281,10 +1281,10 @@ if (count($cid) > 0 && !empty($cid[0])) {
 		</div>
 	<?php
 	foreach ($cid as $invid) {
-		echo '<input type="hidden" name="cid[]" value="'.$invid.'" />';
+		echo '<input type="hidden" name="cid[]" value="'. (int) $invid . '" />';
 	}
 	if ($pconfirmgen > 0) {
-		echo '<input type="hidden" name="confirmgen" value="'.$cid[0].'" />';
+		echo '<input type="hidden" name="confirmgen" value="' . (int) $cid[0] . '" />';
 	}
 	?>
 		<input type="hidden" name="option" value="com_vikbooking" />
@@ -1304,7 +1304,7 @@ if (count($cid) > 0 && !empty($cid[0])) {
 		<?php
 		if (count($cid) === 1) {
 			?>
-			footer_left: '<a href="index.php?option=com_vikbooking&task=editbusy&cid[]=<?php echo $cid[0]; ?>&frominv=1" class="btn vbo-config-btn"><?php echo addslashes(JText::translate('VBINVEDITBINFO')); ?></a>',
+			footer_left: '<a href="index.php?option=com_vikbooking&task=editbusy&cid[]=<?php echo (int) $cid[0]; ?>&frominv=1" class="btn vbo-config-btn"><?php echo addslashes(JText::translate('VBINVEDITBINFO')); ?></a>',
 			<?php
 		}
 		?>

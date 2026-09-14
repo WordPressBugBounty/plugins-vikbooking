@@ -1065,6 +1065,50 @@ class VBOModelReservation extends JObject
     }
 
     /**
+     * Updates the registration status for the provided booking.
+     * 
+     * @param   int     $status     Registration status to set.
+     * @param   ?int    $bookingId  Optional booking ID to update.
+     * 
+     * @return  bool
+     * 
+     * @throws  Exception
+     * 
+     * @since   1.18.15 (J) - 1.8.15 (WP)
+     */
+    public function updateRegistration(int $status, ?int $bookingId = null)
+    {
+        $dbo = JFactory::getDbo();
+
+        if (!$bookingId) {
+            // get the internal booking record
+            $booking = $this->getBooking();
+            $bookingId = $booking['id'] ?? null;
+        }
+
+        if (empty($bookingId)) {
+            throw new Exception('Missing booking ID.', 400);
+        }
+
+        $knownStatuses = [-1, 0, 1, 2];
+
+        if (!in_array($status, $knownStatuses, true)) {
+            throw new InvalidArgumentException('Invalid registration status.', 400);
+        }
+
+        // update booking record
+        $dbo->setQuery(
+            $dbo->getQuery(true)
+                ->update($dbo->qn('#__vikbooking_orders'))
+                ->set($dbo->qn('checked') . ' = ' . $status)
+                ->where($dbo->qn('id') . ' = ' . $bookingId)
+        );
+        $dbo->execute();
+
+        return (bool) $dbo->getAffectedRows();
+    }
+
+    /**
      * Modifies the requested booking ID according to the provided options.
      * This method does not support all rate plan options like for the creation of a
      * new booking. This is a method for making quick updates concerning a room switch,
@@ -1806,6 +1850,9 @@ class VBOModelReservation extends JObject
             }
         }
 
+        // list of room-units pool
+        $roomUnits = [];
+
         // check availability for each room involved
         foreach ($roomBooking as $ind => $or) {
             // determine proper values for this room
@@ -1822,6 +1869,9 @@ class VBOModelReservation extends JObject
 
             // get room record
             $room_record = VikBooking::getRoomInfo($or['idroom']);
+
+            // set room (total) units
+            $roomUnits[$or['idroom']] = (int) ($room_record['units'] ?? 1);
 
             // check if the room is available
             if (!VikBooking::roomBookable($or['idroom'], (($room_record['units'] ?? 0) - $units_minus_oper[$or['idroom']]), $room_stay_checkin, $room_stay_checkout)) {
@@ -1848,24 +1898,29 @@ class VBOModelReservation extends JObject
                 $room_stay_realback = $turnover_secs + $room_stay_checkout;
             }
 
-            // build busy record
-            $busy_record = new stdClass;
-            $busy_record->idroom   = (int) $or['idroom'];
-            $busy_record->checkin  = (int) $room_stay_checkin;
-            $busy_record->checkout = (int) $room_stay_checkout;
-            $busy_record->realback = (int) $room_stay_realback;
+            // determine the room units to occupy (to support closure re-confirmations)
+            $bookUnitsCount = (int) (intval($booking['closure'] ?? 0) ? ($roomUnits[$or['idroom']] ?? 1) : 1);
 
-            // store busy record and obtain the newly created ID
-            $dbo->insertObject('#__vikbooking_busy', $busy_record, 'id');
-            $lid = $busy_record->id ?? 0;
+            for ($bi = 1; $bi <= $bookUnitsCount; $bi++) {
+                // build busy record
+                $busy_record = new stdClass;
+                $busy_record->idroom   = (int) $or['idroom'];
+                $busy_record->checkin  = (int) $room_stay_checkin;
+                $busy_record->checkout = (int) $room_stay_checkout;
+                $busy_record->realback = (int) $room_stay_realback;
 
-            // build busy relation record
-            $obusy_record = new stdClass;
-            $obusy_record->idorder = (int) $booking['id'];
-            $obusy_record->idbusy  = (int) $lid;
+                // store busy record and obtain the newly created ID
+                $dbo->insertObject('#__vikbooking_busy', $busy_record, 'id');
+                $lid = $busy_record->id ?? 0;
 
-            // store busy relation record
-            $dbo->insertObject('#__vikbooking_ordersbusy', $obusy_record, 'id');
+                // build busy relation record
+                $obusy_record = new stdClass;
+                $obusy_record->idorder = (int) $booking['id'];
+                $obusy_record->idbusy  = (int) $lid;
+
+                // store busy relation record
+                $dbo->insertObject('#__vikbooking_ordersbusy', $obusy_record, 'id');
+            }
         }
 
         // delete temporarily locked records, if any
@@ -2149,6 +2204,34 @@ class VBOModelReservation extends JObject
         $rooms_units_counter = [];
         foreach ($booking_rooms as $booking_room) {
             $rooms_units_counter[$booking_room['idroom']] = ($rooms_counter[$booking_room['idroom']] ?? -1) + 1;
+        }
+
+        // check if the booking modification involves other rooms
+        $roomsPool  = $this->getRoomsPool();
+        $oldRoomIds = array_map('intval', array_column($booking_rooms, 'idroom'));
+        $newRoomIds = array_values(array_unique(array_map('intval', array_column($roomsPool, 'id'))));
+        $diffIds    = array_diff($newRoomIds, $oldRoomIds);
+        foreach ($diffIds as $newId) {
+            $unitsRequested = 0;
+            $totUnits = 0;
+            foreach ($roomsPool as $roomData) {
+                if ($newId == $roomData['id']) {
+                    $unitsRequested++;
+                    $totUnits = (int) ($roomData['units'] ?? 1);
+                }
+            }
+            if (!$unitsRequested) {
+                continue;
+            }
+
+            // update units counter map for multiple units requested
+            $rooms_units_counter[$newId] = $unitsRequested - 1;
+
+            // push additional room for availability validation
+            $booking_rooms[] = [
+                'idroom' => $newId,
+                'tot_units' => $totUnits,
+            ];
         }
 
         // check the availability for each room booked
@@ -2880,6 +2963,9 @@ class VBOModelReservation extends JObject
         $country      = !empty($inj_customer['country']) ? $inj_customer['country'] : '';
         $phone        = !empty($inj_customer['phone']) ? $inj_customer['phone'] : '';
         $gender       = !empty($inj_customer['gender']) ? $inj_customer['gender'] : '';
+        $address      = !empty($inj_customer['address']) ? $inj_customer['address'] : '';
+        $city         = !empty($inj_customer['city']) ? $inj_customer['city'] : '';
+        $zip          = !empty($inj_customer['zip']) ? $inj_customer['zip'] : '';
 
         // custom fields
         $q = "SELECT * FROM `#__vikbooking_custfields` ORDER BY `ordering` ASC;";
@@ -2915,6 +3001,21 @@ class VBOModelReservation extends JObject
         if (!empty($gender) && in_array(strtoupper((string) $gender), ['M', 'F'])) {
             // inject the customer gender value
             $customer_extrainfo['gender'] = strtoupper($gender);
+        }
+
+        if (!empty($address)) {
+            // inject extra info
+            $customer_extrainfo['address'] = strlen((string) $address) > 200 ? substr($address, 0, 200) : $address;
+        }
+
+        if (!empty($city)) {
+            // inject extra info
+            $customer_extrainfo['city'] = strlen((string) $city) > 50 ? substr($city, 0, 50) : $city;
+        }
+
+        if (!empty($zip)) {
+            // inject extra info
+            $customer_extrainfo['zip'] = strlen((string) $zip) > 10 ? substr($zip, 0, 10) : $zip;
         }
 
         $cpin = VikBooking::getCPinInstance();
@@ -3268,6 +3369,9 @@ class VBOModelReservation extends JObject
         $customer_email = ($inj_customer['email'] ?? null) ?: '';
         $country_code   = ($inj_customer['country'] ?? null) ?: '';
         $phone_number   = ($inj_customer['phone'] ?? null) ?: '';
+        $address        = ($inj_customer['address'] ?? null) ?: '';
+        $city           = ($inj_customer['city'] ?? null) ?: '';
+        $zip            = ($inj_customer['zip'] ?? null) ?: '';
 
         if ($set_closed) {
             // get the possibly custom "customer notes"
@@ -3291,11 +3395,20 @@ class VBOModelReservation extends JObject
             if ($customer_email) {
                 $customer_data .= "eMail: {$customer_email}\n";
             }
+            if ($phone_number) {
+                $customer_data .= "Phone: {$phone_number}\n";
+            }
             if ($country_code) {
                 $customer_data .= "Country: {$country_code}\n";
             }
-            if ($phone_number) {
-                $customer_data .= "Phone: {$phone_number}\n";
+            if ($address) {
+                $customer_data .= "Address: {$address}\n";
+            }
+            if ($city) {
+                $customer_data .= "City: {$city}\n";
+            }
+            if ($zip) {
+                $customer_data .= "Zip: {$zip}\n";
             }
             $customer_data = rtrim($customer_data, "\n");
         }
@@ -3365,6 +3478,9 @@ class VBOModelReservation extends JObject
         if (!$paymentmeth && ($auto_paymeth || $status == 'standby')) {
             // get the default payment method, if any
             $paymentmeth = $this->getDefaultPaymentMethod($auto_paymeth);
+        } elseif ($paymentmeth && is_int($paymentmeth)) {
+            // convert the payment integer ID into a string with the actual record name
+            $paymentmeth = $this->getPaymentMethodValue($paymentmeth);
         }
 
         if ($bookingId) {
@@ -3512,8 +3628,8 @@ class VBOModelReservation extends JObject
         }
 
         // store room booking records
+        $room_indexes_usemap = [];
         foreach ($rooms_pool as $rind => $nowroom) {
-            $room_indexes_usemap = [];
             for ($r = 1; $r <= $or_forend; $r++) {
                 // determine room-level stay dates
                 $room_stay_checkin  = $nowroom['checkin_ts'] ?? $roomsData[$rind]['checkin'] ?? $checkin_ts;
@@ -3853,5 +3969,26 @@ class VBOModelReservation extends JObject
 
         // nothing was found
         return '';
+    }
+
+    /**
+     * Given a payment method record ID, returns the string
+     * in the format for saving it along the reservation.
+     * 
+     * @param   int      $id     The record ID.
+     * 
+     * @return  ?string  ID=Name calculated value, or null.
+     * 
+     * @since   1.18.15 (J) - 1.8.15 (WP)
+     */
+    protected function getPaymentMethodValue(int $id)
+    {
+        $record = VBOMvcModel::getInstance('payment')->getItem($id);
+
+        if ($record) {
+            return sprintf('%s=%s', $record->id, $record->name);
+        }
+
+        return null;
     }
 }

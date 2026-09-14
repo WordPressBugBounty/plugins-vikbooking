@@ -847,7 +847,7 @@ jQuery(function() {
 			$adultsparts = explode('-', $globnumadults);
 			$adultsel = "<select name=\"adults[]\">";
 			for($a = $adultsparts[0]; $a <= $adultsparts[1]; $a++) {
-				$adultsel .= "<option value=\"".$a."\"".($oldarrpeople[$i]['adults'] == $a ? " selected=\"selected\"" : "").">".$a."</option>";
+				$adultsel .= "<option value=\"".$a."\"".(($oldarrpeople[$i]['adults'] ?? null) == $a ? " selected=\"selected\"" : "").">".$a."</option>";
 			}
 			$adultsel .= "</select>";
 			$oldroomscountadults[$i] = $adultsel;
@@ -855,7 +855,7 @@ jQuery(function() {
 			$childrenparts = explode('-', $globnumchildren);
 			$childrensel = "<select name=\"children[]\">";
 			for($c = $childrenparts[0]; $c <= $childrenparts[1]; $c++) {
-				$childrensel .= "<option value=\"".$c."\"".(($oldarrpeople[$i]['children'] == $c ?? null) ? " selected=\"selected\"" : "").">".$c."</option>";
+				$childrensel .= "<option value=\"".$c."\"".(($oldarrpeople[$i]['children'] ?? null) == $c ? " selected=\"selected\"" : "").">".$c."</option>";
 			}
 			$childrensel .= "</select>";
 			$oldroomscountchildren[$i] = $childrensel;

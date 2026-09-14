@@ -8684,6 +8684,18 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 			case 'VBO_ROOM_REVENUE':
 				$result = __('Room Revenue', 'vikbooking');
 				break;
+			case 'VBO_LOCK_NAME':
+				$result = __('Lock name', 'vikbooking');
+				break;
+			case 'VBO_FIXED_CODE':
+				$result = __('Fixed access code', 'vikbooking');
+				break;
+			case 'VBO_DAC_UNLOCK_INSTR':
+				$result = __('Optional instructions for unlocking the device.', 'vikbooking');
+				break;
+			case 'VBO_DAC_OFFLINE_INTGR_HELP':
+				$result = __('This driver creates one virtual device per profile, with no API connection, using a fixed access code.', 'vikbooking');
+				break;
 		}
 
 		return $result;

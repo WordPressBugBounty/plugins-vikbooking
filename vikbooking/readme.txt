@@ -2,8 +2,8 @@
 Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
-Tested up to: 7.0
-Stable tag: 1.8.14
+Tested up to: 7.1
+Stable tag: 1.8.15
 Requires PHP: 7.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -131,6 +131,18 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 
 == Changelog ==
 
+= 1.8.15 =
+*Release date - 14 September 2026*
+
+* Reservation model improvements for payment method detection.
+* Chat mediator support for dispatching mobile App Push notifications (Task Manager).
+* Task Manager framework improvements.
+* New Door Access Control driver for "offline/fixed" access codes.
+* Automatic checked-in registration for first-access detection in Door Access Control.
+* Introducing Events Observer for platform dispatcher.
+* Dropped support for SVG files in Chat Mediator to improve security.
+* Multiple low-severity security fixes for CSRF and XSS prevention.
+
 = 1.8.14 =
 *Release date - 16 July 2026*
 
@@ -198,52 +210,6 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 * New front-end View (and Shortcode) "Quote Details" to let your customers see their quotes and proceed to booking.
 * Added support for the latest FontAwesome webfonts version.
 * Several framework improvements and fixes.
-
-= 1.8.7 =
-*Release date - 11 February 2026*
-
-* Door Access Control: framework improvements (device data mapping).
-* Door Access Control: automatic removal of expired passcodes.
-* Door Access Control: hotel inventory room-types mapping (subunits).
-* Door Access Control: new integration for U-tec Smart Home.
-* Resolve room assignments through intelligent combinations matrix.
-* Hotel inventory room-types with multiple subunits reassignment options.
-* New notification of type "OTA Bank Transfer Update" (E4jConnect channel manager required).
-* Improved notification of type "OTA Payout Update" (E4jConnect channel manager required).
-* Rates Overview OTA Rates improvements (net rates) and automatic loading.
-* Availability Overview preference for automatically loading rates and restrictions (Multi-calendar).
-* Longer and alphanumeric customer pin codes enforcements.
-* Template file customization improvements (DOMDocument HTML strings loading).
-* Various RMS report metric calculations improved.
-* PMS Reports automatic execution improvements with all-profiles processing.
-* Improved Virtual Credit Cards fetching operations from OTAs (E4jConnect channel manager required).
-* Various internal libraries updates.
-
-= 1.8.6 =
-*Release date - 22 January 2026*
-
-* Availability Overview new "inline-scroll" layout.
-* Increase/Decrease Rates in Rates Overview and Multi-Calendar.
-* Rates Overview new option to display OTA rates (E4jConnect channel manager required).
-* Newly created derived rate plans can populate the base rates for all listings.
-* Identity document AI-powered details extraction through MRZ (E4jConnect channel manager required).
-* Various pre-check-in improvements, including MRZ detection support.
-* Introducing Revenue Manager (RMS) framework and libraries.
-* New RMS Reports: Occupancy Pace and Booking Pace (E4jConnect channel manager required).
-* New Door Access Control integration for Nuki - Smart Locks (E4jConnect channel manager required).
-* Door Access Control passcode generation failures support re-try actions through the Notifications Center.
-* OAuth2 support for custom third-party applications and Door Access Control framework.
-* Webhook endpoint support for custom third-party applications and Door Access Control framework.
-* Booking.com Virtual Card Update notifications (E4jConnect channel manager required).
-* Automatic payment scheduling and collection for Virtual Credit Cards.
-* Various improvements to OTA payout notifications (E4jConnect channel manager required).
-* Various improvements to the electronic invoicing framework.
-* Batch update for "unsafe" customer PIN codes detected.
-* New admin-widget AI Training Drafts (E4jConnect channel manager required).
-* Guest messaging: AI self-training functionalities for approval or rejection (E4jConnect channel manager required).
-* Guest messaging: added support to suspicious messages (phishing) delivered by OTA notifications.
-* Guest messaging: manually generated AI replies can rely on the model's pre-trained knowledge.
-* New backup export type "Reservations - Pricing" to include only time-sensitive operational data.
 
 = Earlier versions =
 

@@ -738,6 +738,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_tm_tasks` (
   `workstartedon` datetime DEFAULT NULL,
   `realduration` int(10) DEFAULT 0,
   `ai` tinyint(1) DEFAULT 0,
+  `reference` varchar(32) DEFAULT NULL COMMENT 'used to link the task to a foreign service',
   PRIMARY KEY (`id`),
   FULLTEXT KEY `ft_title_notes` (`title`, `notes`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci AUTO_INCREMENT=1 ;

@@ -16,7 +16,7 @@ defined('ABSPATH') or die('No script kiddies please!');
  * 
  * @since 1.8
  */
-class VBOChatAttachment implements  JsonSerializable
+class VBOChatAttachment implements JsonSerializable
 {
     /**
      * The relative source path of the attachment.

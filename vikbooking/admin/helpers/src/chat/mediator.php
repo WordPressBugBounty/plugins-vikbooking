@@ -63,7 +63,7 @@ class VBOChatMediator
         // create default attachments extension filters
         $this->supportedFiles = implode(',', [
             // images
-            'png,apng,bmp,gif,ico,jpg,jpeg,svg,heic,webp',
+            'png,apng,bmp,gif,ico,jpg,jpeg,heic,webp',
             // videos
             'mp4,mov,ogm,webm,3gp,asf,avi,divx,flv,mkv,mpg,mpeg,wmv,xvid',
             // audios

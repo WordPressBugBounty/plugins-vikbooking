@@ -39,4 +39,17 @@ interface VBOPlatformDispatcherInterface
 	 * @return  array   A list of returned values.
 	 */
 	public function filter($event, array $args = []);
+
+	/**
+	 * Attaches a new listerner to the specified event. Whenever the event
+	 * is fired, the attached handler will be invoked.
+	 * 
+	 * @param   string    $event    The event to observe.
+	 * @param   callable  $handler  The callback to invoke.
+	 * 
+	 * @return  void
+	 * 
+	 * @since   1.18.15 (J) - 1.8.15 (WP)
+	 */
+	public function observe(string $event, $handler);
 }

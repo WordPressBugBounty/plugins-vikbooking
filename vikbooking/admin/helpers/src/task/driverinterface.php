@@ -47,6 +47,19 @@ interface VBOTaskDriverinterface
     public function getParams();
 
     /**
+     * Can be used to inject custom HTML within the task management layout.
+     * 
+     * @param   string               $position  The position where the output will be displayed.
+     * @param   VBOTaskTaskregistry  $task      The task we are updating.
+     * @param   VBOTaskArea          $area      The area this task belongs to.
+     * 
+     * @return  string  The HTML to output.
+     * 
+     * @since   1.18.15 (J) - 1.8.15 (WP)
+     */
+    public function onManageTask(string $position, VBOTaskTaskregistry $task, VBOTaskArea $area);
+
+    /**
      * Executes and schedules (eventually) the task(s) upon a booking confirmation.
      * 
      * @param   VBOTaskBooking   $booking    The task booking object.

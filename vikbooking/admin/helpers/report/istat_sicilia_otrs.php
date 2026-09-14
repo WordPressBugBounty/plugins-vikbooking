@@ -1243,7 +1243,11 @@ class VikBookingReportIstatSiciliaOtrs extends VikBookingReport
 
 				// birth place code (codice luogo nascita, codice comune Italiano o nome nazione estera)
 				$bplacecode = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'bplacecode') ?: ($guests['bplacecode'] ?? '') ?: '';
-				$bplacecode = $bplacecode ?: $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'province_b');
+				if (!$bplacecode && $guest_ind > 1) {
+					$bplacecode = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'province_b');
+					$bplacecode = $bplacecode !== 'ES' ? $bplacecode : $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'country_b');
+				}
+				$bplacecode = $bplacecode ?: $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'comune_b');
 				$bplacecode = (string) ($bplacecode == 'ES' ? '' : $bplacecode);
 
 				if (!$bplacecode && $pax_country_list && stripos($pax_country_list[0], 'ITA') === false) {
@@ -1330,6 +1334,14 @@ class VikBookingReportIstatSiciliaOtrs extends VikBookingReport
 				// residence place code (codice luogo residenza, codice comune Italiano o nome nazione estera)
 				$rplacecode = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'rplacecode') ?: ($guests['rplacecode'] ?? '') ?: '';
 				$rplacecode = $rplacecode ?: $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'province_s');
+				if ($rplacecode == 'ES') {
+					// try to fetch the country of stay in case of foreign customer
+					$rplacecode = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, $guest_ind, 'country_s');
+				}
+				if (!$rplacecode && $guest_ind > 1) {
+					$rplacecode = $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, 1, 'province_s');
+					$rplacecode = $rplacecode !== 'ES' ? $rplacecode : $this->getGuestPaxDataValue($guests['pax_data'], $room_guests, 1, 'country_s');
+				}
 				$rplacecode = (string) ($rplacecode == 'ES' ? '' : $rplacecode);
 
 				if (!$rplacecode && $pax_country_list && stripos($pax_country_list[0], 'ITA') === false) {

@@ -36,7 +36,7 @@ $pdatefilt = $this->datefilt;
 $pdatefiltfrom = $this->datefiltfrom;
 $pdatefiltto = $this->datefiltto;
 if ((!empty($pdatefiltfrom) || !empty($pdatefiltto))) {
-	$dates_filter = '&amp;datefilt='.$pdatefilt.(!empty($pdatefiltfrom) ? '&amp;datefiltfrom='.$pdatefiltfrom : '').(!empty($pdatefiltto) ? '&amp;datefiltto='.$pdatefiltto : '');
+	$dates_filter = JHtml::fetch('esc_attr', '&amp;datefilt='.$pdatefilt.(!empty($pdatefiltfrom) ? '&amp;datefiltfrom='.$pdatefiltfrom : '').(!empty($pdatefiltto) ? '&amp;datefiltto='.$pdatefiltto : ''));
 }
 $pactive_tab = VikRequest::getString('vbo_active_tab', 'vbo-trackings-tabcont-list', 'request');
 
@@ -95,7 +95,7 @@ jQuery(function() {
 		jQuery("." + newtabrel).fadeIn();
 		jQuery("#vbo_active_tab").val(newtabrel);
 	});
-	jQuery(".vbo-trackings-tab[data-vbotab='<?php echo $pactive_tab; ?>']").trigger('click');
+	jQuery(".vbo-trackings-tab[data-vbotab='<?php echo JHtml::fetch('esc_attr', $pactive_tab); ?>']").trigger('click');
 });
 </script>
 
@@ -106,11 +106,11 @@ jQuery(function() {
 			<a class="btn" href="index.php?option=com_vikbooking&task=trkconfig"><?php VikBookingIcons::e('cogs'); ?> <?php echo JText::translate('VBTRKSETTINGS'); ?></a>
 		</div>
 		<div class="btn-group pull-left input-append">
-			<input type="text" id="vbo-date-from" placeholder="<?php echo JText::translate('VBNEWSEASONONE'); ?>" value="<?php echo $pdatefiltfrom; ?>" size="14" name="datefiltfrom" onfocus="this.blur();" />
+			<input type="text" id="vbo-date-from" placeholder="<?php echo JText::translate('VBNEWSEASONONE'); ?>" value="<?php echo JHtml::fetch('esc_attr', $pdatefiltfrom); ?>" size="14" name="datefiltfrom" onfocus="this.blur();" />
 			<button type="button" class="btn" id="vbo-date-from-trig"><i class="icon-calendar"></i></button>
 		</div>
 		<div class="btn-group pull-left input-append">
-			<input type="text" id="vbo-date-to" placeholder="<?php echo JText::translate('VBNEWSEASONTWO'); ?>" value="<?php echo $pdatefiltto; ?>" size="14" name="datefiltto" onfocus="this.blur();" />
+			<input type="text" id="vbo-date-to" placeholder="<?php echo JText::translate('VBNEWSEASONTWO'); ?>" value="<?php echo JHtml::fetch('esc_attr', $pdatefiltto); ?>" size="14" name="datefiltto" onfocus="this.blur();" />
 			<button type="button" class="btn" id="vbo-date-to-trig"><i class="icon-calendar"></i></button>
 		</div>
 		<div class="btn-group pull-left">
@@ -134,7 +134,7 @@ jQuery(function() {
 			$pcountryfilt = VikRequest::getString('countryfilt', '', 'request');
 			foreach ($this->countries as $c) {
 				?>
-				<option value="<?php echo $c['country']; ?>"<?php echo $c['country'] == $pcountryfilt ? ' selected="selected"' : ''; ?>><?php echo $c['country_name']; ?></option>
+				<option value="<?php echo JHtml::fetch('esc_attr', $c['country']); ?>"<?php echo $c['country'] == $pcountryfilt ? ' selected="selected"' : ''; ?>><?php echo $c['country_name']; ?></option>
 				<?php
 			}
 			?>
@@ -153,7 +153,7 @@ jQuery(function() {
 				$say_referrer = !strcasecmp($say_referrer, 'googlevr') ? 'Google VR' : $say_referrer;
 				$say_referrer = strpos($say_referrer, 'http') === false ? ucwords($say_referrer) : $say_referrer;
 				?>
-				<option value="<?php echo $r['referrer']; ?>"<?php echo $r['referrer'] == $preferrer ? ' selected="selected"' : ''; ?>><?php echo $say_referrer; ?></option>
+				<option value="<?php echo JHtml::fetch('esc_attr', $r['referrer']); ?>"<?php echo $r['referrer'] == $preferrer ? ' selected="selected"' : ''; ?>><?php echo $say_referrer; ?></option>
 				<?php
 			}
 			?>
@@ -315,7 +315,7 @@ if (empty($rows)) {
 							<?php VikBookingIcons::e('chevron-down', 'vbo-trackings-togglesubrow'); ?>
 						</div>
 						<div class="vbo-trackings-table-body-cell vbo-trackings-table-cell-ckb">
-							<input type="checkbox" id="cb<?php echo $i;?>" name="cid[]" value="<?php echo $row['id']; ?>" onclick="Joomla.isChecked(this.checked);">
+							<input type="checkbox" id="cb<?php echo $i;?>" name="cid[]" value="<?php echo JHtml::fetch('esc_attr', $row['id']); ?>" onclick="Joomla.isChecked(this.checked);">
 						</div>
 						<div class="vbo-trackings-table-body-cell vbo-trackings-table-cell-id">
 							<div class="vbo-trackings-table-body-hidden-lbl">ID</div>

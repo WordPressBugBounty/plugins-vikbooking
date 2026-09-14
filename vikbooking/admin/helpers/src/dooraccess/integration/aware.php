@@ -552,7 +552,7 @@ abstract class VBODooraccessIntegrationAware
 
         try {
             // let the integration provider fetch the list of remote devices
-            $remoteDevicesList = $this->fetchRemoteDevices($settings);
+            $remoteDevicesList = $this->fetchRemoteDevices();
         } catch (Exception $e) {
             // propagate the error
             throw $e;

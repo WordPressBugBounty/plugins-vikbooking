@@ -50,6 +50,6 @@ abstract class VBOHtmlTaskmanager
             [
                 'client' => 'admin',
             ]
-        );
+        ) ?: $status->getName();
     }
 }
