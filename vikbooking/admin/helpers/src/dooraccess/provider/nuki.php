@@ -332,6 +332,28 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
         // access webhook data
         $webhookData = $app->input->json->getArray();
 
+        /**
+         * Log the webhook payload data within the CM, if available.
+         * 
+         * @since   1.18.16 (J) - 1.8.16 (WP)
+         */
+        if (class_exists('VCMLogDriverJsonlines')) {
+            $logger = new VCMLogDriverJsonlines(
+                // groups logs by day
+                VBO_MEDIA_PATH . '/logs/dac/webhook/nuki/' . JHtml::fetch('date', 'now', 'Y-m-d') . '.php',
+                [
+                    // auto-delete log files after a certain period
+                    'gc_threshold' => '-3 months',
+                ]
+            );
+            $logger->debug(
+                "Webhook payload received:\n\n```\n{code}\n```",
+                [
+                    'code' => json_encode($webhookData, JSON_PRETTY_PRINT),
+                ]
+            );
+        }
+
         // determine the webhook notification type
         $webhookType = strtoupper((string) ($webhookData['feature'] ?? ''));
 
@@ -617,6 +639,31 @@ HTML;
 
             // throw error
             throw $dacError;
+        }
+
+        /**
+         * Log the webhook payload data within the CM, if available.
+         * 
+         * @since   1.18.16 (J) - 1.8.16 (WP)
+         */
+        if (class_exists('VCMLogDriverJsonlines')) {
+            $logger = new VCMLogDriverJsonlines(
+                // groups logs by day
+                VBO_MEDIA_PATH . '/logs/dac/webhook/nuki/' . JHtml::fetch('date', 'now', 'Y-m-d') . '.php',
+                [
+                    // auto-delete log files after a certain period
+                    'gc_threshold' => '-3 months',
+                ]
+            );
+            $logger->info(
+                "Custom passcode generated:\n\n```\n{code}\n```",
+                [
+                    'code' => json_encode([
+                        'data' => $data,
+                        'response' => $responseData,
+                    ], JSON_PRETTY_PRINT),
+                ]
+            );
         }
 
         // build result properties to bind (operation is asynchronous, so we don't immediately get an authorization ID for the new access code)

@@ -242,7 +242,7 @@ if (!class_exists('VersionListener'))
 		 */
 		public static function isJoomla15()
 		{
-			return self::getID() == self::J15;
+			return self::isJoomla() && self::getID() == self::J15;
 		}
 
 		/**
@@ -252,7 +252,7 @@ if (!class_exists('VersionListener'))
 		 */
 		public static function isJoomla25()
 		{
-			return self::getID() == self::J25;
+			return self::isJoomla() && self::getID() == self::J25;
 		}
 
 		/**
@@ -274,7 +274,7 @@ if (!class_exists('VersionListener'))
 		 */
 		public static function isJoomla30()
 		{
-			return self::getID() == self::J30;
+			return self::isJoomla() && self::getID() == self::J30;
 		}
 
 		/**
@@ -284,7 +284,7 @@ if (!class_exists('VersionListener'))
 		 */
 		public static function isJoomla35()
 		{
-			return self::getID() == self::J35;
+			return self::isJoomla() && self::getID() == self::J35;
 		}
 
 		/**
@@ -294,19 +294,7 @@ if (!class_exists('VersionListener'))
 		 */
 		public static function isJoomla37()
 		{
-			return self::getID() == self::J37;
-		}
-
-		/**
-		 * Checks if the installed Joomla is 4.x.
-		 *
-		 * @return 	boolean  True if Joomla is between 4.0 and 5.0 (excluded), otherwise false.
-		 *
-		 * @since 	1.8.3
-		 */
-		public static function isJoomla4x()
-		{
-			return self::isJoomla40();
+			return self::isJoomla() && self::getID() == self::J37;
 		}
 
 		/**
@@ -316,7 +304,15 @@ if (!class_exists('VersionListener'))
 		 */
 		public static function isJoomla40()
 		{
-			return self::getID() == self::J40;
+			return self::isJoomla() && self::getID() == self::J40;
+		}
+
+		/**
+		 * Alias for `isJoomla40`.
+		 */
+		public static function isJoomla4x()
+		{
+			return self::isJoomla40();
 		}
 
 		/**
@@ -326,7 +322,17 @@ if (!class_exists('VersionListener'))
 		 */
 		public static function isJoomla50()
 		{
-			return false;
+			return self::isJoomla() && version_compare(static::getVersion(), '5.0', '>=');
+		}
+
+		/**
+		 * Checks if the installed Joomla is 6.0 or higher.
+		 *
+		 * @return 	boolean  True if Joomla is 6.0 or higher, otherwise false.
+		 */
+		public static function isJoomla60()
+		{
+			return self::isJoomla() && version_compare(static::getVersion(), '6.0', '>=');
 		}
 
 		/**
@@ -336,7 +342,7 @@ if (!class_exists('VersionListener'))
 		 */
 		public static function isWordpress4()
 		{
-			return self::getID() == self::WP4;
+			return self::isWordpress() && self::getID() == self::WP4;
 		}
 
 		/**
@@ -346,7 +352,7 @@ if (!class_exists('VersionListener'))
 		 */
 		public static function isWordpress5()
 		{
-			return self::getID() == self::WP5;
+			return self::isWordpress() && self::getID() == self::WP5;
 		}
 
 		/**

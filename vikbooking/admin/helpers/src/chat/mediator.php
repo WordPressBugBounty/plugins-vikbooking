@@ -95,6 +95,20 @@ class VBOChatMediator
             if (JFactory::getApplication()->isClient('administrator')) {
                 // authenticate as administrator
                 $user = new VBOChatUserAdmin;
+            } else if (class_exists('VCMAppFramework') && ($appUser = VCMAppFramework::getUser())) {
+                /**
+                 * The user authenticated via APP.
+                 * Create a chat account accordingly.
+                 * 
+                 * @since 1.18.16 (J) - 1.8.16 (WP)
+                 */
+                if ($appUser['admin']) {
+                    // authenticate as administrator
+                    $user = new VBOChatUserAdmin(new JUser($appUser['id']));
+                } else {
+                    // authenticate as operator
+                    $user = new VBOChatUserOperator($appUser['id']);
+                }
             } else {
                 // fetch details of the logged in operator
                 $operator = VikBooking::getOperatorInstance()->getOperatorAccount();
@@ -395,7 +409,7 @@ class VBOChatMediator
             throw new RuntimeException('The class [' . $classname . '] does not exist.', 404);
         }
 
-        // instantiate class by inject the provided ID
+        // instantiate class by injecting the provided ID
         return new $classname($id);
     }
 

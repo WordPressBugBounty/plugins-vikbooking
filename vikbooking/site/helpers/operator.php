@@ -648,6 +648,15 @@ final class VikBookingOperator
 							0 => JText::translate('VBNO'),
 						],
 					],
+					'create_tasks' => [
+						'type'    => 'select',
+						'label'   => JText::translate('VBO_CREATE_TASKS'),
+						'help'    => JText::translate('VBO_SETT_E4JC_APP'),
+						'options' => [
+							1 => JText::translate('VBYES'),
+							0 => JText::translate('VBNO'),
+						],
+					],
 				],
 				// this native tool is rendered through a layout thanks to a callback
 				'rendering_type' => 'layout',

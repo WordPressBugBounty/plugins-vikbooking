@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2026-09-14 12:01+0200\n"
-"PO-Revision-Date: 2026-09-14 12:01+0200\n"
+"POT-Creation-Date: 2026-10-01 17:53+0200\n"
+"PO-Revision-Date: 2026-10-01 17:53+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: en_US\n"
@@ -13270,12 +13270,10 @@ msgid "Room Revenue"
 msgstr "Room Revenue"
 
 #: libraries/language/admin.php:8688
-#| msgid "Lock"
 msgid "Lock name"
 msgstr "Lock name"
 
 #: libraries/language/admin.php:8691
-#| msgid "Access Code"
 msgid "Fixed access code"
 msgstr "Fixed access code"
 
@@ -13290,6 +13288,24 @@ msgid ""
 msgstr ""
 "This driver creates one virtual device per profile, with no API connection, "
 "using a fixed access code."
+
+#: libraries/language/admin.php:8700
+#| msgid "Create Passcode"
+msgid "Create Tasks"
+msgstr "Create Tasks"
+
+#: libraries/language/admin.php:8703
+msgid "This setting affects the App for iOS and Android."
+msgstr "This setting affects the App for iOS and Android."
+
+#: libraries/language/admin.php:8706
+#| msgid "Phone"
+msgid "Phone Alias"
+msgstr "Phone Alias"
+
+#: libraries/language/admin.php:8709
+msgid "Calls to this number are forwarded to the guest's actual phone number."
+msgstr "Calls to this number are forwarded to the guest's actual phone number."
 
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"

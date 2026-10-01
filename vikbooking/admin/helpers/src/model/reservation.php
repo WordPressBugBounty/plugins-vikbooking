@@ -756,10 +756,19 @@ class VBOModelReservation extends JObject
         }
 
         if (($filters['phone'] ?? null)) {
-            $q->where(sprintf('REPLACE(%s, \' \', \'\') LIKE REPLACE(%s, \' \', \'\')', 
-                $dbo->qn('o.phone'),
-                $dbo->q('%' . $filters['phone'])
-            ));
+            $q->where(
+                sprintf(
+                    '(%s OR %s)',
+                    sprintf('REPLACE(%s, \' \', \'\') LIKE REPLACE(%s, \' \', \'\')', 
+                        $dbo->qn('o.phone'),
+                        $dbo->q('%' . $filters['phone'])
+                    ),
+                    sprintf('REPLACE(%s, \' \', \'\') LIKE REPLACE(%s, \' \', \'\')', 
+                        $dbo->qn('o.phone_alias'),
+                        $dbo->q('%' . $filters['phone_alias'])
+                    )
+                )
+            );
         }
 
         if (($filters['date_range']['type'] ?? null) && (($filters['date_range']['start'] ?? null) || ($filters['date_range']['end'] ?? null))) {
@@ -1102,6 +1111,44 @@ class VBOModelReservation extends JObject
                 ->update($dbo->qn('#__vikbooking_orders'))
                 ->set($dbo->qn('checked') . ' = ' . $status)
                 ->where($dbo->qn('id') . ' = ' . $bookingId)
+        );
+        $dbo->execute();
+
+        return (bool) $dbo->getAffectedRows();
+    }
+
+    /**
+     * Updates the booking-level phone number or alias phone number (masked phone).
+     * 
+     * @param   ?string  $phone      The phone number value to set, even null to unset.
+     * @param   bool     $isAlias    Whether to update the real or alias phone number.
+     * @param   ?int     $bookingId  Optional booking ID to update.
+     * 
+     * @return  bool
+     * 
+     * @throws  Exception
+     * 
+     * @since   1.18.16 (J) - 1.8.16 (WP)
+     */
+    public function updatePhoneNumber(?string $phone, bool $isAlias = false, ?int $bookingId = null)
+    {
+        $dbo = JFactory::getDbo();
+
+        if (!$bookingId) {
+            // get the internal booking record
+            $booking = $this->getBooking();
+            $bookingId = $booking['id'] ?? null;
+        }
+
+        if (empty($bookingId)) {
+            throw new Exception('Missing booking ID.', 400);
+        }
+
+        $dbo->setQuery(
+            $dbo->getQuery(true)
+                ->update('#__vikbooking_orders')
+                ->set($dbo->qn($isAlias ? 'phone_alias' : 'phone') . ' = ' . ($phone ? $dbo->q($phone) : 'NULL'))
+                ->where($dbo->qn('id') . ' = ' . (int) $bookingId)
         );
         $dbo->execute();
 
@@ -3369,6 +3416,7 @@ class VBOModelReservation extends JObject
         $customer_email = ($inj_customer['email'] ?? null) ?: '';
         $country_code   = ($inj_customer['country'] ?? null) ?: '';
         $phone_number   = ($inj_customer['phone'] ?? null) ?: '';
+        $phone_alias    = ($inj_customer['phone_alias'] ?? null) ?: '';
         $address        = ($inj_customer['address'] ?? null) ?: '';
         $city           = ($inj_customer['city'] ?? null) ?: '';
         $zip            = ($inj_customer['zip'] ?? null) ?: '';
@@ -3397,6 +3445,8 @@ class VBOModelReservation extends JObject
             }
             if ($phone_number) {
                 $customer_data .= "Phone: {$phone_number}\n";
+            } elseif ($phone_alias) {
+                $customer_data .= "Phone-alias: {$phone_alias}\n";
             }
             if ($country_code) {
                 $customer_data .= "Country: {$country_code}\n";
@@ -3520,6 +3570,7 @@ class VBOModelReservation extends JObject
         $booking->tot_fees       = $set_fees ?: ($this->get('tot_fees') ? ((float) $this->get('tot_fees')) : null);
         $booking->tot_damage_dep = $this->get('tot_damage_dep') ? ((float) $this->get('tot_damage_dep')) : null;
         $booking->phone          = $phone_number;
+        $booking->phone_alias    = $phone_alias ?: null;
         $booking->cmms           = $this->get('cmms') ? ((float) $this->get('cmms')) : null;
         $booking->closure        = ($status == 'standby' ? 0 : ($set_closed || $units_closed ? 1 : 0));
         $booking->payable        = $this->get('payable') ? ((float) $this->get('payable')) : null;

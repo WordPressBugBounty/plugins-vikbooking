@@ -16,6 +16,8 @@ $busy = $this->busy;
 $customer = $this->customer;
 $payments = $this->payments;
 
+// load registry and history
+$registry = VBOBookingRegistry::getInstance($this->row, $this->rooms);
 $history_obj = VikBooking::getBookingHistoryInstance($row['id']);
 
 // availability helper
@@ -224,7 +226,6 @@ $adminSidebarForms = $this->onDisplayView('AdministrationSidebar');
  */
 $messagingAccountConfigurations = [];
 if (class_exists('VCMMessagingAccountsModel')) {
-	$registry = VBOBookingRegistry::getInstance($this->row, $this->rooms);
 	$messagingAccountConfigurations = VCMMessagingAccountsModel::getInstance()->getConfigurationsData(
 		new VCMMessagingTemplateDecoratorBooking($registry),
         [
@@ -1328,6 +1329,13 @@ JS
 		 */
 		$taskManager  = VBOFactory::getTaskManager();
 		$bookingTasks = VBOTaskModelTask::getInstance()->filterItems(['id_order' => $row['id']]);
+
+		/**
+		 * Check if the booking should have had passcodes generated.
+		 * 
+		 * @since 	1.18.16 (J) - 1.8.16 (WP)
+		 */
+		$shouldHavePasscodes = !$history_obj->hasEvent(['ND', 'MD']) && VBOFactory::getDoorAccessControl()->shouldBookingHavePasscodes($registry);
 		?>
 
 		<div class="vbo-bookingdet-tab-cont" id="vbo-tab-details" style="display: block;">
@@ -1372,6 +1380,18 @@ JS
 							<?php
 						}
 						?>
+						</div>
+					</div>
+					<?php
+				}
+				if ($shouldHavePasscodes) {
+					?>
+					<div class="vbo-bookingdet-detcont vbo-bookingdet-detcont-dac vbo-hidein-print">
+						<div class="vbo-bookingdet-lblcont">
+							<label><?php echo JText::translate('VBO_W_DOORACCESSCONTROL_TITLE'); ?></label>
+						</div>
+						<div class="vbo-bookingdet-inpwrap vbo-bookingdet-dac-gen">
+							<a href="<?php echo VBOFactory::getPlatform()->getUri()->addCSRF('index.php?option=com_vikbooking&task=bookings.generatePasscodes&bid=' . $row['id']); ?>" class="btn"><?php echo JText::translate('VBO_CREATE_PASSCODE'); ?></a>
 						</div>
 					</div>
 					<?php
@@ -1756,6 +1776,33 @@ JS
 						?>
 
 					</div>
+					<?php
+					if ($phoneAlias = $registry->getAliasPhoneNumber()) {
+						?>
+					<div class="vbo-bookingdet-detcont vbo-hidein-print">
+						<div class="vbo-bookingdet-lblcont">
+							<label for="phone_alias"><?php VikBookingIcons::e('user-shield'); ?> <?php echo JText::translate('VBO_PHONE_ALIAS'); ?></label>
+						</div>
+						<div class="vbo-bookingdet-inpwrap">
+							<div class="vbo-bookingdet-inpcont">
+								<input type="text" id="phone_alias" value="<?php echo $this->escape($phoneAlias); ?>" readonly />
+							</div>
+							<span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_PHONE_ALIAS_HELP'); ?></span>
+						</div>
+
+						<!-- Define role to detect the supported hook -->
+						<!-- {"rule":"customizer","event":"onDisplayViewVikBookingEditorderSidebar","key":"phone_alias","type":"field"} -->
+
+						<?php	
+						if (isset($bookingSidebarForms['phone_alias'])) {
+							echo $bookingSidebarForms['phone_alias'];
+						}
+						?>
+
+					</div>
+						<?php
+					}
+					?>
 
 					<!-- Define role to detect the supported hook -->
 					<!-- {"rule":"customizer","event":"onDisplayViewVikBookingEditorderSidebar","type":"fieldset"} -->

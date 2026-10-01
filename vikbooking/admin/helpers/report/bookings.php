@@ -433,10 +433,13 @@ class VikBookingReportBookings extends VikBookingReport
             // get booking revenue
             $bookingRevenue = (float) $stats['_bid_stats'][$bookingId]['revenue'] ?? 0;
 
+            // get room-level revenue
+            $roomLevelRevenue = (float) $stats['_bid_stats'][$bookingId]['room_level_revenue'] ?? 0;
+
             // get options/extras revenue
             $extrasRevenue = max(0, 
                 (float) $registry->getProperty('total', 0) - 
-                $bookingRevenue - 
+                $roomLevelRevenue - 
                 ((float) $stats['_bid_stats'][$bookingId]['taxes'] ?? 0) - 
                 ((float) $stats['_bid_stats'][$bookingId]['damage_deposits'] ?? 0) - 
                 ((float) $stats['_bid_stats'][$bookingId]['cmms'] ?? 0)

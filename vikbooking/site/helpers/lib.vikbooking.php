@@ -872,6 +872,16 @@ class VikBooking
 				 */
 				$end_operator = date('Y-m-d', $restr['dfrom']) != date('Y-m-d', $restr['dto']) && substr((string) $restr['dto'], -1, 1) != 9 ? 82799 : 0;
 
+				/**
+				 * Adjust at runtime the restriction end date in case we have records written by third-party
+				 * dynamic pricing systems that last for one day, where the date-from and date-to are identical.
+				 * 
+				 * @since 	1.18.16 (J) - 1.8.16 (WP)
+				 */
+				if ($restr['dfrom'] == $restr['dto'] && !$end_operator) {
+					$end_operator = 82799;
+				}
+
 				if ($restr['dfrom'] <= $restrcheckin[0] && ($restr['dto'] + $end_operator) >= $restrcheckin[0]) {
 					// restriction found for this date range based on arrival date, check if compliant
 					$restrictions_affcount++;

@@ -913,65 +913,65 @@
 
             // check for images
             if (url.match(/\.(a?png|bmp|gif|ico|jpe?g|svg|heic|webp)$/i)) {
-                return '<img src="' + url + '" onclick="' + onclick + '" onload="' + onload + '" title="' + file.name + '" />';
+                return $('<img src="' + url + '" onclick="' + onclick + '" onload="' + onload + '" />').attr('title', file.name).html();
             }
 
             // check for playable video files
             if (url.match(/\.(mp4|mov|ogm|webm)$/i)) {
-                return '<video controls onloadeddata="' + onload + '" title="' + file.name + '">\n' +
+                return $('<video controls onloadeddata="' + onload + '">\n' +
                     '<source src="' + url + '" />\n' +
-                '</video>';
+                '</video>').attr('title', file.name).html();
             }
 
             // check for non-playable video files
             if (url.match(/\.(3gp|asf|avi|divx|flv|mkv|mp?g|wmv|xvid)$/i)) {
-                return '<i class="fas fa-file-video" onclick="' + onclick + '" title="' + file.name + '"></i>';
+                return $('<i class="fas fa-file-video" onclick="' + onclick + '"></i>').attr('title', file.name).html();
             }
 
             // check for playable audio files
             if (url.match(/\.(aac|m4a|mp3|ogg|opus|wave?)$/i)) {
-                return '<audio controls onloadeddata="' + onload + '" title="' + file.name + '">\n' +
+                return $('<audio controls onloadeddata="' + onload + '">\n' +
                     '<source src="' + url + '" />\n' +
-                '</audio>';
+                '</audio>').attr('title', file.name).html();
             }
 
             // check for non-playable audio files
             if (url.match(/\.(ac3|aiff|flac|midi?|wma)$/i)) {
-                return '<i class="fas fa-file-audio" onclick="' + onclick + '" title="' + file.name + '"></i>';
+                return $('<i class="fas fa-file-audio" onclick="' + onclick + '"></i>').attr('title', file.name).html();
             }
 
             // check for archives
             if (url.match(/\.(zip|tar|rar|gz|bzip2)$/i)) {
-                return '<i class="fas fa-file-archive" onclick="' + onclick + '" title="' + file.name + '"></i>';
+                return $('<i class="fas fa-file-archive" onclick="' + onclick + '"></i>').attr('title', file.name).html();
             }
 
             // check for PDF
             if (url.match(/\.pdf$/i)) {
-                return '<i class="fas fa-file-pdf" onclick="' + onclick + '" title="' + file.name + '"></i>';
+                return $('<i class="fas fa-file-pdf" onclick="' + onclick + '"></i>').attr('title', file.name).html();
             }
 
             // check for documents
             if (url.match(/\.(docx?|rtf|odt|pages)$/i)) {
-                return '<i class="fas fa-file-word" onclick="' + onclick + '" title="' + file.name + '"></i>';
+                return $('<i class="fas fa-file-word" onclick="' + onclick + '"></i>').attr('title', file.name).html();
             }
 
             // check for excel-like sheets
             if (url.match(/\.(xlsx?|csv|ods|numbers)$/i)) {
-                return '<i class="fas fa-file-excel" onclick="' + onclick + '" title="' + file.name + '"></i>';
+                return $('<i class="fas fa-file-excel" onclick="' + onclick + '"></i>').attr('title', file.name).html();
             }
 
             // check for presentations
             if (url.match(/\.(ppsx?|odp|keynote)$/i)) {
-                return '<i class="fas fa-file-powerpoint" onclick="' + onclick + '" title="' + file.name + '"></i>';
+                return $('<i class="fas fa-file-powerpoint" onclick="' + onclick + '"></i>').attr('title', file.name).html();
             }
 
             // check for plain text documents
             if (url.match(/\.(txt|md|markdown)$/i)) {
-                return '<i class="fas fa-file-alt" onclick="' + onclick + '" title="' + file.name + '"></i>';
+                return $('<i class="fas fa-file-alt" onclick="' + onclick + '"></i>').attr('title', file.name).html();
             }
 
             // use standard file
-            return '<i class="fas fa-file" onclick="' + onclick + '" title="' + file.name + '"></i>';
+            return $('<i class="fas fa-file" onclick="' + onclick + '"></i>').attr('title', file.name).html();
         }
 
         /**

@@ -783,11 +783,12 @@ class VboBookingHistory
 	/**
 	 * Checks whether this booking has an event of the given type.
 	 * 
-	 * @param 	string 	$type 	the type of the event.
+	 * @param 	array|string 	$type 	the type of the event.
 	 *
 	 * @return 	mixed 			last date on success, false otherwise.
 	 * 
 	 * @since 	1.13.5 (J) - 1.3.5 (WP)
+	 * @since 	1.18.16 (J) - 1.8.16 (WP) argument $type can be also an array of strings.
 	 */
 	public function hasEvent($type)
 	{
@@ -797,12 +798,24 @@ class VboBookingHistory
 			return false;
 		}
 
+		if (is_array($type)) {
+			$type = array_filter(array_map([$dbo, 'q'], $type));
+			if (!$type) {
+				return false;
+			}
+		}
+
 		$q = $dbo->getQuery(true)
 			->select($dbo->qn('dt'))
 			->from($dbo->qn('#__vikbooking_orderhistory'))
 			->where($dbo->qn('idorder') . ' = ' . (int) $this->bid)
-			->where($dbo->qn('type') . ' = ' . $dbo->q($type))
 			->order($dbo->qn('dt') . ' DESC');
+
+		if (is_array($type)) {
+			$q->where($dbo->qn('type') . ' IN (' . implode(', ', $type) . ')');
+		} else {
+			$q->where($dbo->qn('type') . ' = ' . $dbo->q($type));
+		}
 
 		$dbo->setQuery($q, 0, 1);
 

@@ -46,7 +46,8 @@ class VikBookingBody
 		 *
 		 * @since 	1.0
 		 */
-		do_action('vikbooking_before_dispatch');
+		// do_action('vikbooking_before_dispatch');
+		VBOFactory::getPlatform()->getDispatcher()->trigger('onBeforeDispatchVikBooking');
 
 		$task = JFactory::getApplication()->input->get('task');
 
@@ -66,7 +67,8 @@ class VikBookingBody
 		 *
 		 * @since 	1.0
 		 */
-		do_action('vikbooking_after_dispatch');
+		// do_action('vikbooking_after_dispatch');
+		VBOFactory::getPlatform()->getDispatcher()->trigger('onAfterDispatchVikBooking');
 
 		// capture the response echoed by the controller
 		static::$response = ob_get_contents();

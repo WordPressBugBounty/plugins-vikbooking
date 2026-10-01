@@ -1289,4 +1289,54 @@ class VikBookingControllerBookings extends JControllerAdmin
             'success' => true,
         ]);
     }
+
+    /**
+     * Regular task to create passcodes for a booking that should have had them.
+     * 
+     * @since   1.18.16 (J) - 1.8.16 (WP)
+     */
+    public function generatePasscodes()
+    {
+        $app = JFactory::getApplication();
+
+        $bookingId = $app->input->getUInt('bid', 0);
+
+        if (!$bookingId) {
+            $app->enqueueMessage('Missing booking ID.', 'error');
+            $app->redirect('index.php?option=com_vikbooking');
+            $app->close();
+        }
+
+        if (!JSession::checkToken() && !JSession::checkToken('get')) {
+            $app->enqueueMessage(JText::translate('JINVALID_TOKEN'), 'error');
+            $app->redirect('index.php?option=com_vikbooking&task=editorder&cid[]=' . $bookingId);
+            $app->close();
+        }
+
+        try {
+            // access booking registry
+            $registry = VBOBookingRegistry::getInstance(['id' => $bookingId]);
+        } catch (Exception $e) {
+            $app->enqueueMessage($e->getMessage(), 'error');
+            $app->redirect('index.php?option=com_vikbooking');
+            $app->close();
+        }
+
+        // do not check the history to see if previous passcode generation events occurred
+        // always simulate the creation of this booking
+        $generated = VBOFactory::getDoorAccessControl()->processBookingConfirmation($registry->getData(), $registry->getRooms());
+
+        if ($registry->hasPreCheckedIn()) {
+            // simulate the pre-check-in completion of the booking
+            $generatedTwo = VBOFactory::getDoorAccessControl()->processPrecheckinCompleted($registry->getData(), $registry->getRooms());
+        }
+
+        // evaluate result
+        $generated = $generated || $generatedTwo;
+
+        // complete with a successful message
+        $app->enqueueMessage(JText::translate('VBO_W_DOORACCESSCONTROL_TITLE'), ($generated ? 'success' : 'warning'));
+        $app->redirect('index.php?option=com_vikbooking&task=editorder&cid[]=' . $bookingId);
+        $app->close();
+    }
 }

@@ -366,6 +366,8 @@ class VBOTaxonomyFinance
             'damage_deposits' => 0,
             // commissions (amount)
             'cmms'            => 0,
+            // sum of room-level costs or custom costs
+            'room_level_revenue' => 0,
             // net revenue before tax (otas + ibe)
             'revenue'         => 0,
             // gross revenue after tax
@@ -590,6 +592,19 @@ class VBOTaxonomyFinance
             // define the total booking amount for multi-room reservations
             $multi_room_total = 0;
 
+            // define room-level revenue
+            $room_level_revenue = array_sum(
+                array_filter(
+                    array_map(
+                        'floatval',
+                        array_merge(
+                            array_column($booking, 'cust_cost'),
+                            array_column($booking, 'room_cost')
+                        )
+                    )
+                )
+            );
+
             if ($rooms && $booking[0]['roomsnum'] > 1) {
                 // when filters applied to multi-room bookings, count the effective number of rooms involved
                 $booking_rooms = count(array_intersect(array_column($booking, 'idroom'), $rooms));
@@ -625,6 +640,7 @@ class VBOTaxonomyFinance
 
                 // use default total values
                 $room_total          = $multi_room_total ?: $room_booking['total'];
+                $room_level_total    = $room_level_revenue;
                 $room_cmms           = $room_booking['cmms'];
                 $room_refund         = $room_booking['refund'];
                 $room_tot_taxes      = $room_booking['tot_taxes'];
@@ -639,6 +655,7 @@ class VBOTaxonomyFinance
 
                     // adjust the amounts proportionally
                     $room_total          = $room_total * $los_affected / $room_booking['stay_nights'];
+                    $room_level_total    = $room_level_total * $los_affected / $room_booking['stay_nights'];
                     $room_cmms           = $room_cmms * $los_affected / $room_booking['stay_nights'];
                     $room_refund         = $room_refund * $los_affected / $room_booking['stay_nights'];
                     $room_tot_taxes      = $room_tot_taxes * $los_affected / $room_booking['stay_nights'];
@@ -649,6 +666,7 @@ class VBOTaxonomyFinance
 
                 // apply average values per room booked (with filters or booked in total)
                 $room_total          /= $booking_rooms;
+                $room_level_total    /= $booking_rooms;
                 $room_cmms           /= $booking_rooms;
                 $room_refund         /= $booking_rooms;
                 $room_tot_taxes      /= $booking_rooms;
@@ -659,6 +677,7 @@ class VBOTaxonomyFinance
                 // calculate and sum average values per room booked
                 $tot_net = $multi_room_total ?: ($room_total - (float) $room_tot_taxes - (float) $room_tot_city_taxes - (float) $room_tot_fees - (float) $room_tot_damage_dep - (float) $room_cmms);
                 $tot_revenue = $multi_room_total ? ($tot_net / $booking_rooms) : $tot_net;
+                $stats['room_level_revenue'] += $room_level_total;
                 $stats['revenue'] += $tot_revenue;
                 $stats['gross_revenue'] += $room_total;
                 $stats['nights_booked'] += $los_affected;
@@ -712,15 +731,17 @@ class VBOTaxonomyFinance
                  */
                 if ($this->options['booking_level'] ?? null) {
                     $stats['_bid_stats'][$bid] = $stats['_bid_stats'][$bid] ?? [
-                        'revenue'         => 0,
-                        'gross_revenue'   => 0,
-                        'taxes'           => 0,
-                        'tot_vat'         => 0,
-                        'city_taxes'      => 0,
-                        'damage_deposits' => 0,
-                        'cmms'            => 0,
-                        'tot_refunds'     => 0,
+                        'room_level_revenue' => 0,
+                        'revenue'            => 0,
+                        'gross_revenue'      => 0,
+                        'taxes'              => 0,
+                        'tot_vat'            => 0,
+                        'city_taxes'         => 0,
+                        'damage_deposits'    => 0,
+                        'cmms'               => 0,
+                        'tot_refunds'        => 0,
                     ];
+                    $stats['_bid_stats'][$bid]['room_level_revenue'] += $room_level_total;
                     $stats['_bid_stats'][$bid]['revenue'] += $tot_revenue;
                     $stats['_bid_stats'][$bid]['gross_revenue'] += $room_total;
                     $stats['_bid_stats'][$bid]['taxes'] += (float) $room_tot_taxes + (float) $room_tot_city_taxes + (float) $room_tot_fees;

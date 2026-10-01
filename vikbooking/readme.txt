@@ -3,7 +3,7 @@ Contributors: e4jvikwp
 Tags: hotel booking, booking engine, channel manager, hotel, reservations
 Requires at least: 4.7
 Tested up to: 7.1
-Stable tag: 1.8.15
+Stable tag: 1.8.16
 Requires PHP: 7.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -131,6 +131,16 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 
 == Changelog ==
 
+= 1.8.16 =
+*Release date - 01 October 2026*
+
+* Introducing support for guest alias phone numbers (Channel Manager reservations).
+* Task Manager: added new capabilities and permissions to operators (gated listing IDs).
+* Door Access Control: added support to missing passcode detection for bookings.
+* Improved calculation for outstanding balance payment window after deposit confirmation.
+* Multiple XSS preventions applied.
+* Various core framework updates.
+
 = 1.8.15 =
 *Release date - 14 September 2026*
 
@@ -192,24 +202,6 @@ Vik Booking is the Booking Engine and PMS plugin, it can work alone on any exist
 * Automatic payment collection scheduling for VCC and CC of additional OTAs.
 * Language translation strings updated.
 * Multiple low-severity security fixes for XSS prevention.
-
-= 1.8.8 =
-*Release date - 20 April 2026*
-
-* Door Access Control: passcodes generation improvements for multi-unit (hotel inventory) room types.
-* New front-end "Chat" module, available as a Gutenberg native block or as a legacy widget.
-* AI Agent (Chatbot) to guide customers through the booking process or answer questions (CM required).
-* New admin-widget "Inquiries Chat" to manage AI Agent conversations with guests and message requests.
-* WhatsApp Business messaging support (Channel Manager required).
-* New cron-job "Messaging Reminder" for scheduling the delivery of WhatsApp message templates to guests.
-* AI powered auto-responder to guest messages received through WhatsApp backed by custom training system.
-* Send custom and interactive WhatsApp message templates to guests (visit E4jConnect.com for more details).
-* Introducing the new Quote system to manage custom quotes with various booking solutions for your customers.
-* New admin-widget Quotes to monitor the status of the existing quotes.
-* Send quote details via email and/or custom and interactive WhatsApp message templates.
-* New front-end View (and Shortcode) "Quote Details" to let your customers see their quotes and proceed to booking.
-* Added support for the latest FontAwesome webfonts version.
-* Several framework improvements and fixes.
 
 = Earlier versions =
 

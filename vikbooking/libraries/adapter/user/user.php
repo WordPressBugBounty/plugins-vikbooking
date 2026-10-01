@@ -86,13 +86,15 @@ class JUser extends JObject
 			return $user;
 		}
 
+		$key = (int) $id;
+
 		// cache user object
-		if (!isset(static::$instances[$id]))
+		if (!isset(static::$instances[$key]))
 		{
-			static::$instances[$id] = $user;
+			static::$instances[$key] = $user;
 		}
 
-		return static::$instances[$id];
+		return static::$instances[$key];
 	}
 
 	/**

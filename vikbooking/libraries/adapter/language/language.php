@@ -70,12 +70,14 @@ class JLanguage
 	 */
 	public static function getInstance($lang = null)
 	{
-		if (!isset(static::$instances[$lang]))
+		$key = (string) $lang;
+
+		if (!isset(static::$instances[$key]))
 		{
-			static::$instances[$lang] = new static($lang);
+			static::$instances[$key] = new static($lang);
 		}
 
-		return static::$instances[$lang];
+		return static::$instances[$key];
 	}
 
 	/**

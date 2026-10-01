@@ -230,7 +230,7 @@ JAVASCRIPT
 				// replace limitstart
 				$current->setVar($this->prefix . 'limitstart', $v);
 				// route the URI
-				$data['links'][$k] = 'href="' . JRoute::rewrite($current) . '"';
+				$data['links'][$k] = 'href="' . esc_url(JRoute::rewrite($current)) . '"';
 			}
 		}
 

@@ -3281,7 +3281,7 @@ class VikBookingController extends JControllerVikBooking
 						// push the key of the guest details for later comparison
 						array_push($front_keys, $detkey);
 					}
-					if (strlen($detval)) {
+					if (is_scalar($detval) && strlen($detval)) {
 						// push value only if not empty
 						if (!isset($guests_details[$ind])) {
 							$guests_details[$ind] = array();

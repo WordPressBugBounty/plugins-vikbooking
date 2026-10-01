@@ -12,7 +12,7 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 // Software version
-define('VIKBOOKING_SOFTWARE_VERSION', '1.8.15');
+define('VIKBOOKING_SOFTWARE_VERSION', '1.8.16');
 
 // Base path
 define('VIKBOOKING_BASE', dirname(__FILE__));
@@ -59,7 +59,7 @@ defined('VCM_SITE_PATH') or define('VCM_SITE_PATH', str_replace('vikbooking' . D
  * 
  * @since 	1.8.13
  */
-define('VIKCHANNELMANAGER_MINIMUM_VERSION', '1.9.21');
+define('VIKCHANNELMANAGER_MINIMUM_VERSION', '1.9.26');
 
 // Other Constants that may not be available in the framework
 defined('DS') or define('DS', DIRECTORY_SEPARATOR);

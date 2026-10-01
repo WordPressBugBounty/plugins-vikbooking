@@ -726,9 +726,9 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 										$read_fname = substr($guest_fname, (strpos($guest_fname, '_') + 1));
 										?>
 								<div class="vbo-paxfield-file-uploaded">
-									<a href="<?php echo $guest_file; ?>" target="_blank">
+									<a href="<?php echo JHtml::fetch('esc_attr', $guest_file); ?>" target="_blank">
 										<?php VikBookingIcons::e('image'); ?>
-										<span><?php echo $read_fname; ?></span>
+										<span><?php echo htmlspecialchars($read_fname); ?></span>
 									</a>
 								</div>
 										<?php

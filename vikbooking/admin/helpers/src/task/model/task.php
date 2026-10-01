@@ -72,7 +72,7 @@ final class VBOTaskModelTask
      * @param   int     $lim        Query limit value.
      * @param   array   $cols       Optional list of columns to fetch.
      *
-     * @return  array               List of record objects.
+     * @return  array|int           List of record objects, or integer if counting columns.
      */
     public function getItems(array $clauses = [], $start = 0, $lim = 0, array $cols = [])
     {
@@ -224,7 +224,7 @@ final class VBOTaskModelTask
      * @param   int     $lim        Query limit value.
      * @param   bool    $count      True for counting rather than fetching.
      *
-     * @return  array               List of record objects.
+     * @return  array|int           List of record objects, or integer if counting columns.
      */
     public function filterItems(array $filters, $start = 0, $lim = 0, bool $count = false)
     {
@@ -301,6 +301,12 @@ final class VBOTaskModelTask
                 $dbo->qn('ta.id_operator') . ' = ' . $filters['operator'],
                 $dbo->qn('ta.id_operator') . ' IS NULL',
             ];
+            if (is_array($filters['id_rooms'] ?? null) && ($id_rooms = array_filter($filters['id_rooms']))) {
+                // operators should be able to accept only the unassigned tasks that belong to their listings
+                $instructions[1] .= ' AND ' . $dbo->qn('t.id_room') . ' IN (' . implode(', ', array_map('intval', $id_rooms)) . ')';
+                // unset the "id_rooms" filter as it was already applied
+                unset($filters['id_rooms']);
+            }
             $instruction = '(' . implode(' OR ', array_map(function($q) {
                 return '(' . $q . ')';
             }, $instructions)) . ')';

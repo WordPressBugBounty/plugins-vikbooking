@@ -10846,6 +10846,10 @@ table.vboverviewtable td.vbo-cell-selected-middle-row-up {
 .vbo-bookingdet-detcont > div {
 	margin: 8px 0;
 }
+.vbo-bookingdet-detcont .vbo-bookingdet-inpcont input#phone_alias:focus {
+	border: 1px solid var(--vbo-config-border-color);
+	box-shadow: none;
+}
 .vbo-bookingdet-task-details {
 	border: 1px solid var(--vbo-basic-btn);
 	border-radius: 10px;
@@ -11892,8 +11896,14 @@ div.modal.in {
 div.modal.in .close:hover, div.modal.in .close:focus {
 	color: var(--vbo-config-titles-color-light);
 }
+/* Modal loaded just for the RSS system message */
 div.modal.in .modal-header + div.modal-body-wrapper {
 	height: calc(100% - 130px) !important;
+}
+@media (max-width: 680px) {
+	div.modal.in .modal-header + div.modal-body-wrapper {
+		height: calc(100% - 210px) !important;
+	}	
 }
 .vbo-sign-share-meth {
 	margin: 10px 0;
@@ -13315,7 +13325,7 @@ i.vbo-icn-img {
 	flex: 1;
 	max-width: 100%;
 }
-.vbo-admin-container .vbo-param-container .vbo-param-setting-comment {
+.vbo-admin-container .vbo-param-container .vbo-param-setting-comment, .vbo-bookingdet-detcont .vbo-param-setting-comment {
 	display: block;
 	font-size: .9em;
 	margin-top: 4px;

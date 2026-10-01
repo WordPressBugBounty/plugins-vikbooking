@@ -59,21 +59,31 @@ class VBOHistoryTracker
     public function getCommitter()
     {
         if ($this->committer === null) {
-            // fetch client section
-            $isSite = JFactory::getApplication()->isClient('site');
-
-            // check if the user is an operator
-            $operator = $isSite ? VikBooking::getOperatorInstance()->getOperatorAccount() : null;
-
-            if ($operator) {
-                // user logged in as operator
-                $user = (object) $operator;
-                $user->name = trim($user->first_name . ' ' . $user->last_name);
-                $role = 'operator';
+            /**
+             * Check whether the user completed the authentication via APP.
+             * 
+             * @since 1.18.16 (J) - 1.8.16 (WP)
+             */
+            if (class_exists('VCMAppFramework') && ($appUser = VCMAppFramework::getUser())) {
+                $user = (object) $appUser;
+                $role = $appUser['admin'] ? 'admin' : 'operator';
             } else {
-                // CMS user
-                $user = JFactory::getUser();
-                $role = $isSite ? 'guest' : 'admin';
+                // fetch client section
+                $isSite = JFactory::getApplication()->isClient('site');
+
+                // check if the user is an operator
+                $operator = $isSite ? VikBooking::getOperatorInstance()->getOperatorAccount() : null;
+
+                if ($operator) {
+                    // user logged in as operator
+                    $user = (object) $operator;
+                    $user->name = trim($user->first_name . ' ' . $user->last_name);
+                    $role = 'operator';
+                } else {
+                    // CMS user
+                    $user = JFactory::getUser();
+                    $role = $isSite ? 'guest' : 'admin';
+                }
             }
 
             // instantiate committer only once

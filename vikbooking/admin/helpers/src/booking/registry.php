@@ -467,16 +467,19 @@ class VBOBookingRegistry
      * Returns the booking or customer phone number, if any.
      * Note that the + prefix may not be included.
      * 
+     * @param   ?string     $forcedPhone    Optional phone number to sanitize.
+     * 
      * @return  ?string
      * 
      * @since   1.18.8 (J) - 1.8.8 (WP)
+     * @since   1.18.16 (J) - 1.8.16 (WP) added argument $forcedPhone.
      */
-    public function getPhoneNumber()
+    public function getPhoneNumber(?string $forcedPhone = null)
     {
-        // give higher priority to booking-level phone number
-        $phoneNumber = $this->getProperty('phone');
+        // give higher priority to passed or booking-level phone number
+        $phoneNumber = $forcedPhone ?: $this->getProperty('phone');
 
-        if (!$phoneNumber) {
+        if (!$phoneNumber && $forcedPhone !== null) {
             // fetch booking customer details
             $customer = $this->getCustomer();
 
@@ -496,6 +499,20 @@ class VBOBookingRegistry
         }
 
         return $phoneNumber ?: null;
+    }
+
+    /**
+     * Returns the booking alias phone number (masked phone), if any.
+     * 
+     * @return  ?string
+     * 
+     * @since   1.18.16 (J) - 1.8.16 (WP)
+     */
+    public function getAliasPhoneNumber()
+    {
+        $phoneAlias = (string) $this->getProperty('phone_alias');
+
+        return $phoneAlias ? $this->getPhoneNumber($phoneAlias) : null;
     }
 
     /**

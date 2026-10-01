@@ -627,6 +627,65 @@ final class VBODooraccessFactory
     }
 
     /**
+     * Tells whether the given booking should have gone through passcode generation.
+     * The method will NOT check if device passcodes were already generated. Useful
+     * to match bookings generated before configuring a DAC integration provider.
+     * 
+     * @param   VBOBookingRegistry  $registry   The booking registry.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.16 (J) - 1.8.16 (WP)
+     */
+    public function shouldBookingHavePasscodes(VBOBookingRegistry $registry)
+    {
+        if (!$registry->isConfirmed()) {
+            // only confirmed bookings can get passcodes
+            return false;
+        }
+
+        // get the unique list of booked listing ids and subunits
+        $bookedListingSubunits = $registry->getBookedListingSubunits();
+
+        // check if the booking has pre-check-in values
+        $hasPreCheckIn = $registry->hasPreCheckedIn();
+
+        // scan the eligible integrations for generating passcodes at the time of booking or pre-checkin
+        foreach ($this->loadGeneratingIntegrations(['booking', 'precheckin']) as $record) {
+            // get the integration provider
+            $integration = $this->getIntegrationProvider($record['provider_alias']);
+            if (!$integration) {
+                // unknown integration provider
+                continue;
+            }
+
+            // inject profile record within the integration provider
+            $integration->setProfileRecord($record);
+
+            // iterate all provider integration devices
+            foreach ($integration->getDevices() as $device) {
+                // get the listing-subunit pairs compatible with the current device
+                $deviceListingUnits = $device->intersectListingUnits($bookedListingSubunits);
+
+                if (!$deviceListingUnits) {
+                    // ignore device
+                    continue;
+                }
+
+                if (($record['gentype'] ?? '') === 'precheckin' && !$hasPreCheckIn) {
+                    // this device will get a passcode generated once pre-check-in will be completed
+                    continue;
+                }
+
+                // device matching booked listing should have had a passcode generated
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Attempts to return a list of associative arrays that include the active passcode string
      * value and the device information based on what was generated for a specific booking.
      * 

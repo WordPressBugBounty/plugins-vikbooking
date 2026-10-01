@@ -330,9 +330,9 @@ JText::script('VBO_PLEASE_WAIT');
 												?>
 											<div class="vbo-paxfield-file-uploaded">
 												<span class="vbo-paxfield-file-uploaded-rm"><?php VikBookingIcons::e('times-circle'); ?></span>
-												<a href="<?php echo $guest_file; ?>" target="_blank">
+												<a href="<?php echo JHtml::fetch('esc_attr', $guest_file); ?>" target="_blank">
 													<?php VikBookingIcons::e('image'); ?>
-													<span><?php echo $read_fname; ?></span>
+													<span><?php echo htmlspecialchars($read_fname); ?></span>
 												</a>
 											</div>
 												<?php

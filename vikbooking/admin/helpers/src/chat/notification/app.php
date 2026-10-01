@@ -56,9 +56,6 @@ trait VBOChatNotificationApp
                 // multiple attachments
                 $summary = JText::plural('VBO_CHAT_MESSAGE_WEBPUSH_NOTIFICATION_SUMMARY_N_FILES', $message->getSenderName(), $attachmentsCount);
             }
-        } else {
-            // message provided
-            $summary = JText::sprintf('VBO_CHAT_MESSAGE_WEBPUSH_NOTIFICATION_SUMMARY', $message->getSenderName(), $summary);
         }
 
         // prepare notification data

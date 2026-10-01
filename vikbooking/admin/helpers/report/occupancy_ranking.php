@@ -635,14 +635,14 @@ class VikBookingReportOccupancyRanking extends VikBookingReport
 					$tot_bookings++;
 					// calculate net revenue and taxes
 					$tot_net = $gbook[0]['total'] - (float)$gbook[0]['tot_taxes'] - (float)$gbook[0]['tot_city_taxes'] - (float)$gbook[0]['tot_fees'] - (float)$gbook[0]['cmms'];
-					$tot_net = $tot_net / $gbook[0]['days'] * $booking_nights;
+					$tot_net = $tot_net / ($gbook[0]['days'] ?: 1) * $booking_nights;
 					$revenue += $tot_net;
 					if (!empty($gbook[0]['idorderota']) && !empty($gbook[0]['channel'])) {
 						$ota_revenue += $tot_net;
 					} else {
 						$ibe_revenue += $tot_net;
 					}
-					$tot_taxes = ((float)$gbook[0]['tot_taxes'] + (float)$gbook[0]['tot_city_taxes'] + (float)$gbook[0]['tot_fees'] + (float)$gbook[0]['cmms']) / $gbook[0]['days'] * $booking_nights;
+					$tot_taxes = ((float)$gbook[0]['tot_taxes'] + (float)$gbook[0]['tot_city_taxes'] + (float)$gbook[0]['tot_fees'] + (float)$gbook[0]['cmms']) / ($gbook[0]['days'] ?: 1) * $booking_nights;
 					$taxes += $tot_taxes;
 				}
 			}

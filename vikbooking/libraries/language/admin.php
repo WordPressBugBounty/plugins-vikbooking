@@ -8696,6 +8696,18 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 			case 'VBO_DAC_OFFLINE_INTGR_HELP':
 				$result = __('This driver creates one virtual device per profile, with no API connection, using a fixed access code.', 'vikbooking');
 				break;
+			case 'VBO_CREATE_TASKS':
+				$result = __('Create Tasks', 'vikbooking');
+				break;
+			case 'VBO_SETT_E4JC_APP':
+				$result = __('This setting affects the App for iOS and Android.', 'vikbooking');
+				break;
+			case 'VBO_PHONE_ALIAS':
+				$result = __('Phone Alias', 'vikbooking');
+				break;
+			case 'VBO_PHONE_ALIAS_HELP':
+				$result = __('Calls to this number are forwarded to the guest\'s actual phone number.', 'vikbooking');
+				break;
 		}
 
 		return $result;

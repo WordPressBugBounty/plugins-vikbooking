@@ -910,7 +910,7 @@ if ($payable && $isotabooking && !((float) $ord['payable'])) {
 $pay_balance_days_adv = (int) VBOFactory::getConfig()->get('depbalancedays');
 if ($pay_balance_days_adv > 0 && !((float) $ord['payable']) && $ord['status'] == 'confirmed' && empty($ord['idorderota']) && $ord['totpaid'] > 0 && $ord['total'] > $ord['totpaid']) {
 	// ensure the outstanding balance for direct booking is payable at this time
-	if ($ord['ts'] < strtotime(sprintf('-%d days', $pay_balance_days_adv), $ord['checkin'])) {
+	if (time() < strtotime(sprintf('-%d days', $pay_balance_days_adv), $ord['checkin'])) {
 		// outstanding balance not yet payable according to settings
 		$payable = false;
 	}

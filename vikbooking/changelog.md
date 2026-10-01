@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.16
+
+*Release date - 01 October 2026*
+
+- Introducing support for guest alias phone numbers (Channel Manager reservations).
+- Task Manager: added new capabilities and permissions to operators (gated listing IDs).
+- Door Access Control: added support to missing passcode detection for bookings.
+- Improved calculation for outstanding balance payment window after deposit confirmation.
+- Multiple XSS preventions applied.
+- Various core framework updates.
+
 ## 1.8.15
 
 *Release date - 14 September 2026*

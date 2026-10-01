@@ -416,6 +416,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_orders` (
   `tot_fees` decimal(12,2) DEFAULT NULL,
   `tot_damage_dep` decimal(12,2) DEFAULT NULL,
   `phone` varchar(32) DEFAULT NULL,
+  `phone_alias` varchar(32) DEFAULT NULL,
   `pkg` int(10) DEFAULT NULL,
   `cmms` decimal(12,2) DEFAULT NULL,
   `inv_notes` varchar(1024) DEFAULT NULL,
