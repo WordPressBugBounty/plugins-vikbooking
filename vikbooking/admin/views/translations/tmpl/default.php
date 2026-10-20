@@ -45,7 +45,7 @@ if (!(count($langs) > 1)) {
 	</form>
 	<?php
 } else {
-	$cur_langtab = VikRequest::getString('vbo_lang', '', 'request');
+	$cur_langtab = preg_replace('/[^A-Z\-\_]+/i', '', VikRequest::getString('vbo_lang', '', 'request'));
 	$table = VikRequest::getString('vbo_table', '', 'request');
 	if (!empty($table)) {
 		$table = $vbo_tn->replacePrefix($table);
@@ -651,7 +651,7 @@ if (!empty($cur_langtab)) {
 	?>
 	jQuery('.vbo-translation-tab').each(function() {
 		var langtag = jQuery(this).attr('data-vbolang');
-		if (langtag != '<?php echo $cur_langtab; ?>') {
+		if (langtag != <?php echo json_encode($cur_langtab); ?>) {
 			return true;
 		}
 		if (jQuery('#vbo_langcontent_'+langtag).length) {

@@ -37,6 +37,13 @@ final class VBODooraccessIntegrationDevice
     protected array $connectedSubunits = [];
 
     /**
+     * @var    array
+     * 
+     * @since  1.18.17 (J) - 1.8.17 (WP)
+     */
+    protected array $connectedOtas = [];
+
+    /**
      * @var  array
      */
     protected array $capabilities = [];
@@ -64,7 +71,17 @@ final class VBODooraccessIntegrationDevice
     /**
      * @var  ?string
      */
+    protected ?string $brand = null;
+
+    /**
+     * @var  ?string
+     */
     protected ?string $model = null;
+
+    /**
+     * @var  ?string
+     */
+    protected ?string $unlockInstructions = null;
 
     /**
      * @var  ?float
@@ -200,6 +217,38 @@ final class VBODooraccessIntegrationDevice
     }
 
     /**
+     * Gets the device brand.
+     * 
+     * @return   ?string     The device brand.
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function getBrand()
+    {
+        return $this->brand;
+    }
+
+    /**
+     * Sets the device brand.
+     * 
+     * @param   string  $brand   The device brand.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function setBrand(string $brand)
+    {
+        // set value
+        $this->brand = $brand;
+
+        // turn data-changed flag on
+        $this->setDataChanged(true);
+
+        return $this;
+    }
+
+    /**
      * Gets the device model.
      * 
      * @return   ?string     The device model.
@@ -223,6 +272,35 @@ final class VBODooraccessIntegrationDevice
 
         // turn data-changed flag on
         $this->setDataChanged(true);
+
+        return $this;
+    }
+
+    /**
+     * Gets the device unlock instructions.
+     * 
+     * @return   ?string     The device unlock instructions.
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function getUnlockInstructions()
+    {
+        return $this->unlockInstructions;
+    }
+
+    /**
+     * Sets the device unlock instructions.
+     * 
+     * @param   ?string  $text   The device unlock instructions text.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function setUnlockInstructions(?string $text)
+    {
+        // set value
+        $this->unlockInstructions = $text;
 
         return $this;
     }
@@ -303,6 +381,115 @@ final class VBODooraccessIntegrationDevice
     public function setDataChanged(bool $changed)
     {
         $this->dataChanged = $changed;
+
+        return $this;
+    }
+
+    /**
+     * Returns a linear list of connected OTA IDs, if any.
+     * 
+     * @return  int[]
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function getConnectedOtas()
+    {
+        return array_values(array_unique($this->connectedOtas));
+    }
+
+    /**
+     * Tells whether the device has some connected OTA IDs.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function hasConnectedOtas()
+    {
+        return (bool) $this->getConnectedOtas();
+    }
+
+    /**
+     * Returns a list of connected OTA details.
+     * 
+     * @return  array   List of associative arrays.
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function getConnectedOtaDetails()
+    {
+        return array_values(array_filter(array_map(function($otaId) {
+            $channel = VikChannelManager::getChannel($otaId);
+            if (!$channel) {
+                return null;
+            }
+            $logoObj = VikBooking::getVcmChannelsLogo($channel['name'], true);
+            if (!is_object($logoObj)) {
+                return null;
+            }
+            return [
+                'id'   => $otaId,
+                'name' => $channel['name'],
+                'logo' => $logoObj->getTinyLogoURL(),
+            ];
+        }, $this->getConnectedOtas())));
+    }
+
+    /**
+     * Sets the list of connected OTA IDs.
+     * 
+     * @param   array   $otas       Linear list of connected OTA IDs to set.
+     * @param   bool    $replace    True to replace the current list, merge otherwise.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function setConnectedOtas(array $otas, bool $replace = false)
+    {
+        $this->connectedOtas = array_merge(($replace ? [] : $this->connectedOtas), array_values(array_filter(array_map('intval', $otas))));
+
+        return $this;
+    }
+
+    /**
+     * Appends one connected OTA ID.
+     * 
+     * @param   int     $otaId  The connected OTA ID to set.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function setConnectedOta(int $otaId)
+    {
+        if (!in_array($otaId, $this->connectedOtas)) {
+            $this->connectedOtas[] = $otaId;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Deletes one connected OTA ID.
+     * 
+     * @param   int     $otaId  The connected OTA ID to unset.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function deleteConnectedOta(int $otaId)
+    {
+        $key = array_search($otaId, $this->connectedOtas);
+
+        if ($key !== false) {
+            // delete OTA ID from index found
+            unset($this->connectedOtas[$key]);
+
+            // restore linear list
+            $this->connectedOtas = array_values($this->connectedOtas);
+        }
 
         return $this;
     }

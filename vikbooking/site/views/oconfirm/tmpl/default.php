@@ -275,6 +275,7 @@ if (count($this->mod_booking)) {
 	$tot_taxes = 0;
 	$tot_city_taxes = 0;
 	$tot_fees = 0;
+	$tot_damage_dep = 0;
 	$wop = "";
 	foreach ($rooms as $num => $r) {
 		$ind = $num - 1;
@@ -313,6 +314,9 @@ if (count($this->mod_booking)) {
 		$saywith = $tmptotdue;
 		if (isset($selopt[$num]) && is_array($selopt[$num])) {
 			foreach ($selopt[$num] as $selo) {
+				// option params
+				$opt_params = !empty($selo['oparams']) ? (array) json_decode($selo['oparams'], true) : [];
+
 				$wop .= $num . "_" . $selo['id'] . ":" . $selo['quan'] . (array_key_exists('chageintv', $selo) ? '-'.$selo['chageintv'] : '') . ";";
 				$realcost = (intval($selo['perday']) == 1 ? ($selo['cost'] * $room_nights * $selo['quan']) : ($selo['cost'] * $selo['quan']));
 				if (!empty ($selo['maxprice']) && $selo['maxprice'] > 0 && $realcost > $selo['maxprice']) {
@@ -345,6 +349,8 @@ if (count($this->mod_booking)) {
 					$tot_city_taxes += $optbeforetax;
 				} elseif ($selo['is_fee'] == 1) {
 					$tot_fees += $optbeforetax;
+				} elseif ($opt_params['damagedep'] ?? 0) {
+					$tot_damage_dep += $optbeforetax;
 				}
 				// VBO 1.11 - always calculate the amount of tax no matter if this is already a tax or a fee
 				if ($tmpopr == $realcost) {
@@ -557,11 +563,11 @@ if (count($this->mod_booking)) {
 				 * @since 	1.16.8 (J) - 1.6.8 (WP) with coupon before taxes, discounted amount calculation is an equal subtration.
 				 */
 				$prev_totdue = $totdue;
-				$tot_net = ($totdue - $tot_taxes - $tot_city_taxes - $tot_fees);
+				$tot_net = ($totdue - $tot_taxes - $tot_city_taxes - $tot_fees - $tot_damage_dep);
 				$couponsave = ($coupon['excludetaxes'] ? $tot_net : $totdue) * $coupon['value'] / 100;
 				$totdue = ($coupon['excludetaxes'] ? $tot_net : $totdue) * $minuscoupon / 100;
 				$tot_taxes = $coupon['excludetaxes'] ? ($tot_taxes * ($tot_net - $couponsave) / $tot_net) : ($tot_taxes * $minuscoupon / 100);
-				$totdue += $coupon['excludetaxes'] ? ($tot_taxes + $tot_city_taxes + $tot_fees) : 0;
+				$totdue += $coupon['excludetaxes'] ? ($tot_taxes + $tot_city_taxes + $tot_fees + $tot_damage_dep) : 0;
 				$couponsave = abs($prev_totdue - $totdue);
 			} else {
 				// total value

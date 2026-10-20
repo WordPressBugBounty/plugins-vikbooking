@@ -168,6 +168,11 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                     ?>
                 </div>
             </div>
+            <div class="vbo-widget-dac-set-instructions-helper" style="display: none;">
+                <div class="vbo-widget-dac-set-instructions-wrap">
+                    <textarea class="vbo-door-access-control-set-instructions-cont" rows="5" style="width: 100%; min-height: 100px;"></textarea>
+                </div>
+            </div>
             <div class="vbo-widget-dac-cap-params-helper" style="display: none;">
                 <div class="vbo-widget-dac-cap-params-wrap">
                     <div class="vbo-admin-container vbo-admin-container-full vbo-admin-container-compact">
@@ -679,6 +684,10 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                         return false;
                                     }
 
+                                    if (obj_res[call_method]['warnings']) {
+                                        alert(String(obj_res[call_method]['warnings']));
+                                    }
+
                                     if (obj_res[call_method]['device_name']) {
                                         // reload the provider with the new data updated
                                         vboWidgetDACLoadProvider(wrapper_id, id_provider, id_profile, 'devices');
@@ -740,6 +749,133 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                     return;
                 }
 
+                // set device unlock instructions button
+                if (e.target.matches('.vbo-widget-dac-device-set-instructions') || e.target.closest('.vbo-widget-dac-device-set-instructions')) {
+                    const buttonEl = !e.target.matches('.vbo-widget-dac-device-set-instructions') ? e.target.closest('.vbo-widget-dac-device-set-instructions') : e.target;
+                    const wrapper_id = buttonEl.closest('.vbo-admin-widget-wrapper').getAttribute('id');
+                    const wrapper_el = document.getElementById(wrapper_id);
+                    const id_provider = wrapper_el.querySelector('.vbo-door-access-control-setting[data-setting="id_provider"]').value;
+                    const id_profile = wrapper_el.querySelector('.vbo-door-access-control-setting[data-setting="id_profile"]').value;
+                    const id_device = buttonEl.closest('.vbo-dac-device-wrap').querySelector('.vbo-widget-dac-device-listings-data').getAttribute('data-device-id');
+                    const device_name = buttonEl.closest('.vbo-dac-device-wrap').querySelector('.vbo-widget-dac-device-listings-data').getAttribute('data-device-name');
+                    const set_instructions_section = wrapper_el.querySelector('.vbo-widget-dac-set-instructions-wrap');
+                    const set_instructions_cont_el = wrapper_el.querySelector('textarea.vbo-door-access-control-set-instructions-cont');
+                    const current_instructions_el = buttonEl.closest('.vbo-dac-device-instructions')?.querySelector('.vbo-widget-dac-device-current-instructions');
+
+                    set_instructions_cont_el.value = current_instructions_el ? current_instructions_el.textContent : '';
+
+                    // build modal buttons
+                    let cancel_btn = document.createElement('button');
+                    cancel_btn.setAttribute('type', 'button');
+                    cancel_btn.classList.add('btn');
+                    cancel_btn.innerText = <?php echo json_encode(JText::translate('VBANNULLA')); ?>;
+                    cancel_btn.addEventListener('click', () => {
+                        VBOCore.emitEvent('wdac-set-instructions-dismiss');
+                    });
+
+                    let apply_btn = document.createElement('button');
+                    apply_btn.setAttribute('type', 'button');
+                    apply_btn.classList.add('btn', 'btn-success');
+                    apply_btn.innerText = <?php echo json_encode(JText::translate('VBAPPLY')); ?>;
+                    apply_btn.addEventListener('click', (e) => {
+                        // save the new instructions text
+                        const instructionsCont = set_instructions_cont_el.value;
+
+                        // disable button
+                        e.target.disabled = true;
+
+                        // start loading animation
+                        VBOCore.emitEvent('wdac-set-instructions-loading');
+
+                        // the widget method to call
+                        let call_method = 'setDeviceInstructions';
+
+                        // make a request to set the device unlock instructions
+                        VBOCore.doAjax(
+                            "<?php echo $this->getExecWidgetAjaxUri(); ?>",
+                            {
+                                widget_id:    "<?php echo $this->getIdentifier(); ?>",
+                                call:         call_method,
+                                return:       1,
+                                provider:     id_provider,
+                                profile:      id_profile,
+                                device:       id_device,
+                                instructions: instructionsCont,
+                                wrapper:      wrapper_id,
+                                tmpl:         "component"
+                            },
+                            (response) => {
+                                // stop loading animation
+                                VBOCore.emitEvent('wdac-set-instructions-loading');
+
+                                try {
+                                    let obj_res = typeof response === 'string' ? JSON.parse(response) : response;
+                                    if (!obj_res.hasOwnProperty(call_method)) {
+                                        console.error('Unexpected JSON response', obj_res);
+                                        return false;
+                                    }
+
+                                    if (obj_res[call_method]['device_name']) {
+                                        // reload the provider with the new data updated
+                                        vboWidgetDACLoadProvider(wrapper_id, id_provider, id_profile, 'devices');
+
+                                        // reset instructions text
+                                        set_instructions_cont_el.value = '';
+                                        set_instructions_cont_el.dispatchEvent(new Event('change'));
+
+                                        // dismiss the modal
+                                        VBOCore.emitEvent('wdac-set-instructions-dismiss');
+                                    } else {
+                                        // re-enable button
+                                        e.target.disabled = false;
+                                    }
+                                } catch(err) {
+                                    // log and display error
+                                    console.error('could not parse JSON response', err, response);
+                                    alert('could not parse JSON response');
+
+                                    // re-enable button
+                                    e.target.disabled = false;
+                                }
+                            },
+                            (error) => {
+                                // log and display error
+                                console.error(error);
+                                alert(error.responseText);
+
+                                // stop loading animation
+                                VBOCore.emitEvent('wdac-set-instructions-loading');
+
+                                // re-enable button
+                                e.target.disabled = false;
+                            }
+                        );
+                    });
+
+                    // display modal
+                    let modalBody = VBOCore.displayModal({
+                        suffix: 'wdac-set-instructions',
+                        extra_class: 'vbo-modal-rounded vbo-modal-dialog',
+                        title: device_name + ' - ' + <?php echo json_encode(JText::translate('VBO_UNLOCK_INSTRUCTIONS')); ?>,
+                        body_prepend: true,
+                        draggable: true,
+                        footer_left: cancel_btn,
+                        footer_right: apply_btn,
+                        loading_event: 'wdac-set-instructions-loading',
+                        dismiss_event: 'wdac-set-instructions-dismiss',
+                        onDismiss: () => {
+                            // move back the helper section
+                            wrapper_el.querySelector('.vbo-widget-dac-set-instructions-helper').append(set_instructions_section);
+                        },
+                    });
+
+                    // append helper to modal body
+                    (modalBody[0] || modalBody).append(set_instructions_section);
+
+                    // do not proceed
+                    return;
+                }
+
                 // delete device connected listing button
                 if (e.target.matches('.vbo-widget-dac-device-cn-listing') || e.target.closest('.vbo-widget-dac-device-cn-listing')) {
                     const buttonEl = !e.target.matches('.vbo-widget-dac-device-cn-listing') ? e.target.closest('.vbo-widget-dac-device-cn-listing') : e.target;
@@ -782,6 +918,10 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                     if (!obj_res.hasOwnProperty(call_method)) {
                                         console.error('Unexpected JSON response', obj_res);
                                         return false;
+                                    }
+
+                                    if (obj_res[call_method]['warnings']) {
+                                        alert(String(obj_res[call_method]['warnings']));
                                     }
 
                                     // delete element
@@ -943,6 +1083,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                                 device:     id_device,
                                                 capability: id_capability,
                                                 capability_settings: capSettings,
+                                                retry_data: obj_res[call_method]['retry_data'] || null,
                                                 wrapper:    wrapper_id,
                                                 tmpl:       "component"
                                             },
@@ -1497,7 +1638,24 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                             }
                                             ?></span>
                                             <div class="vbo-dac-device-subinfo">
-                                                <div class="vbo-dac-device-name"><?php echo $device->getName(); ?></div>
+                                                <div class="vbo-dac-device-name-wrap">
+                                                    <div class="vbo-dac-device-name"><?php echo $device->getName(); ?></div>
+                                                <?php
+                                                if ($device->hasConnectedOtas() && ($connectedOtaDetails = $device->getConnectedOtaDetails())) {
+                                                    ?>
+                                                    <div class="vbo-dac-device-otas">
+                                                    <?php
+                                                    foreach ($connectedOtaDetails as $connectedOtaDetail) {
+                                                        ?>
+                                                        <img src="<?php echo JHtml::fetch('esc_attr', $connectedOtaDetail['logo'] ?? ''); ?>" alt="<?php echo JHtml::fetch('esc_attr', $connectedOtaDetail['name'] ?? ''); ?>" />
+                                                        <?php
+                                                    }
+                                                    ?>
+                                                    </div>
+                                                    <?php
+                                                }
+                                                ?>
+                                                </div>
                                                 <span class="vbo-dac-device-id"><?php echo $device->getID(); ?></span>
                                             <?php
                                             if ($device->getModel() || $device->getDescription()) {
@@ -1509,22 +1667,28 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                             </div>
                                         </div>
                                     </div>
-                                <?php
-                                if ($device->getBatteryLevel() !== null) {
-                                    if ($device->getBatteryLevel() > 65) {
-                                        $battery_class = 'success';
-                                    } elseif ($device->getBatteryLevel() > 35) {
-                                        $battery_class = 'warning';
-                                    } else {
-                                        $battery_class = 'error';
+                                    <div class="vbo-dac-device-info-dx">
+                                        <div class="vbo-dac-device-instructions">
+                                            <button type="button" class="btn btn-medium vbo-widget-dac-device-set-instructions<?php echo $device->getUnlockInstructions() ? ' btn-has-badge' : ''; ?>"><?php VikBookingIcons::e('file-lines'); ?> <?php echo JText::translate('VBO_INSTRUCTIONS'); ?></button>
+                                            <div class="vbo-widget-dac-device-current-instructions" style="display: none;"><?php echo $device->getUnlockInstructions() ?: ''; ?></div>
+                                        </div>
+                                    <?php
+                                    if ($device->getBatteryLevel() !== null) {
+                                        if ($device->getBatteryLevel() > 65) {
+                                            $battery_class = 'success';
+                                        } elseif ($device->getBatteryLevel() > 35) {
+                                            $battery_class = 'warning';
+                                        } else {
+                                            $battery_class = 'error';
+                                        }
+                                        ?>
+                                        <div class="vbo-dac-device-battery">
+                                            <span class="vbo-dac-device-battery-level vbo-dac-level-<?php echo $battery_class; ?>"><?php VikBookingIcons::e('battery-full'); ?> <?php echo floor($device->getBatteryLevel()); ?>%</span>
+                                        </div>
+                                        <?php
                                     }
                                     ?>
-                                    <div class="vbo-dac-device-battery">
-                                        <span class="vbo-dac-device-battery-level vbo-dac-level-<?php echo $battery_class; ?>"><?php VikBookingIcons::e('battery-full'); ?> <?php echo floor($device->getBatteryLevel()); ?>%</span>
                                     </div>
-                                    <?php
-                                }
-                                ?>
                                 </div>
                                 <div class="vbo-dac-device-content vbo-widget-dac-device-listings-data" data-device-id="<?php echo $device->getID(); ?>" data-device-name="<?php echo JHtml::fetch('esc_attr', $device->getName()); ?>">
                                     <div class="vbo-dac-device-listings">
@@ -1640,6 +1804,16 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="vbo-param-container">
+                                        <div class="vbo-param-label"><?php echo JText::translate('VBO_SYNC_OTAS'); ?></div>
+                                        <div class="vbo-param-setting">
+                                            <select class="vbo-door-access-control-setting" data-setting="ota_sync">
+                                                <option value="0"<?php echo !$integration->isProfileSyncingOtas() ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBPARAMPRICECALENDARDISABLED'); ?></option>
+                                                <option value="1"<?php echo $integration->isProfileSyncingOtas() ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBPARAMPRICECALENDARENABLED'); ?></option>
+                                            </select>
+                                            <span class="vbo-param-setting-comment"><?php echo JText::translate('VBO_DAC_SYNC_OTAS_HELP'); ?></span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="vbo-params-block">
                                     <?php
@@ -1718,6 +1892,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
             'profile_name' => $profile['profile_name'] ?? '',
             'gentype'      => $profile['gentype'] ?? null,
             'genperiod'    => $profile['genperiod'] ?? null,
+            'ota_sync'     => intval((bool) ($profile['ota_sync'] ?? 0)),
             'settings'     => array_merge($defaultSettings, $settings),
         ];
 
@@ -1858,7 +2033,9 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
             if (!class_exists('VCMDacDevicesRequestor')) {
                 throw new Exception('Please update the Channel Manager.', 426);
             }
-            (new VCMDacDevicesRequestor)->add($deviceFound);
+            $devicesRequestor = new VCMDacDevicesRequestor($integration->getProfileOptions());
+            $devicesRequestor->add($deviceFound);
+            $devicesRequestor->addToOtas($deviceFound, $idListing);
 
             // update integration devices onto the current profile record
             $factory->saveIntegrationRecord($integration, ['devices' => $integration->getDevices()]);
@@ -1869,6 +2046,7 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
 
         return [
             'device_name' => $deviceFound->getName(),
+            'warnings'    => $devicesRequestor->getWarnings() ?: null,
         ];
     }
 
@@ -1942,12 +2120,20 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
             // update the integration record devices
             $integration->setProfileRecordProp('devices', $integration->getDevices());
 
+            // ensure the device is deleted from E4jConnect when no more listings are connected
+            if (!class_exists('VCMDacDevicesRequestor')) {
+                throw new Exception('Please update the Channel Manager.', 426);
+            }
+            $devicesRequestor = new VCMDacDevicesRequestor($integration->getProfileOptions());
+
             if (!$deviceFound->getConnectedListings()) {
-                // ensure the device is deleted from E4jConnect when no more listings are connected
-                if (!class_exists('VCMDacDevicesRequestor')) {
-                    throw new Exception('Please update the Channel Manager.', 426);
-                }
-                (new VCMDacDevicesRequestor)->delete($deviceFound);
+                // no more listings connected on this device, delete it
+                $devicesRequestor->delete($deviceFound);
+            }
+
+            if ($deviceFound->hasConnectedOtas()) {
+                // delete the device on OTAs after removing a connected listing
+                $devicesRequestor->deleteFromOtas($deviceFound, $idListing);
             }
 
             // update integration devices onto the current profile record
@@ -1959,6 +2145,85 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
 
         return [
             'device_name' => $deviceFound->getName(),
+            'warnings'    => $devicesRequestor->getWarnings() ?: null,
+        ];
+    }
+
+    /**
+     * Custom method for this widget only.
+     * Updates the unlock instructions for a specific device.
+     * 
+     * @return  array
+     */
+    public function setDeviceInstructions()
+    {
+        $app = JFactory::getApplication();
+
+        $wrapper = $app->input->getString('wrapper', '');
+        $provider = $app->input->getString('provider', '');
+        $idProfile = $app->input->getUInt('profile', 0);
+        $idDevice = $app->input->getString('device', '');
+        $instructions = $app->input->getString('instructions', '');
+
+        if (empty($provider)) {
+            VBOHttpDocument::getInstance($app)->close(400, 'Missing door access control provider identifier.');
+        }
+
+        if (empty($idDevice)) {
+            VBOHttpDocument::getInstance($app)->close(400, 'Missing door access control device identifier.');
+        }
+
+        // access the door access factory object
+        $factory = VBOFactory::getDoorAccessControl();
+
+        // get the requested integration provider
+        $integration = $factory->getIntegrationProvider($provider);
+
+        if (!$integration) {
+            VBOHttpDocument::getInstance($app)->close(404, 'Invalid door access control provider identifier.');
+        }
+
+        // load the requested integration profile
+        $profile = $factory->loadIntegrationRecord($idProfile);
+
+        if (!$profile) {
+            VBOHttpDocument::getInstance($app)->close(404, 'Invalid door access control profile identifier.');
+        }
+
+        // inject profile record within the integration
+        $integration->setProfileRecord($profile);
+
+        // attempt to find the requested device ID
+        $deviceFound = null;
+        foreach ($integration->getDevices() as $device) {
+            if ($device->getID() === $idDevice) {
+                // device ID found, set unlock instructions
+                $device->setUnlockInstructions($instructions);
+
+                // turn flag on and abort
+                $deviceFound = $device;
+                break;
+            }
+        }
+
+        if (!$deviceFound) {
+            VBOHttpDocument::getInstance($app)->close(400, 'Invalid door access control device identifier.');
+        }
+
+        try {
+            // update the integration record devices
+            $integration->setProfileRecordProp('devices', $integration->getDevices());
+
+            // update integration devices onto the current profile record
+            $factory->saveIntegrationRecord($integration, ['devices' => $integration->getDevices()]);
+        } catch (Exception $e) {
+            // raise an error
+            VBOHttpDocument::getInstance($app)->close($e->getCode() ?: 500, $e->getMessage());
+        }
+
+        return [
+            'device_name'  => $deviceFound->getName(),
+            'instructions' => $deviceFound->getUnlockInstructions(),
         ];
     }
 
@@ -2005,7 +2270,9 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
             if (!class_exists('VCMDacDevicesRequestor')) {
                 throw new Exception('Please update the Channel Manager.', 426);
             }
-            (new VCMDacDevicesRequestor)->delete($integration->getDevices());
+            $devicesRequestor = new VCMDacDevicesRequestor($integration->getProfileOptions());
+            $devicesRequestor->delete($integration->getDevices());
+            $devicesRequestor->deleteAllFromOtas($integration->getDevices());
 
             // destroy (delete) the current profile record
             $integration->destroyProfileRecord();
@@ -2023,7 +2290,8 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
 
         // process successfully completed
         return [
-            'success' => 1,
+            'success'  => 1,
+            'warnings' => $devicesRequestor->getWarnings() ?: null,
         ];
     }
 
@@ -2080,6 +2348,11 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
 
             // access the requested device capability
             $capability = $device->getCapabilityById($idCapability);
+
+            if (!empty($retryDataOptions['booking_id']) && !empty($retryDataOptions['listing_id'])) {
+                // inject retry-data into capability
+                $capability->setRetryData($retryDataOptions);
+            }
         } catch (Exception $e) {
             VBOHttpDocument::getInstance($app)->close($e->getCode() ?: 500, $e->getMessage());
         }
@@ -2088,12 +2361,59 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
             // capability provides parameters that require settings for its execution
             return [
                 'capability_params' => VBOParamsRendering::getInstance($capability->getParams(), $retryDataOptions)->setInputName('capability_settings[' . $capability->getID() . ']')->getHtml(),
+                'retry_data'        => $capability->getRetryData(),
             ];
         }
 
         try {
             // execute the device capability
             $capabilityResult = $capability->execute($integration, $device, $capabilitySettings);
+
+            /**
+             * Manual retry attempts ending with a successful status should
+             * update the history events as well as the notifications center.
+             * 
+             * @since   1.18.17 (J) - 1.8.17 (WP)
+             */
+            if ($retryData = $capability->getRetryData()) {
+                // wrap involved reservation into a registry
+                $registry = VBOBookingRegistry::getInstance(['id' => $retryData['booking_id'] ?? 0]);
+
+                // set proper history type event
+                $historyType = 'ND';
+
+                // store booking history record
+                VikBooking::getBookingHistoryInstance($registry->getID())
+                    ->setBookingData($registry->getData(), $registry->getRooms())
+                    ->setExtraData([
+                        'provider' => $integration->getProfileProvider(),
+                        'profile'  => $integration->getProfileID(),
+                        'device'   => $device->getID(),
+                        'passcode' => $capabilityResult->getPasscode(),
+                        'props'    => $capabilityResult->getProperties(),
+                    ])
+                    ->store($historyType, sprintf('%s - %s: %s', (string) $integration->getProfileName(), (string) $device->getName(), (string) $capabilityResult->getPasscode()));
+
+                // store an entry within the notifications center for the successful operation
+                VBOFactory::getNotificationCenter()
+                    ->store([
+                        [
+                            'sender'  => 'dac',
+                            'type'    => sprintf('dac.%s.ok', $historyType),
+                            'title'   => sprintf('%s - %s', (string) $integration->getProfileName(), (string) $device->getName()),
+                            'summary' => strip_tags((string) $capabilityResult),
+                            'idorder' => $registry->getID(),
+                            'avatar'  => preg_match('/^http/', (string) $integration->getIcon()) ? $integration->getIcon() : null,
+                            'label'   => $integration->getName(),
+                            'widget'  => 'door_access_control',
+                            'widget_options' => [
+                                'provider' => $integration->getProfileProvider(),
+                                'profile'  => $integration->getProfileID(),
+                                'device'   => $device->getID(),
+                            ],
+                        ],
+                    ]);
+            }
         } catch (Exception $e) {
             VBOHttpDocument::getInstance($app)->close($e->getCode() ?: 500, $e->getMessage());
         }

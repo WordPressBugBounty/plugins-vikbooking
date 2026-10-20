@@ -70,8 +70,8 @@ class VikBookingModelLicense extends JModelForm
 
 		// build request headers
 		$headers = array(
-			// disable the SSL peer verification
-			'sslverify' => false,
+			// enable SSL peer verification
+			'sslverify' => true,
 		);
 
 		/**
@@ -215,8 +215,8 @@ class VikBookingModelLicense extends JModelForm
 			'blocking'  => true,
 			// force timeout to 120 seconds
 			'timeout'   => 120,
-			// disable the SSL peer verification
-			'sslverify' => false,
+			// enable SSL peer verification
+			'sslverify' => true,
 		);
 
 		// build post data

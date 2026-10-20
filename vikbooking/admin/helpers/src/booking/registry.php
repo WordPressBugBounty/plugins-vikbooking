@@ -59,6 +59,11 @@ class VBOBookingRegistry
     protected $customer = null;
 
     /**
+     * @var  ?array
+     */
+    protected $alterationRequest = null;
+
+    /**
      * Proxy to construct the object.
      * 
      * @param   array   $options    Associative list of booking information to bind.
@@ -106,10 +111,10 @@ class VBOBookingRegistry
         }
 
         // bind booking rooms
-        $this->bookingRooms = $rooms;
+        $this->setBookingRooms($rooms);
 
         // bind previous booking information in case of alteration
-        $this->previousBooking = $previous;
+        $this->setPrevious($previous);
     }
 
     /**
@@ -257,6 +262,198 @@ class VBOBookingRegistry
     }
 
     /**
+     * Tells whether the current registry is for an alteration request.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function isAlterationRequest()
+    {
+        return !empty($this->alterationRequest);
+    }
+
+    /**
+     * Tells whether the alteration request in the registry is "Pending".
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function isAlterationRequestPending()
+    {
+        return $this->isAlterationRequest() && !strcasecmp((string) $this->getAlterationRequestProperty('status', ''), 'pending');
+    }
+
+    /**
+     * Tells whether the alteration request in the registry is "Accepted".
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function isAlterationRequestAccepted()
+    {
+        return $this->isAlterationRequest() && !strcasecmp((string) $this->getAlterationRequestProperty('status', ''), 'accepted');
+    }
+
+    /**
+     * Tells whether the alteration request in the registry is "Declined" or "Canceled".
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function isAlterationRequestCancelled()
+    {
+        $status = (string) $this->getAlterationRequestProperty('status', '');
+
+        return $this->isAlterationRequest() && (!strcasecmp($status, 'declined') || !strcasecmp($status, 'cancelled') || !strcasecmp($status, 'canceled'));
+    }
+
+    /**
+     * Tells whether the alteration request was initiated by the guest.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function isAlterationRequestFromGuest()
+    {
+        return $this->isAlterationRequest() && !strcasecmp((string) $this->getAlterationRequestProperty('initiated_by', ''), 'guest');
+    }
+
+    /**
+     * Returns the current reservation alteration request data, if any.
+     * 
+     * @return  ?array
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function getAlterationRequest()
+    {
+        return $this->alterationRequest;
+    }
+
+    /**
+     * Sets the reservation alteration request data.
+     * 
+     * @param   ?array  $data   Alteration data to set, nullable.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function setAlterationRequest(?array $data)
+    {
+        $this->alterationRequest = $data;
+
+        return $this;
+    }
+
+    /**
+     * Returns the requested reservation alteration request data property.
+     * 
+     * @param   string  $name       The alteration request data property to fetch.
+     * @param   mixed   $default    The default value to return.
+     * 
+     * @return  mixed
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function getAlterationRequestProperty(string $name, $default = null)
+    {
+        return $this->alterationRequest[$name] ?? $default;
+    }
+
+    /**
+     * Applies or rollbacks the alteration request data. Should run
+     * before the object gets serialized, or whenever original data
+     * should be restored after setting alteration request data.
+     * 
+     * @return  void
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function applyAlterationRequestData()
+    {
+        if (!$this->isAlterationRequest()) {
+            // rollback values by re-binding properties
+            $this->bind(VikBooking::getBookingInfoFromID($this->getID()));
+            $this->setBookingRooms(VikBooking::loadOrdersRoomsData($this->getID()));
+
+            // do not proceed
+            return;
+        }
+
+        // apply the reservation alteration request data properties
+        $alterationStay   = (array) $this->getAlterationRequestProperty('stay', []);
+        $alterationRooms  = (array) $this->getAlterationRequestProperty('listing_ids', []);
+        $alterationGuests = (array) $this->getAlterationRequestProperty('guest_details', []);
+
+        // check for new stay dates
+        if (!empty($alterationStay['checkin']) || !empty($alterationStay['checkout'])) {
+            // calculate and set new stay dates
+            $avHelper = VikBooking::getAvailabilityInstance(true);
+            $newCheckinDt = ($alterationStay['checkin'] ?? '') ?: date('Y-m-d', $this->getProperty('checkin'));
+            $newCheckoutDt = ($alterationStay['checkout'] ?? '') ?: date('Y-m-d', $this->getProperty('checkout'));
+            list($newCheckinTs, $newCheckoutTs) = $avHelper->setStayDates($newCheckinDt, $newCheckoutDt)->getStayDates(true);
+            $newNightsOfStay = $avHelper->countNightsOfStay($newCheckinTs, $newCheckoutTs);
+
+            // set new values
+            $this->setProperty('checkin', $newCheckinTs);
+            $this->setProperty('checkout', $newCheckoutTs);
+            $this->setProperty('days', (int) $newNightsOfStay);
+        }
+
+        // replace rooms booked, if any, and if different
+        foreach (array_values((array) $alterationRooms) as $newRoomKey => $newRoomId) {
+            // fetch current room booked data
+            $currentBookingRoom = $this->getRooms()[$newRoomKey] ?? [];
+            if (!$currentBookingRoom || $currentBookingRoom['idroom'] == $newRoomId) {
+                continue;
+            }
+
+            // fetch room data
+            $newRoomInfo = VikBooking::getRoomInfo((int) $newRoomId, ['name', 'units', 'params'], true);
+            if (!$newRoomInfo) {
+                continue;
+            }
+
+            // set new values
+            $currentBookingRoom['idroom'] = (int) $newRoomId;
+            $currentBookingRoom['room_name'] = $newRoomInfo['name'];
+            $currentBookingRoom['tot_units'] = (int) $newRoomInfo['units'];
+            $currentBookingRoom['params'] = $newRoomInfo['params'];
+
+            // replace value on registry
+            $bookingRooms = $this->getRooms();
+            $bookingRooms[$newRoomKey] = $currentBookingRoom;
+            $this->setBookingRooms($bookingRooms);
+        }
+
+        // check for new guest party
+        if (isset($alterationGuests['adults']) || isset($alterationGuests['children']) || isset($alterationGuests['pets'])) {
+            // set new guest values on the first booking room
+            $bookingRooms = $this->getRooms();
+            $bookingRooms[0]['adults'] = (int) ($alterationGuests['adults'] ?? $bookingRooms[0]['adults']);
+            $bookingRooms[0]['children'] = (int) ($alterationGuests['children'] ?? $bookingRooms[0]['children']);
+            $bookingRooms[0]['pets'] = (int) ($alterationGuests['pets'] ?? $bookingRooms[0]['pets']);
+
+            // replace value on registry
+            $this->setBookingRooms($bookingRooms);
+        }
+
+        // check for new totals
+        if ($newTotal = $this->getAlterationRequestProperty('total')) {
+            $this->setProperty('total', (float) $newTotal);
+        }
+        if ($newTotalTaxes = $this->getAlterationRequestProperty('tot_taxes')) {
+            $this->setProperty('tot_taxes', (float) $newTotalTaxes);
+        }
+    }
+
+    /**
      * Returns the whole or provider-alias DAC data-registry.
      * 
      * @param   ?string  $providerAlias  Optional DAC provider alias identifier.
@@ -316,6 +513,32 @@ class VBOBookingRegistry
     public function getRooms()
     {
         return $this->bookingRooms;
+    }
+
+    /**
+     * Sets the booking rooms data.
+     * 
+     * @param   array   $rooms  The booking room records to bind.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function setBookingRooms(array $rooms)
+    {
+        // bind booking rooms
+        $this->bookingRooms = array_map(function($bookingRoom) {
+            $bookingRoom = (array) $bookingRoom;
+            if (!isset($bookingRoom['room_name']) && !empty($bookingRoom['name'])) {
+                $bookingRoom['room_name'] = $bookingRoom['name'];
+            }
+            if (!isset($bookingRoom['tot_units']) && !empty($bookingRoom['units'])) {
+                $bookingRoom['tot_units'] = $bookingRoom['units'];
+            }
+            return $bookingRoom;
+        }, $rooms);
+
+        return $this;
     }
 
     /**
@@ -1059,6 +1282,29 @@ class VBOBookingRegistry
     public function isPast()
     {
         return $this->getProperty('checkout', 0) < time();
+    }
+
+    /**
+     * Given two timestamps, returns the absolute difference in days (time ignored).
+     * 
+     * @param   int     $fromTs     The timestamp to compare from.
+     * @param   int     $toTs       The timestamp to compare against.
+     * 
+     * @return  int     0 for equal date, negative or positive values otherwise.
+     */
+    public function diffInDays(int $fromTs, int $toTs)
+    {
+        $tz = new DateTimeZone(date_default_timezone_get());
+
+        $from = (new DateTimeImmutable('@' . $fromTs))
+            ->setTimezone($tz)
+            ->setTime(0, 0);
+
+        $to = (new DateTimeImmutable('@' . $toTs))
+            ->setTimezone($tz)
+            ->setTime(0, 0);
+
+        return (int) $from->diff($to)->format('%r%a');
     }
 
     /**

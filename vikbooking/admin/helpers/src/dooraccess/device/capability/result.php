@@ -39,6 +39,11 @@ final class VBODooraccessDeviceCapabilityResult
     protected ?array $properties = null;
 
     /**
+     * @var  ?string
+     */
+    protected ?string $eventType = null;
+
+    /**
      * Class constructor.
      * 
      * @param   ?array  $data   Optional result data properties to bind.
@@ -143,6 +148,30 @@ final class VBODooraccessDeviceCapabilityResult
     public function setProperties(array $data)
     {
         $this->properties = $data;
+
+        return $this;
+    }
+
+    /**
+     * Returns the result event type.
+     * 
+     * @return  ?string
+     */
+    public function getEventType()
+    {
+        return $this->eventType;
+    }
+
+    /**
+     * Sets the result event type.
+     * 
+     * @param   ?string   $type     The result event type enumeration.
+     * 
+     * @return  self
+     */
+    public function setEventType(?string $type)
+    {
+        $this->eventType = $type;
 
         return $this;
     }

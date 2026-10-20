@@ -304,11 +304,20 @@ class VikBookingController extends JControllerVikBooking
 				$user_inp_val = VikRequest::getString('vbf' . $cf['id'], '', 'request');
 				if (intval($cf['isemail']) == 1 && $emailwasfound == false) {
 					$useremail = trim($user_inp_val);
-					if (!preg_match('/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/', $useremail)) {
-						showSelectVb('Invalid email address provided.');
-						return;
+					if (VikBooking::validEmail($useremail)) {
+						// valid email address
+						$emailwasfound = true;
+					} else {
+						// invalid email address
+						$useremail = '';
+						if (boolval($cf['required']) && $cf['type'] != 'separator' && $cf['type'] != 'state') {
+							// insufficient data collected
+							$suffdata = false;
+							// abort and display error
+							showSelectVb('Invalid email address provided.');
+							return;
+						}
 					}
-					$emailwasfound = true;
 				}
 				if ($cf['isnominative'] == 1) {
 					if (strlen(str_replace(' ', '', trim($user_inp_val)))) {
@@ -4461,7 +4470,7 @@ class VikBookingController extends JControllerVikBooking
 			];
 
 			// join fetched parts
-			$customer->docsfolder = strtolower(implode('-', array_filter($parts)));
+			$customer->docsfolder = JFilterOutput::stringURLSafe(implode('-', array_filter($parts)));
 
 			if (strlen($customer->docsfolder) < 16) {
 				VBOHttpDocument::getInstance($app)->close(400, 'Possible security breach. Please specify as many details as possible.');

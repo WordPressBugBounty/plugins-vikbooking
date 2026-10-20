@@ -625,7 +625,7 @@ class VikBookingLanguageSystem implements JLanguageHandler
 			 */
 			
 			case 'VBOPROVEXPWARNUPD':
-				$result = __('The Pro license for VikBooking has expired. Do not install any updates or you will downgrade the plugin to the Free version.', 'vikbooking');
+				$result = __('Your Pro license for VikBooking has expired. Updating the plugin will switch it to the Free version, disabling Pro features.', 'vikbooking');
 				break;
 		}
 

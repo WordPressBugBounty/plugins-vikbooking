@@ -25,7 +25,7 @@ if (is_file(VBO_SITE_PATH.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'u
 $unitsdisp = $reservs[0]['units'] - $totres;
 $unitsdisp = ($unitsdisp < 0 ? "0" : $unitsdisp);
 $pvcm = VikRequest::getInt('vcm', '', 'request');
-$pgoto = VikRequest::getString('goto', '', 'request');
+$pgoto = rawurlencode(VikRequest::getString('goto', '', 'request'));
 ?>
 <table class="vbo-choosebusy-table">
 	<tr class="vbo-choosebusy-tr1">
@@ -147,10 +147,10 @@ $pgoto = VikRequest::getString('goto', '', 'request');
 		?>
 		<tr class="row<?php echo $k; ?>">
 			<td>
-				<a class="vbo-bookingid" href="index.php?option=com_vikbooking&amp;task=editbusy<?php echo ($pvcm == 1 ? '&amp;vcm=1' : '').(!empty($pgoto) ? '&amp;goto='.$pgoto : ''); ?>&amp;cid[]=<?php echo $row['idorder']; ?>"><?php echo $row['idorder']; ?></a>
+				<a class="vbo-bookingid" href="index.php?option=com_vikbooking&amp;task=editbusy<?php echo ($pvcm == 1 ? '&amp;vcm=1' : '').(!empty($pgoto) ? '&amp;goto=' . JHtml::fetch('esc_attr', $pgoto) : ''); ?>&amp;cid[]=<?php echo $row['idorder']; ?>"><?php echo $row['idorder']; ?></a>
 			</td>
 			<td>
-				<a href="index.php?option=com_vikbooking&amp;task=editbusy<?php echo ($pvcm == 1 ? '&amp;vcm=1' : '').(!empty($pgoto) ? '&amp;goto='.$pgoto : ''); ?>&amp;cid[]=<?php echo $row['idorder']; ?>"><?php echo date(str_replace("/", $datesep, $df).' H:i', $row['checkin']); ?></a>
+				<a href="index.php?option=com_vikbooking&amp;task=editbusy<?php echo ($pvcm == 1 ? '&amp;vcm=1' : '').(!empty($pgoto) ? '&amp;goto=' . JHtml::fetch('esc_attr', $pgoto) : ''); ?>&amp;cid[]=<?php echo $row['idorder']; ?>"><?php echo date(str_replace("/", $datesep, $df).' H:i', $row['checkin']); ?></a>
 			</td>
 			<td><?php echo date(str_replace("/", $datesep, $df).' H:i', $row['checkout']); ?></td>
 			<td><?php echo $custdata; ?></td>

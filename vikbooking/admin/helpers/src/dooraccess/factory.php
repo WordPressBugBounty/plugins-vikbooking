@@ -315,6 +315,11 @@ final class VBODooraccessFactory
             $dbRecord->genperiod = (string) $options['genperiod'];
         }
 
+        if (isset($options['ota_sync'])) {
+            // set record OTA syncing
+            $dbRecord->ota_sync = (int) $options['ota_sync'];
+        }
+
         if (is_array($options['settings'] ?? null)) {
             if (!($options['overwrite_settings'] ?? null)) {
                 // merge existing settings with the new ones to allow
@@ -419,17 +424,27 @@ final class VBODooraccessFactory
         if ($previousDevices && $newDevices) {
             // restore the previous connected listings per device identifier, if any
             foreach ($previousDevices as $previousDevice) {
-                if (!$previousDevice->getConnectedListings() || !$previousDevice->isComplete()) {
-                    // this old device had no connected listings
-                    continue;
-                }
-
                 // find the corresponding device identifier in the new list
                 foreach ($newDevices as $newDevice) {
+                    // find matching device
                     if ($newDevice->getID() === $previousDevice->getID()) {
-                        // device found, set the previously connected listings and sub-units
+                        // always keep the previously defined unlock instructions, if any
+                        $newDevice->setUnlockInstructions($previousDevice->getUnlockInstructions());
+
+                        if (!$previousDevice->getConnectedListings() || !$previousDevice->isComplete()) {
+                            // the old device had no connected listings
+                            break;
+                        }
+
+                        // set the previously connected listings and sub-units
                         $newDevice->setConnectedListings($previousDevice->getConnectedListings());
                         $newDevice->setConnectedSubunits($previousDevice->getConnectedSubunits());
+
+                        // keep the previously connected OTAs, if any
+                        if ($previousDevice->getConnectedListings()) {
+                            $newDevice->setConnectedOtas($previousDevice->getConnectedOtas(), $replace = true);
+                        }
+
                         break;
                     }
                 }
@@ -650,8 +665,9 @@ final class VBODooraccessFactory
         // check if the booking has pre-check-in values
         $hasPreCheckIn = $registry->hasPreCheckedIn();
 
-        // scan the eligible integrations for generating passcodes at the time of booking or pre-checkin
-        foreach ($this->loadGeneratingIntegrations(['booking', 'precheckin']) as $record) {
+        // scan the eligible integrations for generating passcodes at the time of booking,
+        // upon pre-checkin completed, or before the check-in time
+        foreach ($this->loadGeneratingIntegrations(['booking', 'precheckin', 'checkin']) as $record) {
             // get the integration provider
             $integration = $this->getIntegrationProvider($record['provider_alias']);
             if (!$integration) {
@@ -672,9 +688,30 @@ final class VBODooraccessFactory
                     continue;
                 }
 
+                // ensure this booking was never processed before
+                if ($integration->getBookingAccessProcessed($registry->getID())) {
+                    // skip this booking as it was already processed
+                    continue;
+                }
+
                 if (($record['gentype'] ?? '') === 'precheckin' && !$hasPreCheckIn) {
                     // this device will get a passcode generated once pre-check-in will be completed
                     continue;
+                }
+
+                if (($record['gentype'] ?? '') === 'checkin') {
+                    // obtain generation period values
+                    list($genNumber, $genOperator) = $integration->getGenerationPeriodValues();
+
+                    // obtain expected generation deadline timestamp
+                    $deadlineTs = $genNumber > 0 ? strtotime(sprintf('-%d %s', $genNumber, ($genOperator === 'D' ? 'days' : 'hours')), $registry->getProperty('checkin', 0)) : $registry->getProperty('checkin', 0);
+                    // give the timestamp a grace period until the end of the targeted hour
+                    $deadlineTs = strtotime(date('Y-m-d H:59:59', $deadlineTs));
+
+                    if ($deadlineTs >= time()) {
+                        // this device will get a passcode when it's time to generate it, according to settings
+                        continue;
+                    }
                 }
 
                 // device matching booked listing should have had a passcode generated
@@ -1216,7 +1253,7 @@ final class VBODooraccessFactory
         // count the door access handling actions performed
         $doorAccessActions = 0;
 
-        // scan the eligible integration records for generating door-access passcodes at the time of booking
+        // scan the eligible integration records for generating door-access passcodes before check-in time
         foreach ($this->loadGeneratingIntegrations('checkin') as $record) {
             // get the integration provider
             $integration = $this->getIntegrationProvider($record['provider_alias']);
@@ -1274,7 +1311,18 @@ final class VBODooraccessFactory
                                 // increase counter
                                 $doorAccessActions++;
 
+                                /**
+                                 * Sync Door Access Control with Channel Manager.
+                                 * 
+                                 * @since   1.18.17 (J) - 1.8.17 (WP)
+                                 */
+                                $otaResult = null;
+                                if ($integration->isProfileSyncingOtas() && $device->hasConnectedOtas()) {
+                                    $otaResult = $this->syncOtaBookingDoorAccess($result->setEventType('checkin'), $device, $listingId, $registry);
+                                }
+
                                 // store booking history record
+                                $historyDescr = sprintf('%s - %s: %s', (string) $integration->getProfileName(), (string) $device->getName(), (string) $result->getPasscode());
                                 VikBooking::getBookingHistoryInstance($registry->getID())
                                     ->setBookingData($registry->getData(), $registry->getRooms())
                                     ->setExtraData([
@@ -1283,8 +1331,9 @@ final class VBODooraccessFactory
                                         'device'   => $device->getID(),
                                         'passcode' => $result->getPasscode(),
                                         'props'    => $result->getProperties(),
+                                        'otas'     => $otaResult ? $otaResult->getSyncedOtaIds() : null,
                                     ])
-                                    ->store($historyType, sprintf('%s - %s: %s', (string) $integration->getProfileName(), (string) $device->getName(), (string) $result->getPasscode()));
+                                    ->store($historyType, $historyDescr . ($otaResult ? " \n" . ((string) $otaResult) : ''));
 
                                 // store an entry within the notifications center for the successful operation
                                 try {
@@ -1294,7 +1343,7 @@ final class VBODooraccessFactory
                                                 'sender'  => 'dac',
                                                 'type'    => sprintf('dac.%s.ok', $historyType),
                                                 'title'   => sprintf('%s - %s', (string) $integration->getProfileName(), (string) $device->getName()),
-                                                'summary' => strip_tags((string) $result),
+                                                'summary' => strip_tags(((string) $result) . ($otaResult ? " \n" . ((string) $otaResult) : '')),
                                                 'idorder' => $registry->getID(),
                                                 'avatar'  => preg_match('/^http/', (string) $integration->getIcon()) ? $integration->getIcon() : null,
                                                 'label'   => $integration->getName(),
@@ -1435,12 +1484,14 @@ final class VBODooraccessFactory
      * 
      * @param   array   $booking        The booking record.
      * @param   array   $booking_rooms  The booking room records.
+     * @param   bool    $forced         Whether to skip total count of pre-check-in submissions.
      * 
      * @return  bool
      * 
      * @since   1.18.6 (J) - 1.8.6 (WP)
+     * @since   1.18.17 (J) - 1.8.17 (WP) added argument $forced.
      */
-    public function processPrecheckinCompleted(array $booking, array $booking_rooms = [])
+    public function processPrecheckinCompleted(array $booking, array $booking_rooms = [], bool $forced = false)
     {
         // wrap the booking information into a registry
         $registry = VBOBookingRegistry::getInstance($booking, $booking_rooms);
@@ -1450,15 +1501,41 @@ final class VBODooraccessFactory
             return false;
         }
 
-        // ensure this is the first time the pre-checkin details are submitted, and not simply updated
-        $totalPrecheckins = VikBooking::getBookingHistoryInstance($registry->getID())->getEventsWithData(['PC']);
-        if ($totalPrecheckins && count($totalPrecheckins) > 1) {
-            // this booking already got the pre-checkin information submitted once
-            return false;
+        if (!$forced) {
+            // ensure this is the first time the pre-checkin details are submitted, and not simply updated
+            $totalPrecheckins = VikBooking::getBookingHistoryInstance($registry->getID())->getEventsWithData(['PC']);
+            if ($totalPrecheckins && count($totalPrecheckins) > 1) {
+                // this booking already got the pre-checkin information submitted once
+                return false;
+            }
         }
 
         // handle the pre-checkin completed event
         return $this->handleBookingEvent('precheckin', $registry);
+    }
+
+    /**
+     * Forces the re-generation of passcodes for a given booking.
+     * 
+     * @param   VBOBookingRegistry  $registry  The booking registry to re-process.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function reprocessBookingGeneration(VBOBookingRegistry $registry)
+    {
+        // always simulate the creation of this booking to invoke all eligible profiles
+        $generated = $this->processBookingConfirmation($registry->getData(), $registry->getRooms());
+
+        if ($registry->hasPreCheckedIn()) {
+            // simulate the pre-check-in completion of the booking to invoke the eligible profiles
+            $generatedTwo = $this->processPrecheckinCompleted($registry->getData(), $registry->getRooms(), $forced = true);
+            // evaluate result again
+            $generated = $generated || $generatedTwo;
+        }
+
+        return (bool) $generated;
     }
 
     /**
@@ -1673,7 +1750,18 @@ final class VBODooraccessFactory
                             // increase counter
                             $doorAccessActions++;
 
+                            /**
+                             * Sync Door Access Control with Channel Manager.
+                             * 
+                             * @since   1.18.17 (J) - 1.8.17 (WP)
+                             */
+                            $otaResult = null;
+                            if ($integration->isProfileSyncingOtas() && $device->hasConnectedOtas()) {
+                                $otaResult = $this->syncOtaBookingDoorAccess($result->setEventType($type), $device, $listingId, $registry);
+                            }
+
                             // store booking history record
+                            $historyDescr = sprintf('%s - %s: %s', (string) $integration->getProfileName(), (string) $device->getName(), (string) $result->getPasscode());
                             VikBooking::getBookingHistoryInstance($registry->getID())
                                 ->setBookingData($registry->getData(), $registry->getRooms())
                                 ->setExtraData([
@@ -1682,8 +1770,9 @@ final class VBODooraccessFactory
                                     'device'   => $device->getID(),
                                     'passcode' => $result->getPasscode(),
                                     'props'    => $result->getProperties(),
+                                    'otas'     => $otaResult ? $otaResult->getSyncedOtaIds() : null,
                                 ])
-                                ->store($historyType, sprintf('%s - %s: %s', (string) $integration->getProfileName(), (string) $device->getName(), (string) $result->getPasscode()));
+                                ->store($historyType, $historyDescr . ($otaResult ? " \n" . ((string) $otaResult) : ''));
 
                             // store an entry within the notifications center for the successful operation
                             try {
@@ -1693,7 +1782,7 @@ final class VBODooraccessFactory
                                             'sender'  => 'dac',
                                             'type'    => sprintf('dac.%s.ok', $historyType),
                                             'title'   => sprintf('%s - %s', (string) $integration->getProfileName(), (string) $device->getName()),
-                                            'summary' => strip_tags((string) $result),
+                                            'summary' => strip_tags(((string) $result) . ($otaResult ? " \n" . ((string) $otaResult) : '')),
                                             'idorder' => $registry->getID(),
                                             'avatar'  => preg_match('/^http/', (string) $integration->getIcon()) ? $integration->getIcon() : null,
                                             'label'   => $integration->getName(),
@@ -1801,6 +1890,72 @@ final class VBODooraccessFactory
     }
 
     /**
+     * Synchronizes the OTA booking door access manipulation event with the originating OTA.
+     * The method should be called after checking whether the profile syncs with OTAs and
+     * if the device itself is linked to some OTAs. Just one OTA will be synced, if eligible.
+     * 
+     * @param   VBODooraccessDeviceCapabilityResult  $result     The door access manipulation event result.
+     * @param   VBODooraccessIntegrationDevice       $device     The provider integration device involved.
+     * @param   int                                  $listingId  The involved listing ID.
+     * @param   VBOBookingRegistry                   $registry   The booking registry for the synchronization.
+     * 
+     * @return  ?VBODooraccessDeviceOtaResult        Either null or OTA synchronization result registry.
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function syncOtaBookingDoorAccess(
+        VBODooraccessDeviceCapabilityResult $result,
+        VBODooraccessIntegrationDevice $device,
+        int $listingId,
+        VBOBookingRegistry $registry
+    ) {
+        if (!$registry->getProperty('idorderota')) {
+            // not an OTA reservations
+            return null;
+        }
+
+        if (!$result->getPasscode()) {
+            // no seamless entry to sync on OTAs
+            return null;
+        }
+
+        if (!class_exists('VCMDacDevicesOtamapper')) {
+            // missing DAC OTA mapper implementation
+            return null;
+        }
+
+        // access DAC OTA mapper
+        $otaMapper = new VCMDacDevicesOtamapper;
+
+        if (!$otaMapper->isChannelEligible((string) $registry->getProperty('channel'))) {
+            // not an eligible OTA reservation
+            return null;
+        }
+
+        // start device OTA result registry
+        $otaResult = new VBODooraccessDeviceOtaResult($result, $device, $listingId, $registry);
+
+        // synchronize booking door access on OTAs
+        try {
+            if ($result->getEventType() === 'modification') {
+                // booking modified
+                $otaMapper->modifyBookingSeamlessEntry($otaResult);
+            } elseif ($result->getEventType() === 'cancellation') {
+                // booking cancelled
+                $otaMapper->cancelBookingSeamlessEntry($otaResult);
+            } else {
+                // any new booking passcode event
+                $otaMapper->createBookingSeamlessEntry($otaResult);
+            }
+        } catch (Exception $e) {
+            // push error to result registry
+            $otaResult->setError($e);
+        }
+
+        return $otaResult;
+    }
+
+    /**
      * Decodes and unserializes the proper record columns.
      * 
      * @param   array   $record     The raw integration database record.
@@ -1880,7 +2035,7 @@ final class VBODooraccessFactory
                 }
 
                 // build integration class name
-                $classname  = 'VBODooraccessProvider' . str_replace(' ', '', ucwords(str_replace('_', ' ', $integration_alias)));
+                $classname = 'VBODooraccessProvider' . str_replace(' ', '', ucwords(str_replace('_', ' ', $integration_alias)));
 
                 if (class_exists($classname)) {
                     // instantiate integration object

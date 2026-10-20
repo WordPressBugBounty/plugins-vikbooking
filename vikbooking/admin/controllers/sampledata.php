@@ -45,6 +45,10 @@ class VikBookingControllerSampledata extends JControllerAdmin
 	 */
 	public function install()
 	{
+		if (!JSession::checkToken()) {
+			throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+		}
+
 		$sample_data_id = VikRequest::getInt('sample_data_id', 0, 'request');
 		if (empty($sample_data_id)) {
 			throw new Exception('Empty Sample Data ID', 500);

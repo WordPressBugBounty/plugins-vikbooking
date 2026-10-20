@@ -113,9 +113,9 @@ abstract class VBOTaskDriveraware implements VBOTaskDriverinterface
          * 
          * @return  string  The HTML to output.
          * 
-         * @since 1.18.15 (J) - 1.8.15 (WP) 
+         * @since   1.18.15 (J) - 1.8.15 (WP) 
          */
-        $results = \VBOFactory::getPlatform()->getDispatcher()->filter('onDisplayManageTask', [$position, $task, $area]);
+        $results = VBOFactory::getPlatform()->getDispatcher()->filter('onDisplayManageTask', [$position, $task, $area]);
 
         return implode("\n", $results);
     }

@@ -8708,6 +8708,68 @@ class VikBookingLanguageAdmin implements JLanguageHandler
 			case 'VBO_PHONE_ALIAS_HELP':
 				$result = __('Calls to this number are forwarded to the guest\'s actual phone number.', 'vikbooking');
 				break;
+			case 'VBO_FAILURES':
+				$result = __('Failures', 'vikbooking');
+				break;
+			case 'VBO_ONLY_FAILURES':
+				$result = __('Only failures', 'vikbooking');
+				break;
+			case 'VBO_SYNC_OTAS':
+				$result = __('Sync OTAs', 'vikbooking');
+				break;
+			case 'VBO_DAC_SYNC_OTAS_HELP':
+				$result = __('Synchronize smart locks and passcodes with eligible OTAs (e.g. Airbnb Seamless Entry).', 'vikbooking');
+				break;
+			case 'VBO_INSTRUCTIONS':
+				$result = __('Instructions', 'vikbooking');
+				break;
+			case 'VBO_UNLOCK_INSTRUCTIONS':
+				$result = __('Unlock instructions', 'vikbooking');
+				break;
+			case 'VBO_ALTERATION_RQ':
+				$result = __('Alteration Request', 'vikbooking');
+				break;
+			case 'VBO_GUEST_ALTERATION_RQ':
+				$result = __('The guest requested an alteration of the current reservation.', 'vikbooking');
+				break;
+			case 'VBO_ORIGINAL':
+				// @TRANSLATORS: Original reservation value, like check-in date before modification.
+				$result = _x('Original', 'Original reservation value, like check-in date before modification.');
+				break;
+			case 'VBO_REQUEST':
+				// @TRANSLATORS: Reservation value requested for modification, like new check-in date.
+				$result = _x('Request', 'Reservation value requested for modification, like new check-in date.');
+				break;
+			case 'VBO_UNCHANGED':
+				$result = __('Unchanged', 'vikbooking');
+				break;
+			case 'VBO_ACCEPT':
+				$result = __('Accept', 'vikbooking');
+				break;
+			case 'VBO_DECLINE':
+				$result = __('Decline', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTAL':
+				$result = __('Alteration request received', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTAU':
+				$result = __('Alteration request updated', 'vikbooking');
+				break;
+			case 'VBOBOOKHISTORYTAI':
+				$result = __('AI', 'vikbooking');
+				break;
+			case 'VBO_AI_GPHONE_DETECTED':
+				$result = __('Guest phone number detected in conversation.', 'vikbooking');
+				break;
+			case 'VBO_GPHONE_NUMBER':
+				$result = __('Guest phone number', 'vikbooking');
+				break;
+			case 'VBO_MISSING':
+				$result = __('Missing', 'vikbooking');
+				break;
+			case 'VBO_MISSING_GPHONE_HELP':
+				$result = __('Choose whether to target all OTA reservations or only those without a guest phone number. When "Missing" is selected, reservations with temporary or alias phone numbers will also be excluded, as some OTAs may redact phone numbers shared through messages.', 'vikbooking');
+				break;
 		}
 
 		return $result;

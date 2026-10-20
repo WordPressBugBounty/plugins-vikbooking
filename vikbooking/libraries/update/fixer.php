@@ -214,6 +214,19 @@ class VikBookingUpdateFixer
 			}
 		}
 
+		if (version_compare($this->version, '1.8.17', '<='))
+		{
+			/**
+			 * Legacy cron key should not be less than 5 chars, or 8 chars will be enforced.
+			 */
+			$config = VBOFactory::getConfig();
+			if (strlen($config->getString('cronkey', '')) < 5)
+			{
+				// randomize key
+				$config->set('cronkey', VikBooking::getCPinInstance()->generateSerialCode(8));
+			}
+		}
+
 		return true;
 	}
 

@@ -852,12 +852,15 @@ function vboSearchExtraCost(elem) {
 		<p class="warn"><?php echo JText::translate('VBO_WARN_CM_RES_MOD'); ?></p>
 			<?php
 		}
+
+		// cancel booking link
+		$rmLink = VBOFactory::getPlatform()->getUri()->addCSRF(sprintf('index.php?option=com_vikbooking&task=removeorders&cid[]=%d&goto=%d', $ord['id'], $ord['id']));
 		?>
 
 		<div class="vbo-bookingdet-innertop">
 			<div class="vbo-bookingdet-commands">
 				<div class="vbo-bookingdet-command">
-					<button type="button" class="btn btn-danger" onclick="if (confirm('<?php echo addslashes(JText::translate('VBDELCONFIRM')); ?>')){document.location.href='index.php?option=com_vikbooking&task=removeorders&goto=<?php echo $ord['id']; ?>&cid[]=<?php echo $ord['id']; ?>';}"><?php VikBookingIcons::e('trash'); ?> <?php echo $ord['status'] == 'cancelled' ? JText::translate('VBO_PURGERM_RESERVATION') : JText::translate('VBMAINEBUSYDEL'); ?></button>
+					<button type="button" class="btn btn-danger" onclick="if (confirm('<?php echo addslashes(JText::translate('VBDELCONFIRM')); ?>')){document.location.href='<?php echo $rmLink; ?>';}"><?php VikBookingIcons::e('trash'); ?> <?php echo $ord['status'] == 'cancelled' ? JText::translate('VBO_PURGERM_RESERVATION') : JText::translate('VBMAINEBUSYDEL'); ?></button>
 				</div>
 			</div>
 			<div class="vbo-bookingdet-tabs">
@@ -1959,9 +1962,6 @@ function vboSearchExtraCost(elem) {
 				</div>
 			</div>
 		</div>
-		<input type="hidden" name="task" value="">
-		<input type="hidden" name="idorder" value="<?php echo $ord['id']; ?>">
-		<input type="hidden" name="option" value="com_vikbooking">
 		<?php
 		$pfrominv = VikRequest::getInt('frominv', '', 'request');
 		echo $pfrominv == 1 ? '<input type="hidden" name="frominv" value="1">' : '';
@@ -1969,6 +1969,10 @@ function vboSearchExtraCost(elem) {
 		echo $pvcm == 1 ? '<input type="hidden" name="vcm" value="1">' : '';
 		echo $pgoto == 'overv' ? '<input type="hidden" name="goto" value="overv">' : '';
 		?>
+		<input type="hidden" name="task" value="">
+		<input type="hidden" name="idorder" value="<?php echo $ord['id']; ?>">
+		<input type="hidden" name="option" value="com_vikbooking">
+		<?php echo JHtml::fetch( 'form.token' ); ?>
 	</form>
 </div>
 

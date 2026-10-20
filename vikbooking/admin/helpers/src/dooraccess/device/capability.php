@@ -50,6 +50,11 @@ final class VBODooraccessDeviceCapability
     protected ?string $callback = null;
 
     /**
+     * @var  ?array
+     */
+    protected ?array $retryData = null;
+
+    /**
      * Class constructor.
      */
     public function __construct()
@@ -109,6 +114,34 @@ final class VBODooraccessDeviceCapability
     public function isValid()
     {
         return !empty($this->id) && !empty($this->title) && !empty($this->callback);
+    }
+
+    /**
+     * Returns the capability retry-data, if any.
+     * 
+     * @return  ?array
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function getRetryData()
+    {
+        return $this->retryData;
+    }
+
+    /**
+     * Sets the capability retry-data, if any.
+     * 
+     * @param   ?array  $data   The data payload to set.
+     * 
+     * @return  self
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function setRetryData(?array $data)
+    {
+        $this->retryData = $data;
+
+        return $this;
     }
 
     /**

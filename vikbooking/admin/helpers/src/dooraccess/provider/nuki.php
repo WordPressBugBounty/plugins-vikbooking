@@ -906,6 +906,8 @@ HTML;
             'enddate'   => date('Y-m-d H:i:00', $registry->getProperty('checkout', 0)),
             // custom passcode value to create on the device
             'pwdvalue' => $passcodeValue,
+            // inject the booking ID for completion of data
+            'booking_id' => $registry->getID(),
             // inject the listing ID for completion of data
             'listing_id' => $listingId,
         ];

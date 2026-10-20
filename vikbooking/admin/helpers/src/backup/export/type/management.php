@@ -63,6 +63,7 @@ class VBOBackupExportTypeManagement extends VBOBackupExportTypeFull
 			'#__vikbooking_record_history',
 			'#__vikbooking_record_history_event',
 			'#__vikbooking_chat_messages',
+			'#__vikbooking_res_alteration_requests',
 			// channel manager
 			'#__vikchannelmanager_keys',
 			'#__vikchannelmanager_messaging_users_pings',

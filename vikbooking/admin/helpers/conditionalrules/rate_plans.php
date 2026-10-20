@@ -40,8 +40,8 @@ class VikBookingConditionalRuleRatePlans extends VikBookingConditionalRule
 		$this->vbo_app->loadSelect2();
 		$rplans = $this->loadRatePlans();
 		$otarplans = $this->loadOTARatePlans();
-		$current_rplans = $this->getParam('rplans', array());
-		$cur_ota_rplans = $this->getParam('otarplans', array());
+		$current_rplans = $this->getParam('rplans', []);
+		$cur_ota_rplans = $this->getParam('otarplans', []);
 
 		?>
 		<div class="vbo-param-container">
@@ -60,7 +60,7 @@ class VikBookingConditionalRuleRatePlans extends VikBookingConditionalRule
 		</div>
 
 		<?php
-		if (count($otarplans)) {
+		if ($otarplans) {
 			// this is an associative array with key=channel_name, value=channel_rate_plans
 			?>
 		<div class="vbo-param-container">
@@ -105,29 +105,35 @@ class VikBookingConditionalRuleRatePlans extends VikBookingConditionalRule
 	 */
 	public function isCompliant()
 	{
-		$rplans_booked = $this->getProperty('rooms', array());
-		if (!is_array($rplans_booked) || !count($rplans_booked)) {
+		$rplans_booked = $this->getProperty('rooms', []);
+		if (!is_array($rplans_booked) || !$rplans_booked) {
 			return false;
 		}
 
 		// get filters
-		$allowed_rplans = $this->getParam('rplans', array());
-		$allowed_ota_rplans = $this->getParam('otarplans', array());
+		$allowed_rplans = $this->getParam('rplans', []);
+		$allowed_ota_rplans = $this->getParam('otarplans', []);
 
-		$all_tariff_ids = array();
+		$all_tariff_ids = [];
+		$all_rateplan_ids = [];
 		$ota_rplans_available = false;
 		foreach ($rplans_booked as $rplan_book) {
 			if (array_key_exists('otarplan', $rplan_book)) {
 				// when accessing the "rooms" property, only a few columns may be available
 				$ota_rplans_available = true;
 			}
-			if (!isset($rplan_book['idtar']) || in_array((int)$rplan_book['idtar'], $all_tariff_ids)) {
+			$ratePlanId = (int) ($rplan_book['cust_cpolicy_id'] ?? null);
+			if ($ratePlanId && !in_array($ratePlanId, $all_rateplan_ids)) {
+				$all_rateplan_ids[] = $ratePlanId;
+			}
+			$tariffId = (int) ($rplan_book['idtar'] ?? null);
+			if (!$tariffId || in_array($tariffId, $all_tariff_ids)) {
 				continue;
 			}
-			array_push($all_tariff_ids, (int)$rplan_book['idtar']);
+			array_push($all_tariff_ids, $tariffId);
 		}
 
-		if (!count($all_tariff_ids) && !count($allowed_ota_rplans)) {
+		if (!$all_rateplan_ids && !$all_tariff_ids && !$allowed_ota_rplans) {
 			// useless to proceed
 			return false;
 		}
@@ -138,29 +144,24 @@ class VikBookingConditionalRuleRatePlans extends VikBookingConditionalRule
 		// get all rate plan IDs from tariffs
 		$dbo = JFactory::getDbo();
 
-		if (count($all_tariff_ids)) {
-			$records = array();
+		if ($all_tariff_ids) {
 			$q = "SELECT `idprice` FROM `#__vikbooking_dispcost` WHERE `id` IN (" . implode(', ', $all_tariff_ids) . ")";
 			$dbo->setQuery($q);
-			$dbo->execute();
-			if ($dbo->getNumRows()) {
-				$records = $dbo->loadAssocList();
-			}
-			$all_price_ids = array();
+			$records = $dbo->loadAssocList();
 			foreach ($records as $record) {
-				array_push($all_price_ids, $record['idprice']);
-			}
-
-			// check if website rate plans are matching
-			foreach ($all_price_ids as $idprice) {
-				if (in_array($idprice, $allowed_rplans)) {
-					$one_found = true;
-					break;
-				}
+				array_push($all_rateplan_ids, $record['idprice']);
 			}
 		}
 
-		if (!$one_found && count($allowed_ota_rplans)) {
+		// check if website rate plans are matching
+		foreach ($all_rateplan_ids as $idprice) {
+			if (in_array($idprice, $allowed_rplans)) {
+				$one_found = true;
+				break;
+			}
+		}
+
+		if (!$one_found && $allowed_ota_rplans) {
 			// check if the OTA rate plan matches with the ones allowed
 			if (!$ota_rplans_available) {
 				// load full reservation rooms data, including ota rate plans
@@ -187,27 +188,22 @@ class VikBookingConditionalRuleRatePlans extends VikBookingConditionalRule
 	}
 
 	/**
-	 * Internal function for this rule only.
+	 * Internal method for this rule only.
 	 * 
 	 * @return 	array
 	 */
 	protected function loadRatePlans()
 	{
-		$rplans = array();
-
 		$dbo = JFactory::getDbo();
+
 		$q = "SELECT `id`, `name` FROM `#__vikbooking_prices` ORDER BY `name` ASC;";
 		$dbo->setQuery($q);
-		$dbo->execute();
-		if ($dbo->getNumRows()) {
-			$rplans = $dbo->loadAssocList();
-		}
 
-		return $rplans;
+		return $dbo->loadAssocList();
 	}
 
 	/**
-	 * Internal function for this rule only.
+	 * Internal method for this rule only.
 	 * 
 	 * @return 	array
 	 * 
@@ -215,7 +211,7 @@ class VikBookingConditionalRuleRatePlans extends VikBookingConditionalRule
 	 */
 	protected function loadOTARatePlans()
 	{
-		$otarplans = array();
+		$otarplans = [];
 
 		if (!$this->isChannelManagerAvailable()) {
 			return $otarplans;
@@ -226,34 +222,31 @@ class VikBookingConditionalRuleRatePlans extends VikBookingConditionalRule
 		try {
 			$q = "SELECT `channel`,`otapricing` FROM `#__vikchannelmanager_roomsxref` ORDER BY `channel` ASC;";
 			$dbo->setQuery($q);
-			$dbo->execute();
-			if ($dbo->getNumRows()) {
-				$records = $dbo->loadAssocList();
-				foreach ($records as $ch) {
-					// make sure the channel name is readable
-					$ch['channel'] = $ch['channel'] == 'airbnbapi' ? 'airbnb' : $ch['channel'];
-					$ch_name = ucfirst($ch['channel']);
-					// decode mapped pricing information
-					$ch_pricing = json_decode($ch['otapricing'], true);
-					if (!is_array($ch_pricing) || !isset($ch_pricing['RatePlan']) ) {
+			$records = $dbo->loadAssocList();
+			foreach ($records as $ch) {
+				// make sure the channel name is readable
+				$ch['channel'] = $ch['channel'] == 'airbnbapi' ? 'airbnb' : $ch['channel'];
+				$ch_name = ucfirst($ch['channel']);
+				// decode mapped pricing information
+				$ch_pricing = json_decode($ch['otapricing'], true);
+				if (!is_array($ch_pricing) || !isset($ch_pricing['RatePlan']) ) {
+					continue;
+				}
+				if (!isset($otarplans[$ch_name])) {
+					$otarplans[$ch_name] = [];
+				}
+				foreach ($ch_pricing['RatePlan'] as $rpid => $rpdata) {
+					if (empty($rpdata['name'])) {
 						continue;
 					}
-					if (!isset($otarplans[$ch_name])) {
-						$otarplans[$ch_name] = array();
+					$rplan_name = ucwords($rpdata['name']);
+					if (in_array($rplan_name, $otarplans[$ch_name])) {
+						continue;
 					}
-					foreach ($ch_pricing['RatePlan'] as $rpid => $rpdata) {
-						if (empty($rpdata['name'])) {
-							continue;
-						}
-						$rplan_name = ucwords($rpdata['name']);
-						if (in_array($rplan_name, $otarplans[$ch_name])) {
-							continue;
-						}
-						array_push($otarplans[$ch_name], $rplan_name);
-					}
-					if (!count($otarplans[$ch_name])) {
-						unset($otarplans[$ch_name]);
-					}
+					array_push($otarplans[$ch_name], $rplan_name);
+				}
+				if (!$otarplans[$ch_name]) {
+					unset($otarplans[$ch_name]);
 				}
 			}
 		} catch (Exception $e) {
@@ -262,5 +255,4 @@ class VikBookingConditionalRuleRatePlans extends VikBookingConditionalRule
 
 		return $otarplans;
 	}
-
 }

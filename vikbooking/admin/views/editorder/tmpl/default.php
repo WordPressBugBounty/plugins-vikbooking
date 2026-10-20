@@ -13,7 +13,6 @@ defined('ABSPATH') or die('No script kiddies please!');
 $row = $this->row;
 $rooms = $this->rooms;
 $busy = $this->busy;
-$customer = $this->customer;
 $payments = $this->payments;
 
 // load registry and history
@@ -91,7 +90,7 @@ if ($nowdf == "%d/%m/%Y") {
 $datesep = VikBooking::getDateSeparator(true);
 $vbo_modals_html = array();
 $payment = VikBooking::getPayment($row['idpayment']);
-$pactive_tab = VikRequest::getString('vbo_active_tab', 'vbo-tab-details', 'request');
+$pactive_tab = preg_replace('/[^A-Z0-9\-\_]/i', '', VikRequest::getString('vbo_active_tab', 'vbo-tab-details', 'request'));
 $printreceipt = VikRequest::getInt('print', 0, 'request');
 $printreceipt = ($printreceipt > 0);
 if ($printreceipt) {
@@ -365,7 +364,7 @@ function toggleDiscount(elem) {
 				</div>
 			</div>
 		<?php
-		if (!$printreceipt && $customer) {
+		if (!$printreceipt && $this->customer) {
 		?>
 			<div class="vbo-bookdet-wrap">
 				<div class="vbo-bookdet-head">
@@ -374,21 +373,21 @@ function toggleDiscount(elem) {
 				<div class="vbo-bookdet-foot">
 					<div class="vbo-customer-info-box">
 						<div class="vbo-customer-info-box-name">
-							<?php echo (isset($customer['country_img']) ? $customer['country_img'] . ' ' : ''); ?>
+							<?php echo (isset($this->customer['country_img']) ? $this->customer['country_img'] . ' ' : ''); ?>
 
 							<?php if ($canDo->authorise('core.edit', 'com_vikbooking') && $canDo->authorise('core.vbo.management', 'com_vikbooking')): ?>
-								<a href="index.php?option=com_vikbooking&task=editcustomer&cid[]=<?php echo $customer['id']; ?>&goto=<?php echo base64_encode($gotouri); ?>"><?php echo ltrim($customer['first_name'] . ' ' . $customer['last_name']); ?></a>
+								<a href="index.php?option=com_vikbooking&task=editcustomer&cid[]=<?php echo $this->customer['id']; ?>&goto=<?php echo base64_encode($gotouri); ?>"><?php echo ltrim($this->customer['first_name'] . ' ' . $this->customer['last_name']); ?></a>
 							<?php else: ?>
-								<?php echo ltrim($customer['first_name'] . ' ' . $customer['last_name']); ?>
+								<?php echo ltrim($this->customer['first_name'] . ' ' . $this->customer['last_name']); ?>
 							<?php endif; ?>
 						</div>
 					<?php
-					if (!empty($customer['pic'])) {
-						$avatar_caption = ltrim($customer['first_name'] . ' ' . $customer['last_name']);
+					if (!empty($this->customer['pic'])) {
+						$avatar_caption = ltrim($this->customer['first_name'] . ' ' . $this->customer['last_name']);
 						?>
 						<div class="vbo-customer-info-box-avatar vbo-customer-avatar-small">
 							<span>
-								<img src="<?php echo strpos($customer['pic'], 'http') === 0 ? $customer['pic'] : VBO_SITE_URI . 'resources/uploads/' . $customer['pic']; ?>" data-caption="<?php echo htmlspecialchars($avatar_caption); ?>" />
+								<img src="<?php echo strpos($this->customer['pic'], 'http') === 0 ? $this->customer['pic'] : VBO_SITE_URI . 'resources/uploads/' . $this->customer['pic']; ?>" data-caption="<?php echo htmlspecialchars($avatar_caption); ?>" />
 							</span>
 						</div>
 						<?php
@@ -470,7 +469,7 @@ function toggleDiscount(elem) {
 					break;
 				default:
 					$checked_status = JText::translate('VBOCHECKEDSTATUSZERO');
-					if ($customer && isset($customer['pax_data']) && !empty($customer['pax_data'])) {
+					if ($this->customer && isset($this->customer['pax_data']) && !empty($this->customer['pax_data'])) {
 						// pre check-in performed via front-end
 						$checked_status = JText::translate('VBOCHECKEDSTATUSPRECHECKIN');
 					}
@@ -569,6 +568,7 @@ function toggleDiscount(elem) {
 			if ($ota_logo_img === false) {
 				$ota_logo_img = $otachannel_name;
 			} else {
+				$ota_logo_img_small = VikBooking::getVcmChannelsLogo($row['channel'], true)->getTinyLogoURL();
 				$ota_logo_img = '<img src="'.$ota_logo_img.'" class="vbo-channelimg-medium"/>';
 			}
 			?>
@@ -1035,15 +1035,136 @@ JS
 		</div>
 
 		<?php
+		if (!$printreceipt && $this->alterationRequest && !$this->alterationRequest->data->isAlterationRequestAccepted()) {
+			?>
+		<div class="vbo-bookdet-container vbo-bookdet-top-message vbo-bookdet-alterreq-info">
+			<div class="vbo-bookdet-top-message-inner">
+			<?php
+			if ($this->alterationRequest->data->isAlterationRequestFromGuest()) {
+				?>
+				<div class="vbo-bookdet-top-message-info">
+					<span><?php echo JText::translate('VBO_GUEST_ALTERATION_RQ'); ?></span>
+				</div>
+				<?php
+			}
+			?>
+				<div class="vbo-bookdet-top-message-cta">
+					<button type="button" class="btn <?php echo $this->alterationRequest->data->isAlterationRequestPending() ? 'btn-warning' : 'vbo-config-btn'; ?> vbo-alterrq-trigger"><?php VikBookingIcons::e('circle-exclamation'); ?> <?php echo JText::translate('VBO_ALTERATION_RQ'); ?></button>
+				</div>
+			</div>
+		</div>
+		<script type="text/javascript">
+			VBOCore.DOMLoaded(() => {
+				document.querySelector('.vbo-alterrq-trigger')?.addEventListener('click', () => {
+					const alterReqPending = <?php echo $this->alterationRequest->data->isAlterationRequestFromGuest() && $this->alterationRequest->data->isAlterationRequestPending() ? 'true' : 'false'; ?>;
+					let footer_left = null;
+					let footer_right = null;
+					if (alterReqPending) {
+						// decline button
+						footer_left = document.createElement('button');
+						footer_left.setAttribute('type', 'button');
+						footer_left.classList.add('btn', 'btn-danger');
+						footer_left.innerText = <?php echo json_encode(JText::translate('VBO_DECLINE')); ?>;
+						footer_left.addEventListener('click', () => {
+							if (!confirm(<?php echo json_encode(sprintf('%s - %s', JText::translate('VBO_DECLINE'), JText::translate('VBO_WANT_PROCEED'))); ?>)) {
+								return;
+							}
+							VBOCore.emitEvent('vbo-alterrq-loading');
+							VBOCore.doAjax(
+								"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.update_reservation_alteration_request'); ?>",
+								{
+									bid: '<?php echo $row['id']; ?>',
+									alteration_id: '<?php echo (int) $this->alterationRequest->id; ?>',
+									status: 'DECLINED',
+								},
+								(success) => {
+									// stop loading
+									VBOCore.emitEvent('vbo-alterrq-loading');
+									// dismiss modal
+									VBOCore.emitEvent('vbo-alterrq-modal');
+									// reload the page
+									location.reload();
+								},
+								(error) => {
+									// display error message
+									alert(error.responseText);
+									// stop loading
+									VBOCore.emitEvent('vbo-alterrq-loading');
+								}
+							);
+						});
+                        // accept button
+                        footer_right = document.createElement('button');
+						footer_right.setAttribute('type', 'button');
+						footer_right.classList.add('btn', 'btn-success');
+						footer_right.innerText = <?php echo json_encode(JText::translate('VBO_ACCEPT')); ?>;
+						footer_right.addEventListener('click', () => {
+							if (!confirm(<?php echo json_encode(sprintf('%s - %s', JText::translate('VBO_ACCEPT'), JText::translate('VBO_WANT_PROCEED'))); ?>)) {
+								return;
+							}
+							VBOCore.emitEvent('vbo-alterrq-loading');
+							VBOCore.doAjax(
+								"<?php echo VikBooking::ajaxUrl('index.php?option=com_vikbooking&task=bookings.update_reservation_alteration_request'); ?>",
+								{
+									bid: '<?php echo $row['id']; ?>',
+									alteration_id: '<?php echo (int) $this->alterationRequest->id; ?>',
+									status: 'ACCEPTED',
+								},
+								(success) => {
+									// stop loading
+									VBOCore.emitEvent('vbo-alterrq-loading');
+									// dismiss modal
+									VBOCore.emitEvent('vbo-alterrq-modal');
+									// reload the page
+									location.reload();
+								},
+								(error) => {
+									// display error message
+									alert(error.responseText);
+									// stop loading
+									VBOCore.emitEvent('vbo-alterrq-loading');
+								}
+							);
+						});
+					}
+
+					let modalBody = VBOCore.displayModal({
+						suffix: 	   'vbo-alterrq',
+						extra_class:   'vbo-modal-rounded vbo-modal-tall',
+						title:         <?php echo json_encode(JText::translate('VBO_ALTERATION_RQ')); ?>,
+						body:          '',
+						body_prepend:  true,
+						footer_left:   footer_left,
+						footer_right:  footer_right,
+						draggable:     true,
+						loading_event: 'vbo-alterrq-loading',
+						dismiss_event: 'vbo-alterrq-dismiss',
+						onDismiss:     () => {
+							document.querySelector('.vbo-bookingdet-alterreq-helper-wrap').append(document.querySelector('.vbo-bookingdet-alterreq-helper'));
+						},
+					});
+
+					// append modal body
+					(modalBody[0] || modalBody).append(document.querySelector('.vbo-bookingdet-alterreq-helper'));
+				});
+				if (window.location.hash == '#alteration_request') {
+					setTimeout(function() {
+						document.querySelector('.vbo-alterrq-trigger')?.click();
+					}, 200);
+				}
+			});
+		</script>
+			<?php
+		}
 		if (!$printreceipt && $this->allows_conversion !== false) {
 			?>
-		<div class="vbo-bookdet-container vbo-bookdet-conv-currency">
-			<div class="vbo-bookdet-conv-currency-inner">
-				<div class="vbo-bookdet-conv-currency-info">
+		<div class="vbo-bookdet-container vbo-bookdet-top-message vbo-bookdet-conv-currency">
+			<div class="vbo-bookdet-top-message-inner">
+				<div class="vbo-bookdet-top-message-info">
 					<span><?php echo JText::sprintf('VBO_CONV_RES_OTA_CURRENCY', $this->conv_from_currency, $this->conv_to_currency); ?></span>
-					<span><?php echo JText::sprintf('VBO_CONV_RES_OTA_CURRENCY_EXC', ($this->conv_from_currency . ' ' . VikBooking::numberFormat($row['total'])), ($this->conv_to_currency . ' ' . VikBooking::numberFormat($this->allows_conversion))); ?></span>
+					<strong><?php echo JText::sprintf('VBO_CONV_RES_OTA_CURRENCY_EXC', ($this->conv_from_currency . ' ' . VikBooking::numberFormat($row['total'])), ($this->conv_to_currency . ' ' . VikBooking::numberFormat($this->allows_conversion))); ?></strong>
 				</div>
-				<div class="vbo-bookdet-conv-currency-apply">
+				<div class="vbo-bookdet-top-message-cta">
 					<a class="btn vbo-config-btn" onclick="return confirm(Joomla.JText._('VBO_CONV_RES_OTA_CURRENCY_APPLY') + '?');" href="index.php?option=com_vikbooking&task=editorder&cid[]=<?php echo $row['id']; ?>&do_ota_curr_conv=1"><?php VikBookingIcons::e('exchange-alt'); ?> <?php echo JText::translate('VBO_CONV_RES_OTA_CURRENCY_APPLY'); ?></a>
 				</div>
 			</div>
@@ -1107,12 +1228,12 @@ JS
 				// even if it cannot be a quote, we make sure it's just an inquiry for now
 				$createQuoteUri = 'index.php?option=com_vikbooking&view=managequote&' . http_build_query([
 					'customer' => [
-						'id'         => $customer['id'] ?? null,
-						'first_name' => $customer['first_name'] ?? null,
-						'last_name'  => $customer['last_name'] ?? null,
-						'email'      => $customer['email'] ?? null,
-						'phone'      => $customer['phone'] ?? null,
-						'country'    => $customer['country'] ?? null,
+						'id'         => $this->customer['id'] ?? null,
+						'first_name' => $this->customer['first_name'] ?? null,
+						'last_name'  => $this->customer['last_name'] ?? null,
+						'email'      => $this->customer['email'] ?? null,
+						'phone'      => $this->customer['phone'] ?? null,
+						'country'    => $this->customer['country'] ?? null,
 					],
 					'inquiry' => [
 						'checkin' => date('Y-m-d', $row['checkin']),
@@ -1295,9 +1416,10 @@ JS
 					// end prepare modal
 				} else {
 					// regular remove button with confirmation
+					$rmLink = VBOFactory::getPlatform()->getUri()->addCSRF(sprintf('index.php?option=com_vikbooking&task=removeorders&cid[]=%d&goto=%d', $row['id'], $row['id']));
 					?>
 				<div class="vbo-bookingdet-command">
-					<button type="button" class="btn btn-danger" onclick="if (confirm(Joomla.JText._('VBDELCONFIRM'))){document.location.href='index.php?option=com_vikbooking&task=removeorders&cid[]=<?php echo $row['id']; ?>&goto=<?php echo $row['id']; ?>';}"><?php VikBookingIcons::e('trash'); ?> <?php echo $row['status'] == 'cancelled' ? JText::translate('VBO_PURGERM_RESERVATION') : JText::translate('VBMAINEBUSYDEL'); ?></button>
+					<button type="button" class="btn btn-danger" onclick="if (confirm(Joomla.JText._('VBDELCONFIRM'))){document.location.href='<?php echo $rmLink; ?>';}"><?php VikBookingIcons::e('trash'); ?> <?php echo $row['status'] == 'cancelled' ? JText::translate('VBO_PURGERM_RESERVATION') : JText::translate('VBMAINEBUSYDEL'); ?></button>
 				</div>
 					<?php
 				}
@@ -2512,7 +2634,7 @@ JS
 				if (!$row['closure']) {
 					?>
 					<div class="vbo-bookingdet-admin-entry">
-						<label for="vbo-searchcust"><?php echo JText::translate($customer ? 'VBOASSIGNNEWCUST' : 'VBFILLCUSTFIELDS'); ?></label>
+						<label for="vbo-searchcust"><?php echo JText::translate($this->customer ? 'VBOASSIGNNEWCUST' : 'VBFILLCUSTFIELDS'); ?></label>
 						<span style="display: block;"><?php echo JText::translate('VBOSEARCHEXISTCUST'); ?></span>
 						<span class="vbo-eorder-assigncust" style="margin-bottom: 1px;">
 							<input type="text" id="vbo-searchcust" autocomplete="off" value="" placeholder="<?php echo JText::translate('VBOSEARCHCUSTBY'); ?>" size="30" style="margin-bottom: 0;" />
@@ -3837,7 +3959,7 @@ foreach ($vbo_modals_html as $modalhtml) {
 								],
 								'gen_ai' => [
 									'booking' => $row,
-									'customer' => $customer,
+									'customer' => $this->customer,
 									'environment' => 'booking',
 								],
 							];
@@ -3954,6 +4076,277 @@ foreach ($vbo_modals_html as $modalhtml) {
 				</div>
 			</div>
 		</div>
+	</div>
+</div>
+
+<div class="vbo-bookingdet-alterreq-helper-wrap" style="display: none;">
+	<div class="vbo-bookingdet-alterreq-helper">
+	<?php
+	if ($this->alterationRequest) {
+		$isAlterationReqPending = $this->alterationRequest->data->isAlterationRequestPending();
+		$isAlterationReqAccepted = $this->alterationRequest->data->isAlterationRequestAccepted();
+		$isAlterationReqCancelled = $this->alterationRequest->data->isAlterationRequestCancelled();
+		$alterationStatusCls = '';
+		if ($isAlterationReqPending) {
+			$alterationStatusCls = 'badge-warning';
+		} elseif ($isAlterationReqAccepted) {
+			$alterationStatusCls = 'badge-success';
+		} elseif ($isAlterationReqCancelled) {
+			$alterationStatusCls = 'badge-danger';
+		}
+		?>
+		<div class="vbo-resalterrq-header vbo-flex vbo-justify-between vbo-valign-center">
+			<div class="vbo-resalterrq-recap vbo-flex vbo-valign-center">
+			<?php
+			if (!empty($this->customer['pic'])) {
+				$avatar_caption = ltrim($this->customer['first_name'] . ' ' . $this->customer['last_name']);
+				?>
+				<span class="vbo-resalterrq-recap-avatar vbo-avatar vbo-avatar-img vbo-avatar-img-md">
+					<img src="<?php echo strpos($this->customer['pic'], 'http') === 0 ? $this->customer['pic'] : VBO_SITE_URI . 'resources/uploads/' . $this->customer['pic']; ?>" data-caption="<?php echo htmlspecialchars($avatar_caption); ?>" />
+				</span>
+				<?php
+			} else {
+				?>
+				<span class="vbo-resalterrq-recap-avatar vbo-avatar vbo-avatar-initials vbo-avatar-initials-md"><?php echo implode('', array_filter([substr(($this->customer['first_name'] ?? ''), 0, 1), substr(($this->customer['last_name'] ?? ''), 0, 1)])); ?></span>
+				<?php
+			}
+			?>
+				<div>
+					<strong><?php echo ltrim($this->customer['first_name'] . ' ' . $this->customer['last_name']); ?></strong>
+					<small> &middot; <span><?php echo JHtml::fetch('date', ($this->alterationRequest->updated_on ?? null ?: $this->alterationRequest->created_on), 'D, d M Y H:i:s'); ?></span></small>
+				</div>
+			</div>
+			<div class="vbo-resalterrq-res-id vbo-flex vbo-valign-center">
+				<span class="badge badge-medium <?php echo $alterationStatusCls; ?>"><?php echo htmlspecialchars(ucwords((string) ($this->alterationRequest->status ?? ''))); ?></span>
+			<?php
+			if (!empty($otachannel_name)) {
+				?>
+				<span class="vbo-resalterrq-res-id-label">
+					<span class="vbo-avatar vbo-avatar-img vbo-avatar-img-sm vbo-flex align-center"><?php echo ($ota_logo_img_small ?? null) ? '<img src="' . $ota_logo_img_small . '" />' : ''; ?></span>
+					<span><?php echo $otachannel_name; ?></span>
+					<strong><?php echo $registry->getProperty('idorderota', ''); ?></strong>
+				</span>
+				<?php
+			}
+			?>
+				<span class="vbo-resalterrq-res-id-label">
+					<span><?php echo JText::translate('VBMENUPMS'); ?></span>
+					<strong><?php echo $registry->getID(); ?></strong>
+				</span>
+			</div>
+		</div>
+		<div class="vbo-resalterrq-table">
+			<div class="vbo-resalterrq-tbl-row vbo-resalterrq-tbl-head">
+				<div><?php echo JText::translate('VBRENTALORD'); ?></div>
+				<div><?php echo JText::translate('VBO_ORIGINAL'); ?></div>
+				<div><?php echo JText::translate('VBO_REQUEST'); ?></div>
+			</div>
+			<div class="vbo-resalterrq-tbl-row">
+				<div class="vbo-resalterrq-tbl-label">
+					<?php VikBookingIcons::e('calendar-days'); ?>
+					<span><?php echo JText::translate('VBPICKUPAT'); ?></span>
+				</div>
+				<div class="vbo-resalterrq-tbl-original"><?php echo JHtml::fetch('date', date('Y-m-d H:i:s', $registry->getProperty('checkin')), 'D, d M Y', date_default_timezone_get()); ?></div>
+				<div class="vbo-resalterrq-tbl-difference">
+					<span><?php echo JHtml::fetch('date', date('Y-m-d H:i:s', $this->alterationRequest->data->getProperty('checkin')), 'D, d M Y', date_default_timezone_get()); ?></span>
+				<?php
+				if (date('Y-m-d', $registry->getProperty('checkin')) != date('Y-m-d', $this->alterationRequest->data->getProperty('checkin'))) {
+					// date has changed
+					$checkinDiffDays = $registry->diffInDays($registry->getProperty('checkin', 0), $this->alterationRequest->data->getProperty('checkin', 0));
+					$checkinDiffLabel = abs($checkinDiffDays) != 1 ? JText::translate('VBDAYS') : JText::translate('VBDAY');
+					?>
+					<span class="vbo-resalterrq-tbl-diff-badge"><?php echo sprintf('%s %s', ($checkinDiffDays > 0 ? '+' : '') . $checkinDiffDays, $checkinDiffLabel); ?></span>
+					<?php
+				} else {
+					// date is unchanged
+					?>
+					<span class="vbo-resalterrq-tbl-diff-unchanged"><?php echo JText::translate('VBO_UNCHANGED'); ?></span>
+					<?php
+				}
+				?>
+				</div>
+			</div>
+			<div class="vbo-resalterrq-tbl-row">
+				<div class="vbo-resalterrq-tbl-label">
+					<?php VikBookingIcons::e('calendar-days'); ?>
+					<span><?php echo JText::translate('VBRELEASEAT'); ?></span>
+				</div>
+				<div class="vbo-resalterrq-tbl-original"><?php echo JHtml::fetch('date', date('Y-m-d H:i:s', $registry->getProperty('checkout')), 'D, d M Y', date_default_timezone_get()); ?></div>
+				<div class="vbo-resalterrq-tbl-difference">
+					<span><?php echo JHtml::fetch('date', date('Y-m-d H:i:s', $this->alterationRequest->data->getProperty('checkout')), 'D, d M Y', date_default_timezone_get()); ?></span>
+				<?php
+				if (date('Y-m-d', $registry->getProperty('checkout')) != date('Y-m-d', $this->alterationRequest->data->getProperty('checkout'))) {
+					// date has changed
+					$checkoutDiffDays = $registry->diffInDays($registry->getProperty('checkout', 0), $this->alterationRequest->data->getProperty('checkout', 0));
+					$checkoutDiffLabel = abs($checkoutDiffDays) != 1 ? JText::translate('VBDAYS') : JText::translate('VBDAY');
+					?>
+					<span class="vbo-resalterrq-tbl-diff-badge"><?php echo sprintf('%s %s', ($checkoutDiffDays > 0 ? '+' : '') . $checkoutDiffDays, $checkoutDiffLabel); ?></span>
+					<?php
+				} else {
+					// date is unchanged
+					?>
+					<span class="vbo-resalterrq-tbl-diff-unchanged"><?php echo JText::translate('VBO_UNCHANGED'); ?></span>
+					<?php
+				}
+				?>
+				</div>
+			</div>
+			<div class="vbo-resalterrq-tbl-row">
+				<div class="vbo-resalterrq-tbl-label">
+					<?php VikBookingIcons::e('moon'); ?>
+					<span><?php echo JText::translate('VBDAYS'); ?></span>
+				</div>
+				<div class="vbo-resalterrq-tbl-original"><?php echo sprintf('%d %s', ((int) $registry->getProperty('days', 1)), ($registry->getProperty('days', 1) == 1 ? JText::translate('VBDAY') : JText::translate('VBDAYS'))); ?></div>
+				<div class="vbo-resalterrq-tbl-difference">
+					<span><?php echo sprintf('%d %s', (int) $this->alterationRequest->data->getProperty('days', 1), ($this->alterationRequest->data->getProperty('days', 1) == 1 ? JText::translate('VBDAY') : JText::translate('VBDAYS'))); ?></span>
+				<?php
+				if ($registry->getProperty('days') != $this->alterationRequest->data->getProperty('days')) {
+					// value has changed
+					$diffNights = intval($this->alterationRequest->data->getProperty('days')) - intval($registry->getProperty('days'));
+					$diffNightsLabel = abs($diffNights) != 1 ? JText::translate('VBDAYS') : JText::translate('VBDAY');
+					?>
+					<span class="vbo-resalterrq-tbl-diff-badge"><?php echo sprintf('%s %s', ($diffNights > 0 ? '+' : '') . $diffNights, $diffNightsLabel); ?></span>
+					<?php
+				} else {
+					// value is unchanged
+					?>
+					<span class="vbo-resalterrq-tbl-diff-unchanged"><?php echo JText::translate('VBO_UNCHANGED'); ?></span>
+					<?php
+				}
+				?>
+				</div>
+			</div>
+			<div class="vbo-resalterrq-tbl-row">
+				<div class="vbo-resalterrq-tbl-label">
+					<?php VikBookingIcons::e('users'); ?>
+					<span><?php echo JText::translate('VBPVIEWORDERSPEOPLE'); ?></span>
+				</div>
+			<?php
+			$origGuestsData = array_filter([
+				'adults'   => $registry->countTotalAdults(),
+				'children' => $registry->countTotalChildren(),
+				'pets'     => $registry->countTotalPets(),
+			]);
+			$requestGuestsData = array_filter([
+				'adults'   => $this->alterationRequest->data->countTotalAdults(),
+				'children' => $this->alterationRequest->data->countTotalChildren(),
+				'pets'     => $this->alterationRequest->data->countTotalPets(),
+			]);
+			$origGuestsStr = implode(', ', array_map(function(string $type, int $count) {
+				if ($type === 'adults') {
+					return sprintf('%d %s', $count, ($count === 1 ? JText::translate('VBMAILADULT'): JText::translate('VBMAILADULTS')));
+				}
+				if ($type === 'children') {
+					return sprintf('%d %s', $count, ($count === 1 ? JText::translate('VBMAILCHILD'): JText::translate('VBMAILCHILDREN')));
+				}
+				if ($type === 'pets') {
+					return sprintf('%d %s', $count, ($count === 1 ? JText::translate('VBO_PET'): JText::translate('VBO_PET')));
+				}
+				return sprintf('%d %s', $count, $type);
+			}, array_keys($origGuestsData), array_values($origGuestsData)));
+			$requestGuestsStr = implode(', ', array_map(function(string $type, int $count) {
+				if ($type === 'adults') {
+					return sprintf('%d %s', $count, ($count === 1 ? JText::translate('VBMAILADULT'): JText::translate('VBMAILADULTS')));
+				}
+				if ($type === 'children') {
+					return sprintf('%d %s', $count, ($count === 1 ? JText::translate('VBMAILCHILD'): JText::translate('VBMAILCHILDREN')));
+				}
+				if ($type === 'pets') {
+					return sprintf('%d %s', $count, ($count === 1 ? JText::translate('VBO_PET'): JText::translate('VBO_PET')));
+				}
+				return sprintf('%d %s', $count, $type);
+			}, array_keys($requestGuestsData), array_values($requestGuestsData)));
+			?>
+				<div class="vbo-resalterrq-tbl-original"><?php echo $origGuestsStr; ?></div>
+				<div class="vbo-resalterrq-tbl-difference">
+				<?php
+				if (array_sum(array_values($origGuestsData)) != array_sum(array_values($requestGuestsData))) {
+					// value has changed
+					?>
+					<strong class="vbo-base-color"><?php echo $requestGuestsStr; ?></strong>
+					<?php
+				} else {
+					// value is unchanged
+					?>
+					<span><?php echo $requestGuestsStr; ?></span>
+					<span class="vbo-resalterrq-tbl-diff-unchanged"><?php echo JText::translate('VBO_UNCHANGED'); ?></span>
+					<?php
+				}
+				?>
+				</div>
+			</div>
+			<div class="vbo-resalterrq-tbl-row">
+				<div class="vbo-resalterrq-tbl-label">
+					<?php VikBookingIcons::e('bed'); ?>
+					<span><?php echo JText::translate('VBPVIEWORDERSTHREE'); ?></span>
+				</div>
+				<div class="vbo-resalterrq-tbl-original"><?php echo implode(', ', $registry->getListingNames()); ?></div>
+				<div class="vbo-resalterrq-tbl-difference">
+				<?php
+				if ($registry->getBookedListingIds() != $this->alterationRequest->data->getBookedListingIds()) {
+					// value has changed
+					?>
+					<strong class="vbo-base-color"><?php echo implode(', ', $this->alterationRequest->data->getListingNames()); ?></strong>
+					<?php
+				} else {
+					// value is unchanged
+					?>
+					<span><?php echo implode(', ', $this->alterationRequest->data->getListingNames()); ?></span>
+					<span class="vbo-resalterrq-tbl-diff-unchanged"><?php echo JText::translate('VBO_UNCHANGED'); ?></span>
+					<?php
+				}
+				?>
+				</div>
+			</div>
+			<div class="vbo-resalterrq-tbl-row">
+				<div class="vbo-resalterrq-tbl-label">
+					<?php VikBookingIcons::e('wallet'); ?>
+					<span><?php echo JText::translate('VBPVIEWORDERSSEVEN'); ?></span>
+				</div>
+				<div class="vbo-resalterrq-tbl-original">
+					<span class="vbo-resalterrq-total"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($registry->getProperty('total', 0)), $currencysymb); ?></span>
+				</div>
+				<div class="vbo-resalterrq-tbl-difference">
+				<?php
+				if ($registry->getProperty('total', 0) != $this->alterationRequest->data->getProperty('total', 0)) {
+					// value has changed
+					?>
+					<span class="vbo-resalterrq-total vbo-base-color"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($this->alterationRequest->data->getProperty('total', 0)), $currencysymb); ?></span>
+					<?php
+				} else {
+					// value is unchanged
+					?>
+					<span class="vbo-resalterrq-total"><?php echo VikBooking::formatCurrencyNumber(VikBooking::numberFormat($this->alterationRequest->data->getProperty('total', 0)), $currencysymb); ?></span>
+					<span class="vbo-resalterrq-tbl-diff-unchanged"><?php echo JText::translate('VBO_UNCHANGED'); ?></span>
+					<?php
+				}
+				?>
+				</div>
+			</div>
+		<?php
+		if (($ota_type_data['expected_payout'] ?? null) || $this->alterationRequest->data->getAlterationRequestProperty('expected_payout')) {
+			$alterationExpectedPayout = (float) $this->alterationRequest->data->getAlterationRequestProperty('expected_payout');
+			?>
+			<div class="vbo-resalterrq-tbl-row">
+				<div class="vbo-resalterrq-tbl-label">
+					<?php VikBookingIcons::e('hand-holding-dollar'); ?>
+					<span><?php echo JText::translate('VBO_EXPECTED_PAYOUT'); ?></span>
+				</div>
+				<div class="vbo-resalterrq-tbl-original">
+					<span><?php echo ($ota_type_data['expected_payout'] ?? null) ? VikBooking::formatCurrencyNumber(VikBooking::numberFormat((float) $ota_type_data['expected_payout']), $currencysymb) : ''; ?></span>
+				</div>
+				<div class="vbo-resalterrq-tbl-difference">
+					<span class="vbo-base-color"><?php echo $alterationExpectedPayout ? VikBooking::formatCurrencyNumber(VikBooking::numberFormat($alterationExpectedPayout), $currencysymb) : ''; ?></span>
+				</div>
+			</div>
+			<?php
+		}
+		?>
+
+		</div>
+		<?php
+	}
+	?>
 	</div>
 </div>
 
@@ -4181,7 +4574,7 @@ jQuery(function() {
 		jQuery("#"+newtabrel).fadeIn();
 		jQuery("#vbo_active_tab").val(newtabrel);
 	});
-	jQuery(".vbo-bookingdet-tab[data-vbotab='<?php echo $pactive_tab; ?>']").trigger('click');
+	jQuery(".vbo-bookingdet-tab[data-vbotab='<?php echo JHtml::fetch('esc_attr', $pactive_tab); ?>']").trigger('click');
 	// edit amount paid
 	jQuery('#vbo-amountpaid-edit').click(function() {
 		jQuery('#vbo-amountpaid-cont').hide();

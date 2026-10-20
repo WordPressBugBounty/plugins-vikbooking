@@ -175,6 +175,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 		$from_date = $input->getString('from_date', '');
 		$to_date   = $input->getString('to_date', '');
 		$unread    = $input->getBool('unread', false);
+		$failures  = $input->getBool('failures', false);
 
 		// access the notification-center object
 		$notifCenter = new VBONotificationCenter;
@@ -216,6 +217,16 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 			];
 		}
 
+		if ($failures) {
+			// make the filter a non-scalar value
+			$filters['type'] = [
+				[
+					'operand' => 'REGEXP',
+					'value'   => '\\.(err|nok)',
+				],
+			];
+		}
+
 		// get and build the latest notifications for the requested group
 		$html_content = $this->buildNotificationsHTML(
 			$notifCenter->loadNotifications(0, $this->records_per_page, $filters)
@@ -246,6 +257,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 		$from_date = $input->getString('from_date', '');
 		$to_date   = $input->getString('to_date', '');
 		$unread    = $input->getBool('unread', false);
+		$failures  = $input->getBool('failures', false);
 		$page_num  = $input->getUInt('page_num', 1);
 		$page_num  = $page_num ?: 1;
 
@@ -285,6 +297,16 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				[
 					'operand' => '=',
 					'value'   => '0',
+				],
+			];
+		}
+
+		if ($failures) {
+			// make the filter a non-scalar value
+			$filters['type'] = [
+				[
+					'operand' => 'REGEXP',
+					'value'   => '\\.(err|nok)',
 				],
 			];
 		}
@@ -494,9 +516,13 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 							<div class="vbo-reportwidget-filter vbo-widget-notifscenter-markread">
 								<span class="vbo-widget-notifscenter-read-all"><?php echo JText::translate('VBO_MARK_ALL_READ'); ?></span>
 							</div>
-							<div class="vbo-reportwidget-filter vbo-widget-notifscenter-onlyunread">
-								<span class="vbo-widget-notifscenter-filter-lbl"><?php echo JText::translate('VBO_ONLY_UNREAD'); ?></span>
-								<span class="vbo-widget-notifscenter-filter-val"><?php echo $this->vbo_app->printYesNoButtons('onlyunread', JText::translate('VBYES'), JText::translate('VBNO'), 0, 1, 0); ?></span>
+							<div class="vbo-reportwidget-filter vbo-filter-justified vbo-widget-notifscenter-onlyunread">
+								<span class="vbo-widget-notifscenter-filter-lbl"><label for="onlyunread-on"><?php echo JText::translate('VBO_ONLY_UNREAD'); ?></label></span>
+								<span class="vbo-widget-notifscenter-filter-val vbo-toggle-mini"><?php echo $this->vbo_app->printYesNoButtons('onlyunread', JText::translate('VBYES'), JText::translate('VBNO'), 0, 1, 0); ?></span>
+							</div>
+							<div class="vbo-reportwidget-filter vbo-filter-justified vbo-widget-notifscenter-onlyfailures">
+								<span class="vbo-widget-notifscenter-filter-lbl"><label for="onlyfailures-on"><?php echo JText::translate('VBO_ONLY_FAILURES'); ?></label></span>
+								<span class="vbo-widget-notifscenter-filter-val vbo-toggle-mini"><?php echo $this->vbo_app->printYesNoButtons('onlyfailures', JText::translate('VBYES'), JText::translate('VBNO'), 0, 1, 0, '', ['red']); ?></span>
 							</div>
 							<div class="vbo-reportwidget-filter">
 								<span class="vbo-reportwidget-datepicker">
@@ -627,6 +653,10 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 					.find('.vbo-widget-notifscenter-onlyunread')
 					.find('input[type="checkbox"]')
 					.prop('checked');
+				let only_failures = widget_instance
+					.find('.vbo-widget-notifscenter-onlyfailures')
+					.find('input[type="checkbox"]')
+					.prop('checked');
 
 				// apply the filter attributes
 				notificationsList
@@ -635,6 +665,8 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 					.attr('data-date-to', to_date);
 				notificationsList
 					.attr('data-only-unread', (only_unread ? '1' : ''));
+				notificationsList
+					.attr('data-only-failures', (only_failures ? '1' : ''));
 
 				// update filter information node
 				if (from_date || to_date) {
@@ -696,6 +728,10 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 					.find('.vbo-widget-notifscenter-onlyunread')
 					.find('input[type="checkbox"]')
 					.prop('checked', false);
+				widget_instance
+					.find('.vbo-widget-notifscenter-onlyfailures')
+					.find('input[type="checkbox"]')
+					.prop('checked', false);
 
 				// update the filter attributes
 				notificationsList
@@ -704,6 +740,8 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 					.attr('data-date-to', '');
 				notificationsList
 					.attr('data-only-unread', '');
+				notificationsList
+					.attr('data-only-failures', '');
 
 				// update filter information node
 				widget_instance
@@ -791,7 +829,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 			 * Reloads the notifications for the current group.
 			 */
 			function vboWidgetNotifsCenterReloadNotifs(wrapper) {
-				var notificationsList = document
+				const notificationsList = document
 					.querySelector('#' + wrapper)
 					.querySelector('.vbo-widget-notifscenter-list');
 
@@ -807,15 +845,16 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				}
 
 				// get the current group
-				var group_id = notificationsList.getAttribute('data-group-id');
+				const group_id = notificationsList.getAttribute('data-group-id');
 
 				// get the search filters, if any
-				var from_date   = notificationsList.getAttribute('data-date-from');
-				var to_date     = notificationsList.getAttribute('data-date-to');
-				var only_unread = notificationsList.getAttribute('data-only-unread');
+				let from_date     = notificationsList.getAttribute('data-date-from');
+				let to_date       = notificationsList.getAttribute('data-date-to');
+				let only_unread   = notificationsList.getAttribute('data-only-unread');
+				let only_failures = notificationsList.getAttribute('data-only-failures');
 
 				// the widget method to call
-				var call_method = 'loadGroupNotifications';
+				let call_method = 'loadGroupNotifications';
 
 				// make a request to load the notifications for the current group
 				VBOCore.doAjax(
@@ -828,6 +867,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 						from_date: from_date,
 						to_date:   to_date,
 						unread:    only_unread,
+						failures:  only_failures,
 						wrapper:   wrapper,
 						tmpl:      "component"
 					},
@@ -881,7 +921,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 			 * Loads the next page of notifications.
 			 */
 			function vboWidgetNotifsCenterLoadNextPage(wrapper) {
-				var notificationsList = document
+				const notificationsList = document
 					.querySelector('#' + wrapper)
 					.querySelector('.vbo-widget-notifscenter-list');
 
@@ -890,8 +930,8 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 				}
 
 				// ensure we've got other pages to load
-				var pageNumber = parseInt(notificationsList.getAttribute('data-page-number')) || 1;
-				var pagesCount = parseInt(notificationsList.getAttribute('data-pages-count')) || 1;
+				let pageNumber = parseInt(notificationsList.getAttribute('data-page-number')) || 1;
+				let pagesCount = parseInt(notificationsList.getAttribute('data-pages-count')) || 1;
 
 				if (pageNumber >= pagesCount) {
 					// no more pages available, abort
@@ -905,15 +945,16 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 					.insertAdjacentHTML('beforeend', vboWidgetNotifsCenterGetSkeletons());
 
 				// get the current group
-				var group_id = notificationsList.getAttribute('data-group-id');
+				const group_id = notificationsList.getAttribute('data-group-id');
 
 				// get the search filters, if any
-				var from_date   = notificationsList.getAttribute('data-date-from');
-				var to_date     = notificationsList.getAttribute('data-date-to');
-				var only_unread = notificationsList.getAttribute('data-only-unread');
+				let from_date     = notificationsList.getAttribute('data-date-from');
+				let to_date       = notificationsList.getAttribute('data-date-to');
+				let only_unread   = notificationsList.getAttribute('data-only-unread');
+				let only_failures = notificationsList.getAttribute('data-only-failures');
 
 				// the widget method to call
-				var call_method = 'loadNextNotifications';
+				let call_method = 'loadNextNotifications';
 
 				// make a request to load the next page of notifications for the current group
 				VBOCore.doAjax(
@@ -926,6 +967,7 @@ class VikBookingAdminWidgetNotificationsCenter extends VikBookingAdminWidget
 						from_date: from_date,
 						to_date:   to_date,
 						unread:    only_unread,
+						failures:  only_failures,
 						page_num:  parseInt(pageNumber) + 1,
 						wrapper:   wrapper,
 						tmpl:      "component"

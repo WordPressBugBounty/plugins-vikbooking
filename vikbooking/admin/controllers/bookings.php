@@ -1323,20 +1323,65 @@ class VikBookingControllerBookings extends JControllerAdmin
         }
 
         // do not check the history to see if previous passcode generation events occurred
-        // always simulate the creation of this booking
-        $generated = VBOFactory::getDoorAccessControl()->processBookingConfirmation($registry->getData(), $registry->getRooms());
-
-        if ($registry->hasPreCheckedIn()) {
-            // simulate the pre-check-in completion of the booking
-            $generatedTwo = VBOFactory::getDoorAccessControl()->processPrecheckinCompleted($registry->getData(), $registry->getRooms());
-        }
-
-        // evaluate result
-        $generated = $generated || $generatedTwo;
+        // re-process booking passcode generation
+        $generated = VBOFactory::getDoorAccessControl()->reprocessBookingGeneration($registry);
 
         // complete with a successful message
         $app->enqueueMessage(JText::translate('VBO_W_DOORACCESSCONTROL_TITLE'), ($generated ? 'success' : 'warning'));
         $app->redirect('index.php?option=com_vikbooking&task=editorder&cid[]=' . $bookingId);
         $app->close();
+    }
+
+    /**
+     * AJAX endpoint to update a reservation alteration request record.
+     * 
+     * @return  void
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function update_reservation_alteration_request()
+    {
+        $app = JFactory::getApplication();
+
+        if (!JSession::checkToken()) {
+            VBOHttpDocument::getInstance($app)->close(403, JText::translate('JINVALID_TOKEN'));
+        }        
+
+        // gather request values
+        $bookingId = $app->input->getUInt('bid', 0);
+        $alterationId = $app->input->getUInt('alteration_id', 0);
+        $status = strtoupper((string) $app->input->getString('status', ''));
+
+        if (!$bookingId || !$alterationId) {
+            VBOHttpDocument::getInstance($app)->close(400, 'Missing booking or alteration ID.');
+        }
+
+        if (!in_array($status, ['ACCEPTED', 'DECLINED', 'CANCELLED', 'CANCELED'])) {
+            VBOHttpDocument::getInstance($app)->close(400, 'Unknown reservation alteration request status given.');
+        }
+
+        // access model
+        $model = VBOMvcModel::getInstance('alterationrequest');
+
+        try {
+            // load booking registry
+            $registry = VBOBookingRegistry::getInstance(['id' => $bookingId]);
+
+            // load reservation alteration request record
+            $alterationRequest = $model->getItem($alterationId);
+            if (!$alterationRequest) {
+                throw new Exception('Could not find the reservation alteration request record requested.', 404);
+            }
+
+            // update alteration request status
+            $model->updateStatus($registry, $alterationRequest, $status);
+        } catch (Exception $e) {
+            VBOHttpDocument::getInstance($app)->close($e->getCode(), $e->getMessage());
+        }
+
+        // process completed
+        VBOHttpDocument::getInstance($app)->json([
+            'success' => true,
+        ]);
     }
 }

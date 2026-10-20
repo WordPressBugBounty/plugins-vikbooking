@@ -267,7 +267,7 @@ class VikBookingController extends JControllerVikBooking
 
 	public function pmsreports() {
 		if (!JFactory::getUser()->authorise('core.vbo.pms', 'com_vikbooking') && !JFactory::getUser()->authorise('core.vbo.pmsreports', 'com_vikbooking')) {
-			VBOHttpDocument::getInstance($app)->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
 		}
 
 		VikBookingHelper::printHeader("pmsreports");
@@ -1920,6 +1920,10 @@ class VikBookingController extends JControllerVikBooking
 
 	public function updatebusy()
 	{
+		if (!JSession::checkToken()) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		if (!JFactory::getUser()->authorise('core.edit', 'com_vikbooking')) {
 			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
 		}
@@ -1929,6 +1933,10 @@ class VikBookingController extends JControllerVikBooking
 
 	public function updatebusydoinv()
 	{
+		if (!JSession::checkToken()) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		if (!JFactory::getUser()->authorise('core.edit', 'com_vikbooking')) {
 			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
 		}
@@ -3225,6 +3233,10 @@ class VikBookingController extends JControllerVikBooking
 
 	public function removebusy()
 	{
+		if (!JSession::checkToken()) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		if (!JFactory::getUser()->authorise('core.delete', 'com_vikbooking')) {
 			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
 		}
@@ -7812,6 +7824,10 @@ class VikBookingController extends JControllerVikBooking
 
 	public function removeorders()
 	{
+		if (!JSession::checkToken() && !JSession::checkToken('get')) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		if (!JFactory::getUser()->authorise('core.delete', 'com_vikbooking')) {
 			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
 		}
@@ -12294,6 +12310,10 @@ jQuery(".' . $selector . '").hover(function() {
 	}
 
 	public function icsexportlaunch() {
+		if (!JSession::checkToken()) {
+			throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+		}
+
 		$dbo = JFactory::getDBO();
 		$pcheckindate = VikRequest::getString('checkindate', '', 'request');
 		$pcheckoutdate = VikRequest::getString('checkoutdate', '', 'request');
@@ -12407,6 +12427,10 @@ jQuery(".' . $selector . '").hover(function() {
 
 	public function csvexportlaunch()
 	{
+		if (!JSession::checkToken()) {
+			throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+		}
+
 		$dbo = JFactory::getDbo();
 		$app = JFactory::getApplication();
 
@@ -12934,7 +12958,10 @@ jQuery(".' . $selector . '").hover(function() {
 	}
 
 	public function exportcustomerslaunch() {
-		$cid = VikRequest::getVar('cid', array(0));
+		if (!JSession::checkToken()) {
+			throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+		}
+		$cid = array_map('intval', (array) VikRequest::getVar('cid', []));
 		$dbo = JFactory::getDBO();
 		$pnotes = VikRequest::getInt('notes', '', 'request');
 		$pscanimg = VikRequest::getInt('scanimg', '', 'request');
@@ -14111,7 +14138,7 @@ jQuery(".' . $selector . '").hover(function() {
 
 		if (!is_file($path)) 
 		{
-			VBOHttpDocument::getInstance($app)->close(404, sprintf('File [%s] not found', $path));
+			VBOHttpDocument::getInstance($app)->close(404, 'File path not found');
 		}
 
 		/**
@@ -15281,6 +15308,10 @@ jQuery(".' . $selector . '").hover(function() {
 	 */
 	public function condtext_update_tmpl()
 	{
+		if (!JSession::checkToken()) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+		}
+
 		VikBooking::getConditionalRulesInstance(true);
 
 		$tagaction = VikRequest::getString('tagaction', '', 'request');
@@ -15297,19 +15328,19 @@ jQuery(".' . $selector . '").hover(function() {
 		);
 
 		if (empty($tagaction) || empty($file) || !in_array($tagaction, $allowed_actions)) {
-			throw new Exception("Invalid request submitted", 500);
+			VBOHttpDocument::getInstance()->close(500, "Invalid request submitted");
 		}
 
 		if (in_array($tagaction, array('add', 'remove')) && empty($tag)) {
-			throw new Exception("Invalid request submitted - missing tag", 500);
+			VBOHttpDocument::getInstance()->close(500, "Invalid request submitted - missing tag");
 		}
 
 		if (in_array($tagaction, array('add', 'styles')) && empty($newcontent)) {
-			throw new Exception("Invalid request submitted - missing new HTML content", 500);
+			VBOHttpDocument::getInstance()->close(500, "Invalid request submitted - missing new HTML content");
 		}
 
 		if ($tagaction == 'styles' && (!is_array($custom_classes) || !count($custom_classes))) {
-			throw new Exception("No custom CSS classes to parse", 500);
+			VBOHttpDocument::getInstance()->close(500, "No custom CSS classes to parse");
 		}
 
 		if ($tagaction == 'restore') {
@@ -15320,7 +15351,7 @@ jQuery(".' . $selector . '").hover(function() {
 		// get requested file content
 		$fcontent = VikBookingHelperConditionalRules::getTemplateFileCode($file);
 		if (empty($fcontent) || !is_string($fcontent)) {
-			throw new Exception("File not found or its code is unreadable", 404);
+			VBOHttpDocument::getInstance()->close(404, "File not found or its code is unreadable");
 		}
 
 		if ($tagaction == 'remove') {
@@ -15338,13 +15369,13 @@ jQuery(".' . $selector . '").hover(function() {
 		$res = VikBookingHelperConditionalRules::writeTemplateFileCode($file, $fcontent);
 
 		if (!$res) {
-			throw new Exception("Could not update the source code of the template file", 500);
+			VBOHttpDocument::getInstance()->close(500, "Could not update the source code of the template file");
 		}
 
 		// parse new HTML content
 		$newhtmls = VikBookingHelperConditionalRules::getTemplateFilesContents($file);
 		if (!is_array($newhtmls) || !isset($newhtmls[$file])) {
-			throw new Exception("Could not parse new template file content", 404);
+			VBOHttpDocument::getInstance()->close(404, "Could not parse new template file content");
 		}
 
 		// trigger backup/mirroring, if available
@@ -15357,8 +15388,7 @@ jQuery(".' . $selector . '").hover(function() {
 		$output->newhtml = $newhtmls[$file];
 		$output->log = VikBookingHelperConditionalRules::getEditingLog();
 		
-		echo json_encode($output);
-		exit;
+		VBOHttpDocument::getInstance()->json($output);
 	}
 
 	/**

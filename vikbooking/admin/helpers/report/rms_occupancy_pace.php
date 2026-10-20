@@ -1349,7 +1349,7 @@ JAVASCRIPT;
                     </div>
                     HTML;
 
-                    // RevPAR
+                    // RevPar
                     $metrics = $allMetrics['revpar'] ?? [];
                     $blockTitle = JText::translate('VBOREPORTREVENUEREVPAR');
                     $blockMetricsTpl = '';

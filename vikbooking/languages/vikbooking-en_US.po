@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2026-10-01 17:53+0200\n"
-"PO-Revision-Date: 2026-10-01 17:53+0200\n"
+"POT-Creation-Date: 2026-10-20 19:15+0200\n"
+"PO-Revision-Date: 2026-10-20 19:15+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: en_US\n"
@@ -10544,7 +10544,7 @@ msgstr "Negative values will allow to access past dates."
 msgid "Credit Card"
 msgstr "Credit Card"
 
-#: libraries/language/admin.php:6937
+#: libraries/language/admin.php:6937 libraries/language/admin.php:8759
 msgid "AI"
 msgstr "AI"
 
@@ -13290,7 +13290,6 @@ msgstr ""
 "using a fixed access code."
 
 #: libraries/language/admin.php:8700
-#| msgid "Create Passcode"
 msgid "Create Tasks"
 msgstr "Create Tasks"
 
@@ -13299,13 +13298,106 @@ msgid "This setting affects the App for iOS and Android."
 msgstr "This setting affects the App for iOS and Android."
 
 #: libraries/language/admin.php:8706
-#| msgid "Phone"
 msgid "Phone Alias"
 msgstr "Phone Alias"
 
 #: libraries/language/admin.php:8709
 msgid "Calls to this number are forwarded to the guest's actual phone number."
 msgstr "Calls to this number are forwarded to the guest's actual phone number."
+
+#: libraries/language/admin.php:8712
+msgid "Failures"
+msgstr "Failures"
+
+#: libraries/language/admin.php:8715
+msgid "Only failures"
+msgstr "Only failures"
+
+#: libraries/language/admin.php:8718
+msgid "Sync OTAs"
+msgstr "Sync OTAs"
+
+#: libraries/language/admin.php:8721
+msgid ""
+"Synchronize smart locks and passcodes with eligible OTAs (e.g. Airbnb "
+"Seamless Entry)."
+msgstr ""
+"Synchronize smart locks and passcodes with eligible OTAs (e.g. Airbnb "
+"Seamless Entry)."
+
+#: libraries/language/admin.php:8724
+msgid "Instructions"
+msgstr "Instructions"
+
+#: libraries/language/admin.php:8727
+msgid "Unlock instructions"
+msgstr "Unlock instructions"
+
+#: libraries/language/admin.php:8730
+msgid "Alteration Request"
+msgstr "Alteration Request"
+
+#: libraries/language/admin.php:8733
+msgid "The guest requested an alteration of the current reservation."
+msgstr "The guest requested an alteration of the current reservation."
+
+#. TRANSLATORS: Original reservation value, like check-in date before modification.
+#: libraries/language/admin.php:8737
+msgctxt "Original reservation value, like check-in date before modification."
+msgid "Original"
+msgstr "Original"
+
+#. TRANSLATORS: Reservation value requested for modification, like new check-in date.
+#: libraries/language/admin.php:8741
+msgctxt "Reservation value requested for modification, like new check-in date."
+msgid "Request"
+msgstr "Request"
+
+#: libraries/language/admin.php:8744
+msgid "Unchanged"
+msgstr "Unchanged"
+
+#: libraries/language/admin.php:8747 libraries/language/site.php:2579
+msgid "Accept"
+msgstr "Accept"
+
+#: libraries/language/admin.php:8750
+msgid "Decline"
+msgstr "Decline"
+
+#: libraries/language/admin.php:8753
+msgid "Alteration request received"
+msgstr "Alteration request received"
+
+#: libraries/language/admin.php:8756
+msgid "Alteration request updated"
+msgstr "Alteration request updated"
+
+#: libraries/language/admin.php:8762
+msgid "Guest phone number detected in conversation."
+msgstr "Guest phone number detected in conversation."
+
+#: libraries/language/admin.php:8765
+#| msgid "Phone Number"
+msgid "Guest phone number"
+msgstr "Guest phone number"
+
+#: libraries/language/admin.php:8768
+#| msgid "Missing sub-unit"
+msgid "Missing"
+msgstr "Missing"
+
+#: libraries/language/admin.php:8771
+msgid ""
+"Choose whether to target all OTA reservations or only those without a guest "
+"phone number. When \"Missing\" is selected, reservations with temporary or "
+"alias phone numbers will also be excluded, as some OTAs may redact phone "
+"numbers shared through messages."
+msgstr ""
+"Choose whether to target all OTA reservations or only those without a guest "
+"phone number. When \"Missing\" is selected, reservations with temporary or "
+"alias phone numbers will also be excluded, as some OTAs may redact phone "
+"numbers shared through messages."
 
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
@@ -16215,10 +16307,6 @@ msgstr "This quote has expired and is no longer available."
 msgid "This quote has been cancelled and is no longer available."
 msgstr "This quote has been cancelled and is no longer available."
 
-#: libraries/language/site.php:2579
-msgid "Accept"
-msgstr "Accept"
-
 #: libraries/language/site.php:2582
 msgid "Proceed to payment to confirm your booking."
 msgstr "Proceed to payment to confirm your booking."
@@ -16527,11 +16615,11 @@ msgstr "Preview is not available"
 
 #: libraries/language/system.php:628
 msgid ""
-"The Pro license for VikBooking has expired. Do not install any updates or "
-"you will downgrade the plugin to the Free version."
+"Your Pro license for VikBooking has expired. Updating the plugin will switch "
+"it to the Free version, disabling Pro features."
 msgstr ""
-"The Pro license for VikBooking has expired. Do not install any updates or "
-"you will downgrade the plugin to the Free version."
+"Your Pro license for VikBooking has expired. Updating the plugin will switch "
+"it to the Free version, disabling Pro features."
 
 #: libraries/lite/manager.php:74
 #, php-format

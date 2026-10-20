@@ -28,18 +28,11 @@ class VBOModelBackup extends JObject
 	 */
 	public function getItem($pk)
 	{
+		$folder = $this->getBackupFolder();
+
 		// check if we have a file path or a name
 		if (!JFile::exists($pk))
 		{
-			// fetch folder in which the backup are stored
-			$folder = VBOFactory::getConfig()->get('backupfolder');
-
-			if (!$folder)
-			{
-				// folder not specified, use the temporary folder
-				$folder = JFactory::getApplication()->get('tmp_path');
-			}
-
 			// build file path
 			$pk = rtrim($folder, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $pk;
 
@@ -48,6 +41,16 @@ class VBOModelBackup extends JObject
 				// backup not found
 				return null;
 			}
+		}
+
+		// fetch real path of the provided file to resolve traversal commands
+		$realpath = realpath(JPath::clean($pk));
+
+		// make sure the resulting path is actually inside the backup folder
+		if (strpos((string) $realpath, $folder) !== 0)
+		{
+			// the resulting path doesn't reside within the safe backup path
+			return null;
 		}
 
 		// get running platform
@@ -180,13 +183,7 @@ class VBOModelBackup extends JObject
 			if (!$dest)
 			{
 				// folder not specified, use the default one
-				$dest = $config->get('backupfolder', null);
-			}
-
-			if (!$dest)
-			{
-				// use temporary folder if not specified
-				$dest = JFactory::getApplication()->get('tmp_path');
+				$dest = $this->getBackupFolder();
 			}
 
 			try
@@ -297,13 +294,7 @@ class VBOModelBackup extends JObject
 	public function moveArchives($path)
 	{
 		// get currently set folder
-		$current = VBOFactory::getConfig()->get('backupfolder');
-
-		if (!$current)
-		{
-			// folder not specified, use the default one
-			$current = JFactory::getApplication()->get('tmp_path');
-		}
+		$current = $this->getBackupFolder();
 
 		// load all backup archives
 		$files = JFolder::files($current, 'backup_', $recurse = false, $fullpath = true);
@@ -359,5 +350,26 @@ class VBOModelBackup extends JObject
 
 		// type not found
 		return null;
+	}
+
+	/**
+	 * Returns the path of the folder where the backups should be stored.
+	 * 
+	 * @return 	string
+	 * 
+	 * @since 	1.18.17 (J) - 1.8.17 (WP)
+	 */
+	public function getBackupFolder()
+	{
+		// fetch folder in which the backup are stored
+		$folder = VBOFactory::getConfig()->get('backupfolder');
+
+		if (!$folder)
+		{
+			// folder not specified, use the temporary folder
+			$folder = JFactory::getApplication()->get('tmp_path');
+		}
+
+		return $folder;		
 	}
 }

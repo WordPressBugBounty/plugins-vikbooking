@@ -249,8 +249,14 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 				// search for specific messages with the specified search filters
 				$latest_messages = $chat_messaging->searchMessages($search_filters, $offset, $length);
 			} else {
-				// regular loading of the latest guest messages with no search filters
-				$latest_messages = VikChannelManager::getLatestFromGuests(['guest_messages'], $offset, $length);
+				/**
+				 * Regular loading of the latest guest messages with no search filters.
+				 * Eventually include the conversation for a specific PMS/OTA booking ID,
+				 * which may not be available in the current cursor/offset and should be fetched.
+				 * 
+				 * @since 	1.18.17 (J) - 1.8.17 (WP) 4th argument requires VCM >= 1.9.30
+				 */
+				$latest_messages = VikChannelManager::getLatestFromGuests(['guest_messages'], $offset, $length, array_filter(['bid' => $bid_convo]));
 			}
 		} catch (Exception $e) {
 			// do nothing, but populate the error description
@@ -276,6 +282,12 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					break;
 				}
 			}
+			/**
+			 * The code below should no longer run, because getLatestFromGuests() now includes a specific
+			 * PMS/OTA reservation ID, if requested, hence the conversation must have been found already.
+			 * 
+			 * @since 	1.18.17 (J) - 1.8.17 (WP)
+			 */
 			if (!$bubble_convo && $chat_messaging) {
 				// updated VCM versions will allow us to fetch one conversation by booking ID
 				$booking_messages = $chat_messaging->loadBookingGuestThreads($bid_convo);
@@ -415,7 +427,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 								// print also an icon to inform that the message was not read
 								echo ' ';
 								VikBookingIcons::e('envelope', 'message-new');
-							} elseif (($gmessage->replied ?? 1) == 0 && !strcasecmp($gmessage->sender_type, 'guest')) {
+							} elseif (($gmessage->replied ?? 1) == 0 && !strcasecmp($gmessage->sender_type, 'guest') && !($gmessage->no_reply_needed ?? 0)) {
 								/**
 								 * Display a label to show that the message was not replied.
 								 * 
@@ -837,7 +849,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					</div>
 				</div>
 			</div>
-			<div id="<?php echo $wrapper_id; ?>" class="vbo-dashboard-guests-latest<?php echo $wrap_extra_class; ?>" data-offset="0" data-length="<?php echo $this->messages_per_page; ?>" data-eventsid="<?php echo $js_intvals_id; ?>" data-latestdt="">
+			<div id="<?php echo $wrapper_id; ?>" class="vbo-dashboard-guests-latest<?php echo $wrap_extra_class; ?>" data-offset="0" data-length="<?php echo $this->messages_per_page; ?>" data-eventsid="<?php echo $js_intvals_id; ?>" data-latestdt="" data-bidconvo="<?php echo JHtml::fetch('esc_attr', $bid_convo); ?>">
 				<div class="vbo-dashboard-guest-messages-inner">
 					<div class="vbo-w-guestmessages-list-container">
 						<div class="vbo-dashboard-guest-messages-list">
@@ -1266,11 +1278,11 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 										if (message_el.attr('data-noreply-needed') == 1) {
 											message_el.attr('data-noreply-needed', 0);
 											no_reply_needed_el.removeClass('label-danger');
-											// remove the reply button
-											message_el.find('.message-unreplied').remove();
 										} else {
 											message_el.attr('data-noreply-needed', 1);
 											no_reply_needed_el.addClass('label-danger');
+											// remove the reply button
+											message_el.find('.message-unreplied').remove();
 										}
 									}
 								} catch(err) {
@@ -1631,19 +1643,19 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 			 * Navigate between the various pages of the messages.
 			 */
 			function vboWidgetGuestMessagesNavigate(wrapper, direction) {
-				var widget_instance = jQuery('#' + wrapper);
+				const widget_instance = jQuery('#' + wrapper);
 				if (!widget_instance.length) {
 					return false;
 				}
 
 				// current offset
-				var current_offset = parseInt(widget_instance.attr('data-offset'));
+				let current_offset = parseInt(widget_instance.attr('data-offset'));
 
 				// steps per type
-				var steps = parseInt(widget_instance.attr('data-length'));
+				let steps = parseInt(widget_instance.attr('data-length'));
 
 				// determine the messages rendering method (paging or inbox, where "inbox" will likely never be on the first loading)
-				var mess_rendering_meth = widget_instance.hasClass('vbo-w-guestmessages-inboxstyle') ? 'inbox' : 'paging';
+				let mess_rendering_meth = widget_instance.hasClass('vbo-w-guestmessages-inboxstyle') ? 'inbox' : 'paging';
 
 				if (mess_rendering_meth != 'inbox') {
 					// show loading skeletons only when in chat "modal" style
@@ -1656,13 +1668,13 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 					widget_instance.attr('data-offset', (current_offset + steps));
 				} else {
 					// navigate backward
-					var new_offset = current_offset - steps;
+					let new_offset = current_offset - steps;
 					new_offset = new_offset >= 0 ? new_offset : 0;
 					widget_instance.attr('data-offset', new_offset);
 				}
-				
+
 				// launch navigation
-				vboWidgetGuestMessagesLoad(wrapper);
+				vboWidgetGuestMessagesLoad(wrapper, (widget_instance.attr('data-bidconvo') || null));
 			}
 
 			/**

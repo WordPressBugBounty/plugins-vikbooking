@@ -114,10 +114,12 @@ class VikBookingViewEditorder extends JViewVikBooking
 		$pcmms = VikRequest::getString('cmms', '', 'request');
 		$ptot_damage_dep = VikRequest::getString('tot_damage_dep', '', 'request');
 		$pcustmail = VikRequest::getString('custmail', '', 'request');
-		$pcustphone = VikRequest::getString('custphone', '', 'request');
 		$pmakepay = VikRequest::getInt('makepay', 0, 'request');
 		$pnewamountpaid = VikRequest::getFloat('newamountpaid', -1, 'request');
 		$pnewamountpaymeth = VikRequest::getString('newamountpaymeth', '', 'request');
+		// use a null default value (rather than an empty string) for the customer phone number
+		$pcustphone = VikRequest::getString('custphone', null, 'request');
+
 		// we update the total paid also if the input is 0.0 (float) as the default value is -1 (int)
 		if (($pnewamountpaid > 0 || ($pnewamountpaid == 0 && is_float($pnewamountpaid))) && (float)$row['totpaid'] != $pnewamountpaid) {
 			$prevpaid = (float)$row['totpaid'];
@@ -287,11 +289,12 @@ class VikBookingViewEditorder extends JViewVikBooking
 			$dbo->execute();
 			$row['custmail'] = $pcustmail;
 		}
-		if (strlen($pcustphone) > 0) {
-			$q = "UPDATE `#__vikbooking_orders` SET `phone`=".$dbo->quote($pcustphone)." WHERE `id`=".$row['id'].";";
+		if (!is_null($pcustphone)) {
+			// update phone number even if empty, but not null (form submitted with an empty string to unset it)
+			$q = "UPDATE `#__vikbooking_orders` SET `phone`=" . (!strlen((string) $pcustphone) ? 'NULL' : $dbo->q($pcustphone)) . " WHERE `id`=" . $row['id'] . ";";
 			$dbo->setQuery($q);
 			$dbo->execute();
-			$row['phone'] = $pcustphone;
+			$row['phone'] = $pcustphone ?: null;
 		}
 
 		/**
@@ -319,7 +322,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 		}
 
 		// load data
-		$q = "SELECT `or`.*,`r`.`name`,`r`.`fromadult`,`r`.`toadult`,`r`.`params` FROM `#__vikbooking_ordersrooms` AS `or`,`#__vikbooking_rooms` AS `r` WHERE `or`.`idorder`=".(int)$row['id']." AND `or`.`idroom`=`r`.`id` ORDER BY `or`.`id` ASC;";
+		$q = "SELECT `or`.*,`r`.`name`,`r`.`fromadult`,`r`.`toadult`,`r`.`units` AS `tot_units`,`r`.`params` FROM `#__vikbooking_ordersrooms` AS `or`,`#__vikbooking_rooms` AS `r` WHERE `or`.`idorder`=".(int)$row['id']." AND `or`.`idroom`=`r`.`id` ORDER BY `or`.`id` ASC;";
 		$dbo->setQuery($q);
 		$rooms = $dbo->loadAssocList();
 		$q = "SELECT * FROM `#__vikbooking_ordersbusy` WHERE `idorder`=".(int)$row['id'].";";
@@ -480,7 +483,14 @@ class VikBookingViewEditorder extends JViewVikBooking
 		$allows_conversion  = $ota_helper->supportsConversion($row['total']);
 		$conv_from_currency = $allows_conversion !== false ? $ota_helper->getOTACurrency() : null;
 		$conv_to_currency 	= $allows_conversion !== false ? $ota_helper->getCurrencyName() : null;
-				
+
+		/**
+		 * Load reservation alteration request data, if any.
+		 * 
+		 * @since 	1.18.17 (J) - 1.8.17 (WP)
+		 */
+		$alterationRequest = VBOMvcModel::getInstance('alterationrequest')->getItem(['idorder' => $row['id']]);
+
 		$this->row = $row;
 		$this->rooms = $rooms;
 		$this->busy = $busy;
@@ -495,6 +505,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 		$this->allows_conversion = $allows_conversion;
 		$this->conv_from_currency = $conv_from_currency;
 		$this->conv_to_currency = $conv_to_currency;
+		$this->alterationRequest = $alterationRequest;
 		
 		// Display the template
 		parent::display($tpl);

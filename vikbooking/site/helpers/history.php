@@ -114,6 +114,10 @@ class VboBookingHistory
 		'PC',
 		// Guest review received
 		'GR',
+		// Reservation Alteration Request received
+		'AL',
+		// Artificial Intelligence activity
+		'AI',
 	];
 
 	/**
@@ -323,6 +327,12 @@ class VboBookingHistory
 			'CD' => JText::translate('VBOBOOKHISTORYTCD'),
 			// Door Access Control - First access through device passcode
 			'FA' => JText::translate('VBOBOOKHISTORYTFA'),
+			// Reservation Alteration Request received
+			'AL' => JText::translate('VBOBOOKHISTORYTAL'),
+			// Reservation Alteration Request updated
+			'AU' => JText::translate('VBOBOOKHISTORYTAU'),
+			// Artificial Intelligence activity
+			'AI' => JText::translate('VBOBOOKHISTORYTAI'),
 		];
 	}
 
@@ -355,6 +365,12 @@ class VboBookingHistory
 					'IR',
 					'UR',
 					'OB',
+					'ND',
+					'MD',
+					'CD',
+					'FA',
+					'AL',
+					'AU',
 				],
 			],
 			// group "Channel Manager"
@@ -393,6 +409,16 @@ class VboBookingHistory
 					'PN',
 					'PO',
 					'RF',
+				],
+			],
+			// group "Task Manager"
+			'GTM' => [
+				'name' 	=> JText::translate('VBO_TASK_MANAGER'),
+				'types' => [
+					'TM',
+					'NT',
+					'MT',
+					'CT',
 				],
 			],
 		];
@@ -506,6 +532,9 @@ class VboBookingHistory
 		if (is_array(($booking['rooms_info'] ?? null)) && $booking['rooms_info']) {
 			// booking room records may be available within the booking record itself
 			$this->setBookingRooms($booking['rooms_info']);
+		} elseif (is_array(($booking['_rooms'] ?? null)) && $booking['_rooms']) {
+			// booking room records may be available within the booking record itself
+			$this->setBookingRooms($booking['_rooms']);
 		}
 
 		return $this;
@@ -638,15 +667,37 @@ class VboBookingHistory
 		 */
 		$storingSignature = implode('-', [$type, $this->bid]);
 
+		/**
+		 * Check if language should be loaded for generic history events (AI and Channel Manager).
+		 * 
+		 * @since 	1.18.17 (J) - 1.8.17 (WP)
+		 */
+		if (empty($descr) && in_array(strtoupper($type), ['AI', 'CM'])) {
+			// load language
+			$lang = JFactory::getLanguage();
+			$lang->load('com_vikbooking', (VBOPlatformDetection::isWordPress() ? VIKBOOKING_ADMIN_LANG : JPATH_ADMINISTRATOR), $lang->getTag(), true);
+		}
+
 		if (empty($descr) && $this->prevBooking) {
 			/**
 			 * VCM (including the App) could set the previous booking information,
 			 * so we need to calculate what has changed with the booking.
-			 * Load VBO language.
 			 */
-			$lang = JFactory::getLanguage();
-			$lang->load('com_vikbooking', (VBOPlatformDetection::isWordPress() ? VIKBOOKING_ADMIN_LANG : JPATH_ADMINISTRATOR), $lang->getTag(), true);
 			$descr = VikBooking::getLogBookingModification($this->prevBooking);
+		}
+
+		/**
+		 * Build event description in case of AI activity on reservation.
+		 * 
+		 * @since 	1.18.17 (J) - 1.8.17 (WP)
+		 */
+		if (empty($descr) && !strcasecmp($type, 'AI') && !empty($this->data)) {
+			// parse event data
+			$eventData = is_scalar($this->data) ? (array) json_decode($this->data, true) : $this->data;
+			if (!strcasecmp((string) ($eventData['type'] ?? ''), 'phonedetection')) {
+				// guest phone number was detected in conversation, build event description
+				$descr = JText::translate('VBO_AI_GPHONE_DETECTED') . (($eventData['phone'] ?? null) ? sprintf(" \n(%s)", (string) $eventData['phone'])  : '');
+			}
 		}
 
 		// get the event dispatcher
@@ -1323,6 +1374,27 @@ class VboBookingHistory
 					];
 				}
 			}
+
+			/**
+			 * Set proper CTA URL when a reservation alteration request is received (first time).
+			 * 
+			 * @since 	1.18.17 (J) - 1.8.17 (WP)
+			 */
+			if (!strcasecmp($history_record->type, 'AL')) {
+				// set call-to-action URL
+				$notif_payload_opts = [
+					'cta_url' => VBOFactory::getPlatform()->getUri()->admin('index.php?option=com_vikbooking&task=editorder&cid[]=' . $booking_info['id'] . '#alteration_request', false),
+				];
+			}
+		}
+
+		/**
+		 * Set proper notification sender in case of AI activity on reservation.
+		 * 
+		 * @since 	1.18.17 (J) - 1.8.17 (WP)
+		 */
+		if (!strcasecmp($history_record->type, 'AI')) {
+			$sender = 'ai';
 		}
 
 		// build the notification summary

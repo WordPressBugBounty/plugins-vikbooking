@@ -267,6 +267,13 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 		// check if we got data by clicking on a push/web notification
 		$from_push = $this->options()->gotPushData();
 
+		/**
+		 * Load reservation alteration request data, if any.
+		 * 
+		 * @since 	1.18.17 (J) - 1.8.17 (WP)
+		 */
+		$alterationRequest = VBOMvcModel::getInstance('alterationrequest')->getItem(['idorder' => $details['id']]);
+
 		// start output buffering
 		ob_start();
 
@@ -276,6 +283,24 @@ class VikBookingAdminWidgetBookingDetails extends VikBookingAdminWidget
 				<div class="vbo-params-container">
 
 					<div class="vbo-params-block">
+					<?php
+					if ($alterationRequest && $alterationRequest->data->isAlterationRequestPending()) {
+						?>
+						<div class="vbo-param-container">
+							<div class="vbo-param-setting">
+							<?php
+							if ($alterationRequest->data->isAlterationRequestFromGuest()) {
+								?>
+								<span><?php echo JText::translate('VBO_GUEST_ALTERATION_RQ'); ?></span>
+								<?php
+							}
+							?>
+								<a class="btn btn-warning" href="<?php echo VBOFactory::getPlatform()->getUri()->admin('index.php?option=com_vikbooking&task=editorder&cid[]=' . $details['id'] . '#alteration_request', false); ?>"><?php VikBookingIcons::e('circle-exclamation'); ?> <?php echo JText::translate('VBO_ALTERATION_RQ'); ?></a>
+							</div>
+						</div>
+						<?php
+					}
+					?>
 						<div class="vbo-param-container">
 							<div class="vbo-param-setting">
 							<?php

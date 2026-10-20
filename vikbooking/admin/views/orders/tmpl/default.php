@@ -315,7 +315,7 @@ $filters_set = false;
 			<?php
 			$pstatus = $app->getUserStateFromRequest("vbo.orders.status", 'status', '', 'string');
 			$filters_set = !empty($pstatus) || $filters_set;
-			$status_filter = !empty($pstatus) ? '&amp;status='.$pstatus : '';
+			$status_filter = JHtml::fetch('esc_attr', (!empty($pstatus) ? '&amp;status='.$pstatus : ''));
 			?>
 				<optgroup label="<?php echo JHtml::fetch('esc_attr', JText::translate('VBSTATUS')); ?>">
 					<option value="confirmed"<?php echo $pstatus == 'confirmed' ? ' selected="selected"' : ''; ?>><?php echo JText::translate('VBCONFIRMED'); ?></option>
@@ -352,6 +352,7 @@ $filters_set = false;
 		$datesel .= '<option value="1"'.(!empty($pdatefilt) && $pdatefilt == 1 ? ' selected="selected"' : '').'>'.JText::translate('VBOFILTERDATEBOOK').'</option>';
 		$datesel .= '<option value="2"'.(!empty($pdatefilt) && $pdatefilt == 2 ? ' selected="selected"' : '').'>'.JText::translate('VBOFILTERDATEIN').'</option>';
 		$datesel .= '<option value="3"'.(!empty($pdatefilt) && $pdatefilt == 3 ? ' selected="selected"' : '').'>'.JText::translate('VBOFILTERDATEOUT').'</option>';
+		$datesel .= '<option value="4"'.(!empty($pdatefilt) && $pdatefilt == 4 ? ' selected="selected"' : '').'>'.JText::translate('VBO_CONDTEXT_RULE_STAYDATES').'</option>';
 		$datesel .= '</select>';
 		echo $datesel;
 		?>
@@ -1289,6 +1290,7 @@ if (count($cid) > 0 && !empty($cid[0])) {
 	?>
 		<input type="hidden" name="option" value="com_vikbooking" />
 		<input type="hidden" name="task" value="geninvoices" />
+		<?php echo JHtml::fetch('form.token'); ?>
 	</form>
 </div>
 

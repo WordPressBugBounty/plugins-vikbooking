@@ -1167,7 +1167,7 @@ if ($ord['status'] == 'confirmed' && $resmodcanc === 1 && $this->days_to_arrival
 						<label for="vbcancemail" id="vbformcancemail"><?php echo JText::translate('VBREQUESTCANCMODEMAIL'); ?></label>
 					</div>
 					<div class="vbordcancform-entry-inp">
-						<input type="text" class="vbinput" name="email" id="vbcancemail" value="<?php echo $ord['custmail']; ?>"/>
+						<input type="text" class="vbinput" name="email" id="vbcancemail" value="<?php echo JHtml::fetch('esc_attr', $ord['custmail']); ?>"/>
 					</div>
 				</div>
 				<div class="vbordcancform-entry">
@@ -1179,7 +1179,7 @@ if ($ord['status'] == 'confirmed' && $resmodcanc === 1 && $this->days_to_arrival
 					</div>
 				</div>
 				<div class="vbordcancform-entry-submit">
-					<input type="submit" name="sendrequest" value="<?php echo JText::translate('VBREQUESTCANCMODSUBMIT'); ?>" class="btn vbo-pref-color-btn"/>
+					<input type="submit" name="sendrequest" value="<?php echo JHtml::fetch('esc_attr', JText::translate('VBREQUESTCANCMODSUBMIT')); ?>" class="btn vbo-pref-color-btn"/>
 				</div>
 			</div>
 		<?php
@@ -1217,7 +1217,7 @@ if ($ord['status'] == 'confirmed' && $canc_allowed) {
 							<label for="vbcancemail" id="vbformcancemail"><?php echo JText::translate('VBREQUESTCANCMODEMAIL'); ?></label>
 						</div>
 						<div class="vbordcancform-entry-inp">
-							<input type="text" class="vbinput" name="email" id="vbcancemail" value="<?php echo $ord['custmail']; ?>"/>
+							<input type="text" class="vbinput" name="email" id="vbcancemail" value="<?php echo JHtml::fetch('esc_attr', $ord['custmail']); ?>"/>
 						</div>
 					</div>
 					<div class="vbordcancform-entry">
@@ -1229,7 +1229,7 @@ if ($ord['status'] == 'confirmed' && $canc_allowed) {
 						</div>
 					</div>
 					<div class="vbo-booking-canc-submit">
-						<input type="submit" name="sendrequest" value="<?php echo JText::translate('VBOCANCYOURBOOKING'); ?>" class="vbo-btn-cancelbooking"/>
+						<input type="submit" name="sendrequest" value="<?php echo JHtml::fetch('esc_attr', JText::translate('VBOCANCYOURBOOKING')); ?>" class="vbo-btn-cancelbooking"/>
 					</div>
 				</div>
 			<?php

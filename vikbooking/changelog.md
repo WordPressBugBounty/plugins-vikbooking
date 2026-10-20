@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.8.17
+
+*Release date - 20 October 2026*
+
+- Notifications Center new filter by failure events.
+- All bookings page new filter by stay dates.
+- New booking history events added for AI activities and reservation alteration requests.
+- Reservation alteration requests framework (Airbnb guest-to-host only - CM required).
+- Accept or decline pending reservation alteration requests from guests (CM + Airbnb required).
+- Door Access Control framework support for OTA sync (Airbnb Seamless Entry API - CM required).
+- Cron job email reminder new setting for targeting only OTA reservations with missing guest phone number.
+- Added support to automatic guest phone number detection in messaging contexts (CM + AI required).
+- Multiple guest messaging improvements.
+- Updated several RMS calculation metrics.
+- Multiple security improvements (CSRF preventions).
+- Various core framework updates to support the new iOS/Android App version (CM required).
+
 ## 1.8.16
 
 *Release date - 01 October 2026*

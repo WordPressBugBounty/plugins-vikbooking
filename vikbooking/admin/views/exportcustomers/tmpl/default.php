@@ -79,4 +79,5 @@ if (count($cid) > 0 && !empty($cid[0])) {
 	</div>
 	<input type="hidden" name="task" value="" />
 	<input type="hidden" name="option" value="com_vikbooking" />
+	<?php echo JHtml::fetch( 'form.token' ); ?>
 </form>

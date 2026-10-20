@@ -46,7 +46,7 @@ foreach ($arrpeople as $indroom => $aduch) {
 
 $action = 'index.php?option=com_user&amp;task=login';
 
-$pitemid = VikRequest::getString('Itemid', '', 'request');
+$pitemid = VikRequest::getInt('Itemid', 0, 'request');
 
 if (count($rooms) > 0 && !empty($checkin) && !empty($checkout)) {
 	$goto = "index.php?option=com_vikbooking&task=oconfirm".$strpriceid.$stroptid.$strroomid.$straduchild."&roomsnum=".$roomsnum."&days=".$days."&checkin=".$checkin."&checkout=".$checkout.($ppkg_id > 0 ? '&pkg_id='.$ppkg_id : '').(!empty($pitemid) ? "&Itemid=".$pitemid : "");

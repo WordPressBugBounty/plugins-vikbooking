@@ -19,7 +19,7 @@ class VikBookingViewTmplfileprew extends JViewVikBooking {
 		// This view is usually called within a modal box, so it does not require the toolbar or page title
 		
 		$fpath = VikRequest::getString('path', '', 'request', VIKREQUEST_ALLOWRAW);
-		if (!empty($fpath) && !is_file($fpath)) {
+		if (!empty($fpath) && !is_file($fpath) && is_file(urldecode($fpath))) {
 			$fpath = urldecode($fpath);
 		}
 		// list of allowed template files for preview
@@ -29,7 +29,7 @@ class VikBookingViewTmplfileprew extends JViewVikBooking {
 		$fbase = basename($fpath);
 		$htmlpreview = '';
 		if (!is_file($fpath) || !in_array($fbase, $allowed_previews)) {
-			throw new Exception("File {$fbase} not found", 404);
+			throw new Exception("Template file not found", 404);
 		}
 
 		// load template file preview

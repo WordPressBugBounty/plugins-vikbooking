@@ -98,6 +98,10 @@ class VikBookingControllerMail extends JControllerAdmin
 	 */
 	public function update_ve_contwraper()
 	{
+		if (!JSession::checkToken()) {
+            VBOHttpDocument::getInstance()->close(403, JText::translate('JINVALID_TOKEN'));
+        }
+
 		$app   = JFactory::getApplication();
 		$input = $app->input;
 

@@ -734,7 +734,7 @@ $previous_checkins = VBOCheckinPax::getCustomerAllPaxData($order['id']);
 										<?php
 									}
 									?>
-								<input type="hidden" data-gind="<?php echo $g; ?>" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $extrak; ?>]" value="<?php echo $extrav; ?>" />
+								<input type="hidden" data-gind="<?php echo $g; ?>" name="guests[<?php echo $ind; ?>][<?php echo $g; ?>][<?php echo $extrak; ?>]" value="<?php echo htmlspecialchars($extrav); ?>" />
 									<?php
 								} else {
 									?>

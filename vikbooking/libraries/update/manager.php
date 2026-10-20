@@ -74,19 +74,22 @@ class VikBookingUpdateManager
 	 */
 	public static function install()
 	{
+		// main library
+		require_once VBO_SITE_PATH . DIRECTORY_SEPARATOR . 'helpers' . DIRECTORY_SEPARATOR . 'lib.vikbooking.php';
+
 		self::execSqlFile(VIKBOOKING_BASE . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'install.mysql.utf8.sql');
 		
 		$dbo = JFactory::getDbo();
+		$config = VBOFactory::getConfig();
 
 		// create the configuration record with the email address of the current user
-		$q = "INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('adminemail', " . $dbo->q(JFactory::getUser()->email) . ");";
-		$dbo->setQuery($q);
-		$dbo->execute();
+		$config->set('adminemail', JFactory::getUser()->email);
 
 		// footer must be disabled by default
-		$q = "UPDATE `#__vikbooking_config` SET `setting`='0' WHERE `param`='showfooter';";
-		$dbo->setQuery($q);
-		$dbo->execute();
+		$config->set('showfooter', 0);
+
+		// handle random secret and initial keys
+		$config->set('cronkey', VikBooking::getCPinInstance()->generateSerialCode(8));
 
 		// closing main text must not mention the name of the software
 		$q = "UPDATE `#__vikbooking_texts` SET `setting`='' WHERE `param`='closingmain';";

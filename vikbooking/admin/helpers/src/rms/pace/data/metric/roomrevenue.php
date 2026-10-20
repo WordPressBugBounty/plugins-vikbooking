@@ -33,18 +33,23 @@ final class VBORmsPaceDataMetricRoomrevenue extends VBORmsPaceDataMetric
     {
         $roomRevenue = 0;
 
+        // determine the period interval type for evaluation
+        $intervalType = $paceDataPeriod->getIntervalType();
+
         // iterate all bookings affecting the current period
         foreach ($paceDataPeriod as $booking) {
             if ($booking['status'] != 'confirmed') {
                 // exclude non-confirmed reservations
                 continue;
             }
+            // count number of nights of stay at booking-level according to period interval type
+            $nightsOfStay = $intervalType === 'DAY' ? (int) (($booking['days'] ?? 0) ?: 1) : 1;
             foreach (($booking['_rooms'] ?? []) as $bookingRoom) {
                 if (!empty($bookingRoom['room_cost'])) {
-                    $netRoomCost = VikBooking::sayCostMinusIva($bookingRoom['room_cost'], $bookingRoom['idprice'] ?? 0);
+                    $netRoomCost = VikBooking::sayCostMinusIva($bookingRoom['room_cost'], $bookingRoom['idprice'] ?? 0) / $nightsOfStay;
                     $roomRevenue += (float) $netRoomCost;
                 } elseif (!empty($bookingRoom['cust_cost'])) {
-                    $netRoomCost = VikBooking::sayPackageMinusIva($bookingRoom['cust_cost'], $bookingRoom['cust_idiva']);
+                    $netRoomCost = VikBooking::sayPackageMinusIva($bookingRoom['cust_cost'], $bookingRoom['cust_idiva']) / $nightsOfStay;
                     $roomRevenue += (float) $netRoomCost;
                 }
             }

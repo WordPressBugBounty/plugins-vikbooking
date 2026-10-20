@@ -624,6 +624,20 @@ final class VBOTaskTaskregistry
             }
         }
 
+        /**
+         * Trigger event to allow overriding at runtime the default task duration when not began/finished yet.
+         * 
+         * @param   VBOTaskTaskregistry  $task      The task we are updating.
+         * 
+         * @return  int
+         * 
+         * @since   1.18.17 (J) - 1.8.17 (WP) 
+         */
+        $results = array_filter(array_map('intval', VBOFactory::getPlatform()->getDispatcher()->filter('onComputeCustomTaskDuration', [$this])));
+        if ($results) {
+            return max($results);
+        }
+
         if ($this->getArea()) {
             // fallback onto driver default duration taken from area/project
             $taskDriver = VBOFactory::getTaskManager()->getDriverInstance($this->getArea()->getType(), [$this->getArea()]);

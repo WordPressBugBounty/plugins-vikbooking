@@ -66,4 +66,5 @@ if ($nowdf == "%d/%m/%Y") {
 	</div>
 	<input type="hidden" name="task" value="icsexportlaunch" />
 	<input type="hidden" name="option" value="com_vikbooking" />
+	<?php echo JHtml::fetch( 'form.token' ); ?>
 </form>

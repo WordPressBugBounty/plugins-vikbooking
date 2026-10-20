@@ -38,7 +38,7 @@ $pdatefiltto = $this->datefiltto;
 if ((!empty($pdatefiltfrom) || !empty($pdatefiltto))) {
 	$dates_filter = JHtml::fetch('esc_attr', '&amp;datefilt='.$pdatefilt.(!empty($pdatefiltfrom) ? '&amp;datefiltfrom='.$pdatefiltfrom : '').(!empty($pdatefiltto) ? '&amp;datefiltto='.$pdatefiltto : ''));
 }
-$pactive_tab = VikRequest::getString('vbo_active_tab', 'vbo-trackings-tabcont-list', 'request');
+$pactive_tab = preg_replace('/[^A-Z0-9\-\_]/i', '', VikRequest::getString('vbo_active_tab', 'vbo-trackings-tabcont-list', 'request'));
 
 ?>
 <script type="text/javascript">

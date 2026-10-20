@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: VikBooking\n"
-"POT-Creation-Date: 2026-10-01 17:53+0200\n"
-"PO-Revision-Date: 2026-10-01 17:54+0200\n"
+"POT-Creation-Date: 2026-10-20 19:15+0200\n"
+"PO-Revision-Date: 2026-10-20 19:16+0200\n"
 "Last-Translator: \n"
 "Language-Team: extensionsforjoomla.com\n"
 "Language: it_IT\n"
@@ -10605,7 +10605,7 @@ msgstr "Valori negativi consentiranno di accedere a date nel passato."
 msgid "Credit Card"
 msgstr "Carta di credito"
 
-#: libraries/language/admin.php:6937
+#: libraries/language/admin.php:6937 libraries/language/admin.php:8759
 msgid "AI"
 msgstr "IA"
 
@@ -13405,6 +13405,99 @@ msgid "Calls to this number are forwarded to the guest's actual phone number."
 msgstr ""
 "Le chiamate a questo numero vengono inoltrate al numero di telefono "
 "effettivo dell’ospite."
+
+#: libraries/language/admin.php:8712
+msgid "Failures"
+msgstr "Errori"
+
+#: libraries/language/admin.php:8715
+msgid "Only failures"
+msgstr "Solo errori"
+
+#: libraries/language/admin.php:8718
+msgid "Sync OTAs"
+msgstr "Sincronizza OTA"
+
+#: libraries/language/admin.php:8721
+msgid ""
+"Synchronize smart locks and passcodes with eligible OTAs (e.g. Airbnb "
+"Seamless Entry)."
+msgstr ""
+"Sincronizza smart lock e codici di accesso con OTA idonee (es. Airbnb "
+"Seamless Entry)."
+
+#: libraries/language/admin.php:8724
+msgid "Instructions"
+msgstr "Istruzioni"
+
+#: libraries/language/admin.php:8727
+msgid "Unlock instructions"
+msgstr "Istruzioni di sblocco"
+
+#: libraries/language/admin.php:8730
+msgid "Alteration Request"
+msgstr "Richiesta di modifica"
+
+#: libraries/language/admin.php:8733
+msgid "The guest requested an alteration of the current reservation."
+msgstr "L'ospite ha richiesto una modifica dell'attuale prenotazione."
+
+#. TRANSLATORS: Original reservation value, like check-in date before modification.
+#: libraries/language/admin.php:8737
+msgctxt "Original reservation value, like check-in date before modification."
+msgid "Original"
+msgstr "Originale"
+
+#. TRANSLATORS: Reservation value requested for modification, like new check-in date.
+#: libraries/language/admin.php:8741
+msgctxt "Reservation value requested for modification, like new check-in date."
+msgid "Request"
+msgstr "Richiesta"
+
+#: libraries/language/admin.php:8744
+msgid "Unchanged"
+msgstr "Invariato"
+
+#: libraries/language/admin.php:8747 libraries/language/site.php:2579
+msgid "Accept"
+msgstr "Accetta"
+
+#: libraries/language/admin.php:8750
+msgid "Decline"
+msgstr "Rifiuta"
+
+#: libraries/language/admin.php:8753
+msgid "Alteration request received"
+msgstr "Richiesta di modifica ricevuta"
+
+#: libraries/language/admin.php:8756
+msgid "Alteration request updated"
+msgstr "Richiesta di modifica aggiornata"
+
+#: libraries/language/admin.php:8762
+msgid "Guest phone number detected in conversation."
+msgstr "Numero di telefono dell'ospite rilevato nella conversazione."
+
+#: libraries/language/admin.php:8765
+msgid "Guest phone number"
+msgstr "Numero di telefono dell’ospite"
+
+#: libraries/language/admin.php:8768
+msgid "Missing"
+msgstr "Mancante"
+
+#: libraries/language/admin.php:8771
+msgid ""
+"Choose whether to target all OTA reservations or only those without a guest "
+"phone number. When \"Missing\" is selected, reservations with temporary or "
+"alias phone numbers will also be excluded, as some OTAs may redact phone "
+"numbers shared through messages."
+msgstr ""
+"Scegli se includere tutte le prenotazioni provenienti dalle OTA oppure "
+"soltanto quelle prive del numero di telefono dell’ospite. Selezionando "
+"“Mancante”, verranno escluse anche le prenotazioni con numeri di telefono "
+"temporanei o alias, poiché alcune OTA potrebbero oscurare i numeri di "
+"telefono condivisi tramite messaggi."
 
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
@@ -16352,10 +16445,6 @@ msgstr "Questo preventivo è scaduto e non è più disponibile."
 msgid "This quote has been cancelled and is no longer available."
 msgstr "Questo preventivo è stato cancellato e non è più disponibile."
 
-#: libraries/language/site.php:2579
-msgid "Accept"
-msgstr "Accetta"
-
 #: libraries/language/site.php:2582
 msgid "Proceed to payment to confirm your booking."
 msgstr "Procedi al pagamento per confermare la tua prenotazione."
@@ -16668,11 +16757,11 @@ msgstr "Anteprima non disponibile"
 
 #: libraries/language/system.php:628
 msgid ""
-"The Pro license for VikBooking has expired. Do not install any updates or "
-"you will downgrade the plugin to the Free version."
+"Your Pro license for VikBooking has expired. Updating the plugin will switch "
+"it to the Free version, disabling Pro features."
 msgstr ""
-"La licenza per la versione Pro di VikBooking è scaduta. Non installare "
-"aggiornamenti per questo plugin o tornerai alla versione Free."
+"La tua licenza Pro per VikBooking è scaduta. Aggiornando il plugin passerai "
+"alla versione Free, perdendo le funzionalità Pro."
 
 #: libraries/lite/manager.php:74
 #, php-format

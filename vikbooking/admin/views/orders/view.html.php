@@ -40,23 +40,39 @@ class VikBookingViewOrders extends JViewVikBooking
 		$pdatefiltfrom = $app->getUserStateFromRequest("vbo.orders.datefiltfrom", 'datefiltfrom', '', 'string');
 		$pdatefiltto = $app->getUserStateFromRequest("vbo.orders.datefiltto", 'datefiltto', '', 'string');
 		$pcategory_id = $app->getUserStateFromRequest("vbo.orders.category_id", 'category_id', 0, 'int');
+
 		$dates_filter = '';
 		if (!empty($pdatefilt) && (!empty($pdatefiltfrom) || !empty($pdatefiltto))) {
-			$dates_filter_field = '`o`.`ts`';
-			if ($pdatefilt == 2) {
-				$dates_filter_field = '`o`.`checkin`';
-			} elseif ($pdatefilt == 3) {
-				$dates_filter_field = '`o`.`checkout`';
-			}
-			$dates_filter_clauses = array();
-			if (!empty($pdatefiltfrom)) {
-				$dates_filter_clauses[] = $dates_filter_field.'>='.VikBooking::getDateTimestamp($pdatefiltfrom, '0', '0');
-			}
-			if (!empty($pdatefiltto)) {
-				$dates_filter_clauses[] = $dates_filter_field.'<='.VikBooking::getDateTimestamp($pdatefiltto, 23, 60);
+			$pdatefilt = in_array($pdatefilt, [1, 2, 3, 4]) ? $pdatefilt : 1;
+			$dates_filter_clauses = [];
+			if ($pdatefilt === 4) {
+				// stay dates intersection
+				$pdatefiltfrom = $pdatefiltfrom ?: $pdatefiltto;
+				$pdatefiltto = $pdatefiltto ?: $pdatefiltfrom;
+				$dates_filter_clauses[] = '`o`.`checkin` <= ' . VikBooking::getDateTimestamp($pdatefiltto, 23, 60);
+				$dates_filter_clauses[] = '`o`.`checkout` >= ' . VikBooking::getDateTimestamp($pdatefiltfrom, 0, 0);
+			} else {
+				// individual date intersection
+				if ($pdatefilt === 1) {
+					// reservation date
+					$dates_filter_field = '`o`.`ts`';
+				} elseif ($pdatefilt === 2) {
+					// check-in date
+					$dates_filter_field = '`o`.`checkin`';
+				} elseif ($pdatefilt === 3) {
+					// check-out date
+					$dates_filter_field = '`o`.`checkout`';
+				}
+				if (!empty($pdatefiltfrom)) {
+					$dates_filter_clauses[] = $dates_filter_field.'>='.VikBooking::getDateTimestamp($pdatefiltfrom, 0, 0);
+				}
+				if (!empty($pdatefiltto)) {
+					$dates_filter_clauses[] = $dates_filter_field.'<='.VikBooking::getDateTimestamp($pdatefiltto, 23, 60);
+				}
 			}
 			$dates_filter = implode(' AND ', $dates_filter_clauses);
 		}
+
 		$pstatus = $app->getUserStateFromRequest("vbo.orders.status", 'status', 0, 'string');
 		$status_filter = !empty($pstatus) && in_array($pstatus, array('confirmed', 'standby', 'cancelled')) ? "`o`.`status`='".$pstatus."' AND `o`.`closure`=0" : '';
 		if (empty($status_filter) && !empty($pstatus)) {

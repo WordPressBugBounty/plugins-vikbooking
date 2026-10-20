@@ -2,14 +2,14 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: VikBooking 1.8.16\n"
+"Project-Id-Version: VikBooking 1.8.17\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/VikBooking\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-01T15:55:20+00:00\n"
+"POT-Creation-Date: 2026-10-20T17:20:17+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: vikbooking\n"
@@ -9152,6 +9152,7 @@ msgid "Credit Card"
 msgstr ""
 
 #: libraries/language/admin.php:6937
+#: libraries/language/admin.php:8759
 msgid "AI"
 msgstr ""
 
@@ -11598,6 +11599,75 @@ msgstr ""
 msgid "Calls to this number are forwarded to the guest's actual phone number."
 msgstr ""
 
+#: libraries/language/admin.php:8712
+msgid "Failures"
+msgstr ""
+
+#: libraries/language/admin.php:8715
+msgid "Only failures"
+msgstr ""
+
+#: libraries/language/admin.php:8718
+msgid "Sync OTAs"
+msgstr ""
+
+#: libraries/language/admin.php:8721
+msgid "Synchronize smart locks and passcodes with eligible OTAs (e.g. Airbnb Seamless Entry)."
+msgstr ""
+
+#: libraries/language/admin.php:8724
+msgid "Instructions"
+msgstr ""
+
+#: libraries/language/admin.php:8727
+msgid "Unlock instructions"
+msgstr ""
+
+#: libraries/language/admin.php:8730
+msgid "Alteration Request"
+msgstr ""
+
+#: libraries/language/admin.php:8733
+msgid "The guest requested an alteration of the current reservation."
+msgstr ""
+
+#: libraries/language/admin.php:8744
+msgid "Unchanged"
+msgstr ""
+
+#: libraries/language/admin.php:8747
+#: libraries/language/site.php:2579
+msgid "Accept"
+msgstr ""
+
+#: libraries/language/admin.php:8750
+msgid "Decline"
+msgstr ""
+
+#: libraries/language/admin.php:8753
+msgid "Alteration request received"
+msgstr ""
+
+#: libraries/language/admin.php:8756
+msgid "Alteration request updated"
+msgstr ""
+
+#: libraries/language/admin.php:8762
+msgid "Guest phone number detected in conversation."
+msgstr ""
+
+#: libraries/language/admin.php:8765
+msgid "Guest phone number"
+msgstr ""
+
+#: libraries/language/admin.php:8768
+msgid "Missing"
+msgstr ""
+
+#: libraries/language/admin.php:8771
+msgid "Choose whether to target all OTA reservations or only those without a guest phone number. When \"Missing\" is selected, reservations with temporary or alias phone numbers will also be excluded, as some OTAs may redact phone numbers shared through messages."
+msgstr ""
+
 #: libraries/language/adminsys.php:45
 msgid "Vik Booking"
 msgstr ""
@@ -14020,10 +14090,6 @@ msgstr ""
 msgid "This quote has been cancelled and is no longer available."
 msgstr ""
 
-#: libraries/language/site.php:2579
-msgid "Accept"
-msgstr ""
-
 #: libraries/language/site.php:2582
 msgid "Proceed to payment to confirm your booking."
 msgstr ""
@@ -14312,7 +14378,7 @@ msgid "Preview is not available"
 msgstr ""
 
 #: libraries/language/system.php:628
-msgid "The Pro license for VikBooking has expired. Do not install any updates or you will downgrade the plugin to the Free version."
+msgid "Your Pro license for VikBooking has expired. Updating the plugin will switch it to the Free version, disabling Pro features."
 msgstr ""
 
 #: libraries/lite/helper.php:89

@@ -18,7 +18,7 @@ require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'defines.php';
  * @since 	1.0.2 	It is possible to inject debug=on in query
  * 					string to force the error reporting to MAXIMUM.
  */
-if (VIKBOOKING_DEBUG || (isset($_GET['debug']) && $_GET['debug'] == 'on'))
+if (VIKBOOKING_DEBUG || (function_exists('is_admin') && is_admin() && ($_GET['debug'] ?? '') === 'on'))
 {
 	error_reporting(E_ALL);
 	ini_set('display_errors', true);

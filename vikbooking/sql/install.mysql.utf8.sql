@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_door_access_integrations` (
   `name` varchar(64) NOT NULL DEFAULT '',
   `gentype` varchar(16) DEFAULT NULL,
   `genperiod` varchar(16) DEFAULT NULL,
+  `ota_sync` tinyint(1) NOT NULL DEFAULT 0,
   `settings` varchar(2048) DEFAULT NULL,
   `devices` mediumblob DEFAULT NULL,
   `data` mediumtext DEFAULT NULL,
@@ -475,7 +476,7 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_orderhistory` (
   `total` decimal(12,2) DEFAULT NULL,
   `data` varchar(1024) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `#__vikbooking_packages` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -582,6 +583,20 @@ CREATE TABLE IF NOT EXISTS `#__vikbooking_reminders` (
   `created_on` timestamp DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `#__vikbooking_res_alteration_requests` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `idorder` int(10) NOT NULL,
+  `ota_alteration_id` varchar(64) DEFAULT NULL,
+  `ota_reservation_id` varchar(64) DEFAULT NULL,
+  `channel` varchar(64) DEFAULT NULL,
+  `initiated_by` varchar(16) NOT NULL DEFAULT 'guest',
+  `status` varchar(16) NOT NULL DEFAULT 'pending',
+  `created_on` datetime NOT NULL,
+  `updated_on` datetime DEFAULT NULL,
+  `data` mediumblob DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `#__vikbooking_restrictions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -865,7 +880,6 @@ INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('smsautosend','0'
 INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('smssendto','[]');
 INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('smsadminphone','');
 INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('smsparams','[]');
-INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('cronkey', FLOOR(1000 + (RAND() * 9000)));
 INSERT INTO `#__vikbooking_config` (`param`,`setting`) VALUES ('showcheckinoutonly','0');
 INSERT INTO `#__vikbooking_config` (`param`, `setting`) VALUES('invoiceinum', '0');
 INSERT INTO `#__vikbooking_config` (`param`, `setting`) VALUES('invoicesuffix', '/WEB');

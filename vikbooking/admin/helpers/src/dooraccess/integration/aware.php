@@ -278,11 +278,41 @@ abstract class VBODooraccessIntegrationAware
     }
 
     /**
-     * Returns an array with two timestamps for the configured generation period.
+     * Tells if the current integration record (profile) syncs with OTAs.
+     * 
+     * @return  bool
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
+     */
+    public function isProfileSyncingOtas()
+    {
+        return (bool) ($this->record['ota_sync'] ?? 0);
+    }
+
+    /**
+     * Returns an associative list of profile individual options.
      * 
      * @return  array
+     * 
+     * @since   1.18.17 (J) - 1.8.17 (WP)
      */
-    public function getNextGenerationPeriodTimestamps()
+    public function getProfileOptions()
+    {
+        return [
+            'gentype'   => $this->getProfileGenerationType(),
+            'genperiod' => $this->getProfileGenerationPeriod(),
+            'ota_sync'  => $this->isProfileSyncingOtas(),
+        ];
+    }
+
+    /**
+     * Returns an array with two elements indicating the configured generation period values.
+     * 
+     * @return  array
+     * 
+     * @since   1.18.16 (J) - 1.8.16 (WP)
+     */
+    public function getGenerationPeriodValues()
     {
         $genperiod = $this->getProfileGenerationPeriod() ?: '0H';
 
@@ -303,6 +333,22 @@ abstract class VBODooraccessIntegrationAware
             $genNumber = 0;
             $genOperator = 'H';
         }
+
+        return [
+            $genNumber,
+            $genOperator,
+        ];
+    }
+
+    /**
+     * Returns an array with two timestamps for the configured generation period.
+     * 
+     * @return  array
+     */
+    public function getNextGenerationPeriodTimestamps()
+    {
+        // obtain generation period values
+        list($genNumber, $genOperator) = $this->getGenerationPeriodValues();
 
         // calculate the target timestamp
         $targetTs = $genNumber ? strtotime(sprintf('+%d %s', $genNumber, ($genOperator === 'D' ? 'days' : 'hours'))) : time();
@@ -581,6 +627,11 @@ abstract class VBODooraccessIntegrationAware
             if (!$decorator->isComplete()) {
                 // invalid device object properties decorated
                 return null;
+            }
+
+            if (!$decorator->getBrand()) {
+                // inject the brand within the device by using the integration name
+                $decorator->setBrand($this->getShortName());
             }
 
             // return the decorated device object
