@@ -212,6 +212,97 @@ class VikBookingBuilder
 		});
 
 		/**
+		 * Helper function registered for escaping URLs.
+		 * 
+		 * @since 	1.8.18
+		 */
+		JHtml::register('esc_url', function($url, $protocols = null)
+		{
+			return esc_url($url, $protocols);
+		});
+
+		/**
+		 * Sanitizes the HTML written by third parties (e.g. the guests of the OTAs) by keeping only
+		 * a basic formatting. Every implementation of this helper (e.g. the Joomla one) must honor
+		 * the same contract:
+		 * - elements: only b, strong, i, em, u, br, ul, ol, li and a. The script and style elements
+		 *   are removed with their content, any other element is removed but its text is kept;
+		 * - attributes: only a[href]. A link must be an absolute http(s), mailto or tel URL, without
+		 *   credentials, not pointing to this same website, and it is opened in a new tab with
+		 *   rel="noopener noreferrer nofollow";
+		 * - the returned HTML is balanced, and it can be printed as it is.
+		 *
+		 * Usage: JHtml::fetch('kses', $html) or JHtml::fetch('kses', $html)
+		 *
+		 * @since 	1.8.18
+		 */
+		JHtml::register('kses', function($html)
+		{
+			$html = preg_replace(
+				[
+					// script and style elements are removed with their content
+					'#<(script|style)\b[^>]*>.*?</\1\s*>#is',
+					// keep apart the text of the block elements
+					'#</(?:p|div|h[1-6]|blockquote|pre|tr|table)>#i',
+					// a "<" that does not start a tag is plain text ("<3"), otherwise wp_kses would drop what follows
+					'#<(?!/?[a-z])#i',
+				],
+				['', ' ', '&lt;'],
+				(string) $html
+			);
+
+			// Remove the HTML comments before wp_kses: it never ends on some of them (e.g. "<!--</<a>"),
+			// as its output grows at every pass of the loop that sanitizes the comments (CPU and memory exhaustion).
+			// The loop prevents a comment from being rebuilt by removing another one ("<!<!---->--").
+			while (strpos($html, '<!--') !== false) {
+				$html = (string) preg_replace('/<!--.*?(?:-->|$)/s', '', $html);
+			}
+
+			// remove any element and attribute that is not allowed, as well as any URL scheme other than these
+			$html = wp_kses($html, [
+				'b'      => [],
+				'strong' => [],
+				'i'      => [],
+				'em'     => [],
+				'u'      => [],
+				'br'     => [],
+				'ul'     => [],
+				'ol'     => [],
+				'li'     => [],
+				'a'      => ['href' => true],
+			], ['http', 'https', 'mailto', 'tel']);
+
+			// the hosts of this website
+			$own_hosts = [];
+			foreach ([home_url(), VBO_SITE_URI, VBO_ADMIN_URI, 'http://' . ($_SERVER['HTTP_HOST'] ?? '')] as $own) {
+				$own_hosts[] = strtolower((string) parse_url($own, PHP_URL_HOST));
+			}
+			$own_hosts = array_filter($own_hosts);
+
+			// rebuild the links, only the safe ones are kept (otherwise just their text remains)
+			$html = preg_replace_callback('/<a\b([^>]*)>/i', function($match) use ($own_hosts) {
+				// browsers ignore control characters within a URL ("jav\tascript:")
+				$url = preg_match('/\bhref="([^"]*)"/i', $match[1], $href) ? html_entity_decode($href[1], ENT_QUOTES, 'UTF-8') : '';
+				$url = trim(preg_replace('/[\x00-\x1f\x7f]+/', '', $url));
+
+				// absolute URLs only (no relative ones), no credentials, no link to this same website
+				$parts = preg_match('#^(?:https?://|mailto:|tel:)#i', $url) ? parse_url($url) : false;
+
+				if (!$parts || isset($parts['user']) || isset($parts['pass']) || in_array(strtolower($parts['host'] ?? ''), $own_hosts, true)) {
+					return '';
+				}
+
+				return '<a href="' . esc_url($url, ['http', 'https', 'mailto', 'tel']) . '" target="_blank" rel="noopener noreferrer nofollow">';
+			}, $html);
+
+			// defense in depth: any "<" that does not start one of the tags allowed above is plain text
+			$html = preg_replace('#<(?!/?(?:b|strong|i|em|u|ul|ol|li)>|br ?/?>|/a>|a href="[^"<>]*" target="_blank" rel="noopener noreferrer nofollow">)#', '&lt;', $html);
+
+			// close any tag left open (e.g. an unclosed <b> would bleed into the next elements of the page)
+			return force_balance_tags($html);
+		});
+
+		/**
 		 * Attempt to turn on the SQL_BIG_SELECTS setting at runtime, to avoid
 		 * SQL errors like "The SELECT would examine more than MAX_JOIN_SIZE rows;".
 		 * This has affected several clients with the Channel Manager for the Guest Messages

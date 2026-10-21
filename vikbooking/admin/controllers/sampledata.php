@@ -29,6 +29,10 @@ class VikBookingControllerSampledata extends JControllerAdmin
 	 */
 	public function load()
 	{
+		if (!JFactory::getUser()->authorise('core.admin', 'com_vikbooking')) {
+			VBOHttpDocument::getInstance()->close(403, JText::translate('JERROR_ALERTNOAUTHOR'));
+		}
+
 		$data = $this->getSampleData();
 		
 		echo json_encode($data);
@@ -47,6 +51,10 @@ class VikBookingControllerSampledata extends JControllerAdmin
 	{
 		if (!JSession::checkToken()) {
 			throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+		}
+
+		if (!JFactory::getUser()->authorise('core.admin', 'com_vikbooking')) {
+			throw new Exception(JText::translate('JERROR_ALERTNOAUTHOR'), 403);
 		}
 
 		$sample_data_id = VikRequest::getInt('sample_data_id', 0, 'request');
@@ -313,6 +321,10 @@ class VikBookingControllerSampledata extends JControllerAdmin
 			throw new Exception('Manifest file contains an invalid JSON', 500);
 		}
 
+		// validate every instruction of the manifest before executing any of them,
+		// the installation is otherwise rejected as a whole
+		$this->validateManifest($manifest, $folder);
+
 		$dbo = JFactory::getDbo();
 
 		// look for uninstall queries
@@ -391,41 +403,323 @@ class VikBookingControllerSampledata extends JControllerAdmin
 
 	/**
 	 * Moves the files into the related folders.
+	 * The destination and the files are validated again here, even
+	 * if the manifest was already validated, as this is the method
+	 * that writes on the file system.
 	 *
-	 * @param 	string 	$dest   The destination folder.
+	 * @param 	string 	$dest   The destination folder declared by the manifest.
 	 * @param 	mixed 	$files  Either a file or an array.
 	 * @param 	string 	$dir    The current directory.
 	 *
 	 * @return 	void
+	 * 
+	 * @throws 	Exception
 	 */
 	private function installFilesRole($dest, $files, $dir)
 	{
 		// load update manager class for backup/mirroring of files
 		VikBookingLoader::import('update.manager');
 
-		// set destination by prepending plugin base path
-		$dest = VIKBOOKING_BASE . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $dest);
+		// copy files and create a backup copy from each file
+		foreach ($this->resolveFilesRole($dest, $files, $dir) as $job) {
+			// copy file in its destination
+			$res = JFile::copy($job['source'], $job['target']);
+
+			if ($res) {
+				// trigger mirroring action for new file uploaded
+				VikBookingUpdateManager::triggerUploadBackup($job['target']);
+			}
+		}
+	}
+
+	/**
+	 * Returns the only directories in which a sample data package is
+	 * allowed to install files. The key is the "destination" declared
+	 * by the manifest, the value is the absolute path of the directory.
+	 *
+	 * @return 	array
+	 */
+	private function getAllowedFileDestinations()
+	{
+		return [
+			'site/resources/uploads' => VBO_SITE_PATH . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'uploads',
+		];
+	}
+
+	/**
+	 * Returns the only file types (image type constants) that a sample
+	 * data package is allowed to install, indexed by file extension.
+	 *
+	 * @return 	array
+	 */
+	private function getAllowedImageTypes()
+	{
+		return [
+			'jpg'  => IMAGETYPE_JPEG,
+			'jpeg' => IMAGETYPE_JPEG,
+			'png'  => IMAGETYPE_PNG,
+			'gif'  => IMAGETYPE_GIF,
+			'webp' => IMAGETYPE_WEBP,
+		];
+	}
+
+	/**
+	 * Returns the VikBooking tables (without prefix) that a sample
+	 * data package is allowed to populate or to empty.
+	 *
+	 * @return 	array
+	 */
+	private function getAllowedTables()
+	{
+		return [
+			'adultsdiff',
+			'categories',
+			'characteristics',
+			'dispcost',
+			'iva',
+			'prices',
+			'rooms',
+			'wpshortcodes',
+		];
+	}
+
+	/**
+	 * Validates the destination and the files of a "files" role, and
+	 * returns the list of the copy operations that can be safely executed.
+	 *
+	 * - the destination must be one of the allowed directories (no path
+	 *   provided by the package is ever used to build a path);
+	 * - the source must be a regular file (no symlinks) found within the
+	 *   extracted package;
+	 * - only real images with an allowed extension are copied, any other
+	 *   file (such as the index.html) is ignored.
+	 *
+	 * @param 	mixed 	$dest   The destination declared by the manifest.
+	 * @param 	mixed 	$files  Either a file or an array.
+	 * @param 	string 	$dir    The directory of the extracted package.
+	 *
+	 * @return 	array 	List of associative arrays (source, target).
+	 *
+	 * @throws 	Exception
+	 */
+	private function resolveFilesRole($dest, $files, $dir)
+	{
+		if (!is_string($dest)) {
+			throw new Exception('Invalid destination declared by the sample data', 403);
+		}
+
+		$allowed = $this->getAllowedFileDestinations();
+
+		// normalize the destination declared by the package
+		$key = trim(str_replace('\\', '/', $dest), '/');
+
+		if (!isset($allowed[$key])) {
+			throw new Exception(sprintf('Destination [%s] is not allowed for sample data', $dest), 403);
+		}
+
+		$realDest = realpath($allowed[$key]);
+		$realDir  = realpath($dir);
+
+		if ($realDest === false || $realDir === false || !is_dir($realDest) || !is_dir($realDir)) {
+			throw new Exception('Cannot access the sample data directories', 404);
+		}
 
 		// make sure to always parse an array
 		if (!is_array($files)) {
 			$files = array($files);
 		}
 
-		// copy files and create a backup copy from each file
+		$types = $this->getAllowedImageTypes();
+		$jobs  = array();
+
 		foreach ($files as $file) {
-			// fetch file path
-			$path = JPath::clean($dir . DIRECTORY_SEPARATOR . $file);
-
-			// fetch destination file path
-			$destFile = JPath::clean($dest . DIRECTORY_SEPARATOR . basename($file));
-
-			// copy file in its destination
-			$res = JFile::copy($path, $destFile);
-
-			if ($res) {
-				// trigger mirroring action for new file uploaded
-				VikBookingUpdateManager::triggerUploadBackup($destFile);
+			if (!is_string($file) || $file === '') {
+				throw new Exception('Invalid file declared by the sample data', 403);
 			}
+
+			// the file name is the only part that will be used to build the target path
+			$name = basename(str_replace('\\', '/', $file));
+
+			// never use a name that is not strictly alphanumeric (plus dot, dash and underscore)
+			if (!preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]*$/', $name)) {
+				continue;
+			}
+
+			$ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+			if (!isset($types[$ext])) {
+				// file type not allowed (e.g. index.html), ignore it
+				continue;
+			}
+
+			// refuse names containing any executable extension, e.g. "image.php.jpg"
+			if (preg_match('/\.(php\d*|phtml|pht|phps|phar|cgi|pl|py|sh|asp|aspx|jsp|htaccess)(\.|$)/i', $name)) {
+				continue;
+			}
+
+			$source = JPath::clean($dir . DIRECTORY_SEPARATOR . $file);
+
+			// regular files only, no symbolic links
+			if (is_link($source) || !is_file($source)) {
+				throw new Exception(sprintf('Sample data file [%s] not found', $file), 404);
+			}
+
+			// the source must be found within the extracted package
+			$realSource = realpath($source);
+
+			if ($realSource === false || strpos($realSource, $realDir . DIRECTORY_SEPARATOR) !== 0) {
+				throw new Exception(sprintf('Sample data file [%s] is outside the package', $file), 403);
+			}
+
+			// the content must be an image of the type declared by the extension
+			$info = @getimagesize($realSource);
+
+			if (!$info || $info[2] !== $types[$ext]) {
+				throw new Exception(sprintf('Sample data file [%s] is not a valid image', $file), 403);
+			}
+
+			$jobs[] = array(
+				'source' => $realSource,
+				'target' => $realDest . DIRECTORY_SEPARATOR . $name,
+			);
+		}
+
+		return $jobs;
+	}
+
+	/**
+	 * Validates all the instructions of the manifest, without executing any.
+	 *
+	 * @param 	object 	$manifest  The decoded manifest.
+	 * @param 	string 	$folder    The directory of the extracted package.
+	 *
+	 * @return 	void
+	 *
+	 * @throws 	Exception
+	 */
+	private function validateManifest($manifest, $folder)
+	{
+		if (!empty($manifest->uninstall)) {
+			if (!is_array($manifest->uninstall)) {
+				throw new Exception('Invalid uninstall section declared by the sample data', 403);
+			}
+
+			foreach ($manifest->uninstall as $q) {
+				$this->assertSafeQuery($q, $install = false);
+			}
+		}
+
+		if (!empty($manifest->installers)) {
+			if (!is_array($manifest->installers)) {
+				throw new Exception('Invalid installers section declared by the sample data', 403);
+			}
+
+			foreach ($manifest->installers as $install) {
+				$role = isset($install->role) ? $install->role : '';
+				$data = isset($install->data) ? $install->data : null;
+
+				switch ($role) {
+					case 'sql':
+					case 'insert':
+						foreach (is_array($data) ? $data : array($data) as $q) {
+							$this->assertSafeQuery($q, $install = true);
+						}
+						break;
+
+					case 'media':
+					case 'folder':
+						if (!is_object($data) || !isset($data->destination) || !isset($data->files)) {
+							throw new Exception('Invalid files role declared by the sample data', 403);
+						}
+						$this->resolveFilesRole($data->destination, $data->files, $folder);
+						break;
+
+					default:
+						// unknown roles are never executed (see installSampleData)
+						break;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Makes sure the query declared by the package is one of the few
+	 * statements that a sample data needs, otherwise an exception is thrown:
+	 *
+	 * - install: INSERT INTO `#__vikbooking_{table}` (...) VALUES ...
+	 * - uninstall: TRUNCATE TABLE or DELETE FROM `#__vikbooking_{table}`
+	 *
+	 * where {table} is one of the allowed tables. Nothing can follow the
+	 * statement: the text outside the string literals is inspected to
+	 * detect stacked queries, comments, sub-queries and file operations.
+	 *
+	 * @param 	mixed 	 $query    The query to validate.
+	 * @param 	boolean  $install  True for installation queries.
+	 *
+	 * @return 	void
+	 *
+	 * @throws 	Exception
+	 */
+	private function assertSafeQuery($query, $install)
+	{
+		if (!is_string($query)) {
+			throw new Exception('Invalid query declared by the sample data', 403);
+		}
+
+		$query  = trim($query);
+		$tables = implode('|', array_map('preg_quote', $this->getAllowedTables()));
+
+		if ($install) {
+			$head = '/^INSERT\s+INTO\s+`#__vikbooking_(?:' . $tables . ')`\s*\([^)]*\)\s*VALUES\b/i';
+		} else {
+			$head = '/^(?:TRUNCATE\s+TABLE|DELETE\s+FROM)\s+`#__vikbooking_(?:' . $tables . ')`\s*;?$/i';
+		}
+
+		if (!preg_match($head, $query, $match)) {
+			throw new Exception('Query declared by the sample data is not allowed', 403);
+		}
+
+		// inspect the text found after the statement head, ignoring the string literals
+		$tail    = substr($query, strlen($match[0]));
+		$outside = '';
+		$inStr   = false;
+		$len     = strlen($tail);
+
+		for ($i = 0; $i < $len; $i++) {
+			$c = $tail[$i];
+
+			if ($inStr) {
+				if ($c === '\\') {
+					// escaped character
+					$i++;
+				} elseif ($c === "'") {
+					if ($i + 1 < $len && $tail[$i + 1] === "'") {
+						// escaped quote
+						$i++;
+					} else {
+						$inStr = false;
+					}
+				}
+			} elseif ($c === "'") {
+				$inStr    = true;
+				$outside .= "'";
+			} else {
+				$outside .= $c;
+			}
+		}
+
+		if ($inStr) {
+			// unterminated string literal
+			throw new Exception('Query declared by the sample data is malformed', 403);
+		}
+
+		// a single semicolon is tolerated only as last character
+		$outside = rtrim($outside);
+		$outside = preg_replace('/;$/', '', $outside);
+
+		// no stacked queries, comments, double quoted strings, sub-queries or file operations
+		if (preg_match('/;|--|#|\/\*|\*\/|"|\b(?:SELECT|UNION|UPDATE|DROP|ALTER|GRANT|CREATE|REPLACE|OUTFILE|DUMPFILE|LOAD_FILE|SLEEP|BENCHMARK)\b/i', $outside)) {
+			throw new Exception('Query declared by the sample data is not allowed', 403);
 		}
 	}
 

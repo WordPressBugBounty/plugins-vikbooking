@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.18
+
+*Release date - 21 October 2026*
+
+- Fixes applied for the automated security plugin review findings.
+
 ## 1.8.17
 
 *Release date - 20 October 2026*

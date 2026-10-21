@@ -3805,11 +3805,6 @@ JS
 			</div>
 		</div>
 
-		<input type="hidden" name="task" value="editorder">
-		<input type="hidden" name="vbo_active_tab" id="vbo_active_tab" value="">
-		<input type="hidden" name="whereup" value="<?php echo $row['id']; ?>">
-		<input type="hidden" name="cid[]" value="<?php echo $row['id']; ?>">
-		<input type="hidden" name="option" value="com_vikbooking">
 		<?php
 		$tmpl = VikRequest::getVar('tmpl');
 		if ($tmpl == 'component') {
@@ -3820,6 +3815,12 @@ JS
 			echo '<input type="hidden" name="goto" value="' . $pgoto . '" />';
 		}
 		?>
+		<input type="hidden" name="task" value="editorder">
+		<input type="hidden" name="vbo_active_tab" id="vbo_active_tab" value="">
+		<input type="hidden" name="whereup" value="<?php echo $row['id']; ?>">
+		<input type="hidden" name="cid[]" value="<?php echo $row['id']; ?>">
+		<input type="hidden" name="option" value="com_vikbooking">
+		<?php echo JHtml::fetch('form.token'); ?>
 	</form>
 </div>
 <?php
@@ -3832,6 +3833,7 @@ foreach ($vbo_modals_html as $modalhtml) {
 	<input type="hidden" name="task" value="orders" />
 	<input type="hidden" name="cid[]" value="<?php echo $row['id']; ?>" />
 	<input type="hidden" name="invnotes" id="invnotes-hid" value="" />
+	<?php echo JHtml::fetch('form.token'); ?>
 </form>
 
 <div class="vbo-editorder-sms-email-send-helper" style="display: none;">
@@ -3857,6 +3859,7 @@ foreach ($vbo_modals_html as $modalhtml) {
 			<input type="hidden" name="phone" id="smstophone" value="<?php echo $row['phone']; ?>" />
 			<input type="hidden" name="goto" value="<?php echo urlencode('index.php?option=com_vikbooking&task=editorder&cid[]='.$row['id']); ?>" />
 			<input type="hidden" name="task" value="sendcustomsms" />
+			<?php echo JHtml::fetch('form.token'); ?>
 		</form>
 	</div>
 
@@ -4016,6 +4019,7 @@ foreach ($vbo_modals_html as $modalhtml) {
 			<input type="hidden" name="email" id="emailto" value="<?php echo $row['custmail']; ?>" />
 			<input type="hidden" name="goto" value="<?php echo urlencode('index.php?option=com_vikbooking&task=editorder&cid[]='.$row['id']); ?>" />
 			<input type="hidden" name="task" value="sendcustomemail" />
+			<?php echo JHtml::fetch('form.token'); ?>
 		</form>
 	</div>
 

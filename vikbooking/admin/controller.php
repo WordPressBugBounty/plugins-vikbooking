@@ -9969,6 +9969,9 @@ class VikBookingController extends JControllerVikBooking
 	}
 
 	public function sendcustomsms() {
+		if (!JSession::checkToken()) {
+			throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+		}
 		$mainframe = JFactory::getApplication();
 		$pphone = VikRequest::getString('phone', '', 'request');
 		$psmscont = VikRequest::getString('smscont', '', 'request');
@@ -9996,6 +9999,9 @@ class VikBookingController extends JControllerVikBooking
 	}
 
 	public function sendcustomemail() {
+		if (!JSession::checkToken()) {
+			throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
+		}
 		$dbo = JFactory::getDbo();
 		$mainframe = JFactory::getApplication();
 		$vbo_tn = VikBooking::getTranslator();

@@ -211,7 +211,7 @@ final class VBODooraccessProviderNuki extends VBODooraccessIntegrationAware
         }
 
         // perform the OAuth token internal validation that relies on the database for CSRF prevention
-        if ($auth_state != $this->getOAuthCode()) {
+        if (!hash_equals((string) $this->getOAuthCode(), (string) $auth_state)) {
             throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
         }
 

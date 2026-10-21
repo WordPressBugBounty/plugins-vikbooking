@@ -323,19 +323,21 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 		$tot_messages = count($latest_messages);
 
 		foreach ($latest_messages as $ind => $gmessage) {
-			$gmessage_content = $gmessage->content;
-			if (empty($gmessage_content)) {
+			// the message body is written by guests/OTAs: limit its size, then sanitize it (the preview is also clamped by CSS)
+			$gmessage_content = (string) ($gmessage->content ?? '');
+			$gmessage_cut = strlen($gmessage_content) > 600;
+			if ($gmessage_cut) {
+				$gmessage_content = function_exists('mb_substr') ? mb_substr($gmessage_content, 0, 600, 'UTF-8') : substr($gmessage_content, 0, 600);
+			}
+			$gmessage_content = JHtml::fetch('kses', $gmessage_content);
+			if (trim(strip_tags($gmessage_content)) === '') {
 				if (!empty($gmessage->attachments)) {
-					$gmessage_content = '<i class="' . VikBookingIcons::i('paperclip') . '"></i> ' . basename($gmessage->attachments[0] ?? '');
+					// the attachment name is not trusted either
+					$gmessage_content = '<i class="' . VikBookingIcons::i('paperclip') . '"></i> ' . htmlspecialchars(basename((string) ($gmessage->attachments[0] ?? '')), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 				} else {
 					$gmessage_content = '.....';
 				}
-			} elseif (strlen($gmessage_content) > 90) {
-				if (function_exists('mb_substr')) {
-					$gmessage_content = mb_substr($gmessage_content, 0, 90, 'UTF-8');
-				} else {
-					$gmessage_content = substr($gmessage_content, 0, 90);
-				}
+			} elseif ($gmessage_cut) {
 				$gmessage_content .= '...';
 			}
 
@@ -515,7 +517,7 @@ class VikBookingAdminWidgetGuestMessages extends VikBookingAdminWidget
 						</div>
 					</div>
 					<div class="vbo-dashboard-guest-activity-content-info-msg">
-						<p><?php echo $gmessage_content; ?></p>
+						<div class="vbo-w-guestmessages-message-text"><?php echo $gmessage_content; ?></div>
 					</div>
 				</div>
 			</div>

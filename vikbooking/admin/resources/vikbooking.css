@@ -6769,6 +6769,18 @@ body #wpcontent .btn-success.vbo-context-menu-btn:focus .vbo-context-menu-ico, b
 .vbo-dashboard-guest-activity-content-info-msg p {
 	margin: 0;
 }
+.vbo-dashboard-guest-activity-content-info-msg .vbo-w-guestmessages-message-text {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	line-clamp: 3;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+}
+.vbo-dashboard-guest-activity-content-info-msg .vbo-w-guestmessages-message-text ul, .vbo-dashboard-guest-activity-content-info-msg .vbo-w-guestmessages-message-text ol {
+	margin: 0;
+	padding-left: 18px;
+}
 .vbo-dashboard-guest-activity-skeleton {
 	padding: 17px 15px;
 }

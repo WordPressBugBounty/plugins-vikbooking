@@ -610,7 +610,7 @@ if (empty($rows)) {
 									$referrer_logo = VikBooking::getVcmChannelsLogo($info['referrer']);
 									if ($referrer_logo === false) {
 										$say_referrer = strpos($info['referrer'], 'http') === false ? ucwords($info['referrer']) : $info['referrer'];
-										$referrer_logo = '<span><i class="' . VikBookingIcons::i('globe') . '"></i> ' . $say_referrer . '</span>';
+										$referrer_logo = '<span><i class="' . VikBookingIcons::i('globe') . '"></i> ' . htmlspecialchars($say_referrer) . '</span>';
 									} else {
 										$referrer_logo = '<span class="vbo-tracking-info-referrer-logo"><img src="' . $referrer_logo . '"/></span>';
 									}

@@ -83,7 +83,18 @@ final class VBODooraccessProviderUtec extends VBODooraccessIntegrationAware
             // convert the redirect URI to a text
             $dac_oauth_spawn_url = 'Save settings first.';
         } else {
-            // build button-link for the authorization code URL
+            /**
+             * Build button-link for the authorization code URL.
+             * 
+             * The "client_secret" is part of the authorization request on purpose: the official U-tec OpenAPI
+             * documentation defines the authorization URI with the parameters response_type, client_id, client_secret,
+             * scope, redirect_uri and state (this is not the standard OAuth 2.0 authorization code flow). This
+             * integration has been working in production with this exact request since February 2026.
+             * The link is only generated for the administrators that can access the settings of this integration,
+             * who are the ones that entered the client secret, and it is sent over HTTPS only.
+             * 
+             * @link    https://doc.api.u-tec.com/ OAuth - Authorization
+             */
             $utec_auth_data = [
                 'response_type' => 'code',
                 'client_id'     => $settings['client_id'],
@@ -186,7 +197,7 @@ final class VBODooraccessProviderUtec extends VBODooraccessIntegrationAware
         }
 
         // perform the OAuth token internal validation that relies on the database for CSRF prevention
-        if ($auth_state != $this->getOAuthCode()) {
+        if (!hash_equals((string) $this->getOAuthCode(), (string) $auth_state)) {
             throw new Exception(JText::translate('JINVALID_TOKEN'), 403);
         }
 
@@ -215,7 +226,12 @@ final class VBODooraccessProviderUtec extends VBODooraccessIntegrationAware
                 'code'          => $auth_code,
             ];
 
-            // make the API request
+            /**
+             * Make the API request. The U-tec token endpoint is documented to receive the grant parameters,
+             * client_secret included, within the query string of the request, over HTTPS (server-to-server call).
+             * 
+             * @link    https://doc.api.u-tec.com/ OAuth - Token
+             */
             $response = $transporter->get('https://oauth.u-tec.com/token?' . http_build_query($requestData), $this->httpHeaders, 60);
 
             // obtain response data
@@ -276,12 +292,7 @@ final class VBODooraccessProviderUtec extends VBODooraccessIntegrationAware
     {
         $app = JFactory::getApplication();
 
-        /**
-         * @todo  remove webhook payload debugging
-         */
-        $fp = fopen(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'webhook_debug.txt', 'a+');
-        fwrite($fp, date('c') . "\n" . print_r(file_get_contents('php://input'), true) . "\n" . print_r($app->input->request->getArray(), true) . "\n" . print_r($app->input->server->getArray(), true) . "\n\n\n");
-        fclose($fp);
+        // the payload is not processed yet, nothing is stored or logged
 
         // close the response with a 200 status code
         VBOHttpDocument::getInstance($app)->close(200, 'Webhook data successfully received.');

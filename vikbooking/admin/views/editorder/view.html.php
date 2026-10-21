@@ -101,6 +101,9 @@ class VikBookingViewEditorder extends JViewVikBooking
 			}
 		}
 
+		// CSRF token validation
+		$applyChanges = JSession::checkToken() || JSession::checkToken('get');
+
 		$padminnotes = VikRequest::getString('adminnotes', '', 'request');
 		$pupdadmnotes = VikRequest::getString('updadmnotes', '', 'request');
 		$pinvnotes = VikRequest::getString('invnotes', '', 'request', VIKREQUEST_ALLOWHTML);
@@ -121,7 +124,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 		$pcustphone = VikRequest::getString('custphone', null, 'request');
 
 		// we update the total paid also if the input is 0.0 (float) as the default value is -1 (int)
-		if (($pnewamountpaid > 0 || ($pnewamountpaid == 0 && is_float($pnewamountpaid))) && (float)$row['totpaid'] != $pnewamountpaid) {
+		if ($applyChanges && (($pnewamountpaid > 0 || ($pnewamountpaid == 0 && is_float($pnewamountpaid))) && (float)$row['totpaid'] != $pnewamountpaid)) {
 			$prevpaid = (float)$row['totpaid'];
 			$q = "UPDATE `#__vikbooking_orders` SET `totpaid`=".$dbo->quote($pnewamountpaid)." WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
@@ -144,7 +147,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 		}
 		$pnewamountrefunded = VikRequest::getFloat('newamountrefunded', -1, 'request');
 		// we update the total refunded also if the input is 0.0 (float) as the default value is -1 (int)
-		if (($pnewamountrefunded > 0 || ($pnewamountrefunded == 0 && is_float($pnewamountrefunded))) && (float)$row['refund'] != $pnewamountrefunded) {
+		if ($applyChanges && (($pnewamountrefunded > 0 || ($pnewamountrefunded == 0 && is_float($pnewamountrefunded))) && (float)$row['refund'] != $pnewamountrefunded)) {
 			$prevrefunded = $row['refund'];
 			$refund_diff = $pnewamountrefunded - $row['refund'];
 			if ($refund_diff > 0) {
@@ -172,7 +175,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 		}
 		$pnewamountpayable = VikRequest::getFloat('newamountpayable', -1, 'request');
 		// we update the amount payable also if the input is 0.0 (float) as the default value is -1 (int)
-		if (($pnewamountpayable > 0 || ($pnewamountpayable == 0 && is_float($pnewamountpayable))) && (float)$row['payable'] != $pnewamountpayable) {
+		if ($applyChanges && (($pnewamountpayable > 0 || ($pnewamountpayable == 0 && is_float($pnewamountpayable))) && (float)$row['payable'] != $pnewamountpayable)) {
 			$q = "UPDATE `#__vikbooking_orders` SET `payable`=" . $dbo->quote($pnewamountpayable) . " WHERE `id`=" . $row['id'] . ";";
 			$dbo->setQuery($q);
 			$dbo->execute();
@@ -185,7 +188,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 				$pmakepay = 1;
 			}
 		}
-		if ($pmakepay > 0) {
+		if ($applyChanges && $pmakepay > 0) {
 			// check if the payment counter should be updated
 			$q = "UPDATE `#__vikbooking_orders` SET `paymcount`=" . $pmakepay . " WHERE `id`=" . $row['id'] . ";";
 			$dbo->setQuery($q);
@@ -194,7 +197,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 		}
 		$pnewcancfee = VikRequest::getFloat('newcancfee', -1, 'request');
 		// we update the cancellation fee amount also if the input is 0.0 (float) as the default value is -1 (int)
-		if (($pnewcancfee > 0 || ($pnewcancfee == 0 && is_float($pnewcancfee))) && (float)$row['canc_fee'] != $pnewcancfee) {
+		if ($applyChanges && (($pnewcancfee > 0 || ($pnewcancfee == 0 && is_float($pnewcancfee))) && (float)$row['canc_fee'] != $pnewcancfee)) {
 			$q = "UPDATE `#__vikbooking_orders` SET `canc_fee`=" . $dbo->quote($pnewcancfee) . " WHERE `id`=" . $row['id'] . ";";
 			$dbo->setQuery($q);
 			$dbo->execute();
@@ -202,20 +205,20 @@ class VikBookingViewEditorder extends JViewVikBooking
 			// booking history log for new cancellation fee amount
 			VikBooking::getBookingHistoryInstance()->setBid($row['id'])->store('MB', sprintf(JText::translate('VBO_CANC_FEE') . ': %s', VikBooking::numberFormat($pnewcancfee)));
 		}
-		if (!empty($padminnotes) || !empty($pupdadmnotes)) {
+		if ($applyChanges && (!empty($padminnotes) || !empty($pupdadmnotes))) {
 			$q = "UPDATE `#__vikbooking_orders` SET `adminnotes`=".$dbo->quote($padminnotes)." WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['adminnotes'] = $padminnotes;
 		}
-		if (!empty($pinvnotes) || !empty($pupdinvnotes)) {
+		if ($applyChanges && (!empty($pinvnotes) || !empty($pupdinvnotes))) {
 			$pinvnotes = strpos($pinvnotes, '<br') !== false ? $pinvnotes : nl2br($pinvnotes);
 			$q = "UPDATE `#__vikbooking_orders` SET `inv_notes`=".$dbo->quote($pinvnotes)." WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['inv_notes'] = $pinvnotes;
 		}
-		if (!empty($pnewpayment) && $payments) {
+		if ($applyChanges && !empty($pnewpayment) && $payments) {
 			foreach ($payments as $npay) {
 				if ((int)$npay['id'] == (int)$pnewpayment) {
 					$newpayvalid = $npay['id'].'='.$npay['name'];
@@ -227,13 +230,13 @@ class VikBookingViewEditorder extends JViewVikBooking
 				}
 			}
 		}
-		if (!empty($pnewlang)) {
+		if ($applyChanges && !empty($pnewlang)) {
 			$q = "UPDATE `#__vikbooking_orders` SET `lang`=".$dbo->quote($pnewlang)." WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['lang'] = $pnewlang;
 		}
-		if (strlen($padmindisc) > 0) {
+		if ($applyChanges && strlen($padmindisc) > 0) {
 			if (floatval($padmindisc) > 0.00) {
 				$admincoupon = '-1;'.floatval($padmindisc).';'.JText::translate('VBADMINDISCOUNT');
 			} else {
@@ -253,43 +256,43 @@ class VikBookingViewEditorder extends JViewVikBooking
 				$row['total'] = $newtotal;
 			}
 		}
-		if (strlen($ptot_taxes) > 0) {
+		if ($applyChanges && strlen($ptot_taxes) > 0) {
 			$q = "UPDATE `#__vikbooking_orders` SET `tot_taxes`='".floatval($ptot_taxes)."' WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['tot_taxes'] = $ptot_taxes;
 		}
-		if (strlen($ptot_city_taxes) > 0) {
+		if ($applyChanges && strlen($ptot_city_taxes) > 0) {
 			$q = "UPDATE `#__vikbooking_orders` SET `tot_city_taxes`='".floatval($ptot_city_taxes)."' WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['tot_city_taxes'] = $ptot_city_taxes;
 		}
-		if (strlen($ptot_fees) > 0) {
+		if ($applyChanges && strlen($ptot_fees) > 0) {
 			$q = "UPDATE `#__vikbooking_orders` SET `tot_fees`='".floatval($ptot_fees)."' WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['tot_fees'] = $ptot_fees;
 		}
-		if (strlen($pcmms) > 0) {
+		if ($applyChanges && strlen($pcmms) > 0) {
 			$q = "UPDATE `#__vikbooking_orders` SET `cmms`='".floatval($pcmms)."' WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['cmms'] = $pcmms;
 		}
-		if (strlen($ptot_damage_dep) > 0) {
+		if ($applyChanges && strlen($ptot_damage_dep) > 0) {
 			$q = "UPDATE `#__vikbooking_orders` SET `tot_damage_dep`='".floatval($ptot_damage_dep)."' WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['tot_damage_dep'] = $ptot_damage_dep;
 		}
-		if (strlen($pcustmail) > 0) {
+		if ($applyChanges && strlen($pcustmail) > 0) {
 			$q = "UPDATE `#__vikbooking_orders` SET `custmail`=".$dbo->quote($pcustmail)." WHERE `id`=".$row['id'].";";
 			$dbo->setQuery($q);
 			$dbo->execute();
 			$row['custmail'] = $pcustmail;
 		}
-		if (!is_null($pcustphone)) {
+		if ($applyChanges && !is_null($pcustphone)) {
 			// update phone number even if empty, but not null (form submitted with an empty string to unset it)
 			$q = "UPDATE `#__vikbooking_orders` SET `phone`=" . (!strlen((string) $pcustphone) ? 'NULL' : $dbo->q($pcustphone)) . " WHERE `id`=" . $row['id'] . ";";
 			$dbo->setQuery($q);
@@ -303,7 +306,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 		 * @since 	1.16.3 (J) - 1.6.3 (WP)
 		 */
 		$vcm_assign_channel = VikRequest::getString('vcm_assign_channel', '', 'request');
-		if (!empty($vcm_assign_channel) && class_exists('VCMOtaBooking')) {
+		if ($applyChanges && !empty($vcm_assign_channel) && class_exists('VCMOtaBooking')) {
 			// current unix timestamp will be used in place of OTA Reservation ID
 			$set_ota_bid = time();
 
@@ -331,7 +334,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 
 		// Rooms Specific Unit
 		$proomindex = VikRequest::getVar('roomindex', array());
-		if (!empty($proomindex) && is_array($proomindex) && count($proomindex)) {
+		if ($applyChanges && !empty($proomindex) && is_array($proomindex) && $proomindex) {
 			$orig_rooms = $rooms;
 			foreach ($proomindex as $or_id => $rind) {
 				if (empty($or_id)) {
@@ -416,7 +419,7 @@ class VikBookingViewEditorder extends JViewVikBooking
 
 		// unset credit card details, if needed, maybe to re-collect them
 		$unset_cc = VikRequest::getInt('unset_cc', 0, 'request');
-		if ($unset_cc && empty($row['idorderota']) && !empty($row['paymentlog'])) {
+		if ($applyChanges && $unset_cc && empty($row['idorderota']) && !empty($row['paymentlog'])) {
 			$q = "UPDATE `#__vikbooking_orders` SET `paymentlog` = NULL WHERE `id` = " . $row['id'] . ";";
 			$dbo->setQuery($q);
 			$dbo->execute();

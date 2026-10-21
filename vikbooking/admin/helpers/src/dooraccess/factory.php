@@ -1575,7 +1575,8 @@ final class VBODooraccessFactory
         // load the requested integration profile
         $profile = $this->loadIntegrationRecord((int) $profileId);
 
-        if (!$profile) {
+        if (!$profile || ($profile['provider_alias'] ?? '') !== $integration->getAlias()) {
+            // the profile must exist and belong to the requested provider
             throw new Exception('Invalid door access control provider profile.', 404);
         }
 
@@ -1623,7 +1624,8 @@ final class VBODooraccessFactory
         // load the requested integration profile
         $profile = $this->loadIntegrationRecord((int) $profileId);
 
-        if (!$profile) {
+        if (!$profile || ($profile['provider_alias'] ?? '') !== $integration->getAlias()) {
+            // the profile must exist and belong to the requested provider
             throw new Exception('Invalid door access control provider profile.', 404);
         }
 

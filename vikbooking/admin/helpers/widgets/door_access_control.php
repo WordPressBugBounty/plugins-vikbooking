@@ -2350,6 +2350,21 @@ class VikBookingAdminWidgetDoorAccessControl extends VikBookingAdminWidget
             $capability = $device->getCapabilityById($idCapability);
 
             if (!empty($retryDataOptions['booking_id']) && !empty($retryDataOptions['listing_id'])) {
+                // normalize the retry-data identifiers
+                $retryDataOptions['booking_id'] = (int) $retryDataOptions['booking_id'];
+                $retryDataOptions['listing_id'] = (int) $retryDataOptions['listing_id'];
+
+                // the retry-data must refer to an existing booking that actually includes the given listing
+                try {
+                    $retryRegistry = VBOBookingRegistry::getInstance(['id' => $retryDataOptions['booking_id']]);
+                } catch (Exception $e) {
+                    $retryRegistry = null;
+                }
+
+                if (!$retryRegistry || !in_array($retryDataOptions['listing_id'], $retryRegistry->getBookedListingIds(), true)) {
+                    throw new Exception('Invalid door access control retry data.', 400);
+                }
+
                 // inject retry-data into capability
                 $capability->setRetryData($retryDataOptions);
             }
